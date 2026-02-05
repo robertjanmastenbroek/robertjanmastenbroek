@@ -930,6 +930,14 @@
                     Watch on YouTube
                 </a>
             </div>
+            <!-- Artist Photo -->
+            <div class="hero-image" style="margin-top: 3rem;">
+                <img src="images/profile-photo.jpg" alt="Robert-Jan Mastenbroek"
+                     style="width: 200px; height: 200px; border-radius: 50%;
+                            border: 3px solid var(--accent-gold); object-fit: cover;
+                            box-shadow: 0 10px 40px rgba(212, 175, 55, 0.3);"
+                     onerror="this.style.display='none'">
+            </div>
         </div>
     </section>
 
@@ -937,19 +945,19 @@
     <div class="stats-bar">
         <div class="stats-container">
             <div class="stat-item">
-                <h3>300K+</h3>
+                <h3>291K</h3>
                 <p>Instagram Followers</p>
             </div>
             <div class="stat-item">
                 <h3>40+</h3>
-                <p>Original Tracks</p>
+                <p>Original Tracks Created</p>
             </div>
             <div class="stat-item">
-                <h3>Weekly</h3>
-                <p>Releases on YouTube</p>
+                <h3>Every 2 Days</h3>
+                <p>New YouTube Releases</p>
             </div>
             <div class="stat-item">
-                <h3>Every Thursday</h3>
+                <h3>Thursday 18:00</h3>
                 <p>Live in Tenerife</p>
             </div>
         </div>
@@ -964,7 +972,8 @@
         </div>
 
         <div class="music-grid">
-            <!-- Spotify Embed -->
+            <!-- Note: Replace these with actual Spotify track URIs when tracks are released -->
+            <!-- Example: https://open.spotify.com/embed/track/YOUR_TRACK_ID -->
             <div class="music-card">
                 <iframe
                     class="spotify-embed"
@@ -975,6 +984,10 @@
                 </iframe>
             </div>
         </div>
+
+        <p style="text-align: center; color: var(--text-secondary); margin-top: 2rem; font-size: 0.95rem;">
+            🎵 <strong>40+ tracks created</strong> · 3 released on streaming platforms · More coming every week
+        </p>
 
         <div class="platform-links">
             <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="platform-link">
@@ -1042,6 +1055,14 @@
                     </p>
                 </div>
                 <div class="story-visual">
+                    <!-- Artist Worship Photo -->
+                    <img src="images/worship-raised-arms.jpg"
+                         alt="Robert-Jan Mastenbroek in worship"
+                         style="width: 100%; border-radius: 12px;
+                                border: 1px solid var(--border-subtle);
+                                margin-bottom: 2rem; object-fit: cover;
+                                max-height: 500px;"
+                         onerror="this.style.display='none'">
                     <div class="story-quote">
                         <blockquote>
                             "Let everything that has breath praise the Lord."
@@ -1061,14 +1082,14 @@
             <div class="gold-line"></div>
         </div>
         <div class="event-card">
-            <span class="event-badge">Every Thursday</span>
+            <span class="event-badge">Every Thursday · 18:00-21:00</span>
             <h3>Electronic Worship Night</h3>
             <div class="event-details">
-                <span>📍 Tenerife Family Church</span>
+                <span>📍 <a href="https://maps.app.goo.gl/xY9qKgEu7oMXAsmb8" target="_blank" style="color: var(--accent-gold); text-decoration: none;">Tenerife Family Church</a></span>
                 <span>🎵 Sober Rave / Ecstatic Dance</span>
                 <span>✨ Dancing for Jesus in a safe, high-energy environment</span>
             </div>
-            <a href="#booking" class="btn btn-primary">Get in Touch</a>
+            <a href="mailto:mastenbroekrobertjan@gmail.com" class="btn btn-primary">Book This Event</a>
         </div>
     </section>
 
@@ -1080,21 +1101,20 @@
             <div class="gold-line"></div>
         </div>
         <div class="booking-content">
-            <form class="contact-form" id="contactForm" action="https://formspree.io/f/xpwzgvpd" method="POST">
-                <input type="text" name="name" placeholder="Your Name" required>
-                <input type="email" name="email" placeholder="Your Email" required>
-                <input type="text" name="subject" placeholder="Subject" required>
-                <textarea name="message" placeholder="Tell me about your event or inquiry" required></textarea>
-                <input type="hidden" name="_subject" value="New booking inquiry from website">
-                <button type="submit" class="btn btn-primary">Send Message</button>
-            </form>
-            <div class="form-success" id="formSuccess" style="display: none;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <h3>Message Sent!</h3>
-                <p>Thank you for reaching out. I'll get back to you soon.</p>
+            <div class="contact-info" style="text-align: center;">
+                <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem;">
+                    Ready to bring Electronic Worship to your venue, festival, or church?
+                </p>
+                <a href="mailto:mastenbroekrobertjan@gmail.com?subject=Booking Inquiry - Electronic Worship" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.5rem 3rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    Email: mastenbroekrobertjan@gmail.com
+                </a>
+                <p style="margin-top: 2rem; color: var(--text-secondary); font-size: 0.9rem;">
+                    For bookings, collaborations, or media inquiries
+                </p>
             </div>
         </div>
     </section>
@@ -1103,12 +1123,11 @@
     <div class="newsletter">
         <h3>Stay Connected</h3>
         <p>Get updates on new releases, events, and exclusive content.</p>
-        <form class="newsletter-form" action="https://formspree.io/f/xpwzgvpd" method="POST">
-            <input type="email" name="email" placeholder="Enter your email" required>
-            <input type="hidden" name="_subject" value="New newsletter subscription">
-            <input type="hidden" name="type" value="newsletter">
-            <button type="submit">Subscribe</button>
-        </form>
+        <p style="margin-top: 1.5rem; color: var(--text-secondary);">
+            <a href="mailto:mastenbroekrobertjan@gmail.com?subject=Newsletter Signup" style="color: var(--accent-gold); text-decoration: none; font-weight: 600;">
+                Email me to join the mailing list
+            </a>
+        </p>
     </div>
 
     <!-- Footer -->
@@ -1138,7 +1157,7 @@
                             <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
                         </svg>
                     </a>
-                    <a href="https://facebook.com/robertjanmastenbroek" target="_blank" title="Facebook">
+                    <a href="https://facebook.com/rjmastenbroek" target="_blank" title="Facebook">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                         </svg>
@@ -1159,8 +1178,8 @@
                 <ul>
                     <li><a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank">Spotify</a></li>
                     <li><a href="https://www.youtube.com/@robertjanmastenbroekofficial" target="_blank">YouTube</a></li>
-                    <li><a href="https://music.apple.com" target="_blank">Apple Music</a></li>
-                    <li><a href="https://soundcloud.com" target="_blank">SoundCloud</a></li>
+                    <li><a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank">Instagram</a></li>
+                    <li><a href="https://tiktok.com/@robertjanmastenbroek" target="_blank">TikTok</a></li>
                 </ul>
             </div>
         </div>
@@ -1271,35 +1290,7 @@
             `;
         }
 
-        // Contact form handling with Formspree
-        const contactForm = document.getElementById('contactForm');
-        const formSuccess = document.getElementById('formSuccess');
-
-        contactForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(contactForm);
-
-            try {
-                const response = await fetch(contactForm.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    contactForm.style.display = 'none';
-                    formSuccess.style.display = 'block';
-                } else {
-                    throw new Error('Form submission failed');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('There was an issue sending your message. Please try again or email directly.');
-            }
-        });
+        // Form handling removed - using direct mailto links instead
 
         // Intersection Observer for fade-in animations
         const observerOptions = {
