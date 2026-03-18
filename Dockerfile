@@ -1,7 +1,8 @@
-FROM nginx:alpine
-COPY index.html /usr/share/nginx/html/index.html
-COPY images/ /usr/share/nginx/html/images/
-COPY nginx.conf /etc/nginx/nginx.conf
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json ./
+RUN npm install --production
+COPY . .
 ENV PORT=8080
 EXPOSE 8080
-CMD sh -c "envsubst '\$PORT' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp && mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+CMD ["node", "server.js"]

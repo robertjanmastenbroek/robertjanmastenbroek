@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support the Mission · Robert-Jan Mastenbroek</title>
+  <meta name="description" content="Keep Holy Rave free. Every event free, every week. Your support makes that possible.">
+  <meta property="og:title" content="Keep Holy Rave Free · Support the Mission">
+  <meta property="og:description" content="Every event free. Every week. No tickets, no dress code, no faith test. Your support is what makes that possible.">
+  <meta property="og:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --dark:       #0a0a0a;
+      --secondary:  #111111;
+      --card:       #161616;
+      --gold:       #d4af37;
+      --gold-dim:   rgba(212, 175, 55, 0.12);
+      --gold-border:rgba(212, 175, 55, 0.25);
+      --text:       #ffffff;
+      --muted:      #a0a0a0;
+      --border:     rgba(255,255,255,0.07);
+      --serif:      'Cormorant Garamond', Georgia, serif;
+      --sans:       'Inter', -apple-system, sans-serif;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--dark);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; width: 100%;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 1.2rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    nav .logo { font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text); text-decoration: none; }
+    nav .logo span { color: var(--gold); }
+    nav .back { color: var(--muted); text-decoration: none; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; transition: color 0.2s; }
+    nav .back:hover { color: var(--text); }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 900px; height: 900px;
+      background: radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 65%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: breathe 12s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+      50%       { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    }
+
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fff 30%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.5rem;
+      line-height: 1.1;
+      position: relative;
+    }
+
+    .hero .sub {
+      font-size: clamp(1rem, 2vw, 1.15rem);
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.8;
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    /* ── MRR Counter ── */
+    .mrr-block {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--card);
+      border: 1px solid var(--gold-border);
+      border-radius: 12px;
+      padding: 1.5rem 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .mrr-block::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(212,175,55,0.15), transparent 60%);
+      pointer-events: none;
+    }
+    .mrr-amount {
+      font-family: var(--serif);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+    .mrr-label {
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .mrr-pulse {
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.3; transform: scale(0.7); }
+    }
+    .mrr-caption {
+      font-size: 0.75rem;
+      color: #555;
+      letter-spacing: 1px;
+      margin-top: 0.5rem;
+    }
+
+    /* ── Section ── */
+    .tiers-section {
+      padding: 6rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .section-label {
+      text-align: center;
+      font-size: 0.75rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      text-align: center;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      max-width: 500px;
+      margin: 0 auto 4rem;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    .gold-line {
+      width: 50px; height: 2px;
+      background: var(--gold);
+      margin: 1.25rem auto 2rem;
+    }
+
+    /* ── Tier Cards ── */
+    .tiers-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    .tier-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: all 0.35s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .tier-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+    .tier-card:hover {
+      border-color: var(--gold-border);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .tier-card:hover::before {
+      background: var(--gold);
+    }
+
+    /* Featured card */
+    .tier-card.featured {
+      border-color: var(--gold-border);
+      background: linear-gradient(160deg, #1a1600 0%, var(--card) 50%);
+    }
+    .tier-card.featured::before {
+      background: var(--gold);
+    }
+    .featured-badge {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: var(--gold);
+      color: var(--dark);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+    }
+
+    .tier-name {
+      font-size: 0.75rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 600;
+    }
+    .tier-price {
+      font-family: var(--serif);
+      font-size: 2.4rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+    }
+    .tier-price .currency { font-size: 1.4rem; color: var(--muted); vertical-align: super; }
+    .tier-price .period  { font-family: var(--sans); font-size: 0.85rem; color: var(--muted); font-weight: 400; }
+    .tier-desc {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex-grow: 1;
+      font-style: italic;
+    }
+
+    /* Custom amount input for tier 4 */
+    .custom-amount-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .custom-amount-label {
+      font-size: 0.72rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .custom-amount-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .custom-amount-input-row:focus-within {
+      border-color: var(--gold);
+    }
+    .custom-amount-prefix {
+      padding: 0.8rem 0.75rem 0.8rem 1rem;
+      color: var(--gold);
+      font-size: 1rem;
+      font-weight: 600;
+      background: transparent;
+    }
+    .custom-amount-input {
+      flex: 1;
+      padding: 0.8rem 1rem 0.8rem 0.25rem;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 500;
+      font-family: var(--sans);
+    }
+    .custom-amount-input::placeholder { color: #444; }
+    .custom-amount-min {
+      font-size: 0.72rem;
+      color: #555;
+      letter-spacing: 0.5px;
+    }
+
+    /* CTA Button */
+    .btn-tier {
+      display: block;
+      width: 100%;
+      padding: 1rem;
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--gold-border);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: all 0.25s ease;
+    }
+    .btn-tier:hover, .btn-tier:focus {
+      background: var(--gold);
+      color: var(--dark);
+      border-color: var(--gold);
+    }
+    .tier-card.featured .btn-tier {
+      background: var(--gold);
+      color: var(--dark);
+      border-color: var(--gold);
+    }
+    .tier-card.featured .btn-tier:hover {
+      background: transparent;
+      color: var(--gold);
+    }
+    .btn-tier:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-tier.loading {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    /* ── Error message ── */
+    .tier-error {
+      font-size: 0.75rem;
+      color: #e05555;
+      min-height: 1rem;
+      text-align: center;
+    }
+
+    /* ── One-time ── */
+    .one-time-section {
+      text-align: center;
+      padding: 1rem 2rem 5rem;
+    }
+    .one-time-section p {
+      color: #555;
+      font-size: 0.85rem;
+    }
+    .one-time-section a {
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+    .one-time-section a:hover {
+      color: var(--gold);
+    }
+
+    /* ── Scripture strip ── */
+    .scripture {
+      background: var(--secondary);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+    .scripture blockquote {
+      font-family: var(--serif);
+      font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+      font-style: italic;
+      color: var(--text);
+      max-width: 600px;
+      margin: 0 auto 0.75rem;
+      line-height: 1.6;
+    }
+    .scripture cite {
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    /* ── Footer strip ── */
+    .footer-strip {
+      padding: 2rem;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+    .footer-strip p {
+      font-size: 0.8rem;
+      color: #444;
+    }
+    .footer-strip a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .footer-strip a:hover { color: var(--gold); }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .tiers-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .tiers-grid { grid-template-columns: 1fr; }
+      .hero h1 { letter-spacing: 2px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="/" class="logo">Robert-Jan <span>M</span></a>
+    <a href="/" class="back">← Back to site</a>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <p class="hero-eyebrow">Sacred Music · Free Dancefloors</p>
+    <h1>Keep Holy Rave<br>Free</h1>
+    <p class="sub">Every event free. Every week. No tickets, no dress code, no faith test. Your support is what makes that possible.</p>
+
+    <!-- Live MRR Counter -->
+    <div class="mrr-block">
+      <span class="mrr-amount">
+        €<span id="mrr-value">—</span>
+      </span>
+      <span class="mrr-label">
+        <span class="mrr-pulse"></span>/ month in mission support
+      </span>
+    </div>
+    <p class="mrr-caption">Live · updates every few minutes</p>
+  </div>
+
+  <!-- Scripture -->
+  <div class="scripture">
+    <blockquote>"Let everything that has breath praise the Lord."</blockquote>
+    <cite>— Psalm 150:6</cite>
+  </div>
+
+  <!-- Tiers -->
+  <div class="tiers-section">
+    <p class="section-label">Join the mission</p>
+    <h2 class="section-title">Choose Your Part</h2>
+    <div class="gold-line"></div>
+    <p class="section-sub">Every tier keeps the dancefloor free. Pick what feels right.</p>
+
+    <div class="tiers-grid">
+
+      <!-- Tier 1: Friend -->
+      <div class="tier-card">
+        <span class="tier-name">Friend</span>
+        <div class="tier-price">
+          <span class="currency">€</span>5
+          <span class="period"> / month</span>
+        </div>
+        <p class="tier-desc">"You show up. That means everything."</p>
+        <a href="STRIPE_TIER_1_LINK" class="btn-tier" target="_blank" rel="noopener">
+          Support this mission
+        </a>
+      </div>
+
+      <!-- Tier 2: Supporter -->
+      <div class="tier-card">
+        <span class="tier-name">Supporter</span>
+        <div class="tier-price">
+          <span class="currency">€</span>15
+          <span class="period"> / month</span>
+        </div>
+        <p class="tier-desc">"You keep the doors open."</p>
+        <a href="STRIPE_TIER_2_LINK" class="btn-tier" target="_blank" rel="noopener">
+          Support this mission
+        </a>
+      </div>
+
+      <!-- Tier 3: Patron (featured) -->
+      <div class="tier-card featured">
+        <span class="featured-badge">Most chosen</span>
+        <span class="tier-name">Patron</span>
+        <div class="tier-price">
+          <span class="currency">€</span>33
+          <span class="period"> / month</span>
+        </div>
+        <p class="tier-desc">"You're part of what makes this possible."</p>
+        <a href="STRIPE_TIER_3_LINK" class="btn-tier" target="_blank" rel="noopener">
+          Support this mission
+        </a>
+      </div>
+
+      <!-- Tier 4: Benefactor (custom) -->
+      <div class="tier-card">
+        <span class="tier-name">Benefactor</span>
+        <div class="tier-price">
+          <span class="currency">€</span>100<span style="font-family:var(--sans);font-size:1rem;color:var(--muted);">+</span>
+          <span class="period"> / month</span>
+        </div>
+        <p class="tier-desc">"You're a cornerstone of this mission."</p>
+        <div class="custom-amount-wrapper">
+          <span class="custom-amount-label">Set your monthly amount</span>
+          <div class="custom-amount-input-row">
+            <span class="custom-amount-prefix">€</span>
+            <input
+              type="number"
+              id="custom-amount"
+              class="custom-amount-input"
+              placeholder="100"
+              min="100"
+              step="1"
+            >
+          </div>
+          <span class="custom-amount-min">Minimum €100 / month</span>
+        </div>
+        <p class="tier-error" id="tier4-error"></p>
+        <button class="btn-tier" id="tier4-btn" onclick="startCustomCheckout()">
+          Support this mission
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- One-time -->
+  <div class="one-time-section">
+    <p>Prefer a one-time gift? <a href="STRIPE_ONE_TIME_LINK" target="_blank" rel="noopener">Click here.</a></p>
+  </div>
+
+  <!-- Footer strip -->
+  <div class="footer-strip">
+    <p>
+      <a href="/">robertjanmastenbroek.com</a> &nbsp;·&nbsp;
+      <a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank">Instagram</a> &nbsp;·&nbsp;
+      <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank">WhatsApp Community</a>
+    </p>
+    <p style="margin-top: 0.5rem;">All the glory belongs to Jesus.</p>
+  </div>
+
+  <script>
+    // ── Load MRR counter ──────────────────────────────────────────────────────
+    async function loadMRR() {
+      try {
+        const res = await fetch('/api/mrr');
+        const data = await res.json();
+        const el = document.getElementById('mrr-value');
+        if (data.mrr > 0) {
+          animateCounter(el, 0, data.mrr, 1200);
+        } else {
+          el.textContent = '0';
+        }
+      } catch (e) {
+        document.getElementById('mrr-value').textContent = '0';
+      }
+    }
+
+    function animateCounter(el, from, to, duration) {
+      const start = performance.now();
+      const range = to - from;
+      function step(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(from + range * eased).toLocaleString('nl-NL');
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    // ── Tier 4 custom checkout ────────────────────────────────────────────────
+    async function startCustomCheckout() {
+      const input = document.getElementById('custom-amount');
+      const btn = document.getElementById('tier4-btn');
+      const error = document.getElementById('tier4-error');
+      const amount = parseInt(input.value, 10);
+
+      error.textContent = '';
+
+      if (!amount || amount < 100) {
+        error.textContent = 'Please enter €100 or more.';
+        input.focus();
+        return;
+      }
+
+      btn.textContent = 'Redirecting…';
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error(data.error || 'Unknown error');
+        }
+      } catch (err) {
+        error.textContent = 'Something went wrong. Please try again.';
+        btn.textContent = 'Support this mission';
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    // Allow Enter key in amount input
+    document.getElementById('custom-amount').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startCustomCheckout();
+    });
+
+    loadMRR();
+  </script>
+
+</body>
+</html>
