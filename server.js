@@ -1,17 +1,35 @@
 const express = require('express');
 const path = require('path');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { Resend } = require('resend');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 const SITE_URL = process.env.SITE_URL || 'https://robertjanmastenbroek.com';
-const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Lazy-initialize Stripe and Resend so the server starts even without env vars set
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) return null;
+  if (!getStripe._instance) {
+    getStripe._instance = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  }
+  return getStripe._instance;
+}
+
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!getResend._instance) {
+    const { Resend } = require('resend');
+    getResend._instance = new Resend(process.env.RESEND_API_KEY);
+  }
+  return getResend._instance;
+}
 
 // Webhook route needs raw body — must come before express.json()
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
+
+  const stripe = getStripe();
+  if (!stripe) return res.status(503).send('Stripe not configured');
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -59,6 +77,7 @@ app.get('/api/mrr', async (req, res) => {
     let hasMore = true;
     let startingAfter = undefined;
 
+    const stripe = getStripe();
     // Page through all active subscriptions
     while (hasMore) {
       const params = { status: 'active', limit: 100, expand: ['data.items.data.price'] };
@@ -100,6 +119,9 @@ app.post('/api/create-checkout', async (req, res) => {
   if (!amount || isNaN(amount) || amount < 100) {
     return res.status(400).json({ error: 'Minimum amount is €100' });
   }
+
+  const stripe = getStripe();
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -151,6 +173,9 @@ app.get('*', (req, res) => {
 async function sendThankYouEmail(email, name) {
   const firstName = name ? name.split(' ')[0] : '';
   const greeting = firstName ? `Hey ${firstName},` : 'Hey,';
+
+  const resend = getResend();
+  if (!resend) { console.warn('Resend not configured, skipping email'); return; }
 
   try {
     await resend.emails.send({
