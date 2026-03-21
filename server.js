@@ -140,12 +140,6 @@ app.post('/api/create-checkout', async (req, res) => {
         },
         quantity: 1,
       }],
-      custom_fields: [{
-        key: 'what_brought_you',
-        label: { type: 'custom', custom: 'What brought you to Holy Rave?' },
-        type: 'text',
-        optional: true,
-      }],
       success_url: `${SITE_URL}/offering/thank-you`,
       cancel_url: `${SITE_URL}/offering`,
     });
