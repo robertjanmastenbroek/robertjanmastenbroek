@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JZG345ND51"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-JZG345ND51');
+    </script>
+    <title>The Story — Robert-Jan Mastenbroek</title>
+    <meta name="description" content="From €6 million to a camper van on a beach in Tenerife. The story of Robert-Jan Mastenbroek — Dutch producer, entrepreneur, and Jesus-loving raver.">
+    <meta property="og:title" content="The Story — Robert-Jan Mastenbroek">
+    <meta property="og:description" content="From €6 million to a camper van on a beach in Tenerife. The story behind the music.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --dark-bg: #0a0a0a;
+            --secondary-bg: #111111;
+            --card-bg: #161616;
+            --accent-gold: #d4af37;
+            --accent-gold-dim: rgba(212, 175, 55, 0.12);
+            --accent-gold-border: rgba(212, 175, 55, 0.25);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-body: #c8c8c8;
+            --border-subtle: rgba(255, 255, 255, 0.07);
+            --font-serif: 'Cormorant Garamond', Georgia, serif;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--dark-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        nav .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav .logo {
+            font-family: var(--font-serif);
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+        nav .logo span { color: var(--accent-gold); }
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+            align-items: center;
+        }
+        nav ul li a {
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        nav ul li a:hover,
+        nav ul li a.active { color: var(--text-primary); }
+        nav ul li a.active { color: var(--accent-gold); }
+
+        @media (max-width: 700px) {
+            nav ul { gap: 1.2rem; }
+            nav ul li a { font-size: 0.8rem; }
+        }
+
+        /* ── Hero ── */
+        .story-hero {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10rem 2rem 6rem;
+            position: relative;
+            text-align: center;
+            overflow: hidden;
+        }
+        .story-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 30%, rgba(212, 175, 55, 0.07) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 40% at 80% 80%, rgba(74, 144, 226, 0.04) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .story-hero-inner {
+            max-width: 780px;
+            position: relative;
+            z-index: 1;
+        }
+        .story-hero .eyebrow {
+            font-family: var(--font-sans);
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 2rem;
+        }
+        .story-hero h1 {
+            font-family: var(--font-serif);
+            font-size: clamp(3rem, 7vw, 5.5rem);
+            font-weight: 400;
+            line-height: 1.1;
+            letter-spacing: -0.01em;
+            margin-bottom: 2rem;
+        }
+        .story-hero h1 em {
+            font-style: italic;
+            color: var(--accent-gold);
+        }
+        .story-hero .lead {
+            font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+            font-weight: 300;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+        }
+        .scroll-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.6;
+            margin-top: 3rem;
+        }
+        .scroll-indicator span {
+            display: block;
+            width: 1px;
+            height: 40px;
+            background: linear-gradient(to bottom, var(--accent-gold), transparent);
+            animation: scrollPulse 2s ease-in-out infinite;
+        }
+        @keyframes scrollPulse {
+            0%, 100% { opacity: 0.4; transform: scaleY(1); }
+            50% { opacity: 1; transform: scaleY(1.1); }
+        }
+
+        /* ── Layout ── */
+        .story-body {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 0 2rem 8rem;
+        }
+
+        /* ── Chapter structure ── */
+        .chapter {
+            margin-bottom: 7rem;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .chapter.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .chapter-number {
+            font-family: var(--font-sans);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .chapter-number::after {
+            content: '';
+            display: block;
+            flex: 1;
+            max-width: 40px;
+            height: 1px;
+            background: var(--accent-gold-border);
+        }
+        .chapter h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(1.9rem, 4vw, 2.8rem);
+            font-weight: 400;
+            line-height: 1.2;
+            margin-bottom: 2rem;
+            letter-spacing: -0.01em;
+        }
+        .chapter h2 em {
+            font-style: italic;
+            color: var(--accent-gold);
+        }
+
+        /* ── Prose ── */
+        .prose p {
+            font-size: 1.08rem;
+            line-height: 1.95;
+            color: var(--text-body);
+            margin-bottom: 1.5rem;
+        }
+        .prose p:last-child { margin-bottom: 0; }
+        .prose strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ── Pull quotes ── */
+        .pull-quote {
+            border-left: 2px solid var(--accent-gold);
+            padding: 1.5rem 0 1.5rem 2rem;
+            margin: 3rem 0;
+        }
+        .pull-quote p {
+            font-family: var(--font-serif);
+            font-size: clamp(1.4rem, 3vw, 1.85rem);
+            font-weight: 400;
+            font-style: italic;
+            line-height: 1.5;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        /* ── Scripture callout ── */
+        .scripture {
+            background: var(--accent-gold-dim);
+            border: 1px solid var(--accent-gold-border);
+            border-radius: 8px;
+            padding: 2rem 2.5rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        .scripture blockquote {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            font-style: italic;
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+        .scripture cite {
+            font-size: 0.82rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            font-style: normal;
+        }
+
+        /* ── Chapter divider ── */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin: 5rem 0;
+            color: var(--border-subtle);
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-subtle);
+        }
+        .divider span {
+            font-size: 1.2rem;
+            color: var(--accent-gold);
+            opacity: 0.5;
+        }
+
+        /* ── Stat callout ── */
+        .stat-callout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+        .stat-callout .stat {
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 1.75rem 1.5rem;
+            text-align: center;
+        }
+        .stat-callout .stat h3 {
+            font-family: var(--font-serif);
+            font-size: 2.2rem;
+            font-weight: 500;
+            color: var(--accent-gold);
+            margin-bottom: 0.4rem;
+        }
+        .stat-callout .stat p {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* ── CTA ── */
+        .story-cta {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 4rem 3rem;
+            text-align: center;
+            margin-top: 7rem;
+        }
+        .story-cta h2 {
+            font-family: var(--font-serif);
+            font-size: 2.2rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+        .story-cta p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 480px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.8;
+        }
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 2rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background: var(--accent-gold);
+            color: #000;
+        }
+        .btn-primary:hover { background: #e8c84a; transform: translateY(-1px); }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+        .btn-secondary:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        /* ── Final line ── */
+        .final-line {
+            text-align: center;
+            padding: 6rem 2rem;
+            font-family: var(--font-serif);
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-style: italic;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .final-line em {
+            color: var(--accent-gold);
+            font-style: normal;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="container">
+            <a href="/" class="logo">Robert-Jan <span>M</span></a>
+            <ul>
+                <li><a href="/#music">Music</a></li>
+                <li><a href="/story" class="active">Story</a></li>
+                <li><a href="/#event">Sunset Sessions</a></li>
+                <li><a href="/#booking">Booking</a></li>
+                <li><a href="/offering" style="color: var(--accent-gold);">Support</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ── Hero ── -->
+    <section class="story-hero">
+        <div class="story-hero-inner">
+            <p class="eyebrow">The Story Behind the Music</p>
+            <h1>From <em>six million</em> to<br>a camper van on a beach</h1>
+            <p class="lead">
+                He built one of the largest crowdfunding platforms in Europe, lost everything at thirty, and ended up busking on the south coast of Tenerife — searching for something no amount of money had ever given him.
+            </p>
+            <div class="scroll-indicator">
+                <span></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Story body ── -->
+    <main class="story-body">
+
+        <!-- Chapter 1 -->
+        <div class="chapter">
+            <div class="chapter-number">Chapter One</div>
+            <h2>The Deal He <em>Walked Away From</em></h2>
+            <div class="prose">
+                <p>
+                    Robert-Jan Mastenbroek was twenty-one when a record label offered him a deal. Most artists at that age would have signed without reading a word.
+                </p>
+                <p>
+                    He read it. Then he walked away.
+                </p>
+                <p>
+                    Not out of arrogance — out of clarity. He had looked at the numbers and seen what the industry was actually offering: a loan in the form of an advance, paid back through royalties he would no longer own. The music, the masters, the creative control — all of it would belong to someone else. He understood, even then, that the real asset wasn't the deal. It was the catalogue.
+                </p>
+                <p>
+                    He kept his masters. He kept his independence. And he set about building something no label could have predicted.
+                </p>
+            </div>
+        </div>
+
+        <div class="divider"><span>✦</span></div>
+
+        <!-- Chapter 2 -->
+        <div class="chapter">
+            <div class="chapter-number">Chapter Two</div>
+            <h2>Building an <em>Empire</em></h2>
+            <div class="prose">
+                <p>
+                    By his mid-twenties, Robert-Jan had channelled the same instincts that made him a musician — pattern recognition, relentless output, an ability to feel what people needed before they knew it themselves — into building a company.
+                </p>
+                <p>
+                    <strong>Dream or Donate</strong> became the largest crowdfunding platform in the Netherlands and Belgium. Not a niche corner of the internet — the dominant platform in its market, processing millions in campaigns for individuals, causes, and businesses across two countries.
+                </p>
+            </div>
+
+            <div class="stat-callout">
+                <div class="stat">
+                    <h3>€6M</h3>
+                    <p>Raised through the platform</p>
+                </div>
+                <div class="stat">
+                    <h3>#1</h3>
+                    <p>NL &amp; Belgium crowdfunding</p>
+                </div>
+                <div class="stat">
+                    <h3>27</h3>
+                    <p>Age when he became a millionaire</p>
+                </div>
+            </div>
+
+            <div class="prose">
+                <p>
+                    He was a multi-millionaire by twenty-seven. Properties. Investments. Bitcoin holdings acquired early. A reputation in the Dutch startup world as someone who built real things and made them work.
+                </p>
+                <p>
+                    From the outside, the story looked finished. He had made it.
+                </p>
+                <p>
+                    It was about to come apart in public.
+                </p>
+            </div>
+        </div>
+
+        <div class="divider"><span>✦</span></div>
+
+        <!-- Chapter 3 -->
+        <div class="chapter">
+            <div class="chapter-number">Chapter Three</div>
+            <h2>The Year <em>Everything Burned</em></h2>
+            <div class="prose">
+                <p>
+                    He was thirty years old when it started.
+                </p>
+                <p>
+                    A hack. Then a blackmail campaign. Then a media storm in the Netherlands that took the story and ran with it — without context, without nuance, without room for him to respond in real time. His name was in headlines. Not the kind that build careers.
+                </p>
+                <p>
+                    Within months, everything he had built was gone. The businesses. The properties. The Bitcoin. The reputation he had spent a decade constructing.
+                </p>
+            </div>
+
+            <div class="pull-quote">
+                <p>"He repaid every cent to every creditor. Not because the law required it. Because he believed it was right."</p>
+            </div>
+
+            <div class="prose">
+                <p>
+                    The collapse was total. And it was public. In the Netherlands, where he had been a known name, his story had been rewritten by people who hadn't lived it. Rebuilding there felt impossible — not because of the financial reality, but because of what the name now carried.
+                </p>
+                <p>
+                    So he left.
+                </p>
+            </div>
+        </div>
+
+        <div class="divider"><span>✦</span></div>
+
+        <!-- Chapter 4 -->
+        <div class="chapter">
+            <div class="chapter-number">Chapter Four</div>
+            <h2>The Camper Van. <em>The South Coast. The Busking.</em></h2>
+            <div class="prose">
+                <p>
+                    He chose Tenerife.
+                </p>
+                <p>
+                    Not as a retreat. Not as a gap year. As a deliberate choice to start again in a place where nobody had a version of his story except him.
+                </p>
+                <p>
+                    He lived in a camper van on the south coast for a year. He busked. He played wherever people would listen — on streets, at markets, in places where nobody knew he had once been wealthy, and nobody cared.
+                </p>
+            </div>
+
+            <div class="pull-quote">
+                <p>"He earned more per hour than most people make in a day — and found more peace than he'd had in years."</p>
+            </div>
+
+            <div class="prose">
+                <p>
+                    There was something about that year that money had never been able to buy. Stripped of every marker of success, every title and asset and social proof, what was left was just the music and the man making it.
+                </p>
+                <p>
+                    He discovered he was enough.
+                </p>
+                <p>
+                    But there was still something missing. Something deeper than peace. Something that money had never delivered and success had never satisfied.
+                </p>
+            </div>
+        </div>
+
+        <div class="divider"><span>✦</span></div>
+
+        <!-- Chapter 5 -->
+        <div class="chapter">
+            <div class="chapter-number">Chapter Five</div>
+            <h2>One Night. <em>One Prayer.</em></h2>
+            <div class="prose">
+                <p>
+                    He doesn't describe it as a dramatic conversion. No light from heaven. No audible voice.
+                </p>
+                <p>
+                    Just one night, alone, on his knees — asking for one thing.
+                </p>
+                <p>
+                    <strong>To be happy again the way he was as a child.</strong>
+                </p>
+                <p>
+                    That was the prayer. Simple. Desperate. Completely honest.
+                </p>
+                <p>
+                    And it was the beginning of everything that followed.
+                </p>
+            </div>
+
+            <div class="scripture">
+                <blockquote>"Come to me, all who are weary and burdened, and I will give you rest."</blockquote>
+                <cite>— Matthew 11:28</cite>
+            </div>
+
+            <div class="prose">
+                <p>
+                    Faith, for Robert-Jan, didn't look like a church membership or a change in vocabulary. It looked like music. It looked like ancient scripture finding its way into modern electronic production — Hebrew lyrics over 140 BPM percussion, Biblical truth embedded in melodic techno drops.
+                </p>
+                <p>
+                    He calls himself a Jesus-loving raver. He means it completely.
+                </p>
+            </div>
+        </div>
+
+        <div class="divider"><span>✦</span></div>
+
+        <!-- Chapter 6 -->
+        <div class="chapter">
+            <div class="chapter-number">Chapter Six</div>
+            <h2>Ancient Truth. <em>Future Sound.</em></h2>
+            <div class="prose">
+                <p>
+                    Today, Robert-Jan Mastenbroek operates entirely independently — no label, no manager, no agent. He owns every master. Every decision about his music belongs to him.
+                </p>
+                <p>
+                    He has 290,000 Instagram followers. More than thirty original tracks on Spotify, all independently released and fully owned. He releases new music every week — not to feed an algorithm, but because creating is how he worships.
+                </p>
+            </div>
+
+            <div class="stat-callout">
+                <div class="stat">
+                    <h3>290K</h3>
+                    <p>Instagram followers</p>
+                </div>
+                <div class="stat">
+                    <h3>30+</h3>
+                    <p>Original tracks owned</p>
+                </div>
+                <div class="stat">
+                    <h3>Weekly</h3>
+                    <p>New music released</p>
+                </div>
+            </div>
+
+            <div class="prose">
+                <p>
+                    His music spans Melodic Techno, Tribal Psytrance, and Electronic Worship — genres that sit at the edge of the mainstream, serving audiences who find their transcendence on a dancefloor rather than in a pew. The sonic references are Anyma for scale, Rüfüs Du Sol for depth, Vini Vici for psy energy, Argy for tribal texture.
+                </p>
+                <p>
+                    But the content is scripture. Ancient texts. The Psalms in 120 BPM. Hebrew in a 140 BPM drop. The Sermon on the Mount as the melody line.
+                </p>
+                <p>
+                    He is not making worship music in the conventional sense. He is making electronic music with Christian depth — music that can sit on a secular stage and still carry the weight of something sacred.
+                </p>
+            </div>
+
+            <div class="pull-quote">
+                <p>"He doesn't make Christian music. He makes electronic music with Christian depth."</p>
+            </div>
+
+            <div class="prose">
+                <p>
+                    His weekly Sunset Sessions in Tenerife are free. Always free. Hidden locations, revealed to the community each Friday. Ecstatic dance. Sacred music. People who would never set foot in a church, dancing in the open air, encountering something they can't quite name.
+                </p>
+                <p>
+                    That is the mission. Not the platform numbers. Not the masters or the independence or the fact that he walked away from a record deal at twenty-one.
+                </p>
+                <p>
+                    The mission is this: ancient truth, carried by future sound, to people who need it most.
+                </p>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="story-cta chapter">
+            <h2>Hear the Music</h2>
+            <p>Every track is an offering. 30+ original songs, all independently owned. New music every week.</p>
+            <div class="cta-buttons">
+                <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                    Listen on Spotify
+                </a>
+                <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" class="btn btn-secondary">
+                    Join the Community
+                </a>
+                <a href="/" class="btn btn-secondary">← Back to Home</a>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="final-line">
+        "Ancient Truth. <em>Future Sound.</em>"
+    </div>
+
+    <script>
+        // Scroll-triggered fade-in for chapters
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+        document.querySelectorAll('.chapter').forEach(el => observer.observe(el));
+    </script>
+
+</body>
+</html>
