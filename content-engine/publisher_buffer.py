@@ -137,19 +137,19 @@ def get_profiles() -> list[dict]:
 
     org_id = orgs[0]["id"]
 
+    # Inline org_id to avoid scalar type mismatch (OrganizationId! vs String!)
     data = _gql(
-        """
-        query GetChannels($orgId: String!) {
-          channels(input: { organizationId: $orgId }) {
+        f"""
+        query GetChannels {{
+          channels(input: {{ organizationId: "{org_id}" }}) {{
             id
             name
             displayName
             service
             avatar
-          }
-        }
-        """,
-        {"orgId": org_id},
+          }}
+        }}
+        """
     )
 
     channels = data.get("channels", [])
@@ -168,39 +168,42 @@ def get_profiles() -> list[dict]:
     return result
 
 
+
+
 # ── Media upload ──────────────────────────────────────────────────────────────
 
 def upload_media(local_path: str) -> Optional[str]:
     """
-    Upload a local video/image to transfer.sh and return the public URL.
+    Upload a local video/image to litterbox.catbox.moe and return the public URL.
     Buffer requires a publicly accessible URL for media assets.
-    URL is valid for 14 days — plenty of time for Buffer to fetch it.
+    URL is valid for 72 hours — Buffer fetches it well within that window.
     """
     path = Path(local_path)
     if not path.exists():
         logger.error(f"Media file not found: {local_path}")
         return None
 
-    logger.info(f"Uploading {path.name} to transfer.sh...")
+    logger.info(f"Uploading {path.name} ({path.stat().st_size // 1024 // 1024}MB)...")
     try:
         result = subprocess.run(
-            ["curl", "--upload-file", str(path),
-             f"https://transfer.sh/{path.name}"],
-            capture_output=True, text=True, timeout=300
+            [
+                "curl", "-s", "--max-time", "600",
+                "-F", "reqtype=fileupload",
+                "-F", "time=72h",
+                "-F", f"fileToUpload=@{path}",
+                "https://litterbox.catbox.moe/resources/internals/api.php",
+            ],
+            capture_output=True, text=True, timeout=620
         )
-        if result.returncode == 0:
-            url = result.stdout.strip()
-            if url.startswith("https://"):
-                logger.info(f"Uploaded: {url}")
-                return url
-            else:
-                logger.error(f"Unexpected upload response: {url[:100]}")
-                return None
+        url = result.stdout.strip()
+        if result.returncode == 0 and url.startswith("https://"):
+            logger.info(f"Uploaded → {url}")
+            return url
         else:
-            logger.error(f"Upload failed: {result.stderr[:200]}")
+            logger.error(f"Upload failed (rc={result.returncode}): {url[:200]}")
             return None
     except subprocess.TimeoutExpired:
-        logger.error("Media upload timed out after 5 minutes")
+        logger.error("Media upload timed out")
         return None
     except Exception as e:
         logger.error(f"Upload error: {e}")
@@ -212,10 +215,12 @@ def upload_media(local_path: str) -> Optional[str]:
 _CREATE_POST = """
 mutation CreatePost($input: CreatePostInput!) {
   createPost(input: $input) {
-    post {
-      id
-      status
-      dueAt
+    ... on PostActionSuccess {
+      post {
+        id
+        status
+        dueAt
+      }
     }
   }
 }

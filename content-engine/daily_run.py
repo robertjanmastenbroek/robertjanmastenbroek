@@ -327,10 +327,17 @@ def main():
         logger.error(f"Content library error: {exc}")
         sys.exit(1)
 
-    # ── Output dir in Command Centre ───────────────────────────────────────
-    date_str = datetime.now().strftime('%Y-%m-%d_%H%M')
-    song_stem = Path(song_path).stem.replace(' ', '_')[:25]
-    output_dir = OUTPUT_BASE / f"rjm_{song_stem}_{date_str}"
+    # ── Output dir: YYYY-MM-DD_HHMM_song-name ─────────────────────────────
+    date_str  = datetime.now().strftime('%Y-%m-%d_%H%M')
+    # Clean song name: strip artist prefix "Robert-Jan Mastenbroek - " etc,
+    # lowercase, replace spaces/special chars with hyphens
+    raw_stem  = Path(song_path).stem
+    song_slug = raw_stem.lower()
+    for prefix in ['robert-jan mastenbroek & lucid - ', 'robert-jan mastenbroek - ']:
+        song_slug = song_slug.replace(prefix, '')
+    import re
+    song_slug = re.sub(r'[^a-z0-9]+', '-', song_slug).strip('-')[:30]
+    output_dir = OUTPUT_BASE / f"{date_str}_{song_slug}"
 
     # ── Run pipeline ───────────────────────────────────────────────────────
     posted = run_daily(
