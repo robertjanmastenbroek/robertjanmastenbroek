@@ -386,12 +386,37 @@ def upload_video(
     youtube_profile_ids: list = None,
     title: str = None,
 ) -> set:
-    """Schedule a video to multiple channels. Returns set of post IDs."""
+    """Upload media once, then schedule to all channels. Returns set of post IDs."""
+    if not channel_ids:
+        return set()
+
+    # Upload once, reuse URL for all channels
+    video_url = upload_media(video_path)
+    if not video_url:
+        return set()
+
     post_ids = set()
     for channel_id in channel_ids:
-        post_id = schedule_video(channel_id, video_path, caption, scheduled_time, title=title)
-        if post_id:
-            post_ids.add(post_id)
+        variables = {
+            "input": {
+                "channelId": channel_id,
+                "text": caption,
+                "shareMode": "customScheduled",
+                "dueAt": scheduled_time,
+                "assets": {"videos": [{"url": video_url}]},
+            }
+        }
+        if title:
+            variables["input"]["metadata"] = {"title": title}
+
+        data = _gql(_CREATE_POST, variables)
+        post = data.get("createPost", {}).get("post", {})
+        if post.get("id"):
+            post_ids.add(post["id"])
+            logger.info(f"Scheduled post {post['id']} → channel {channel_id[:8]}...")
+        else:
+            logger.error(f"createPost failed for channel {channel_id}")
+
     return post_ids
 
 
