@@ -55,6 +55,15 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 });
 
 app.use(express.json());
+
+// Public client config — injects env vars the browser is allowed to see
+// Never put secret keys here, only public/read-only API keys
+app.get('/config.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.send(`window.YOUTUBE_API_KEY = ${JSON.stringify(process.env.YOUTUBE_API_KEY || '')};`);
+});
+
 app.use(express.static(path.join(__dirname)));
 
 // ─── MRR Counter ────────────────────────────────────────────────────────────
