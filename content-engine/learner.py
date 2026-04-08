@@ -19,6 +19,7 @@ import os
 import uuid
 from collections import defaultdict
 from datetime import datetime, timezone
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class PerformanceLearner:
         self._svc = drive_service
         self._folder_id = output_folder_id
         self._log: dict = self._empty_log()
-        self._file_id: str | None = None  # Drive file ID of the log, once found/created
+        self._file_id: Optional[str] = None  # Drive file ID of the log, once found/created
 
         # Attempt to load existing log from Drive on startup
         if self._svc and self._folder_id:
@@ -48,7 +49,7 @@ class PerformanceLearner:
 
     # ── Drive sync ────────────────────────────────────────────────────────────
 
-    def _find_log_file_id(self) -> str | None:
+    def _find_log_file_id(self) -> Optional[str]:
         """Search the output folder for the log file. Returns Drive file ID or None."""
         query = (
             f"'{self._folder_id}' in parents and "

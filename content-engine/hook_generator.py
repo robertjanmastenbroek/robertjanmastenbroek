@@ -61,15 +61,18 @@ def _match_track(filepath: str) -> str:
     return ''
 
 
-def get_hooks_for_file(filepath: str, bucket: str = 'reach', limit: int = 10) -> list[str]:
+def get_hooks_for_file(filepath: str, bucket: str = 'reach', limit: int = 10,
+                       max_chars: int = 40) -> list[str]:
     """
     Match filepath to database, return hook texts for that track.
     Falls back to generic hooks if track not found.
 
     Args:
-        filepath: Full or partial path to the audio file.
-        bucket:   'reach' (viral/top-of-funnel) or 'depth' (engaged audience).
-        limit:    Maximum number of hooks to return.
+        filepath:  Full or partial path to the audio file.
+        bucket:    'reach', 'follow', or 'spotify'.
+        limit:     Maximum number of hooks to return.
+        max_chars: Only return hooks shorter than this (for video overlays).
+                   Pass None to disable filtering.
 
     Returns:
         List of hook text strings, best-performing first.
@@ -77,18 +80,25 @@ def get_hooks_for_file(filepath: str, bucket: str = 'reach', limit: int = 10) ->
     pattern = _match_track(filepath)
 
     if not pattern:
-        return get_generic_hooks(bucket)[:limit]
+        return get_generic_hooks(bucket, max_chars=max_chars)[:limit]
 
     rows = get_hooks_for_track(pattern, bucket=bucket)
 
     if not rows:
-        # Fallback: try without bucket filter
         rows = get_hooks_for_track(pattern)
 
     if not rows:
-        return get_generic_hooks(bucket)[:limit]
+        return get_generic_hooks(bucket, max_chars=max_chars)[:limit]
 
-    return [row['hook_text'] for row in rows[:limit]]
+    hooks = [row['hook_text'] for row in rows]
+    if max_chars:
+        hooks = [h for h in hooks if len(h) <= max_chars]
+
+    # If filtering left nothing, fall back to generics
+    if not hooks:
+        hooks = get_generic_hooks(bucket, max_chars=max_chars)
+
+    return hooks[:limit]
 
 
 def get_bible_info(filepath: str) -> dict:
@@ -118,95 +128,50 @@ def get_bible_info(filepath: str) -> dict:
     }
 
 
-def get_generic_hooks(bucket: str = 'reach') -> list[str]:
+def get_generic_hooks(bucket: str = 'reach', max_chars: int = 40) -> list[str]:
     """
     Generic Holy Rave hooks for tracks not yet in the database.
-    Still high-quality, just not track-specific.
-
-    bucket='reach'  → viral, short-form, curiosity-gap, broad audience
-    bucket='depth'  → for engaged fans, more layered meaning
+    Short, punchy — designed for video text overlays.
     """
-
     reach_hooks = [
-        # Holy Rave concept
-        'What if the rave was always sacred?',
-        'This is what church sounds like when nobody has to whisper.',
-        'Holy Rave: where the ancient text meets the modern dancefloor.',
-        'You didn\'t come to a club. You came to a cathedral.',
-        'The Psalms were written to be felt in your chest. That\'s why this is techno.',
-        'If David had a sub bass, it sounded like this.',
-        'Some of us only hear God when the music is this loud.',
-        'Sacred and secular — the line was always thinner than they told you.',
-        'This is what happens when the ancient texts get a sound system.',
-        'Church music for people who can\'t sit still.',
-
-        # Sunset Sessions Tenerife
-        'Tenerife at 6am. Sun rising. Music still playing. This is that feeling.',
-        'Sunset Sessions: where the Atlantic Ocean is the dance floor.',
-        'Built on volcanic rock. Played under the stars. That\'s the vibe.',
-        'Some music belongs outdoors. Under a sky this big.',
-        'Tenerife is where the ancient and the futuristic collapse into one.',
-
-        # Sacred/secular contrast
-        'The Bible is more electronic than you think.',
-        'Every prophet was also a poet. Every psalm was also a song.',
-        'Worship was never meant to be quiet.',
-        'The temple walls shook. The dancefloor shakes. Same frequency.',
-        'Scripture was meant to be performed, not just read.',
-        'This is for the people who feel God more in music than in silence.',
-        'If you\'ve ever cried on a dancefloor, you already know what this is.',
-        'Electronic worship — not a trend. A return.',
-
-        # Electronic faith
-        'Some people find God at the altar. Others find Him at the drop.',
-        'Faith encoded in frequencies.',
-        'The Spirit moves where the Spirit moves. Sometimes it\'s here.',
-        'This is what it sounds like when someone builds music as a prayer.',
-        'The Bible says make a joyful noise. This is that.',
-        'Not background music. Sacred music.',
-
-        # Curiosity / no-explicit-Bible
-        'Every track I make has a secret. This is one of them.',
-        'The lyrics are older than you think.',
-        'The source material for this is 3,000 years old.',
-        'Wait until you find out where this comes from.',
-        'This started as a prayer. It ended up as a track.',
+        'Sacred music. Loud.',
+        'The rave was always holy.',
+        'This is what prayer sounds like.',
+        'Ancient text. Modern drop.',
+        'Worship was never quiet.',
+        'Church for the dancefloor.',
+        'Faith at 130 BPM.',
+        'God moves here too.',
+        'The psalms had bass.',
+        'Built on sacred ground.',
+        'Holy Rave. Tenerife.',
+        'This started as a prayer.',
+        '3000 years old. Still hits.',
+        'Find God at the drop.',
+        'Free. Every Friday. Tenerife.',
     ]
 
-    depth_hooks = [
-        # Holy Rave depth
-        'The Holy Rave isn\'t ironic. It\'s the most serious thing I do.',
-        'Techno as liturgy — form, repetition, surrender. It was always this.',
-        'The trance state on a dancefloor and the trance state in prayer are closer than you\'ve been told.',
-        'Electronic music and sacred music share the same architecture: rhythm, repetition, release.',
-        'The ancients used rhythm to enter the presence of God. We call it a rave now.',
-        'What I\'m building is not "Christian techno." It\'s something older than both categories.',
-        'The church lost the dancefloor. I\'m taking it back.',
-        'Every track I produce is an act of translation — ancient truth into contemporary frequency.',
-
-        # Bible / Scripture depth
-        'The Bible is full of people who worshipped God loudly, physically, communally. The rave already existed.',
-        'Hebrew worship was participatory, embodied, rhythmic. Sound familiar?',
-        'The Psalms are 150 songs that were sung, not read. This is how they should be heard.',
-        'Sacred music was always for the body, not just the mind.',
-        'Scripture was composed for performance in communal spaces. You\'re in that space right now.',
-
-        # Sunset Sessions / Tenerife depth
-        'I build music in Tenerife because the island is itself a kind of crossing — between Africa and Europe, ancient and modern, ocean and sky.',
-        'The Sunset Sessions started as a personal experiment. It became a congregation.',
-        'There is something about playing music at the edge of the ocean that is not metaphorical.',
-        'Tenerife is where I go to hear clearly. The music that comes out of that clarity is what you\'re hearing.',
-
-        # Faith / personal
-        'Every track is a record of where I was spiritually when I made it. Nothing is decoration.',
-        'I stopped making music for audiences and started making it as offerings. The audiences got bigger.',
-        'The most vulnerable thing I do is put a Bible verse in the centre of a club track and mean it completely.',
-        'I don\'t choose the Bible verses. They choose the music. I just show up and produce.',
+    follow_hooks = [
+        'Free every Friday. Tenerife.',
+        'Follow for weekly drops.',
+        'Sunset Sessions. Always free.',
+        'Holy Rave. Follow along.',
+        'New music every week.',
+        'Join the congregation.',
     ]
 
-    if bucket == 'depth':
-        return depth_hooks
-    return reach_hooks
+    spotify_hooks = [
+        'Stream it. Save it.',
+        'On Spotify now.',
+        'Full track on Spotify.',
+        'Add it to your rotation.',
+        'Now streaming.',
+    ]
+
+    pool = {'follow': follow_hooks, 'spotify': spotify_hooks}.get(bucket, reach_hooks)
+    if max_chars:
+        pool = [h for h in pool if len(h) <= max_chars]
+    return pool or reach_hooks
 
 
 if __name__ == '__main__':

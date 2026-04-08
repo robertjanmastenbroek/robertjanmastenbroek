@@ -34,7 +34,6 @@ VIDEO_SCAN_DIRS = [
     CC_ROOT / "content" / "videos" / "phone-footage",
     CC_ROOT / "content" / "videos" / "performances",
     CC_ROOT / "content" / "videos" / "music-videos",
-    CC_ROOT / "images",   # some reels/clips stored here too
 ]
 
 SONG_SCAN_DIRS = [
@@ -43,6 +42,19 @@ SONG_SCAN_DIRS = [
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.m4v', '.webm',
                     '.MP4', '.MOV', '.MKV', '.M4V', '.AVI'}
+
+BLACKLIST_FILE = CC_ROOT / "content" / "videos" / ".blacklist"
+
+
+def _load_blacklist() -> set:
+    """Load blacklisted clip stems from .blacklist file (one stem per line)."""
+    if not BLACKLIST_FILE.exists():
+        return set()
+    return {
+        line.strip().lower()
+        for line in BLACKLIST_FILE.read_text().splitlines()
+        if line.strip() and not line.startswith('#')
+    }
 
 # Songs: prefer _FINAL or _MASTER suffix — deduplicate by base stem
 PREFERRED_SUFFIXES = ['_FINAL', '_MASTER', 'FINAL', 'MASTER']
@@ -148,16 +160,25 @@ def _folder_type(path: Path) -> str:
 
 
 def scan_videos() -> list[str]:
-    """Return all video file paths found in VIDEO_SCAN_DIRS."""
+    """Return all video file paths found in VIDEO_SCAN_DIRS, excluding blacklisted clips."""
+    blacklist = _load_blacklist()
     found = []
+    skipped = 0
     for d in VIDEO_SCAN_DIRS:
         if not d.exists():
             continue
         for p in d.rglob('*'):
             if p.suffix in VIDEO_EXTENSIONS and p.is_file():
                 # Skip already-processed output files
-                if 'output' not in p.parts and '_7s' not in p.name and '_15s' not in p.name:
-                    found.append(str(p))
+                if 'output' in p.parts or '_7s' in p.name or '_15s' in p.name:
+                    continue
+                # Skip blacklisted clips
+                if p.stem.lower() in blacklist:
+                    skipped += 1
+                    continue
+                found.append(str(p))
+    if skipped:
+        logger.info(f"Skipped {skipped} blacklisted clip(s)")
     return sorted(set(found))
 
 
@@ -321,9 +342,9 @@ def pick_videos(n: int = 12, song_path: str = None) -> list[str]:
     Prioritises least-recently-used clips from each category.
 
     Distribution:
-      - 50% phone footage (candid, authentic)
-      - 35% event/performance footage (crowd, energy)
-      - 15% music-video / other (cinematic)
+      - 30% phone footage (candid, authentic)
+      - 60% event/performance footage (higher quality, crowd energy)
+      - 10% music-video / other (cinematic)
     """
     _sync_library()
     conn = sqlite3.connect(str(DB_PATH))
@@ -343,8 +364,8 @@ def pick_videos(n: int = 12, song_path: str = None) -> list[str]:
         return paths[:limit]
 
     # Distribution across types
-    n_phone  = max(1, int(n * 0.50))
-    n_event  = max(1, int(n * 0.35))
+    n_event  = max(1, int(n * 0.60))
+    n_phone  = max(1, int(n * 0.30))
     n_other  = max(1, n - n_phone - n_event)
 
     phone_clips = fetch_pool('phone', n_phone)

@@ -12,7 +12,7 @@ Usage:
   python3 social_master.py ~/Desktop/rjm_content_2026-04-08_1200/ --schedule "2026-04-11T19:00:00+01:00"
 
 Environment:
-  BUFFER_ACCESS_TOKEN — Buffer OAuth access token
+  BUFFER_API_KEY — Buffer API key (from https://publish.buffer.com/settings/api)
 """
 
 import argparse
@@ -754,8 +754,8 @@ def main() -> None:
         # Validate token is accepted before encoding/uploading anything
         if not publisher_buffer.validate_token():
             print(
-                "\nERROR: Buffer token invalid. Run:  python3 buffer_auth.py\n"
-                "to get a proper OAuth token, then re-run.",
+                "\nERROR: Buffer API key invalid. Run:  python3 buffer_auth.py\n"
+                "to save your API key, then re-run.",
                 file=sys.stderr,
             )
             sys.exit(1)

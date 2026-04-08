@@ -379,7 +379,7 @@ def _render_hook_overlay(hook_text: str, out_png: str,
     img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # Font
+    # Font — scale size to text length so short hooks stay punchy
     font_paths = [
         '/Library/Fonts/Arial Bold.ttf',
         '/System/Library/Fonts/Helvetica.ttc',
@@ -388,7 +388,21 @@ def _render_hook_overlay(hook_text: str, out_png: str,
         '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
         '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
     ]
-    font_size = 96
+    text = hook_text.upper()
+    n_chars = len(text)
+    # ≤20 chars → 88px, ≤35 → 72px, ≤50 → 60px, longer → 48px
+    if n_chars <= 20:
+        font_size = 88
+        wrap_width = 14
+    elif n_chars <= 35:
+        font_size = 72
+        wrap_width = 18
+    elif n_chars <= 55:
+        font_size = 60
+        wrap_width = 22
+    else:
+        font_size = 48
+        wrap_width = 28
     font = None
     for fp in font_paths:
         if os.path.exists(fp):
@@ -400,9 +414,7 @@ def _render_hook_overlay(hook_text: str, out_png: str,
     if font is None:
         font = ImageFont.load_default()
 
-    # Uppercase, tight wrap for large font
-    text = hook_text.upper()
-    lines = textwrap.wrap(text, width=16)
+    lines = textwrap.wrap(text, width=wrap_width)
     if not lines:
         lines = [text]
 
