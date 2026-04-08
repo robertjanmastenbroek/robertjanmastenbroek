@@ -1,0 +1,35 @@
+# ── Secrets — NEVER commit these ──────────────────────────────────────────────
+.env
+.env.*
+*.pem
+*.p12
+*.key
+credentials.json
+service_account.json
+
+# ── Content engine runtime ─────────────────────────────────────────────────────
+content-engine/*.db
+content-engine/__pycache__/
+content-engine/*.pyc
+content-engine/.pipeline_checkpoint.json
+
+# ── Logs ───────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Generated content output ──────────────────────────────────────────────────
+content/output/
+
+# ── macOS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+**/.DS_Store
+
+# ── Node ───────────────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/

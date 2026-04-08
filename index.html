@@ -1250,8 +1250,9 @@
         </div>
     </footer>
 
+    <script src="/config.js"></script>
     <script>
-        const YOUTUBE_API_KEY = 'AIzaSyA5gUHL6hwQE6KVAexxPz2SMqBGa4N7nEY';
+        const YOUTUBE_API_KEY = window.YOUTUBE_API_KEY || '';
         const YOUTUBE_CHANNEL_ID = 'UCWFAH-ji2uaHYff7QZHKztQ';
         // Uploads playlist = channel ID with UC replaced by UU — includes all videos AND Shorts
         const YOUTUBE_UPLOADS_PLAYLIST = 'UUWFAH-ji2uaHYff7QZHKztQ';
