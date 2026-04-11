@@ -1,7 +1,7 @@
 """
 Video processor — cuts clips and formats to 9:16 vertical.
 Uses center-crop to fill (no blur bars).
-Burns hook text using Impact font with thick stroke — matches Holy Rave visual style.
+Burns hook text using Helvetica Neue with soft drop-shadow — clean TikTok-native style.
 Supports multi-clip beat-sync editing: stitches equal-length segments from different sources.
 """
 
@@ -18,45 +18,40 @@ OUTPUT_W     = 1080
 OUTPUT_H     = 1920
 CLIP_LENGTHS = [5, 9, 15]
 
-# Impact is the primary font — bold, condensed, readable at any size, matches reference style.
+# Helvetica Neue — clean TikTok-native sans-serif with soft drop shadow.
 # Fall back down the list if not found.
 FONT_CANDIDATES = [
-    '/Library/Fonts/Impact.ttf',
-    '/Library/Fonts/Arial Black.ttf',
-    '/Library/Fonts/DIN Condensed Bold.ttf',
-    '/Library/Fonts/DIN Alternate Bold.ttf',
     '/System/Library/Fonts/HelveticaNeue.ttc',
+    '/Library/Fonts/Helvetica Neue.ttf',
+    '/System/Library/Fonts/Helvetica.ttc',
+    '/Library/Fonts/Arial.ttf',
+    '/Library/Fonts/Impact.ttf',          # last resort
 ]
 
-# Per-angle hook style — all use Impact, all uppercase.
-# Differentiated only by size and vertical position.
+# Per-angle hook style — clean sans-serif, uppercase, soft shadow, no stroke.
 HOOK_STYLES = {
     'emotional': {
-        'fontsize': 78,
+        'fontsize': 58,
         'uppercase': True,
-        'y_pct':    0.50,   # always center
-        'stroke_w': 9,
+        'y_pct':    0.50,
         'wrap_at':  18,
     },
     'signal': {
-        'fontsize': 78,
+        'fontsize': 58,
         'uppercase': True,
-        'y_pct':    0.50,   # always center
-        'stroke_w': 9,
+        'y_pct':    0.50,
         'wrap_at':  18,
     },
     'energy': {
-        'fontsize': 84,
+        'fontsize': 58,
         'uppercase': True,
-        'y_pct':    0.50,   # always center
-        'stroke_w': 10,
-        'wrap_at':  16,
+        'y_pct':    0.50,
+        'wrap_at':  18,
     },
     'default': {
-        'fontsize': 78,
+        'fontsize': 58,
         'uppercase': True,
-        'y_pct':    0.50,   # always center
-        'stroke_w': 9,
+        'y_pct':    0.50,
         'wrap_at':  18,
     },
 }
@@ -100,28 +95,22 @@ def _render_hook_overlay(hook_text: str, angle: str, source_category: str = None
     else:
         y_pct = style['y_pct']   # default center
 
-    # Phone-footage raw style (Expert 3): thinner stroke, off-white fill
-    if source_category == 'phone-footage':
-        stroke_w  = 4
-        fill_color = (245, 245, 245, 255)
-    else:
-        stroke_w  = style['stroke_w']
-        fill_color = (255, 255, 255, 255)
+    fill_color = (255, 255, 255, 255)
 
     # Measure each line
     probe      = Image.new('RGBA', (1, 1))
     probe_draw = ImageDraw.Draw(probe)
     line_bboxes = []
     for line in lines:
-        bb = probe_draw.textbbox((0, 0), line, font=font, stroke_width=stroke_w)
+        bb = probe_draw.textbbox((0, 0), line, font=font)
         line_bboxes.append(bb)
 
     line_h  = max(bb[3] - bb[1] for bb in line_bboxes) if line_bboxes else style['fontsize']
-    spacing = int(style['fontsize'] * 0.18)
+    spacing = int(style['fontsize'] * 0.22)
     total_h = line_h * len(lines) + spacing * (len(lines) - 1)
 
     y_anchor = int(OUTPUT_H * y_pct) - total_h // 2
-    y_anchor = max(stroke_w + 10, min(y_anchor, OUTPUT_H - total_h - stroke_w - 10))
+    y_anchor = max(10, min(y_anchor, OUTPUT_H - total_h - 10))
 
     canvas = Image.new('RGBA', (OUTPUT_W, OUTPUT_H), (0, 0, 0, 0))
     draw   = ImageDraw.Draw(canvas)
@@ -132,12 +121,10 @@ def _render_hook_overlay(hook_text: str, angle: str, source_category: str = None
         x  = max(PAD_X, (OUTPUT_W - lw) // 2)
         y  = y_anchor + i * (line_h + spacing)
 
-        draw.text(
-            (x, y), line, font=font,
-            fill=fill_color,
-            stroke_width=stroke_w,
-            stroke_fill=(0, 0, 0, 255),
-        )
+        # Soft drop-shadow: semi-transparent black offset 3px down/right
+        draw.text((x + 3, y + 3), line, font=font, fill=(0, 0, 0, 160))
+        # White text on top, no stroke
+        draw.text((x, y), line, font=font, fill=fill_color)
 
     tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
     canvas.save(tmp.name, 'PNG')

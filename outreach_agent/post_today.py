@@ -178,62 +178,98 @@ def _get_duration(path: Path) -> int:
     return int(float(result.stdout.strip() or "0"))
 
 
-def find_peak_section(audio_path: Path, clip_duration: int = 30) -> int:
+AUDIO_ROTATION = Path(__file__).parent / "audio_rotation.json"
+
+
+def _find_top_sections(audio_path: Path, clip_duration: int, n: int = 5) -> list:
     """
-    Find the start time (seconds) of the best beat-dense section to use as audio.
-
-    Uses librosa onset-strength × RMS to score every 1-second window, then picks
-    the window with the highest combined score.  Onset strength rewards sections
-    where beats are landing consistently — so a flat intro or quiet breakdown will
-    score low even if it's loud.
-
-    Skip window:
-      - First 60 s (intro ramp-up — beats usually not fully in yet)
-      - Last  30 s (outro fade)
+    Scan the track and return up to N non-overlapping high-energy sections,
+    sorted by time (natural listening order). Sections are spaced at least
+    clip_duration seconds apart so they don't overlap.
     """
     try:
         import librosa
         import numpy as np
 
         total      = _get_duration(audio_path)
-        scan_start = 60                                  # skip intro
+        scan_start = 60
         scan_end   = max(scan_start + clip_duration, total - 30)
         load_dur   = scan_end - scan_start
 
         print(f"  Scanning {audio_path.name} ({total//60}:{total%60:02d}) "
-              f"for best beat section (t={scan_start}s–{scan_end}s)…")
+              f"for top sections (t={scan_start}s–{int(scan_end)}s)…")
 
         y, sr = librosa.load(str(audio_path), sr=22050, mono=True,
                              offset=scan_start, duration=load_dur)
 
-        hop      = 512
-        fps      = sr / hop                              # frames per second
-
-        onset    = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop)
-        rms      = librosa.feature.rms(y=y, hop_length=hop)[0]
-
-        n        = min(len(onset), len(rms))
-        score    = onset[:n] * rms[:n]
+        hop  = 512
+        fps  = sr / hop
+        onset = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop)
+        rms   = librosa.feature.rms(y=y, hop_length=hop)[0]
+        n_f   = min(len(onset), len(rms))
+        score = onset[:n_f] * rms[:n_f]
 
         win_frames = max(1, int(clip_duration * fps))
-        step       = max(1, int(fps))                    # step 1 s at a time
+        step       = max(1, int(fps))
 
-        best_t     = scan_start
-        best_score = -1.0
-        for i in range(0, n - win_frames, step):
-            s = float(np.mean(score[i : i + win_frames]))
-            if s > best_score:
-                best_score = s
-                best_t     = scan_start + i / fps
+        windows = []
+        for i in range(0, n_f - win_frames, step):
+            s = float(np.mean(score[i: i + win_frames]))
+            t = int(min(scan_start + i / fps, total - clip_duration))
+            windows.append((s, t))
 
-        best_t = int(min(best_t, total - clip_duration))
-        print(f"  Peak beat section at {best_t}s  (score={best_score:.5f})")
-        return best_t
+        windows.sort(reverse=True)
+
+        # Pick top N non-overlapping (min gap = clip_duration seconds)
+        selected = []
+        for s, t in windows:
+            if all(abs(t - prev) >= clip_duration for prev in selected):
+                selected.append(t)
+                if len(selected) >= n:
+                    break
+
+        selected.sort()  # chronological order
+        return selected if selected else [scan_start]
 
     except Exception as e:
-        print(f"  WARN: librosa beat-scan failed ({e}) — falling back to t=60s")
+        print(f"  WARN: librosa scan failed ({e}) — using t=60s")
         total = _get_duration(audio_path)
-        return min(60, max(0, total - clip_duration))
+        return [min(60, max(0, total - clip_duration))]
+
+
+def find_peak_section(audio_path: Path, clip_duration: int = 30) -> int:
+    """
+    Return the next audio section start time for this track, rotating through
+    the top-N scoring sections so each run uses a different part of the song.
+    Sections are cached in audio_rotation.json; the index advances each call.
+    """
+    track_key = audio_path.stem.lower()
+
+    try:
+        state = json.loads(AUDIO_ROTATION.read_text()) if AUDIO_ROTATION.exists() else {}
+    except Exception:
+        state = {}
+
+    entry    = state.get(track_key, {})
+    sections = entry.get("sections", [])
+
+    if not sections:
+        sections = _find_top_sections(audio_path, clip_duration, n=5)
+        print(f"  Candidate sections: {sections}")
+    else:
+        print(f"  Cached sections: {sections}")
+
+    next_idx = entry.get("next_idx", 0) % len(sections)
+    best_t   = sections[next_idx]
+
+    state[track_key] = {"sections": sections, "next_idx": (next_idx + 1) % len(sections)}
+    try:
+        AUDIO_ROTATION.write_text(json.dumps(state, indent=2))
+    except Exception as e:
+        print(f"  WARN: Could not save audio rotation: {e}")
+
+    print(f"  Peak beat section at {best_t}s  (section {next_idx + 1}/{len(sections)})")
+    return best_t
 
 
 def _snap_to_beat(audio_path: Path, target_start: int) -> int:
