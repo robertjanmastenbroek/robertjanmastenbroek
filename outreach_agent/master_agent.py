@@ -600,6 +600,56 @@ def cmd_health():
 
     print(f"  ℹ️  Today's sends: {today_sent} / {MAX_EMAILS_PER_DAY}")
 
+    # ── Content engine ─────────────────────────────────────────────────────────
+    content_out = BASE_DIR.parent / "content" / "output"
+    if content_out.exists():
+        runs = sorted([r for r in content_out.iterdir() if r.is_dir()], reverse=True)
+        if runs:
+            last_run_name = runs[0].name
+            try:
+                run_dt = datetime.strptime(last_run_name[:13], "%Y-%m-%d_%H%M")
+                age_h = (datetime.now() - run_dt).total_seconds() / 3600
+                if age_h > 30:
+                    issues.append(f"⚠️  Content engine: last run {age_h:.0f}h ago — holy-rave-daily-run may be down")
+                else:
+                    print(f"  ✅ Content last run: {age_h:.1f}h ago ({last_run_name})")
+            except Exception:
+                print(f"  ℹ️  Content last run: {last_run_name}")
+        else:
+            issues.append("⚠️  Content engine: no runs yet — holy-rave-daily-run not yet active")
+    else:
+        print("  ℹ️  Content engine: content/output/ not found")
+
+    # ── Spotify listeners ──────────────────────────────────────────────────────
+    listeners_json = BASE_DIR.parent / "data" / "listeners.json"
+    if listeners_json.exists():
+        try:
+            import json as _json
+            d = _json.loads(listeners_json.read_text(encoding="utf-8"))
+            n = d.get("count", 0)
+            updated = d.get("updatedAt", "")[:10]
+            pct = round(n / 1_000_000 * 100, 3)
+            print(f"  ✅ Spotify listeners: {n:,} ({pct}% of 1M)  [updated {updated}]")
+        except Exception:
+            print("  ℹ️  Spotify: could not read data/listeners.json")
+    else:
+        issues.append("⚠️  Spotify: no listener data — run: python3 master_agent.py log_listeners <n>")
+
+    # ── Playlist pipeline ──────────────────────────────────────────────────────
+    try:
+        import playlist_db as _pdb
+        _pdb.init_playlist_db()
+        s = _pdb.get_summary()
+        total = s.get("_total", 0)
+        verified = s.get("verified", 0)
+        contact_found = s.get("contact_found", 0)
+        if verified > 0:
+            issues.append(f"⚠️  Playlist DB: {verified} playlists verified but no contact found yet — run rjm-playlist-discover")
+        else:
+            print(f"  ✅ Playlist pipeline: {total} total, {contact_found} with contact info")
+    except Exception:
+        pass  # playlist_db not critical for health
+
     if issues:
         print(f"\nISSUES FOUND ({len(issues)}):")
         for i in issues:
