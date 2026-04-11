@@ -13,13 +13,43 @@ Filename convention: trackname_angle_description.mp4
   renamed_energy.mp4                        → track=Renamed, angle=energy,   seed=None
 """
 
+import glob as _glob
 import os
 import re
 import json
 import logging
-import anthropic
+import subprocess
 
 logger = logging.getLogger(__name__)
+
+# ── Claude CLI ─────────────────────────────────────────────────────────────────
+
+def _find_claude() -> str:
+    """Return path to the claude CLI binary (uses Max plan OAuth — no API key needed)."""
+    for path in ["/usr/local/bin/claude", "/opt/homebrew/bin/claude"]:
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    pattern = os.path.expanduser(
+        "~/Library/Application Support/Claude/claude-code/*/claude.app/Contents/MacOS/claude"
+    )
+    matches = sorted(_glob.glob(pattern), reverse=True)
+    if matches:
+        return matches[0]
+    raise RuntimeError("claude CLI not found. Make sure Claude Code is installed.")
+
+CLAUDE_BIN = _find_claude()
+
+
+def _call_claude(system_prompt: str, user_prompt: str, timeout: int = 120) -> str:
+    """Call claude CLI and return the text response. Uses Max plan — no API key."""
+    result = subprocess.run(
+        [CLAUDE_BIN, "--print", "--no-session-persistence",
+         "--system-prompt", system_prompt, user_prompt],
+        capture_output=True, text=True, timeout=timeout,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Claude CLI error: {result.stderr[:300]}")
+    return result.stdout.strip()
 
 # ── Artist context ─────────────────────────────────────────────────────────────
 ARTIST_CONTEXT = """
@@ -241,7 +271,6 @@ def generate_hooks(filename: str, clip_lengths: list,
         'hooks':      {15: 'hook text', 30: 'hook text', 60: 'hook text'},
     }
     """
-    client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
     meta = parse_filename_metadata(filename)
     track_name = meta['track_name']
     angle      = angle_override or meta['angle']
@@ -303,14 +332,7 @@ Format exactly as shown below — no preamble, no explanation, nothing else:
 Do not explain your choices. Do not apologise for bold hooks. Bold is correct."""
 
     try:
-        message = client.messages.create(
-            model="claude-opus-4-6",
-            max_tokens=1500,
-            temperature=1.0,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}]
-        )
-        raw = message.content[0].text.strip()
+        raw   = _call_claude(system_prompt, user_prompt, timeout=120)
         hooks = _parse_hook_candidates(raw, clip_lengths)
         logger.info(f"Hooks generated: {filename} | track={track_name} | angle={angle}")
         for l, h in hooks.items():
@@ -385,8 +407,6 @@ def generate_content(filename: str, clip_lengths: list,
         }
     }
     """
-    client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
-
     content_type = detect_content_type(filename)
     content_desc = CONTENT_TYPES.get(content_type, CONTENT_TYPES['event'])
     track_name   = hooks_meta.get('track_name')
@@ -459,13 +479,7 @@ Return ONLY valid JSON, no explanation, no markdown fences:
 }}"""
 
     try:
-        message = client.messages.create(
-            model="claude-opus-4-6",
-            max_tokens=2500,
-            temperature=0.4,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        raw = message.content[0].text.strip()
+        raw = _call_claude("You are a social media caption writer. Return only valid JSON as instructed.", prompt, timeout=120)
 
         if raw.startswith('```'):
             raw = raw.split('\n', 1)[1]
