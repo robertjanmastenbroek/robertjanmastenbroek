@@ -139,6 +139,88 @@ HOOK_STYLES = {
 }
 
 
+def _render_hook_overlay(hook_text: str, style: dict) -> str:
+    """
+    Render hook text as a transparent PNG using Pillow.
+    Returns path to a temp PNG file (caller must delete after use).
+    """
+    from PIL import Image, ImageDraw, ImageFont
+
+    display_text = hook_text.upper() if style['uppercase'] else hook_text
+
+    # Wrap at style-defined char width
+    words = display_text.split()
+    lines, line = [], []
+    for w in words:
+        line.append(w)
+        if len(' '.join(line)) > style['wrap_at']:
+            lines.append(' '.join(line[:-1]))
+            line = [w]
+    if line:
+        lines.append(' '.join(line))
+    wrapped = '\n'.join(lines)
+
+    # Load a system font — try several locations
+    font_size = style['fontsize']
+    font = None
+    for font_path in [
+        '/System/Library/Fonts/HelveticaNeue.ttc',
+        '/System/Library/Fonts/Helvetica.ttc',
+        '/System/Library/Fonts/SFNSDisplay.ttf',
+        '/Library/Fonts/Arial.ttf',
+        '/System/Library/Fonts/Supplemental/Arial.ttf',
+    ]:
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+            break
+        except (IOError, OSError):
+            continue
+    if font is None:
+        font = ImageFont.load_default()
+
+    # Measure text on a scratch image
+    scratch = Image.new('RGBA', (OUTPUT_W, OUTPUT_H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(scratch)
+    bbox = d.multiline_textbbox((0, 0), wrapped, font=font, spacing=12, align='center')
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+
+    # Resolve y position
+    y_expr = style['y']
+    if y_expr == '(h-text_h)/2':
+        y = (OUTPUT_H - text_h) // 2
+    elif y_expr.startswith('h*'):
+        y = int(OUTPUT_H * float(y_expr[2:]))
+    else:
+        try:
+            y = int(y_expr)
+        except ValueError:
+            y = 120
+
+    x = (OUTPUT_W - text_w) // 2
+
+    # Draw on transparent canvas
+    img = Image.new('RGBA', (OUTPUT_W, OUTPUT_H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    border = style['borderw']
+    bc = (0, 0, 0, 220) if style['bordercolor'] == 'black' else (255, 255, 255, 220)
+    tc = (255, 255, 255, 255) if style['fontcolor'] == 'white' else (0, 0, 0, 255)
+
+    # Draw border by offsetting in all directions
+    for dx in range(-border, border + 1):
+        for dy in range(-border, border + 1):
+            if dx != 0 or dy != 0:
+                draw.multiline_text((x + dx, y + dy), wrapped, font=font,
+                                    fill=bc, spacing=12, align='center')
+    draw.multiline_text((x, y), wrapped, font=font, fill=tc, spacing=12, align='center')
+
+    tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+    img.save(tmp.name, 'PNG')
+    tmp.close()
+    return tmp.name
+
+
 def format_to_vertical(video_path: str, output_path: str,
                         start: float, duration: float,
                         hook_text: str = None, angle: str = None):
@@ -146,82 +228,66 @@ def format_to_vertical(video_path: str, output_path: str,
     Cut a clip starting at `start` for `duration` seconds,
     format to 9:16 (1080x1920) with blurred background fill,
     and optionally burn in hook text styled for the given angle.
+    Text is rendered via Pillow and composited with ffmpeg overlay.
     """
-    # Build filter chain:
-    # 1. Scale to fit width (1080), keeping aspect ratio
-    # 2. Pad with blurred version of itself to fill 1920 height
-    # 3. Optionally add text overlay
-
     blur_bg = (
         f"[0:v]scale={OUTPUT_W}:-1,setsar=1[scaled];"
         f"[0:v]scale={OUTPUT_W}:{OUTPUT_H},boxblur=20:1[blurred];"
         f"[blurred][scaled]overlay=(W-w)/2:(H-h)/2[composited]"
     )
 
-    if hook_text:
-        style = HOOK_STYLES.get(angle, HOOK_STYLES['default'])
+    overlay_png = None
+    try:
+        if hook_text:
+            style = HOOK_STYLES.get(angle, HOOK_STYLES['default'])
+            overlay_png = _render_hook_overlay(hook_text, style)
 
-        # Apply uppercase if style requires it
-        display_text = hook_text.upper() if style['uppercase'] else hook_text
+            vf = blur_bg + f";[composited][1:v]overlay=0:0[out]"
+            cmd = [
+                'ffmpeg', '-y',
+                '-ss', str(start),
+                '-i', video_path,
+                '-i', overlay_png,
+                '-t', str(duration),
+                '-filter_complex', vf,
+                '-map', '[out]',
+                '-map', '0:a?',
+                '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                '-c:a', 'aac', '-b:a', '128k',
+                '-movflags', '+faststart',
+                '-s', f'{OUTPUT_W}x{OUTPUT_H}',
+                output_path,
+            ]
+        else:
+            vf = blur_bg + ';[composited]copy[out]'
+            cmd = [
+                'ffmpeg', '-y',
+                '-ss', str(start),
+                '-i', video_path,
+                '-t', str(duration),
+                '-filter_complex', vf,
+                '-map', '[out]',
+                '-map', '0:a?',
+                '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                '-c:a', 'aac', '-b:a', '128k',
+                '-movflags', '+faststart',
+                '-s', f'{OUTPUT_W}x{OUTPUT_H}',
+                output_path,
+            ]
 
-        # Sanitise text for ffmpeg drawtext
-        safe_text = display_text.replace("'", "\\'").replace(':', '\\:').replace('%', '\\%')
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if result.returncode != 0:
+            logger.error(f"ffmpeg error: {result.stderr[-500:]}")
+            raise RuntimeError(f"ffmpeg failed for {output_path}")
 
-        # Wrap at style-defined char width
-        wrap_at = style['wrap_at']
-        words = safe_text.split()
-        lines, line = [], []
-        for w in words:
-            line.append(w)
-            if len(' '.join(line)) > wrap_at:
-                lines.append(' '.join(line[:-1]))
-                line = [w]
-        if line:
-            lines.append(' '.join(line))
-        wrapped = '\n'.join(lines)
+        logger.info(f"Created clip: {output_path} ({duration}s from {start:.1f}s)")
 
-        text_filter = (
-            f";[composited]drawtext="
-            f"text='{wrapped}':"
-            f"fontsize={style['fontsize']}:"
-            f"fontcolor={style['fontcolor']}:"
-            f"borderw={style['borderw']}:"
-            f"bordercolor={style['bordercolor']}:"
-            f"x=(w-text_w)/2:"
-            f"y={style['y']}:"
-            f"line_spacing=12"
-            f"[out]"
-        )
-        vf = blur_bg + text_filter
-        map_str = '[out]'
-    else:
-        vf = blur_bg + ';[composited]copy[out]'
-        map_str = '[out]'
-
-    cmd = [
-        'ffmpeg', '-y',
-        '-ss', str(start),
-        '-i', video_path,
-        '-t', str(duration),
-        '-filter_complex', vf,
-        '-map', map_str,
-        '-map', '0:a?',
-        '-c:v', 'libx264',
-        '-preset', 'fast',
-        '-crf', '23',
-        '-c:a', 'aac',
-        '-b:a', '128k',
-        '-movflags', '+faststart',
-        '-s', f'{OUTPUT_W}x{OUTPUT_H}',
-        output_path
-    ]
-
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-    if result.returncode != 0:
-        logger.error(f"ffmpeg error: {result.stderr[-500:]}")
-        raise RuntimeError(f"ffmpeg failed for {output_path}")
-
-    logger.info(f"Created clip: {output_path} ({duration}s from {start:.1f}s)")
+    finally:
+        if overlay_png:
+            try:
+                os.unlink(overlay_png)
+            except OSError:
+                pass
 
 
 def process_video(video_path: str, output_dir: str, hooks: dict = None, angle: str = None) -> list:

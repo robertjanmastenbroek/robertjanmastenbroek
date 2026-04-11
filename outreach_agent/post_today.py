@@ -24,6 +24,19 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+# ─── Load .env ────────────────────────────────────────────────────────────────
+
+def _load_env():
+    env_file = Path(__file__).parent.parent / ".env"
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, _, v = line.partition("=")
+                os.environ.setdefault(k.strip(), v.strip())
+
+_load_env()
+
 # ─── Paths ────────────────────────────────────────────────────────────────────
 
 BASE           = Path(__file__).parent.parent
