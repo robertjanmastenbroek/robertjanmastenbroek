@@ -3263,3 +3263,626 @@ Run: python agent.py setup
 2026-04-10 10:32:25,829 [outreach.agent] INFO: Sent to contact@datatransmission.co.uk — 'dutch rebirth, biblical electronic'
 2026-04-10 10:32:25,844 [outreach.agent] INFO: Initial sends: {'sent': 7, 'failed': 0, 'skipped': 0}
 2026-04-10 10:32:25,847 [outreach.agent] INFO: Cycle complete — DB: {'bounced': 127, 'followup_sent': 34, 'queued': 1, 'responded': 38, 'sent': 270, 'skip': 87, 'verified': 199} | Today: 17 sent | Reply rate: 11.1%
+2026-04-11 22:15:46,705 [outreach.agent] INFO: ============================================================
+2026-04-11 22:15:46,706 [outreach.agent] INFO: RJM OUTREACH AGENT — CYCLE START  [draft_mode=False]
+2026-04-11 22:15:46,706 [outreach.agent] INFO: ============================================================
+2026-04-11 22:15:46,709 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:15:46,710 [outreach.agent] INFO: Scheduler: OK — 80 emails remaining today
+2026-04-11 22:15:46,711 [outreach.agent] INFO: No new contacts to verify
+2026-04-11 22:15:46,719 [outreach.reply_detector] INFO: Scanning 268 open threads for replies...
+2026-04-11 22:15:46,725 [outreach.gmail] INFO: Refreshing Gmail token...
+2026-04-11 22:16:50,789 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:18:32,951 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:18:53,016 [outreach.agent] INFO: ============================================================
+2026-04-11 22:18:53,016 [outreach.agent] INFO: RJM OUTREACH AGENT — CYCLE START  [draft_mode=False]
+2026-04-11 22:18:53,016 [outreach.agent] INFO: ============================================================
+2026-04-11 22:18:53,019 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:18:53,022 [outreach.agent] INFO: Scheduler: OK — 80 emails remaining today | Bounce check: not enough data (7 sends in window)
+2026-04-11 22:18:53,022 [outreach.agent] INFO: No new contacts to verify
+2026-04-11 22:18:53,030 [outreach.reply_detector] INFO: Scanning 268 open threads for replies...
+2026-04-11 22:18:53,032 [outreach.gmail] INFO: Refreshing Gmail token...
+2026-04-11 22:18:53,253 [outreach.agent] WARNING: Inbox check failed (non-fatal — check Gmail OAuth credentials): ('deleted_client: The OAuth client was deleted.', {'error': 'deleted_client', 'error_description': 'The OAuth client was deleted.'})
+2026-04-11 22:18:53,258 [outreach.reply_classifier] INFO: Classifying 38 unclassified replies...
+2026-04-11 22:18:53,258 [outreach.templates] INFO: Using Claude CLI: /Users/motomoto/Library/Application Support/Claude/claude-code/2.1.92/claude.app/Contents/MacOS/claude
+2026-04-11 22:18:59,646 [outreach.reply_classifier] INFO: [!!! BOOKING INQUIRY !!!] david@davidwrightonline.com — Podcast host explicitly interested in having RJM as a guest on their radio show | Action: Offer 3 interview slots (Tue/Wed/Thu 11:00–17:00 CET), mention Tenerife timezone, attach press kit, and add confirmed date to Google Calendar with 1-hour warning
+2026-04-11 22:18:59,651 [outreach.reply_classifier] INFO: !!! BOOKING LEAD — respond manually: david@davidwrightonline.com
+2026-04-11 22:19:05,571 [outreach.reply_classifier] INFO: [!!! BOOKING INQUIRY !!!] darlene@scottdclary.com — Scott D. Clary (Success Story Podcast) is interested in having RJM as a guest on the show | Action: Reply with available interview slots (Tue/Wed/Thu 11:00–17:00 CET), mention Tenerife timezone, offer press kit, and ask Scott's preference
+2026-04-11 22:19:05,575 [outreach.reply_classifier] INFO: !!! BOOKING LEAD — respond manually: darlene@scottdclary.com
+2026-04-11 22:19:11,843 [outreach.reply_classifier] INFO: [Negative (fit)] demo@antimamusic.com — Label politely declines — psytrance doesn't match their release catalog | Action: Remove from active outreach list; Antima doesn't release psytrance. Archive for potential future outreach if RJM produces progressive house or other genres they do release.
+2026-04-11 22:19:17,771 [outreach.reply_classifier] INFO: [Negative (fit)] demos@trancespired.com — Label is not accepting demo submissions at this time due to closed demo window. | Action: Save contact for future outreach when demo window reopens; move to next curator in pipeline.
+2026-04-11 22:19:28,235 [outreach.reply_classifier] INFO: [QUESTION — needs answer] demos@yhvmusic.group — A&R team interested in reviewing demos; requesting private SoundCloud links for assessment. | Action: Send private SoundCloud links to YHV A&R team; follow up in 7-10 days if no response.
+2026-04-11 22:19:46,290 [outreach.reply_classifier] INFO: [Negative (fit)] andrew@nervousnyc.com — Confused or unclear rejection; Nervous Records states 'your playlist is not found,' suggesting the demo doesn't fit or there's a misunderstanding about the submission. | Action: Don't re-contact for this submission. Archive their new address (150 Broadway, Suite 1517, New York, NY 10038) in case of future relevant collaboration. Message is incomplete/garbled, so consider removing or marking as unproductive lead.
+2026-04-11 22:19:56,587 [outreach.reply_classifier] INFO: [Auto-reply (bot/OOO)] contact@anjunadeep.com — Inbox is unmonitored; sender directed to official contact form instead. | Action: Remove this email address from active rotation or update to use their official contact form at anjunabeats.com/contact
+2026-04-11 22:19:56,594 [outreach.reply_classifier] INFO: Auto-reply from contact@anjunadeep.com — reverted to sent
+2026-04-11 22:20:08,064 [outreach.reply_classifier] INFO: [POSITIVE] alex@suprematicagency.com — Curator expressing interest and willingness to add track to 37K+ follower playlist, but requiring 30 EUR donation; email cuts off mid-sentence discussing larger promo package. | Action: Follow up to clarify terms: confirm whether 30 EUR is required for playlist placement and request details on the 'bigger promo package' they started to describe.
+2026-04-11 22:20:18,199 [outreach.reply_classifier] INFO: [QUESTION — needs answer] spotify@hmwl.org — Curator acknowledges the pitch and directs RJM to submit via their HMWL Recordings demo portal for proper review. | Action: Submit track to HMWL Recordings demo portal as directed; include the specific track details they requested.
+2026-04-11 22:20:28,538 [outreach.reply_classifier] INFO: [Negative (hard no)] info@boomfestival.org — Boom Festival has a formal policy against reviewing direct email proposals and directs submitters to their official process. | Action: Research Boom Festival's official artist booking/submission portal and resubmit through proper channels, or mark as email-unresponsive and archive.
+2026-04-11 22:20:34,168 [outreach.reply_classifier] INFO: [Negative (fit)] ovnimoon@gmail.com — Ovnimoon declines because the track being Spotify-only doesn't fit their model or distribution requirements. | Action: Mark contact as not-fit for now; revisit only if track is distributed to other platforms (Apple Music, Bandcamp, etc.) that Ovnimoon requires.
+2026-04-11 22:20:44,679 [outreach.reply_classifier] INFO: [Negative (fit)] techno.addicts.records@gmail.com — Polite decline — they only accept private/unreleased tracks via Soundcloud, not public releases | Action: Archive and revisit when RJM has unreleased material ready for private submission via Soundcloud
+2026-04-11 22:20:52,585 [outreach.reply_classifier] INFO: [POSITIVE] podcast@faithdrivenentrepreneur.org — Podcast host expresses excitement about featuring RJM's story; email truncated but signals strong interest in collaboration. | Action: Send follow-up with 3 availability slots for interview (Tue/Wed/Thu 11:00–17:00 CET), mention press kit, confirm podcast format, and add tentative booking to calendar pending confirmation.
+2026-04-11 22:21:02,833 [outreach.reply_classifier] INFO: [POSITIVE] info@groeivoer.nl — Friendly engagement—gave feedback about duplicate contact request and suggested a podcast RJM might appreciate, but hasn't declined or booked anything yet. | Action: Thank them for the feedback on duplicate contact, acknowledge the Typhoon podcast suggestion, then ask if they'd be open to having RJM as a guest on Groeivoer voor Ondernemers—reference his story (€0M to building audience independently, biblical foundation in music).
+2026-04-11 22:21:10,811 [outreach.reply_classifier] INFO: [!!! BOOKING INQUIRY !!!] worldscollide123pod@gmail.com — Podcast host enthusiastically confirms they want to have RJM on their show and will discuss his story. | Action: Offer 3 interview time slots (Tue/Wed/Thu 11:00–17:00 CET), mention Tenerife timezone, include press kit link.
+2026-04-11 22:21:10,816 [outreach.reply_classifier] INFO: !!! BOOKING LEAD — respond manually: worldscollide123pod@gmail.com
+2026-04-11 22:21:21,018 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:21:21,704 [outreach.reply_classifier] INFO: [Negative (fit)] info@modemfestival.com — 2026 applications are closed, but they've directed RJM to apply for the 2027 edition which is currently open. | Action: Apply for Mo:Dem Festival 2027 artist program; set calendar reminder to apply before the deadline
+2026-04-11 22:21:28,283 [outreach.reply_classifier] INFO: [Negative (fit)] info@ministryofmusic.co.uk — Polite decline due to UK-artist-only policy; geographic mismatch | Action: Remove from active outreach list; revisit only if RJM establishes UK presence or co-signs a UK artist
+2026-04-11 22:21:44,621 [outreach.reply_classifier] INFO: [Negative (fit)] info@5chicago.com — Curator politely redirects to formal submission process, indicating cold outreach approach doesn't fit their workflow. | Action: Submit track through 5 Magazine's official form at 5mag.net/submit or remove from cold email outreach list and track as curator with formal-process-only workflow.
+2026-04-11 22:22:02,879 [outreach.reply_classifier] INFO: [POSITIVE] info@technoairlines.com — Curator offers to share track on their channels via paid promotion service (€75 for Instagram story); conditional interest contingent on payment terms. | Action: Confirm interest in their promotion offer and ask if Spotify playlist placement is included in their services, or clarify which channels they promote to.
+2026-04-11 22:22:10,539 [outreach.reply_classifier] INFO: [Negative (fit)] blog@undrtone.co.uk — Polite decline on the premiere request because the track is already released; explicitly inviting future submissions. | Action: Move to warm follow-up list; send unreleased tracks to them first before requesting premieres.
+2026-04-11 22:22:16,972 [outreach.reply_classifier] INFO: [Negative (fit)] philip@copilco-productions.com — Polite decline—podcast host says RJM doesn't fit the podcast direction at the moment; podcast is currently on hiatus but may return | Action: Archive contact for 3-6 months; if podcast returns and releases new episodes, re-engage with a fresh track or updated pitch
+2026-04-11 22:22:22,776 [outreach.reply_classifier] INFO: [Auto-reply (bot/OOO)] info@edmsauce.com — Automated response indicating high email volume; directs to a playlist submission form but link is incomplete. | Action: Do not engage with the incomplete link. Wait for genuine human reply, or try a different contact at EDM Sauce (check if they have a curator-specific email).
+2026-04-11 22:22:22,779 [outreach.reply_classifier] INFO: Auto-reply from info@edmsauce.com — reverted to sent
+2026-04-11 22:22:39,109 [outreach.reply_classifier] INFO: [Negative (hard no)] electrokillmedia@gmail.com — Curator explicitly no longer accepts email submissions due to overwhelming volume (300/week), politely declines the channel. | Action: Remove from email outreach list. Flag contact record: 'No email submissions—300/week volume.' Could explore DM outreach on social media instead, but email is closed.
+2026-04-11 22:22:50,047 [outreach.reply_classifier] INFO: [POSITIVE] james@trueunderground.one — Curator engaged with RJM's story positively and is considering it, but their message appears to have been cut off mid-sentence. | Action: Follow up with Spotify link and ask if they need anything else to review the track—message may have been incomplete.
+2026-04-11 22:22:57,561 [outreach.reply_classifier] INFO: [POSITIVE] nathan@worshipmusicrecords.co.uk — Curator engaged and interested—listened to Living Water, checked Instagram, appreciated the track, but message cuts off before confirming playlist placement. | Action: Follow up within 48 hours: ask if Living Water fits their playlist and if they'd like to add it; reference the incomplete reply professionally ('saw your message got cut off—still interested?').
+2026-04-11 22:23:05,527 [outreach.reply_classifier] INFO: [*** TRACK ADDED TO PLAYLIST ***] music@tanzgemeinschaft.com — Curator Claudio explicitly confirmed adding Living Water to one of their Spotify playlists and thanked RJM for sharing. | Action: Send brief thank you reply; offer to send future tracks that fit the playlist's vibe or ask about other curated playlists at Tanzgemeinschaft.
+2026-04-11 22:23:05,535 [outreach.reply_classifier] INFO: *** WIN *** music@tanzgemeinschaft.com confirmed track in playlist
+2026-04-11 22:23:13,763 [outreach.reply_classifier] INFO: [Auto-reply (bot/OOO)] info@holyculture.net — Automated submission form redirect from Holy Culture's standard intake process; incomplete sentence ending suggests templated bot response. | Action: Visit www.holyculture.net/submissions to follow their official track submission workflow, or deprioritize this contact and move to next prospect — they're not engaging directly.
+2026-04-11 22:23:13,770 [outreach.reply_classifier] INFO: Auto-reply from info@holyculture.net — reverted to sent
+2026-04-11 22:23:20,080 [outreach.reply_classifier] INFO: [Negative (fit)] contact@tibetaniarecords.com — Tibetania Records politely declined the submission because the track is already published and doesn't align with their playlist | Action: Archive this contact or note for future outreach with an unreleased track; move to next curator
+2026-04-11 22:23:23,551 [outreach.agent] INFO: ============================================================
+2026-04-11 22:23:23,551 [outreach.agent] INFO: RJM OUTREACH AGENT — CYCLE START  [draft_mode=False]
+2026-04-11 22:23:23,551 [outreach.agent] INFO: ============================================================
+2026-04-11 22:23:23,553 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:23:23,556 [outreach.agent] INFO: Scheduler: OK — 80 emails remaining today | Bounce check: not enough data (7 sends in window)
+2026-04-11 22:23:23,559 [outreach.agent] INFO: Verifying 49 new contacts...
+2026-04-11 22:23:31,886 [outreach.reply_classifier] INFO: [Negative (hard no)] info@merkabamusic.com — Merkaba Music is not accepting new releases/demos and incorrectly assumes the music is AI-generated; explicit rejection with no room for follow-up. | Action: Remove from active outreach list; do not follow up. Their policy explicitly rejects new submissions and they've made a false assumption about the music being AI.
+2026-04-11 22:23:41,207 [outreach.reply_classifier] INFO: [!!! BOOKING INQUIRY !!!] gcu@thesanct.com — Podcast is moving forward with booking RJM as a guest for their 8th season shoots starting in July; will send Guest Profile form to initiate the process. | Action: Wait for Guest Profile form and fill it out promptly; confirm RJM's availability for July shoots
+2026-04-11 22:23:41,213 [outreach.reply_classifier] INFO: !!! BOOKING LEAD — respond manually: gcu@thesanct.com
+2026-04-11 22:23:50,661 [outreach.bounce] INFO: Catch-all domain detected: mgmtpr.com (probe lz6p33ymlpkdf7 accepted)
+2026-04-11 22:23:51,432 [outreach.reply_classifier] INFO: [POSITIVE] neighborn8@musicfestivalspodcast.com — Podcast host expresses genuine interest; notes EDM isn't current but on roadmap, identifies RJM as musical fit based on their eurotechno background | Action: Offer podcast appearance with 3 interview slots (Tue/Wed/Thu 11:00–17:00 CET); mention Tenerife timezone; reference their Oakenfold/eurotechno taste to show research alignment
+2026-04-11 22:23:51,626 [outreach.bounce] INFO: Catch-all domain detected: medullaoblongata.net (probe p6t1pjc21ev3fa accepted)
+2026-04-11 22:23:52,461 [outreach.bounce] INFO: Catch-all domain detected: redlensepodcast.com (probe bj4qbtlhr4hzu5 accepted)
+2026-04-11 22:23:53,509 [outreach.bounce] INFO: Catch-all domain detected: deeptechmagazine.com (probe edd7tk08dosgu6 accepted)
+2026-04-11 22:23:54,556 [outreach.bounce] INFO: Catch-all domain detected: darkfloor.co.uk (probe b8ev70dgqllh7s accepted)
+2026-04-11 22:23:56,664 [outreach.reply_classifier] INFO: [Auto-reply (bot/OOO)] demos@solarstone.co.uk — Automated out-of-office confirmation that demos are reviewed within 10 days; not a personal response. | Action: Do not engage further; note the 10-day review window in CRM and follow up after 10 days if no human response received.
+2026-04-11 22:23:56,671 [outreach.reply_classifier] INFO: Auto-reply from demos@solarstone.co.uk — reverted to sent
+2026-04-11 22:24:04,215 [outreach.bounce] INFO: Catch-all domain detected: datatransmission.co.uk (probe k5csuai62htnkq accepted)
+2026-04-11 22:24:04,930 [outreach.bounce] INFO: Catch-all domain detected: trancentral.tv (probe 1t6385pirf5ef3 accepted)
+2026-04-11 22:24:05,736 [outreach.bounce] INFO: Catch-all domain detected: beatradar.com (probe 3pcu4vi19m4xyp accepted)
+2026-04-11 22:24:06,466 [outreach.reply_classifier] INFO: [POSITIVE] contact@red-music.com — Curator appreciates outreach and mentions they're actively developing playlists for promotional purposes; email appears incomplete or cut off. | Action: Follow up: thank them, ask directly if 'Halleluyah' fits their developing playlist, send Spotify link + brief description (140 BPM psytrance, spiritual theme fits 'Goa' angle), ask for any additional details they need
+2026-04-11 22:24:07,005 [outreach.bounce] INFO: Catch-all domain detected: psytranceguide.com (probe l7ea9nbzkrtvb9 accepted)
+2026-04-11 22:24:07,816 [outreach.bounce] INFO: Catch-all domain detected: ektoplazm.com (probe zxakj1jhszft2w accepted)
+2026-04-11 22:24:08,711 [outreach.bounce] INFO: Catch-all domain detected: psytrance-music.com (probe rx2itmv6adcak5 accepted)
+2026-04-11 22:24:09,437 [outreach.bounce] INFO: Catch-all domain detected: stillstream.com (probe 8zpeis8nx4tq37 accepted)
+2026-04-11 22:24:10,147 [outreach.bounce] INFO: Catch-all domain detected: drumsradio.com (probe 47koao4j0k53le accepted)
+2026-04-11 22:24:10,924 [outreach.bounce] INFO: Catch-all domain detected: psytrance.com (probe nr2zuc25456ix8 accepted)
+2026-04-11 22:24:11,694 [outreach.bounce] INFO: Catch-all domain detected: thissongissick.com (probe btn6v1zi8c579b accepted)
+2026-04-11 22:24:12,062 [outreach.reply_classifier] INFO: [Negative (fit)] radio@terrarelicta.com — Podcast listened to the music but declined because it doesn't match their typical playlist style | Action: Mark as genre mismatch; remove from active outreach or archive this contact—don't re-contact with similar melodic techno tracks
+2026-04-11 22:24:12,544 [outreach.bounce] INFO: Catch-all domain detected: redolentmusic.com (probe zfszzdp15nwrwa accepted)
+2026-04-11 22:24:13,304 [outreach.bounce] INFO: Catch-all domain detected: viciousmagazine.com (probe 3zh1efgn1gov87 accepted)
+2026-04-11 22:24:13,996 [outreach.bounce] INFO: Catch-all domain detected: thatdrop.com (probe 0pamn94rb05d22 accepted)
+2026-04-11 22:24:14,691 [outreach.bounce] INFO: Catch-all domain detected: edmmaniac.com (probe gvouqxeopo74ae accepted)
+2026-04-11 22:24:28,332 [outreach.reply_classifier] INFO: [POSITIVE] contact@electronicgroove.com — Curator responded positively but pivoted to offering paid promotional services rather than expressing interest in the track itself. | Action: Clarify if they review unsolicited submissions for organic playlist placement, or pass if their business model is primarily paid services.
+2026-04-11 22:24:33,224 [outreach.agent] INFO: Verification done — verified: 49, rejected: 0
+2026-04-11 22:24:33,247 [outreach.reply_detector] INFO: Scanning 272 open threads for replies...
+2026-04-11 22:24:33,260 [outreach.gmail] INFO: Refreshing Gmail token...
+2026-04-11 22:24:33,464 [outreach.agent] WARNING: Inbox check failed (non-fatal — check Gmail OAuth credentials): ('deleted_client: The OAuth client was deleted.', {'error': 'deleted_client', 'error_description': 'The OAuth client was deleted.'})
+2026-04-11 22:24:33,468 [outreach.reply_classifier] INFO: Classifying 3 unclassified replies...
+2026-04-11 22:24:33,469 [outreach.templates] INFO: Using Claude CLI: /Users/motomoto/Library/Application Support/Claude/claude-code/2.1.92/claude.app/Contents/MacOS/claude
+2026-04-11 22:24:40,055 [outreach.reply_classifier] INFO: [POSITIVE] info@colorizemusic.com — Label redirects demo submission to their Demmo platform; still open to receiving music through proper channel. | Action: Submit demo via Demmo link provided; add follow-up in 2 weeks if no response.
+2026-04-11 22:24:45,284 [outreach.reply_classifier] INFO: [Negative (fit)] info@colorizemusic.com — Label no longer accepts email demos; redirects to alternative Demmo submission platform. | Action: Consider resubmitting via Demmo platform if worth the effort, otherwise deprioritize this contact.
+2026-04-11 22:24:46,301 [outreach.reply_classifier] INFO: [Auto-reply (bot/OOO)] paul@dubtechnoblog.com — Gmail delivery failure notification — message to paul@dubtechnoblog.com bounced temporarily with retry in progress | Action: Wait 46 hours for Gmail retry, then if still bouncing, verify email address or try alternative contact method for Dub Techno Blog
+2026-04-11 22:24:46,307 [outreach.reply_classifier] INFO: Auto-reply from paul@dubtechnoblog.com — reverted to sent
+2026-04-11 22:24:53,870 [outreach.reply_classifier] INFO: [Auto-reply (bot/OOO)] paul@dubtechnoblog.com — Gmail delivery failure — outbound message to paul@dubtechnoblog.com temporarily undeliverable, automatic retry pending for 46 hours | Action: Monitor for permanent delivery failure; if delivery fails after 46 hours, verify email address and flag contact for research/requeue
+2026-04-11 22:24:53,876 [outreach.reply_classifier] INFO: Auto-reply from paul@dubtechnoblog.com — reverted to sent
+2026-04-11 22:24:54,992 [outreach.reply_classifier] INFO: [POSITIVE] promo@youbeat.it — Curator is engaged and friendly, offering paid promotional service options rather than organic playlist placement. | Action: Reply thanking them for the promo options, ask if they'd consider organic playlist add first, or inquire about cost/reach of their paid services
+2026-04-11 22:24:54,997 [outreach.reply_classifier] INFO: Classification complete — classified: 38, failed: 0
+2026-04-11 22:24:54,997 [outreach.agent] INFO: Reply classification: {'classified': 38, 'failed': 0}
+2026-04-11 22:24:55,009 [outreach.followup] INFO: Follow-up queue: 10 contacts eligible (checked 150 candidates)
+2026-04-11 22:24:55,010 [outreach.templates] INFO: Generating follow-up for contact@anjunadeep.com...
+2026-04-11 22:25:04,523 [outreach.reply_classifier] INFO: [POSITIVE] promo@youbeat.it — YouBeat curator is receptive and offering their paid promotion services (web banner, homepage spotlight, etc.) as next steps. | Action: Review YouBeat's promo options; if budget-friendly, inquire about playlist placement rates and timelines. If budget-constrained, ask if they add tracks organically first.
+2026-04-11 22:25:04,529 [outreach.reply_classifier] INFO: Classification complete — classified: 3, failed: 0
+2026-04-11 22:25:04,529 [outreach.agent] INFO: Reply classification: {'classified': 3, 'failed': 0}
+2026-04-11 22:25:04,543 [outreach.followup] INFO: Follow-up queue: 10 contacts eligible (checked 150 candidates)
+2026-04-11 22:25:04,543 [outreach.templates] INFO: Generating follow-up for contact@anjunadeep.com...
+2026-04-11 22:25:14,682 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Melodic House / Deep Techno'
+2026-04-11 22:25:14,685 [outreach.gmail] INFO: Refreshing Gmail token...
+2026-04-11 22:25:14,959 [outreach.followup] ERROR: Follow-up send failed for contact@anjunadeep.com: ('deleted_client: The OAuth client was deleted.', {'error': 'deleted_client', 'error_description': 'The OAuth client was deleted.'})
+2026-04-11 22:25:16,967 [outreach.templates] INFO: Generating follow-up for info@abora-recordings.com...
+2026-04-11 22:25:24,392 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Melodic House / Deep Techno'
+2026-04-11 22:25:24,396 [outreach.gmail] INFO: Refreshing Gmail token...
+2026-04-11 22:25:24,598 [outreach.followup] ERROR: Follow-up send failed for contact@anjunadeep.com: ('deleted_client: The OAuth client was deleted.', {'error': 'deleted_client', 'error_description': 'The OAuth client was deleted.'})
+2026-04-11 22:25:26,605 [outreach.templates] INFO: Generating follow-up for info@abora-recordings.com...
+2026-04-11 22:25:37,242 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Progressive / Melodic House'
+2026-04-11 22:25:37,246 [outreach.gmail] INFO: Refreshing Gmail token...
+2026-04-11 22:25:37,442 [outreach.followup] ERROR: Follow-up send failed for info@abora-recordings.com: ('deleted_client: The OAuth client was deleted.', {'error': 'deleted_client', 'error_description': 'The OAuth client was deleted.'})
+2026-04-11 22:25:39,447 [outreach.templates] INFO: Generating follow-up for info@betamusicbooking.com...
+2026-04-11 22:25:48,779 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Progressive / Melodic House'
+2026-04-11 22:25:48,783 [outreach.gmail] INFO: Refreshing Gmail token...
+2026-04-11 22:25:48,982 [outreach.followup] ERROR: Follow-up send failed for info@abora-recordings.com: ('deleted_client: The OAuth client was deleted.', {'error': 'deleted_client', 'error_description': 'The OAuth client was deleted.'})
+2026-04-11 22:25:50,988 [outreach.templates] INFO: Generating follow-up for info@betamusicbooking.com...
+2026-04-11 22:25:58,605 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Psytrance / Ethnic Tribal Techno'
+2026-04-11 22:25:58,924 [google_auth_oauthlib.flow] INFO: Please visit this URL to authorize this application: https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=321027307676-2giulc8vemltto7j3g6hbkj2j3mscvv3.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A50313%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.modify&state=cJOR192hmqDqVhByxmCwEtSFe67kUB&code_challenge=BRWNZfUBvQCOHWNmWM7uG-VXCn2ajHyE_t8hvPHygjk&code_challenge_method=S256&access_type=offline
+2026-04-11 22:26:03,566 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Psytrance / Ethnic Tribal Techno'
+2026-04-11 22:26:03,723 [google_auth_oauthlib.flow] INFO: Please visit this URL to authorize this application: https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=321027307676-2giulc8vemltto7j3g6hbkj2j3mscvv3.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A50315%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.modify&state=tGDu9wnvZElaYfbsZ3Mgu4gE2jpE43&code_challenge=TLj0hcBdUQ16_MThySXX2gL9LUlEH1z3izIokaljaVc&code_challenge_method=S256&access_type=offline
+2026-04-11 22:26:30,210 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:26:30,308 [google_auth_oauthlib.flow] INFO: Please visit this URL to authorize this application: https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=321027307676-2giulc8vemltto7j3g6hbkj2j3mscvv3.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A50326%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.modify&state=sd3vxoiWeasbrvToELFHWzWQmWVjPR&code_challenge=fO1aw4e4yjab4yTGOa2oPOCI6YzoKyXyDqEh8FbEJM0&code_challenge_method=S256&access_type=offline
+2026-04-11 22:27:42,813 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:27:43,174 [google_auth_oauthlib.flow] INFO: Please visit this URL to authorize this application: https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=321027307676-2giulc8vemltto7j3g6hbkj2j3mscvv3.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A50341%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.modify&state=nmM0umCZBzExtLCGlyUCkJRkXQ5Mt9&code_challenge=LHMKBzDhaGD-uQ3JCJwt38d54sYDjnCh4kxBJTHkKM4&code_challenge_method=S256&access_type=offline
+2026-04-11 22:40:11,575 [outreach.agent] INFO: ============================================================
+2026-04-11 22:40:11,575 [outreach.agent] INFO: RJM OUTREACH AGENT — CYCLE START  [draft_mode=False]
+2026-04-11 22:40:11,575 [outreach.agent] INFO: ============================================================
+2026-04-11 22:40:11,579 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:40:11,581 [outreach.agent] INFO: Scheduler: OK — 80 emails remaining today | Bounce check: not enough data (7 sends in window)
+2026-04-11 22:40:11,582 [outreach.agent] INFO: No new contacts to verify
+2026-04-11 22:40:11,590 [outreach.reply_detector] INFO: Scanning 273 open threads for replies...
+2026-04-11 22:40:11,843 [google_auth_oauthlib.flow] INFO: Please visit this URL to authorize this application: https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=321027307676-2giulc8vemltto7j3g6hbkj2j3mscvv3.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A50503%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.modify&state=PBDSDONhepZgjM9Xyv1HuTZkAmIubu&code_challenge=HGksbhGIjCTgkpaSh_SR-MU48Tz8jVteHrzRjFBakBs&code_challenge_method=S256&access_type=offline
+2026-04-11 22:41:50,380 [outreach.agent] INFO: ============================================================
+2026-04-11 22:41:50,381 [outreach.agent] INFO: RJM OUTREACH AGENT — CYCLE START  [draft_mode=False]
+2026-04-11 22:41:50,381 [outreach.agent] INFO: ============================================================
+2026-04-11 22:41:50,382 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:41:50,385 [outreach.agent] INFO: Scheduler: OK — 80 emails remaining today | Bounce check: not enough data (7 sends in window)
+2026-04-11 22:41:50,385 [outreach.agent] INFO: No new contacts to verify
+2026-04-11 22:41:50,396 [outreach.reply_detector] INFO: Scanning 273 open threads for replies...
+2026-04-11 22:41:50,647 [google_auth_oauthlib.flow] INFO: Please visit this URL to authorize this application: https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=321027307676-c606uuhud7nl0jin6oloeo0rrbphdf30.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A50528%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.modify&state=zoDXFClRivvGnaIc6EZYscBbKlw8Ih&code_challenge=jH7rKLET8ZAnzRW8eOzcfEdssq4KR5kFtl1CyPBaV_g&code_challenge_method=S256&access_type=offline
+2026-04-11 22:41:57,359 [google_auth_oauthlib.flow] INFO: "GET /?state=zoDXFClRivvGnaIc6EZYscBbKlw8Ih&iss=https://accounts.google.com&code=4/0Aci98E-mdhK0QcREK-JGHWecQCCJfqERbJWTHXVOq2UevfAbIvKSGGUoS3HWawV2pA4_GQ&scope=https://www.googleapis.com/auth/gmail.readonly%20https://www.googleapis.com/auth/gmail.send%20https://www.googleapis.com/auth/gmail.modify HTTP/1.1" 200 65
+2026-04-11 22:41:57,651 [outreach.gmail] INFO: Gmail token saved to /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/token.json
+2026-04-11 22:41:57,653 [googleapiclient.discovery_cache] INFO: file_cache is only supported with oauth2client<4.0.0
+2026-04-11 22:41:57,663 [outreach.gmail] INFO: Gmail API authenticated as motomotosings@gmail.com
+2026-04-11 22:42:38,690 [outreach.agent] INFO: ============================================================
+2026-04-11 22:42:38,690 [outreach.agent] INFO: RJM OUTREACH AGENT — CYCLE START  [draft_mode=False]
+2026-04-11 22:42:38,690 [outreach.agent] INFO: ============================================================
+2026-04-11 22:42:38,692 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 22:42:38,695 [outreach.agent] INFO: Scheduler: OK — 80 emails remaining today | Bounce check: not enough data (7 sends in window)
+2026-04-11 22:42:38,695 [outreach.agent] INFO: No new contacts to verify
+2026-04-11 22:42:38,704 [outreach.reply_detector] INFO: Scanning 273 open threads for replies...
+2026-04-11 22:42:38,706 [googleapiclient.discovery_cache] INFO: file_cache is only supported with oauth2client<4.0.0
+2026-04-11 22:42:38,707 [outreach.gmail] INFO: Gmail API authenticated as motomotosings@gmail.com
+2026-04-11 22:43:00,698 [outreach.reply_detector] INFO: Reply detected from demos@solarstone.co.uk (thread 19d55226c0f8f12e): Hi there Please be aware that this is an auto reply. Thanks for thinking of me &
+2026-04-11 22:43:00,710 [outreach.reply_detector] INFO: Reply detected from contact@anjunadeep.com (thread 19d55b4ca5ba4dcd): Hi there, This inbox is no longer being monitored. To contact us please head to 
+2026-04-11 22:43:00,717 [outreach.reply_detector] INFO: Reply detected from info@edmsauce.com (thread 19d5cda0163b25af): Due to the amount of emails this email address gets, we will try to get back to 
+2026-04-11 22:43:00,723 [outreach.reply_detector] INFO: Reply detected from info@holyculture.net (thread 19d5e3957bdd1a46): Hi, thank you for emailing us at Holy Culture. If your email is in regards to su
+2026-04-11 22:43:00,730 [outreach.reply_detector] INFO: Reply detected from paul@dubtechnoblog.com (thread 19d6c76ce5bec480): Delivery incomplete There was a temporary problem while delivering your message 
+2026-04-11 22:43:00,735 [outreach.reply_detector] INFO: Reply detected from info@outkast.io (thread 19d76b259621bedc): Address not found Your message wasn&#39;t delivered to info@outkast.io because t
+2026-04-11 22:43:00,739 [outreach.reply_detector] INFO: Reply detected from contact@datatransmission.co.uk (thread 19d76bc4e87654dc): Address not found Your message wasn&#39;t delivered to contact@datatransmission.
+2026-04-11 22:43:00,744 [outreach.reply_detector] INFO: Reply detected from info@zenonrecords.com (thread 19d55b5a0b56d42f): Hey Robert-Jan, Apologies but somehow i&#39;ve lost the original links you sent 
+2026-04-11 22:43:00,749 [outreach.reply_detector] INFO: Reply detected from info@one-fest.com (thread 19d55bcaec20db7d): Rober-Jan, Thank you for reaching out and sharing the information about your art
+2026-04-11 22:43:00,754 [outreach.reply_detector] INFO: Reply scan complete — 9/273 threads had replies
+2026-04-11 22:43:00,755 [outreach.reply_detector] INFO: Scanning inbox for bounce/delivery-failure messages...
+2026-04-11 22:43:17,468 [outreach.bounce] INFO: Added confirmed dead address: paul@dubtechnoblog.com
+2026-04-11 22:43:17,471 [outreach.reply_detector] INFO: Marking actual bounce: paul@dubtechnoblog.com (reason: Message not delivered There was a problem delivering your me)
+2026-04-11 22:43:17,476 [outreach.bounce] INFO: Added confirmed dead address: contact@datatransmission.co.uk
+2026-04-11 22:43:17,478 [outreach.reply_detector] INFO: Marking actual bounce: contact@datatransmission.co.uk (reason: Address not found Your message wasn&#39;t delivered to conta)
+2026-04-11 22:43:17,482 [outreach.bounce] INFO: Added confirmed dead address: info@outkast.io
+2026-04-11 22:43:17,484 [outreach.reply_detector] INFO: Marking actual bounce: info@outkast.io (reason: Address not found Your message wasn&#39;t delivered to info@)
+2026-04-11 22:43:17,487 [outreach.bounce] INFO: Added confirmed dead address: music@sol-festival.com
+2026-04-11 22:43:17,489 [outreach.bounce] INFO: Added confirmed dead address: unknowntimeline.podcast@gmail.com
+2026-04-11 22:43:17,492 [outreach.bounce] INFO: Added confirmed dead address: technocolor.podcast@gmail.com
+2026-04-11 22:43:17,495 [outreach.bounce] INFO: Added confirmed dead address: into.the.abyss.podcast@gmail.com
+2026-04-11 22:43:17,498 [outreach.bounce] INFO: Added confirmed dead address: affine.darkscience@gmail.com
+2026-04-11 22:43:17,501 [outreach.bounce] INFO: Added confirmed dead address: trevepodcast@gmail.com
+2026-04-11 22:43:17,503 [outreach.bounce] INFO: Added confirmed dead address: anodynics@gmail.com
+2026-04-11 22:43:17,505 [outreach.bounce] INFO: Added confirmed dead address: submissions@obscuresound.com
+2026-04-11 22:43:17,507 [outreach.bounce] INFO: Added confirmed dead address: minimalslashambient@gmail.com
+2026-04-11 22:43:17,509 [outreach.bounce] INFO: Added confirmed dead address: lofimb@gmail.com
+2026-04-11 22:43:17,510 [outreach.bounce] INFO: Added confirmed dead address: info@earmilk.com
+2026-04-11 22:43:17,512 [outreach.bounce] INFO: Added confirmed dead address: info@obscuresound.com
+2026-04-11 22:43:17,514 [outreach.bounce] INFO: Added confirmed dead address: music@fluxmusic.eu
+2026-04-11 22:43:17,516 [outreach.bounce] INFO: Added confirmed dead address: bob@businesssideofmusic.com
+2026-04-11 22:43:17,518 [outreach.bounce] INFO: Added confirmed dead address: info@youredm.com
+2026-04-11 22:43:17,519 [outreach.bounce] INFO: Added confirmed dead address: cam@christianmusicmarketing.com
+2026-04-11 22:43:17,521 [outreach.bounce] INFO: Added confirmed dead address: jesse@jessedeanrivero.com
+2026-04-11 22:43:17,522 [outreach.bounce] INFO: Added confirmed dead address: abstractworlds@psytrance.com
+2026-04-11 22:43:17,524 [outreach.bounce] INFO: Added confirmed dead address: affinerecords@gmail.com
+2026-04-11 22:43:17,526 [outreach.bounce] INFO: Added confirmed dead address: virescence.recs@gmail.com
+2026-04-11 22:43:17,527 [outreach.bounce] INFO: Added confirmed dead address: midnightsessions.dj@gmail.com
+2026-04-11 22:43:17,529 [outreach.bounce] INFO: Added confirmed dead address: 4x4pakt@gmail.com
+2026-04-11 22:43:17,532 [outreach.bounce] INFO: Added confirmed dead address: treve.podcast@gmail.com
+2026-04-11 22:43:17,533 [outreach.bounce] INFO: Added confirmed dead address: contact@iedm.com
+2026-04-11 22:43:17,535 [outreach.bounce] INFO: Added confirmed dead address: psytrancetop10@gmail.com
+2026-04-11 22:43:17,536 [outreach.bounce] INFO: Added confirmed dead address: psytrancetop10@gmail.com
+2026-04-11 22:43:17,538 [outreach.bounce] INFO: Added confirmed dead address: info@spintwist.com
+2026-04-11 22:43:17,539 [outreach.bounce] INFO: Added confirmed dead address: info@spintwist.com
+2026-04-11 22:43:17,541 [outreach.bounce] INFO: Added confirmed dead address: info@digitalomproductions.in
+2026-04-11 22:43:17,542 [outreach.bounce] INFO: Added confirmed dead address: info@digitalomproductions.in
+2026-04-11 22:43:17,545 [outreach.bounce] INFO: Added confirmed dead address: ethno@outtallectuals.com
+2026-04-11 22:43:17,546 [outreach.bounce] INFO: Added confirmed dead address: obscuresoundsubmit@gmail.com
+2026-04-11 22:43:17,548 [outreach.bounce] INFO: Added confirmed dead address: submissions@electronica.org.uk
+2026-04-11 22:43:17,549 [outreach.bounce] INFO: Added confirmed dead address: info.beathepodcast@gmail.com
+2026-04-11 22:43:17,550 [outreach.bounce] INFO: Added confirmed dead address: promo@knightsoftheturntable.co.uk
+2026-04-11 22:43:17,553 [outreach.bounce] INFO: Added confirmed dead address: austin@millionaire-interviews.com
+2026-04-11 22:43:17,554 [outreach.bounce] INFO: Added confirmed dead address: musique@pan-african-music.com
+2026-04-11 22:43:17,556 [outreach.bounce] INFO: Added confirmed dead address: booking@ozora.hu
+2026-04-11 22:43:17,557 [outreach.bounce] INFO: Added confirmed dead address: booking@psy-fi.nl
+2026-04-11 22:43:17,559 [outreach.bounce] INFO: Added confirmed dead address: editorial@traxsource.com
+2026-04-11 22:43:17,560 [outreach.bounce] INFO: Added confirmed dead address: info@inmyhouse65.com
+2026-04-11 22:43:17,562 [outreach.bounce] INFO: Added confirmed dead address: business@edmprod.com
+2026-04-11 22:43:17,564 [outreach.bounce] INFO: Added confirmed dead address: info@tldmusic.com
+2026-04-11 22:43:17,565 [outreach.bounce] INFO: Added confirmed dead address: djmarcuswade@gospelmeetsdance.com
+2026-04-11 22:43:17,566 [outreach.bounce] INFO: Added confirmed dead address: movement@transformradio.com
+2026-04-11 22:43:17,567 [outreach.bounce] INFO: Added confirmed dead address: submissions@beatstorapon.com
+2026-04-11 22:43:17,568 [outreach.bounce] INFO: Added confirmed dead address: contact@edmprod.com
+2026-04-11 22:43:17,569 [outreach.bounce] INFO: Added confirmed dead address: submissions@colonizemedia.com
+2026-04-11 22:43:17,570 [outreach.bounce] INFO: Added confirmed dead address: press@ccmmagazine.com
+2026-04-11 22:43:17,572 [outreach.bounce] INFO: Added confirmed dead address: music@mixmag.net
+2026-04-11 22:43:17,573 [outreach.bounce] INFO: Added confirmed dead address: info@god.radio
+2026-04-11 22:43:17,576 [outreach.bounce] INFO: Added confirmed dead address: submissions@stereofox.com
+2026-04-11 22:43:17,577 [outreach.bounce] INFO: Added confirmed dead address: hello@deeptechmagazine.com
+2026-04-11 22:43:17,579 [outreach.bounce] INFO: Added confirmed dead address: info@groover.co
+2026-04-11 22:43:17,580 [outreach.bounce] INFO: Added confirmed dead address: demo@alchemyrecords.com
+2026-04-11 22:43:17,582 [outreach.bounce] INFO: Added confirmed dead address: info@lifest.com
+2026-04-11 22:43:17,584 [outreach.bounce] INFO: Added confirmed dead address: press@axiomlabelgroup.com
+2026-04-11 22:43:17,585 [outreach.bounce] INFO: Added confirmed dead address: contact@ozorafest.hu
+2026-04-11 22:43:17,586 [outreach.bounce] INFO: Added confirmed dead address: deepershades@mail.com
+2026-04-11 22:43:17,587 [outreach.bounce] INFO: Added confirmed dead address: contact@nanostate.family
+2026-04-11 22:43:17,588 [outreach.bounce] INFO: Added confirmed dead address: demo@blackmirrorrecordings.com
+2026-04-11 22:43:17,590 [outreach.bounce] INFO: Added confirmed dead address: info@widerbergmusic.com
+2026-04-11 22:43:17,591 [outreach.bounce] INFO: Added confirmed dead address: demo@innervisions.net
+2026-04-11 22:43:17,592 [outreach.bounce] INFO: Added confirmed dead address: demos@cercle.io
+2026-04-11 22:43:17,593 [outreach.bounce] INFO: Added confirmed dead address: music@alldayidream.com
+2026-04-11 22:43:17,593 [outreach.reply_detector] WARNING: Domain obscuresound.com has 2 bounces — blacklisting entire domain
+2026-04-11 22:43:17,594 [outreach.bounce] INFO: Added confirmed dead domain: obscuresound.com
+2026-04-11 22:43:17,594 [outreach.reply_detector] WARNING: Domain spintwist.com has 2 bounces — blacklisting entire domain
+2026-04-11 22:43:17,594 [outreach.bounce] INFO: Added confirmed dead domain: spintwist.com
+2026-04-11 22:43:17,594 [outreach.reply_detector] WARNING: Domain digitalomproductions.in has 2 bounces — blacklisting entire domain
+2026-04-11 22:43:17,595 [outreach.bounce] INFO: Added confirmed dead domain: digitalomproductions.in
+2026-04-11 22:43:17,595 [outreach.reply_detector] WARNING: Domain edmprod.com has 2 bounces — blacklisting entire domain
+2026-04-11 22:43:17,595 [outreach.bounce] INFO: Added confirmed dead domain: edmprod.com
+2026-04-11 22:43:17,595 [outreach.reply_detector] INFO: Bounce scan complete — 3 actual bounces recorded
+2026-04-11 22:43:17,596 [outreach.reply_classifier] INFO: Classifying 2 unclassified replies...
+2026-04-11 22:43:17,867 [outreach.templates] INFO: Using Claude CLI: /Users/motomoto/Library/Application Support/Claude/claude-code/2.1.92/claude.app/Contents/MacOS/claude
+2026-04-11 22:43:24,638 [outreach.reply_classifier] INFO: [QUESTION — needs answer] info@zenonrecords.com — Tim lost the original links and is requesting RJM resend them. | Action: Resend the track link(s) to Tim — Spotify link and/or WAV download, maintaining the Hebrew lyrics angle from the original pitch.
+2026-04-11 22:43:33,836 [outreach.reply_classifier] INFO: [Negative (fit)] info@one-fest.com — OneFest's 2026 lineup is full, but they invite RJM to reapply in fall 2026 for their 2027 festival with EPK. | Action: Calendar reminder for September 2026 to reach out with updated EPK and materials for 2027 festival consideration.
+2026-04-11 22:43:33,840 [outreach.reply_classifier] INFO: Classification complete — classified: 2, failed: 0
+2026-04-11 22:43:33,840 [outreach.agent] INFO: Inbox check: {'threads_scanned': 273, 'replies_found': 9, 'bounces_found': 3, 'classified': 2, 'failed': 0}
+2026-04-11 22:43:33,855 [outreach.followup] INFO: Follow-up queue: 10 contacts eligible (checked 147 candidates)
+2026-04-11 22:43:33,855 [outreach.templates] INFO: Generating follow-up for info@abora-recordings.com...
+2026-04-11 22:43:42,031 [outreach.reply_detector] INFO: Reply detected from demos@solarstone.co.uk (thread 19d55226c0f8f12e): Hi there Please be aware that this is an auto reply. Thanks for thinking of me &
+2026-04-11 22:43:42,036 [outreach.reply_detector] INFO: Reply detected from contact@anjunadeep.com (thread 19d55b4ca5ba4dcd): Hi there, This inbox is no longer being monitored. To contact us please head to 
+2026-04-11 22:43:42,039 [outreach.reply_detector] INFO: Reply detected from info@edmsauce.com (thread 19d5cda0163b25af): Due to the amount of emails this email address gets, we will try to get back to 
+2026-04-11 22:43:42,041 [outreach.reply_detector] INFO: Reply detected from info@holyculture.net (thread 19d5e3957bdd1a46): Hi, thank you for emailing us at Holy Culture. If your email is in regards to su
+2026-04-11 22:43:42,045 [outreach.reply_detector] INFO: Reply detected from paul@dubtechnoblog.com (thread 19d6c76ce5bec480): Delivery incomplete There was a temporary problem while delivering your message 
+2026-04-11 22:43:42,047 [outreach.reply_detector] INFO: Reply detected from info@outkast.io (thread 19d76b259621bedc): Address not found Your message wasn&#39;t delivered to info@outkast.io because t
+2026-04-11 22:43:42,050 [outreach.reply_detector] INFO: Reply detected from contact@datatransmission.co.uk (thread 19d76bc4e87654dc): Address not found Your message wasn&#39;t delivered to contact@datatransmission.
+2026-04-11 22:43:42,052 [outreach.reply_detector] INFO: Reply detected from info@zenonrecords.com (thread 19d55b5a0b56d42f): Hey Robert-Jan, Apologies but somehow i&#39;ve lost the original links you sent 
+2026-04-11 22:43:42,055 [outreach.reply_detector] INFO: Reply detected from info@one-fest.com (thread 19d55bcaec20db7d): Rober-Jan, Thank you for reaching out and sharing the information about your art
+2026-04-11 22:43:42,057 [outreach.reply_detector] INFO: Reply scan complete — 9/273 threads had replies
+2026-04-11 22:43:42,057 [outreach.reply_detector] INFO: Scanning inbox for bounce/delivery-failure messages...
+2026-04-11 22:43:50,172 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Progressive / Melodic House'
+2026-04-11 22:43:50,678 [outreach.gmail] INFO: Sent email to info@abora-recordings.com — message_id=19d7e804c860f435 thread=19d570e6fb8935bc
+2026-04-11 22:43:50,679 [outreach.followup] INFO: Follow-up sent to info@abora-recordings.com — 'Re: Demo Submission — Robert-Jan Mastenbroek | Progressive / Melodic House'
+2026-04-11 22:43:52,692 [outreach.templates] INFO: Generating follow-up for info@betamusicbooking.com...
+2026-04-11 22:43:58,672 [outreach.bounce] INFO: Added confirmed dead address: paul@dubtechnoblog.com
+2026-04-11 22:43:58,675 [outreach.reply_detector] INFO: Marking actual bounce: paul@dubtechnoblog.com (reason: Message not delivered There was a problem delivering your me)
+2026-04-11 22:43:58,679 [outreach.bounce] INFO: Added confirmed dead address: contact@datatransmission.co.uk
+2026-04-11 22:43:58,681 [outreach.reply_detector] INFO: Marking actual bounce: contact@datatransmission.co.uk (reason: Address not found Your message wasn&#39;t delivered to conta)
+2026-04-11 22:43:58,685 [outreach.bounce] INFO: Added confirmed dead address: info@outkast.io
+2026-04-11 22:43:58,687 [outreach.reply_detector] INFO: Marking actual bounce: info@outkast.io (reason: Address not found Your message wasn&#39;t delivered to info@)
+2026-04-11 22:43:58,690 [outreach.bounce] INFO: Added confirmed dead address: music@sol-festival.com
+2026-04-11 22:43:58,693 [outreach.bounce] INFO: Added confirmed dead address: unknowntimeline.podcast@gmail.com
+2026-04-11 22:43:58,695 [outreach.bounce] INFO: Added confirmed dead address: technocolor.podcast@gmail.com
+2026-04-11 22:43:58,697 [outreach.bounce] INFO: Added confirmed dead address: into.the.abyss.podcast@gmail.com
+2026-04-11 22:43:58,699 [outreach.bounce] INFO: Added confirmed dead address: affine.darkscience@gmail.com
+2026-04-11 22:43:58,701 [outreach.bounce] INFO: Added confirmed dead address: trevepodcast@gmail.com
+2026-04-11 22:43:58,704 [outreach.bounce] INFO: Added confirmed dead address: anodynics@gmail.com
+2026-04-11 22:43:58,706 [outreach.bounce] INFO: Added confirmed dead address: submissions@obscuresound.com
+2026-04-11 22:43:58,708 [outreach.bounce] INFO: Added confirmed dead address: minimalslashambient@gmail.com
+2026-04-11 22:43:58,709 [outreach.bounce] INFO: Added confirmed dead address: lofimb@gmail.com
+2026-04-11 22:43:58,711 [outreach.bounce] INFO: Added confirmed dead address: info@earmilk.com
+2026-04-11 22:43:58,713 [outreach.bounce] INFO: Added confirmed dead address: info@obscuresound.com
+2026-04-11 22:43:58,715 [outreach.bounce] INFO: Added confirmed dead address: music@fluxmusic.eu
+2026-04-11 22:43:58,717 [outreach.bounce] INFO: Added confirmed dead address: bob@businesssideofmusic.com
+2026-04-11 22:43:58,719 [outreach.bounce] INFO: Added confirmed dead address: info@youredm.com
+2026-04-11 22:43:58,720 [outreach.bounce] INFO: Added confirmed dead address: cam@christianmusicmarketing.com
+2026-04-11 22:43:58,722 [outreach.bounce] INFO: Added confirmed dead address: jesse@jessedeanrivero.com
+2026-04-11 22:43:58,723 [outreach.bounce] INFO: Added confirmed dead address: abstractworlds@psytrance.com
+2026-04-11 22:43:58,725 [outreach.bounce] INFO: Added confirmed dead address: affinerecords@gmail.com
+2026-04-11 22:43:58,727 [outreach.bounce] INFO: Added confirmed dead address: virescence.recs@gmail.com
+2026-04-11 22:43:58,729 [outreach.bounce] INFO: Added confirmed dead address: midnightsessions.dj@gmail.com
+2026-04-11 22:43:58,730 [outreach.bounce] INFO: Added confirmed dead address: 4x4pakt@gmail.com
+2026-04-11 22:43:58,731 [outreach.bounce] INFO: Added confirmed dead address: treve.podcast@gmail.com
+2026-04-11 22:43:58,733 [outreach.bounce] INFO: Added confirmed dead address: contact@iedm.com
+2026-04-11 22:43:58,735 [outreach.bounce] INFO: Added confirmed dead address: psytrancetop10@gmail.com
+2026-04-11 22:43:58,737 [outreach.bounce] INFO: Added confirmed dead address: psytrancetop10@gmail.com
+2026-04-11 22:43:58,738 [outreach.bounce] INFO: Added confirmed dead address: info@spintwist.com
+2026-04-11 22:43:58,740 [outreach.bounce] INFO: Added confirmed dead address: info@spintwist.com
+2026-04-11 22:43:58,742 [outreach.bounce] INFO: Added confirmed dead address: info@digitalomproductions.in
+2026-04-11 22:43:58,743 [outreach.bounce] INFO: Added confirmed dead address: info@digitalomproductions.in
+2026-04-11 22:43:58,744 [outreach.bounce] INFO: Added confirmed dead address: ethno@outtallectuals.com
+2026-04-11 22:43:58,746 [outreach.bounce] INFO: Added confirmed dead address: obscuresoundsubmit@gmail.com
+2026-04-11 22:43:58,747 [outreach.bounce] INFO: Added confirmed dead address: submissions@electronica.org.uk
+2026-04-11 22:43:58,748 [outreach.bounce] INFO: Added confirmed dead address: info.beathepodcast@gmail.com
+2026-04-11 22:43:58,750 [outreach.bounce] INFO: Added confirmed dead address: promo@knightsoftheturntable.co.uk
+2026-04-11 22:43:58,752 [outreach.bounce] INFO: Added confirmed dead address: austin@millionaire-interviews.com
+2026-04-11 22:43:58,753 [outreach.bounce] INFO: Added confirmed dead address: musique@pan-african-music.com
+2026-04-11 22:43:58,755 [outreach.bounce] INFO: Added confirmed dead address: booking@ozora.hu
+2026-04-11 22:43:58,756 [outreach.bounce] INFO: Added confirmed dead address: booking@psy-fi.nl
+2026-04-11 22:43:58,758 [outreach.bounce] INFO: Added confirmed dead address: editorial@traxsource.com
+2026-04-11 22:43:58,759 [outreach.bounce] INFO: Added confirmed dead address: info@inmyhouse65.com
+2026-04-11 22:43:58,761 [outreach.bounce] INFO: Added confirmed dead address: business@edmprod.com
+2026-04-11 22:43:58,763 [outreach.bounce] INFO: Added confirmed dead address: info@tldmusic.com
+2026-04-11 22:43:58,764 [outreach.bounce] INFO: Added confirmed dead address: djmarcuswade@gospelmeetsdance.com
+2026-04-11 22:43:58,765 [outreach.bounce] INFO: Added confirmed dead address: movement@transformradio.com
+2026-04-11 22:43:58,767 [outreach.bounce] INFO: Added confirmed dead address: submissions@beatstorapon.com
+2026-04-11 22:43:58,768 [outreach.bounce] INFO: Added confirmed dead address: contact@edmprod.com
+2026-04-11 22:43:58,769 [outreach.bounce] INFO: Added confirmed dead address: submissions@colonizemedia.com
+2026-04-11 22:43:58,770 [outreach.bounce] INFO: Added confirmed dead address: press@ccmmagazine.com
+2026-04-11 22:43:58,771 [outreach.bounce] INFO: Added confirmed dead address: music@mixmag.net
+2026-04-11 22:43:58,772 [outreach.bounce] INFO: Added confirmed dead address: info@god.radio
+2026-04-11 22:43:58,773 [outreach.bounce] INFO: Added confirmed dead address: submissions@stereofox.com
+2026-04-11 22:43:58,774 [outreach.bounce] INFO: Added confirmed dead address: hello@deeptechmagazine.com
+2026-04-11 22:43:58,776 [outreach.bounce] INFO: Added confirmed dead address: info@groover.co
+2026-04-11 22:43:58,777 [outreach.bounce] INFO: Added confirmed dead address: demo@alchemyrecords.com
+2026-04-11 22:43:58,779 [outreach.bounce] INFO: Added confirmed dead address: info@lifest.com
+2026-04-11 22:43:58,780 [outreach.bounce] INFO: Added confirmed dead address: press@axiomlabelgroup.com
+2026-04-11 22:43:58,782 [outreach.bounce] INFO: Added confirmed dead address: contact@ozorafest.hu
+2026-04-11 22:43:58,784 [outreach.bounce] INFO: Added confirmed dead address: deepershades@mail.com
+2026-04-11 22:43:58,785 [outreach.bounce] INFO: Added confirmed dead address: contact@nanostate.family
+2026-04-11 22:43:58,787 [outreach.bounce] INFO: Added confirmed dead address: demo@blackmirrorrecordings.com
+2026-04-11 22:43:58,788 [outreach.bounce] INFO: Added confirmed dead address: info@widerbergmusic.com
+2026-04-11 22:43:58,789 [outreach.bounce] INFO: Added confirmed dead address: demo@innervisions.net
+2026-04-11 22:43:58,792 [outreach.bounce] INFO: Added confirmed dead address: demos@cercle.io
+2026-04-11 22:43:58,793 [outreach.bounce] INFO: Added confirmed dead address: music@alldayidream.com
+2026-04-11 22:43:58,794 [outreach.reply_detector] WARNING: Domain obscuresound.com has 2 bounces — blacklisting entire domain
+2026-04-11 22:43:58,794 [outreach.bounce] INFO: Added confirmed dead domain: obscuresound.com
+2026-04-11 22:43:58,794 [outreach.reply_detector] WARNING: Domain spintwist.com has 2 bounces — blacklisting entire domain
+2026-04-11 22:43:58,795 [outreach.bounce] INFO: Added confirmed dead domain: spintwist.com
+2026-04-11 22:43:58,795 [outreach.reply_detector] WARNING: Domain digitalomproductions.in has 2 bounces — blacklisting entire domain
+2026-04-11 22:43:58,795 [outreach.bounce] INFO: Added confirmed dead domain: digitalomproductions.in
+2026-04-11 22:43:58,795 [outreach.reply_detector] WARNING: Domain edmprod.com has 2 bounces — blacklisting entire domain
+2026-04-11 22:43:58,796 [outreach.bounce] INFO: Added confirmed dead domain: edmprod.com
+2026-04-11 22:43:58,796 [outreach.reply_detector] INFO: Bounce scan complete — 3 actual bounces recorded
+2026-04-11 22:43:58,797 [outreach.agent] INFO: Inbox check: {'threads_scanned': 273, 'replies_found': 9, 'bounces_found': 3, 'classified': 0, 'failed': 0}
+2026-04-11 22:43:58,803 [outreach.followup] INFO: Follow-up queue: 10 contacts eligible (checked 146 candidates)
+2026-04-11 22:43:58,803 [outreach.templates] INFO: Generating follow-up for info@betamusicbooking.com...
+2026-04-11 22:43:58,803 [outreach.templates] INFO: Using Claude CLI: /Users/motomoto/Library/Application Support/Claude/claude-code/2.1.92/claude.app/Contents/MacOS/claude
+2026-04-11 22:44:09,786 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Psytrance / Ethnic Tribal Techno'
+2026-04-11 22:44:10,109 [outreach.gmail] INFO: Sent email to info@betamusicbooking.com — message_id=19d7e8099ef1b19d thread=19d570fc963bab50
+2026-04-11 22:44:10,109 [outreach.followup] INFO: Follow-up sent to info@betamusicbooking.com — 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Psytrance / Ethnic Tribal Techno'
+2026-04-11 22:44:12,126 [outreach.templates] INFO: Generating follow-up for info@oasistenerife.com...
+2026-04-11 22:44:18,386 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Psytrance / Ethnic Tribal Techno'
+2026-04-11 22:44:18,915 [outreach.gmail] INFO: Sent email to info@betamusicbooking.com — message_id=19d7e80ba3b1caf6 thread=19d570fc963bab50
+2026-04-11 22:44:18,915 [outreach.followup] INFO: Follow-up sent to info@betamusicbooking.com — 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Psytrance / Ethnic Tribal Techno'
+2026-04-11 22:44:20,922 [outreach.templates] INFO: Generating follow-up for info@oasistenerife.com...
+2026-04-11 22:44:36,636 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Melodic House & Techno'
+2026-04-11 22:44:37,218 [outreach.gmail] INFO: Sent email to info@oasistenerife.com — message_id=19d7e8100432eaee thread=19d5711219059761
+2026-04-11 22:44:37,219 [outreach.followup] INFO: Follow-up sent to info@oasistenerife.com — 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Melodic House & Techno'
+2026-04-11 22:44:37,865 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Melodic House & Techno'
+2026-04-11 22:44:38,319 [outreach.gmail] INFO: Sent email to info@oasistenerife.com — message_id=19d7e810654d73ea thread=19d5711219059761
+2026-04-11 22:44:38,319 [outreach.followup] INFO: Follow-up sent to info@oasistenerife.com — 'Re: Artist Booking Inquiry — Robert-Jan Mastenbroek | Melodic House & Techno'
+2026-04-11 22:44:39,228 [outreach.templates] INFO: Generating follow-up for fictionrecordings@gmail.com...
+2026-04-11 22:44:40,326 [outreach.templates] INFO: Generating follow-up for fictionrecordings@gmail.com...
+2026-04-11 22:44:59,015 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Psytrance'
+2026-04-11 22:44:59,551 [outreach.gmail] INFO: Sent email to fictionrecordings@gmail.com — message_id=19d7e81587c6d678 thread=19d571278ddec1df
+2026-04-11 22:44:59,552 [outreach.followup] INFO: Follow-up sent to fictionrecordings@gmail.com — 'Re: Demo Submission — Robert-Jan Mastenbroek | Psytrance'
+2026-04-11 22:45:01,563 [outreach.templates] INFO: Generating follow-up for info@tribalmusicgroup.com...
+2026-04-11 22:45:02,951 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Psytrance'
+2026-04-11 22:45:03,444 [outreach.gmail] INFO: Sent email to fictionrecordings@gmail.com — message_id=19d7e816877fe108 thread=19d571278ddec1df
+2026-04-11 22:45:03,445 [outreach.followup] INFO: Follow-up sent to fictionrecordings@gmail.com — 'Re: Demo Submission — Robert-Jan Mastenbroek | Psytrance'
+2026-04-11 22:45:05,456 [outreach.templates] INFO: Generating follow-up for info@tribalmusicgroup.com...
+2026-04-11 22:45:15,983 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Ethnic Tribal Techno'
+2026-04-11 22:45:16,548 [outreach.gmail] INFO: Sent email to info@tribalmusicgroup.com — message_id=19d7e819b92135c7 thread=19d5713d873c5817
+2026-04-11 22:45:16,548 [outreach.followup] INFO: Follow-up sent to info@tribalmusicgroup.com — 'Re: Demo Submission — Robert-Jan Mastenbroek | Ethnic Tribal Techno'
+2026-04-11 22:45:18,561 [outreach.templates] INFO: Generating follow-up for iparic70@gmail.com...
+2026-04-11 22:45:21,379 [outreach.followup] ERROR: Failed to generate follow-up for info@tribalmusicgroup.com: Expecting ',' delimiter: line 3 column 90 (char 175)
+2026-04-11 22:45:23,385 [outreach.templates] INFO: Generating follow-up for iparic70@gmail.com...
+2026-04-11 22:45:36,367 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Goa / Psytrance'
+2026-04-11 22:45:36,833 [outreach.gmail] INFO: Sent email to iparic70@gmail.com — message_id=19d7e81eb7bff387 thread=19d57157b7c0adfe
+2026-04-11 22:45:36,833 [outreach.followup] INFO: Follow-up sent to iparic70@gmail.com — 'Re: Demo Submission — Robert-Jan Mastenbroek | Goa / Psytrance'
+2026-04-11 22:45:38,848 [outreach.templates] INFO: Generating follow-up for info@suntriprecords.com...
+2026-04-11 22:45:39,328 [outreach.templates] INFO: Generated follow-up — subject: 'Re: Demo Submission — Robert-Jan Mastenbroek | Goa / Psytrance'
+2026-04-11 22:45:39,785 [outreach.gmail] INFO: Sent email to iparic70@gmail.com — message_id=19d7e81f7462d58c thread=19d57157b7c0adfe
+2026-04-11 22:45:39,785 [outreach.followup] INFO: Follow-up sent to iparic70@gmail.com — 'Re: Demo Submission — Robert-Jan Mastenbroek | Goa / Psytrance'
+2026-04-11 22:45:41,791 [outreach.templates] INFO: Generating follow-up for info@suntriprecords.com...
+2026-04-11 22:45:57,250 [outreach.templates] INFO: Generated follow-up — subject: 'following up'
+2026-04-11 22:45:57,820 [outreach.gmail] INFO: Sent email to info@suntriprecords.com — message_id=19d7e823d6f704d5 thread=19d7e823d6f704d5
+2026-04-11 22:45:57,820 [outreach.followup] INFO: Follow-up sent to info@suntriprecords.com — 'following up'
+2026-04-11 22:45:59,832 [outreach.templates] INFO: Generating follow-up for info@geomagnetic.tv...
+2026-04-11 22:46:00,609 [outreach.templates] INFO: Generated follow-up — subject: 'following up'
+2026-04-11 22:46:01,097 [outreach.gmail] INFO: Sent email to info@suntriprecords.com — message_id=19d7e8249eb4b7ff thread=19d7e8249eb4b7ff
+2026-04-11 22:46:01,097 [outreach.followup] INFO: Follow-up sent to info@suntriprecords.com — 'following up'
+2026-04-11 22:46:03,105 [outreach.templates] INFO: Generating follow-up for info@geomagnetic.tv...
+2026-04-11 22:46:11,560 [outreach.templates] INFO: Generated follow-up — subject: 'following up'
+2026-04-11 22:46:12,003 [outreach.gmail] INFO: Sent email to info@geomagnetic.tv — message_id=19d7e8274114dde7 thread=19d7e8274114dde7
+2026-04-11 22:46:12,003 [outreach.followup] INFO: Follow-up sent to info@geomagnetic.tv — 'following up'
+2026-04-11 22:46:12,731 [outreach.templates] INFO: Generated follow-up — subject: 'following up'
+2026-04-11 22:46:13,181 [outreach.gmail] INFO: Sent email to info@geomagnetic.tv — message_id=19d7e82780a5b860 thread=19d7e82780a5b860
+2026-04-11 22:46:13,181 [outreach.followup] INFO: Follow-up sent to info@geomagnetic.tv — 'following up'
+2026-04-11 22:46:14,016 [outreach.templates] INFO: Generating follow-up for mail@twistedmusic.com...
+2026-04-11 22:46:15,194 [outreach.templates] INFO: Generating follow-up for mail@twistedmusic.com...
+2026-04-11 22:46:23,434 [outreach.templates] INFO: Generated follow-up — subject: 'following up'
+2026-04-11 22:46:23,935 [outreach.gmail] INFO: Sent email to mail@twistedmusic.com — message_id=19d7e82a30b236f2 thread=19d7e82a30b236f2
+2026-04-11 22:46:23,936 [outreach.followup] INFO: Follow-up sent to mail@twistedmusic.com — 'following up'
+2026-04-11 22:46:25,949 [outreach.templates] INFO: Generating follow-up for info@psyexperience-festival.com...
+2026-04-11 22:46:34,733 [outreach.templates] INFO: Generated follow-up — subject: 'following up'
+2026-04-11 22:46:35,199 [outreach.gmail] INFO: Sent email to info@psyexperience-festival.com — message_id=19d7e82cf18d9215 thread=19d7e82cf18d9215
+2026-04-11 22:46:35,200 [outreach.followup] INFO: Follow-up sent to info@psyexperience-festival.com — 'following up'
+2026-04-11 22:46:37,215 [outreach.followup] INFO: Follow-up batch complete — 1st: 9 sent / 1 failed | 2nd: 0 sent / 0 failed
+2026-04-11 22:46:37,226 [outreach.agent] INFO: Follow-ups: {'followups_sent': 9, 'followups_failed': 1, 'followup2_sent': 0, 'followup2_failed': 0}
+2026-04-11 22:46:37,231 [outreach.scheduler] INFO: wait_for_interval: elapsed=0.0s needed=106s will_sleep=True
+2026-04-11 22:46:37,232 [outreach.scheduler] INFO: Rate limit: waiting 106 seconds before next send...
+2026-04-11 22:46:42,329 [outreach.templates] INFO: Generated follow-up — subject: 'following up'
+2026-04-11 22:46:42,879 [outreach.gmail] INFO: Sent email to mail@twistedmusic.com — message_id=19d7e82ece04f646 thread=19d7e82ece04f646
+2026-04-11 22:46:42,879 [outreach.followup] INFO: Follow-up sent to mail@twistedmusic.com — 'following up'
+2026-04-11 22:46:44,889 [outreach.templates] INFO: Generating follow-up for info@psyexperience-festival.com...
+2026-04-11 22:47:17,986 [outreach.templates] INFO: Generated follow-up — subject: 'Following up'
+2026-04-11 22:47:18,422 [outreach.gmail] INFO: Sent email to info@psyexperience-festival.com — message_id=19d7e837754a6205 thread=19d7e837754a6205
+2026-04-11 22:47:18,423 [outreach.followup] INFO: Follow-up sent to info@psyexperience-festival.com — 'Following up'
+2026-04-11 22:47:20,433 [outreach.templates] INFO: Generating follow-up for kbinfo@kingdombound.org...
+2026-04-11 22:47:30,306 [outreach.templates] INFO: Generated follow-up — subject: 'following up'
+2026-04-11 22:47:30,739 [outreach.gmail] INFO: Sent email to kbinfo@kingdombound.org — message_id=19d7e83a6468d934 thread=19d7e83a6468d934
+2026-04-11 22:47:30,739 [outreach.followup] INFO: Follow-up sent to kbinfo@kingdombound.org — 'following up'
+2026-04-11 22:47:30,746 [outreach.followup] INFO: Follow-up batch complete — 1st: 10 sent / 0 failed | 2nd: 0 sent / 0 failed
+2026-04-11 22:47:30,761 [outreach.agent] INFO: Follow-ups: {'followups_sent': 10, 'followups_failed': 0, 'followup2_sent': 0, 'followup2_failed': 0}
+2026-04-11 22:47:30,769 [outreach.scheduler] INFO: wait_for_interval: elapsed=0.0s needed=71s will_sleep=True
+2026-04-11 22:47:30,770 [outreach.scheduler] INFO: Rate limit: waiting 71 seconds before next send...
+2026-04-11 22:48:23,249 [outreach.agent] INFO: Send window closed: Minimum interval not met — wait 7s
+2026-04-11 22:48:23,251 [outreach.agent] INFO: Initial sends: {'sent': 0, 'failed': 0, 'skipped': 0}
+2026-04-11 22:48:23,254 [outreach.agent] INFO: Cycle complete — DB: {'bounced': 131, 'closed': 16, 'followup_sent': 43, 'queued': 1, 'responded': 22, 'sent': 257, 'skip': 87, 'verified': 198, 'won': 1} | Today: 19 sent | Reply rate: 6.8%
+2026-04-11 22:48:41,783 [outreach.templates] INFO: Generating email for hola@binaural.es (curator)...
+2026-04-11 22:49:38,469 [outreach.templates] INFO: Generated — subject: 'renamed for your list'
+2026-04-11 22:49:38,932 [outreach.gmail] INFO: Sent email to hola@binaural.es — message_id=19d7e859c8bd8dae thread=19d7e859c8bd8dae
+2026-04-11 22:49:38,932 [outreach.agent] INFO: Sent to hola@binaural.es — 'renamed for your list'
+2026-04-11 22:49:38,950 [outreach.agent] INFO: Post-send delay: sleeping 107s before next send...
+2026-04-11 22:51:25,967 [outreach.scheduler] INFO: wait_for_interval: elapsed=107.0s needed=105s will_sleep=False
+2026-04-11 22:51:25,981 [outreach.templates] INFO: Generating email for crescent.textures@protonmail.com (podcast)...
+2026-04-11 22:52:10,156 [outreach.templates] INFO: Generated — subject: 'crescent textures × renamed'
+2026-04-11 22:52:10,616 [outreach.gmail] INFO: Sent email to crescent.textures@protonmail.com — message_id=19d7e87ed7eab146 thread=19d7e87ed7eab146
+2026-04-11 22:52:10,617 [outreach.agent] INFO: Sent to crescent.textures@protonmail.com — 'crescent textures × renamed'
+2026-04-11 22:52:10,628 [outreach.agent] INFO: Post-send delay: sleeping 96s before next send...
+2026-04-11 22:53:46,613 [outreach.scheduler] INFO: wait_for_interval: elapsed=96.0s needed=75s will_sleep=False
+2026-04-11 22:53:46,626 [outreach.templates] INFO: Generating email for thevortex.podcast@protonmail.com (podcast)...
+2026-04-11 22:54:45,600 [outreach.templates] INFO: Generated — subject: 'chanting through the collapse'
+2026-04-11 22:54:46,131 [outreach.gmail] INFO: Sent email to thevortex.podcast@protonmail.com — message_id=19d7e8a4d9903af4 thread=19d7e8a4d9903af4
+2026-04-11 22:54:46,131 [outreach.agent] INFO: Sent to thevortex.podcast@protonmail.com — 'chanting through the collapse'
+2026-04-11 22:54:46,140 [outreach.agent] INFO: Post-send delay: sleeping 80s before next send...
+2026-04-11 22:56:06,154 [outreach.scheduler] INFO: wait_for_interval: elapsed=80.0s needed=112s will_sleep=True
+2026-04-11 22:56:06,155 [outreach.scheduler] INFO: Rate limit: waiting 32 seconds before next send...
+2026-04-11 22:56:38,164 [outreach.templates] INFO: Generating email for introspectiva@protonmail.com (podcast)...
+2026-04-11 22:57:42,277 [outreach.templates] INFO: Generated — subject: 'dark, hypnotic, faith-rooted'
+2026-04-11 22:57:42,761 [outreach.gmail] INFO: Sent email to introspectiva@protonmail.com — message_id=19d7e8cff2fb08ae thread=19d7e8cff2fb08ae
+2026-04-11 22:57:42,761 [outreach.agent] INFO: Sent to introspectiva@protonmail.com — 'dark, hypnotic, faith-rooted'
+2026-04-11 22:57:42,774 [outreach.agent] INFO: Post-send delay: sleeping 79s before next send...
+2026-04-11 22:59:01,789 [outreach.scheduler] INFO: wait_for_interval: elapsed=79.0s needed=84s will_sleep=True
+2026-04-11 22:59:01,790 [outreach.scheduler] INFO: Rate limit: waiting 5 seconds before next send...
+2026-04-11 22:59:06,786 [outreach.templates] INFO: Generating email for shark.promomusic@gmail.com (podcast)...
+2026-04-11 23:00:30,084 [outreach.templates] INFO: Generated — subject: 'halleluyah: dutch, lost €6m'
+2026-04-11 23:00:30,394 [outreach.gmail] INFO: Sent email to shark.promomusic@gmail.com — message_id=19d7e8f8cd85d92e thread=19d7e8f8cd85d92e
+2026-04-11 23:00:30,394 [outreach.agent] INFO: Sent to shark.promomusic@gmail.com — 'halleluyah: dutch, lost €6m'
+2026-04-11 23:00:30,409 [outreach.agent] INFO: Post-send delay: sleeping 104s before next send...
+2026-04-11 23:02:14,424 [outreach.scheduler] INFO: wait_for_interval: elapsed=104.0s needed=110s will_sleep=True
+2026-04-11 23:02:14,426 [outreach.scheduler] INFO: Rate limit: waiting 6 seconds before next send...
+2026-04-11 23:02:20,419 [outreach.agent] INFO: Send window closed: BOUNCE RATE TOO HIGH: 2/10 = 20.0% over last 2d (limit 15%) — sends paused
+2026-04-11 23:02:20,420 [outreach.agent] INFO: Initial sends: {'sent': 5, 'failed': 0, 'skipped': 0}
+2026-04-11 23:02:20,421 [outreach.agent] INFO: Cycle complete — DB: {'bounced': 131, 'closed': 16, 'followup_sent': 43, 'queued': 1, 'responded': 22, 'sent': 262, 'skip': 87, 'verified': 193, 'won': 1} | Today: 24 sent | Reply rate: 6.7%
+2026-04-11 23:06:02,467 [outreach.agent] INFO: ============================================================
+2026-04-11 23:06:02,468 [outreach.agent] INFO: RJM OUTREACH AGENT — CYCLE START  [draft_mode=False]
+2026-04-11 23:06:02,468 [outreach.agent] INFO: ============================================================
+2026-04-11 23:06:02,469 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-11 23:06:02,473 [outreach.agent] INFO: Scheduler: BOUNCE RATE TOO HIGH: 2/10 = 20.0% over last 2d (limit 15%) — sends paused
+2026-04-11 23:06:02,474 [outreach.agent] INFO: No new contacts to verify
+2026-04-11 23:06:02,481 [outreach.reply_detector] INFO: Scanning 269 open threads for replies...
+2026-04-11 23:06:02,483 [googleapiclient.discovery_cache] INFO: file_cache is only supported with oauth2client<4.0.0
+2026-04-11 23:06:02,487 [outreach.gmail] INFO: Gmail API authenticated as motomotosings@gmail.com
+2026-04-11 23:07:00,836 [outreach.reply_detector] INFO: Reply detected from crescent.textures@protonmail.com (thread 19d7e87ed7eab146): Address not found Your message wasn&#39;t delivered to crescent.textures@protonm
+2026-04-11 23:07:00,846 [outreach.reply_detector] INFO: Reply detected from thevortex.podcast@protonmail.com (thread 19d7e8a4d9903af4): Address not found Your message wasn&#39;t delivered to thevortex.podcast@protonm
+2026-04-11 23:07:00,852 [outreach.reply_detector] INFO: Reply detected from introspectiva@protonmail.com (thread 19d7e8cff2fb08ae): Address not found Your message wasn&#39;t delivered to introspectiva@protonmail.
+2026-04-11 23:07:00,859 [outreach.reply_detector] INFO: Reply scan complete — 3/269 threads had replies
+2026-04-11 23:07:00,862 [outreach.reply_detector] INFO: Scanning inbox for bounce/delivery-failure messages...
+2026-04-11 23:07:17,214 [outreach.bounce] INFO: Added confirmed dead address: introspectiva@protonmail.com
+2026-04-11 23:07:17,217 [outreach.reply_detector] INFO: Marking actual bounce: introspectiva@protonmail.com (reason: Address not found Your message wasn&#39;t delivered to intro)
+2026-04-11 23:07:17,221 [outreach.bounce] INFO: Added confirmed dead address: thevortex.podcast@protonmail.com
+2026-04-11 23:07:17,223 [outreach.reply_detector] INFO: Marking actual bounce: thevortex.podcast@protonmail.com (reason: Address not found Your message wasn&#39;t delivered to thevo)
+2026-04-11 23:07:17,226 [outreach.bounce] INFO: Added confirmed dead address: crescent.textures@protonmail.com
+2026-04-11 23:07:17,227 [outreach.reply_detector] INFO: Marking actual bounce: crescent.textures@protonmail.com (reason: Address not found Your message wasn&#39;t delivered to cresc)
+2026-04-11 23:07:17,230 [outreach.bounce] INFO: Added confirmed dead address: paul@dubtechnoblog.com
+2026-04-11 23:07:17,232 [outreach.bounce] INFO: Added confirmed dead address: contact@datatransmission.co.uk
+2026-04-11 23:07:17,235 [outreach.bounce] INFO: Added confirmed dead address: info@outkast.io
+2026-04-11 23:07:17,237 [outreach.bounce] INFO: Added confirmed dead address: music@sol-festival.com
+2026-04-11 23:07:17,239 [outreach.bounce] INFO: Added confirmed dead address: unknowntimeline.podcast@gmail.com
+2026-04-11 23:07:17,241 [outreach.bounce] INFO: Added confirmed dead address: technocolor.podcast@gmail.com
+2026-04-11 23:07:17,244 [outreach.bounce] INFO: Added confirmed dead address: into.the.abyss.podcast@gmail.com
+2026-04-11 23:07:17,245 [outreach.bounce] INFO: Added confirmed dead address: affine.darkscience@gmail.com
+2026-04-11 23:07:17,247 [outreach.bounce] INFO: Added confirmed dead address: trevepodcast@gmail.com
+2026-04-11 23:07:17,249 [outreach.bounce] INFO: Added confirmed dead address: anodynics@gmail.com
+2026-04-11 23:07:17,251 [outreach.bounce] INFO: Added confirmed dead address: submissions@obscuresound.com
+2026-04-11 23:07:17,252 [outreach.bounce] INFO: Added confirmed dead address: minimalslashambient@gmail.com
+2026-04-11 23:07:17,254 [outreach.bounce] INFO: Added confirmed dead address: lofimb@gmail.com
+2026-04-11 23:07:17,256 [outreach.bounce] INFO: Added confirmed dead address: info@earmilk.com
+2026-04-11 23:07:17,257 [outreach.bounce] INFO: Added confirmed dead address: info@obscuresound.com
+2026-04-11 23:07:17,259 [outreach.bounce] INFO: Added confirmed dead address: music@fluxmusic.eu
+2026-04-11 23:07:17,260 [outreach.bounce] INFO: Added confirmed dead address: bob@businesssideofmusic.com
+2026-04-11 23:07:17,262 [outreach.bounce] INFO: Added confirmed dead address: info@youredm.com
+2026-04-11 23:07:17,263 [outreach.bounce] INFO: Added confirmed dead address: cam@christianmusicmarketing.com
+2026-04-11 23:07:17,264 [outreach.bounce] INFO: Added confirmed dead address: jesse@jessedeanrivero.com
+2026-04-11 23:07:17,266 [outreach.bounce] INFO: Added confirmed dead address: abstractworlds@psytrance.com
+2026-04-11 23:07:17,268 [outreach.bounce] INFO: Added confirmed dead address: affinerecords@gmail.com
+2026-04-11 23:07:17,269 [outreach.bounce] INFO: Added confirmed dead address: virescence.recs@gmail.com
+2026-04-11 23:07:17,270 [outreach.bounce] INFO: Added confirmed dead address: midnightsessions.dj@gmail.com
+2026-04-11 23:07:17,272 [outreach.bounce] INFO: Added confirmed dead address: 4x4pakt@gmail.com
+2026-04-11 23:07:17,273 [outreach.bounce] INFO: Added confirmed dead address: treve.podcast@gmail.com
+2026-04-11 23:07:17,274 [outreach.bounce] INFO: Added confirmed dead address: contact@iedm.com
+2026-04-11 23:07:17,275 [outreach.bounce] INFO: Added confirmed dead address: psytrancetop10@gmail.com
+2026-04-11 23:07:17,276 [outreach.bounce] INFO: Added confirmed dead address: psytrancetop10@gmail.com
+2026-04-11 23:07:17,277 [outreach.bounce] INFO: Added confirmed dead address: info@spintwist.com
+2026-04-11 23:07:17,279 [outreach.bounce] INFO: Added confirmed dead address: info@spintwist.com
+2026-04-11 23:07:17,280 [outreach.bounce] INFO: Added confirmed dead address: info@digitalomproductions.in
+2026-04-11 23:07:17,281 [outreach.bounce] INFO: Added confirmed dead address: info@digitalomproductions.in
+2026-04-11 23:07:17,282 [outreach.bounce] INFO: Added confirmed dead address: ethno@outtallectuals.com
+2026-04-11 23:07:17,284 [outreach.bounce] INFO: Added confirmed dead address: obscuresoundsubmit@gmail.com
+2026-04-11 23:07:17,285 [outreach.bounce] INFO: Added confirmed dead address: submissions@electronica.org.uk
+2026-04-11 23:07:17,286 [outreach.bounce] INFO: Added confirmed dead address: info.beathepodcast@gmail.com
+2026-04-11 23:07:17,287 [outreach.bounce] INFO: Added confirmed dead address: promo@knightsoftheturntable.co.uk
+2026-04-11 23:07:17,288 [outreach.bounce] INFO: Added confirmed dead address: austin@millionaire-interviews.com
+2026-04-11 23:07:17,289 [outreach.bounce] INFO: Added confirmed dead address: musique@pan-african-music.com
+2026-04-11 23:07:17,290 [outreach.bounce] INFO: Added confirmed dead address: booking@ozora.hu
+2026-04-11 23:07:17,292 [outreach.bounce] INFO: Added confirmed dead address: booking@psy-fi.nl
+2026-04-11 23:07:17,293 [outreach.bounce] INFO: Added confirmed dead address: editorial@traxsource.com
+2026-04-11 23:07:17,294 [outreach.bounce] INFO: Added confirmed dead address: info@inmyhouse65.com
+2026-04-11 23:07:17,295 [outreach.bounce] INFO: Added confirmed dead address: business@edmprod.com
+2026-04-11 23:07:17,296 [outreach.bounce] INFO: Added confirmed dead address: info@tldmusic.com
+2026-04-11 23:07:17,297 [outreach.bounce] INFO: Added confirmed dead address: djmarcuswade@gospelmeetsdance.com
+2026-04-11 23:07:17,298 [outreach.bounce] INFO: Added confirmed dead address: movement@transformradio.com
+2026-04-11 23:07:17,300 [outreach.bounce] INFO: Added confirmed dead address: submissions@beatstorapon.com
+2026-04-11 23:07:17,301 [outreach.bounce] INFO: Added confirmed dead address: contact@edmprod.com
+2026-04-11 23:07:17,302 [outreach.bounce] INFO: Added confirmed dead address: submissions@colonizemedia.com
+2026-04-11 23:07:17,303 [outreach.bounce] INFO: Added confirmed dead address: press@ccmmagazine.com
+2026-04-11 23:07:17,304 [outreach.bounce] INFO: Added confirmed dead address: music@mixmag.net
+2026-04-11 23:07:17,305 [outreach.bounce] INFO: Added confirmed dead address: info@god.radio
+2026-04-11 23:07:17,307 [outreach.bounce] INFO: Added confirmed dead address: submissions@stereofox.com
+2026-04-11 23:07:17,308 [outreach.bounce] INFO: Added confirmed dead address: hello@deeptechmagazine.com
+2026-04-11 23:07:17,309 [outreach.bounce] INFO: Added confirmed dead address: info@groover.co
+2026-04-11 23:07:17,310 [outreach.bounce] INFO: Added confirmed dead address: demo@alchemyrecords.com
+2026-04-11 23:07:17,312 [outreach.bounce] INFO: Added confirmed dead address: info@lifest.com
+2026-04-11 23:07:17,313 [outreach.bounce] INFO: Added confirmed dead address: press@axiomlabelgroup.com
+2026-04-11 23:07:17,314 [outreach.bounce] INFO: Added confirmed dead address: contact@ozorafest.hu
+2026-04-11 23:07:17,315 [outreach.bounce] INFO: Added confirmed dead address: deepershades@mail.com
+2026-04-11 23:07:17,317 [outreach.bounce] INFO: Added confirmed dead address: contact@nanostate.family
+2026-04-11 23:07:17,318 [outreach.bounce] INFO: Added confirmed dead address: demo@blackmirrorrecordings.com
+2026-04-11 23:07:17,319 [outreach.bounce] INFO: Added confirmed dead address: info@widerbergmusic.com
+2026-04-11 23:07:17,320 [outreach.bounce] INFO: Added confirmed dead address: demo@innervisions.net
+2026-04-11 23:07:17,322 [outreach.bounce] INFO: Added confirmed dead address: demos@cercle.io
+2026-04-11 23:07:17,323 [outreach.bounce] INFO: Added confirmed dead address: music@alldayidream.com
+2026-04-11 23:07:17,323 [outreach.reply_detector] WARNING: Domain obscuresound.com has 2 bounces — blacklisting entire domain
+2026-04-11 23:07:17,324 [outreach.bounce] INFO: Added confirmed dead domain: obscuresound.com
+2026-04-11 23:07:17,324 [outreach.reply_detector] WARNING: Domain spintwist.com has 2 bounces — blacklisting entire domain
+2026-04-11 23:07:17,325 [outreach.bounce] INFO: Added confirmed dead domain: spintwist.com
+2026-04-11 23:07:17,325 [outreach.reply_detector] WARNING: Domain digitalomproductions.in has 2 bounces — blacklisting entire domain
+2026-04-11 23:07:17,325 [outreach.bounce] INFO: Added confirmed dead domain: digitalomproductions.in
+2026-04-11 23:07:17,325 [outreach.reply_detector] WARNING: Domain edmprod.com has 2 bounces — blacklisting entire domain
+2026-04-11 23:07:17,326 [outreach.bounce] INFO: Added confirmed dead domain: edmprod.com
+2026-04-11 23:07:17,326 [outreach.reply_detector] INFO: Bounce scan complete — 3 actual bounces recorded
+2026-04-11 23:07:17,327 [outreach.agent] INFO: Inbox check: {'threads_scanned': 269, 'replies_found': 3, 'bounces_found': 3, 'classified': 0, 'failed': 0}
+2026-04-11 23:07:17,331 [outreach.reply_responder] INFO: Found 12 replies to respond to
+2026-04-11 23:07:17,525 [outreach.reply_responder] INFO: Processing [POSITIVE] podcast@faithdrivenentrepreneur.org — Faith Driven Entrepreneur
+2026-04-11 23:07:17,526 [outreach.templates] INFO: Using Claude CLI: /Users/motomoto/Library/Application Support/Claude/claude-code/2.1.92/claude.app/Contents/MacOS/claude
+2026-04-11 23:07:34,805 [outreach.gmail] INFO: Sent email to podcast@faithdrivenentrepreneur.org — message_id=19d7e9606b288159 thread=19d590f2893e1732
+2026-04-11 23:07:34,808 [outreach.reply_responder] INFO: Reply sent to podcast@faithdrivenentrepreneur.org — message_id=19d7e9606b288159
+2026-04-11 23:07:35,042 [outreach.reply_responder] INFO: Processing [POSITIVE] info@groeivoer.nl — Groeivoer voor Ondernemers
+2026-04-11 23:08:03,921 [outreach.gmail] INFO: Sent email to info@groeivoer.nl — message_id=19d7e96793ffb715 thread=19d5914b51fca76b
+2026-04-11 23:08:03,927 [outreach.reply_responder] INFO: Reply sent to info@groeivoer.nl — message_id=19d7e96793ffb715
+2026-04-11 23:08:04,122 [outreach.reply_responder] INFO: Processing [BOOKING_INTENT] worldscollide123pod@gmail.com — Worlds Collide Podcast
+2026-04-11 23:08:17,281 [outreach.gmail] INFO: Sent email to worldscollide123pod@gmail.com — message_id=19d7e96ad13e0af8 thread=19d59175cf30a40d
+2026-04-11 23:08:17,283 [outreach.reply_responder] INFO: Reply sent to worldscollide123pod@gmail.com — message_id=19d7e96ad13e0af8
+2026-04-11 23:08:17,489 [outreach.reply_responder] INFO: Processing [POSITIVE] info@technoairlines.com — Techno Airlines
+2026-04-11 23:08:42,117 [outreach.gmail] INFO: Sent email to info@technoairlines.com — message_id=19d7e970ef9680d9 thread=19d5d7176ea9e4c4
+2026-04-11 23:08:42,121 [outreach.reply_responder] INFO: Reply sent to info@technoairlines.com — message_id=19d7e970ef9680d9
+2026-04-11 23:08:42,327 [outreach.reply_responder] INFO: Processing [POSITIVE] james@trueunderground.one — True Underground
+2026-04-11 23:09:15,826 [outreach.gmail] INFO: Sent email to james@trueunderground.one — message_id=19d7e979045afc06 thread=19d5de059f707b37
+2026-04-11 23:09:15,830 [outreach.reply_responder] INFO: Reply sent to james@trueunderground.one — message_id=19d7e979045afc06
+2026-04-11 23:09:16,136 [outreach.reply_responder] INFO: Processing [POSITIVE] nathan@worshipmusicrecords.co.uk — Worship Music Recordings
+2026-04-11 23:09:50,097 [outreach.gmail] INFO: Sent email to nathan@worshipmusicrecords.co.uk — message_id=19d7e98164fcdb02 thread=19d5de52469510f3
+2026-04-11 23:09:50,103 [outreach.reply_responder] INFO: Reply sent to nathan@worshipmusicrecords.co.uk — message_id=19d7e98164fcdb02
+2026-04-11 23:09:50,323 [outreach.reply_responder] INFO: Processing [BOOKING_INTENT] gcu@thesanct.com — Getting Close UP\!
+2026-04-11 23:10:07,999 [outreach.gmail] INFO: Sent email to gcu@thesanct.com — message_id=19d7e985c36ccd34 thread=19d67101915b61c7
+2026-04-11 23:10:08,005 [outreach.reply_responder] INFO: Reply sent to gcu@thesanct.com — message_id=19d7e985c36ccd34
+2026-04-11 23:10:08,259 [outreach.reply_responder] INFO: Processing [POSITIVE] neighborn8@musicfestivalspodcast.com — Music Festivals Podcast
+2026-04-11 23:10:27,006 [outreach.gmail] INFO: Sent email to neighborn8@musicfestivalspodcast.com — message_id=19d7e98a7b2b8c05 thread=19d6728ccdc04eb2
+2026-04-11 23:10:27,009 [outreach.reply_responder] INFO: Reply sent to neighborn8@musicfestivalspodcast.com — message_id=19d7e98a7b2b8c05
+2026-04-11 23:10:27,203 [outreach.reply_responder] INFO: Processing [POSITIVE] contact@red-music.com — Redlist
+2026-04-11 23:10:39,759 [outreach.gmail] INFO: Sent email to contact@red-music.com — message_id=19d7e98d883cb5ba thread=19d627fa446c4f0c
+2026-04-11 23:10:39,762 [outreach.reply_responder] INFO: Reply sent to contact@red-music.com — message_id=19d7e98d883cb5ba
+2026-04-11 23:10:39,981 [outreach.reply_responder] INFO: Processing [POSITIVE] contact@electronicgroove.com — Electronic Groove
+2026-04-11 23:10:56,829 [outreach.gmail] INFO: Sent email to contact@electronicgroove.com — message_id=19d7e991d43980b9 thread=19d67de1fab2e91b
+2026-04-11 23:10:56,835 [outreach.reply_responder] INFO: Reply sent to contact@electronicgroove.com — message_id=19d7e991d43980b9
+2026-04-11 23:10:57,046 [outreach.reply_responder] INFO: Processing [POSITIVE] promo@youbeat.it — YouBeat Italy
+2026-04-11 23:11:13,715 [outreach.gmail] INFO: Sent email to promo@youbeat.it — message_id=19d7e995ed5be9ae thread=19d714b731957f78
+2026-04-11 23:11:13,718 [outreach.reply_responder] INFO: Reply sent to promo@youbeat.it — message_id=19d7e995ed5be9ae
+2026-04-11 23:11:14,002 [outreach.reply_responder] INFO: Processing [QUESTION] info@zenonrecords.com — Zenon Records
+2026-04-11 23:11:37,081 [outreach.gmail] INFO: Sent email to info@zenonrecords.com — message_id=19d7e99b8e5b9277 thread=19d55b5a0b56d42f
+2026-04-11 23:11:37,084 [outreach.reply_responder] INFO: Reply sent to info@zenonrecords.com — message_id=19d7e99b8e5b9277
+2026-04-11 23:11:37,084 [outreach.reply_responder] INFO: Reply responder done — sent: 12, skipped: 0, failed: 0
+2026-04-11 23:11:37,084 [outreach.agent] INFO: Auto-replies sent: {'sent': 12, 'skipped': 0, 'failed': 0}
+2026-04-11 23:11:37,088 [outreach.agent] INFO: No sends this cycle — BOUNCE RATE TOO HIGH: 2/10 = 20.0% over last 2d (limit 15%) — sends paused
+2026-04-11 23:11:37,089 [outreach.agent] INFO: Cycle complete — DB: {'bounced': 134, 'closed': 16, 'followup_sent': 43, 'queued': 1, 'responded': 22, 'sent': 259, 'skip': 87, 'verified': 193, 'won': 1} | Today: 24 sent | Reply rate: 6.8%

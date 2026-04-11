@@ -24,7 +24,7 @@ MAJOR_PROVIDERS = {
     "gmail.com","googlemail.com","hotmail.com","outlook.com","live.com","msn.com",
     "yahoo.com","yahoo.co.uk","yahoo.fr","yahoo.de","yahoo.es","mail.com","email.com",
     "gmx.com","gmx.ch","gmx.de","gmx.net","icloud.com","me.com","mac.com",
-    "protonmail.com","pm.me","aol.com","zoho.com","live.co.uk",
+    "aol.com","zoho.com","live.co.uk",
 }
 
 # Seed list — these were hard-confirmed dead before the DB existed.
@@ -35,6 +35,11 @@ _SEED_DEAD_DOMAINS = {
     "widerbergmusic.com",
     "nanostate.family",
     "ozorafest.hu",
+    # Protonmail curator contacts are almost always fake/abandoned throwaway accounts.
+    # 3/3 bounced in practice — block the domain entirely at verification.
+    "protonmail.com",
+    "protonmail.ch",
+    "pm.me",
 }
 _SEED_DEAD_ADDRESSES = {
     "demos@cercle.io",
