@@ -85,6 +85,7 @@ def main():
             claude_bin,
             "--print",
             "--dangerously-skip-permissions",
+            "--model", "claude-haiku-4-5-20251001",
             "-p", skill_content,
         ],
         cwd=str(PROJECT_ROOT),
