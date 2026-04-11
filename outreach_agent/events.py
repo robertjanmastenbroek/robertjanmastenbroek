@@ -27,10 +27,17 @@ log = logging.getLogger("outreach.events")
 def publish(event_type: str, source: str, payload: dict) -> int:
     """Publish an event. Returns new event id."""
     now = datetime.utcnow().isoformat()
+    try:
+        payload_json = json.dumps(payload)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"events.publish: payload for '{event_type}' from '{source}' "
+            f"is not JSON-serialisable: {exc}"
+        ) from exc
     with db.get_conn() as conn:
         cursor = conn.execute(
             "INSERT INTO events (event_type, source, payload, created_at) VALUES (?,?,?,?)",
-            (event_type, source, json.dumps(payload), now),
+            (event_type, source, payload_json, now),
         )
         return cursor.lastrowid
 
@@ -42,6 +49,8 @@ def subscribe(
     limit: int = 50,
 ) -> list[dict]:
     """Return events matching event_types, newest first."""
+    if not event_types:
+        return []
     placeholders = ",".join("?" * len(event_types))
     params: list = list(event_types)
     where_clauses = [f"event_type IN ({placeholders})"]
@@ -51,8 +60,10 @@ def subscribe(
         params.append(since)
 
     if exclude_consumed_by:
-        where_clauses.append("(consumed_by IS NULL OR consumed_by NOT LIKE ?)")
-        params.append(f"%{exclude_consumed_by}%")
+        where_clauses.append(
+            "(consumed_by IS NULL OR consumed_by NOT LIKE ?)"
+        )
+        params.append(f"%,{exclude_consumed_by},%")
 
     where = " AND ".join(where_clauses)
     params.append(limit)
@@ -74,9 +85,11 @@ def mark_consumed(event_id: int, consumer: str) -> None:
         if row is None:
             return
         existing = row["consumed_by"] or ""
-        if consumer in existing.split(","):
-            return
-        updated = f"{existing},{consumer}".lstrip(",")
+        # Use comma-padded format: ",master_agent,rjm_discover," for exact matching
+        padded = existing if existing.startswith(",") else (f",{existing}" if existing else "")
+        if f",{consumer}," in f"{padded},":
+            return  # already consumed
+        updated = f"{padded},{consumer},"
         conn.execute("UPDATE events SET consumed_by=? WHERE id=?", (updated, event_id))
 
 
