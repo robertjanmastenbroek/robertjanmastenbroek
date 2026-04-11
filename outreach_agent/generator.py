@@ -824,7 +824,7 @@ def generate_content(filename: str, clip_lengths: list,
     json_template = ', '.join(
         f'"{l}": {{"tiktok": {{"caption": "", "hashtags": ""}}, '
         f'"instagram": {{"caption": "", "hashtags": ""}}, '
-        f'"youtube": {{"title": "", "description": ""}}}}'
+        f'"youtube": {{"title": "", "description": "", "hashtags": ""}}}}'
         for l in clip_lengths
     )
 
@@ -856,10 +856,12 @@ For EACH clip length, write platform captions:
    - Slightly more considered than TikTok, same Act 2 logic
    - End with: "{spotify_cta} — link in bio"
 
-3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences)
+3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences) + 3-5 hashtags
    - Title patterns: "[Bible ref] at [BPM] BPM — Tenerife" | "Holy Rave Tenerife — [what's unique]"
      | "[Song title] — Sacred Melodic Techno"
    - Description: name the track, mention Sunset Sessions / free events / Tenerife
+   - Hashtags: append at end of description field as space-separated tags (YouTube renders first 3 above title)
+     Mix: 1-2 broad (#techno #shorts) + 2-3 niche (#holyrave #melodictechno #sacredtechno)
 
 CAPTION RULES:
 - Never include a URL. CTAs are text only.
@@ -980,7 +982,7 @@ def generate_run_captions(track_title: str, clips_data: list) -> dict:
     json_template = ", ".join(
         f'"{c["length"]}": {{"tiktok": {{"caption": "", "hashtags": ""}}, '
         f'"instagram": {{"caption": "", "hashtags": ""}}, '
-        f'"youtube": {{"title": "", "description": ""}}}}'
+        f'"youtube": {{"title": "", "description": "", "hashtags": ""}}}}'
         for c in clips_data
     )
 
@@ -1033,9 +1035,11 @@ For EACH clip:
 2. INSTAGRAM REELS caption (max 200 chars) + hashtags (8-12 tags, for first comment)
    - Slightly more considered than TikTok, but still raw — not curated
 
-3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences)
+3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences) + 3-5 hashtags
    - Title patterns: "[Bible ref] at [BPM] BPM" | "Holy Rave Tenerife — [specific]"
                      | "[Song title] — Sacred Melodic Techno"
+   - Hashtags: space-separated, appended in the hashtags field (YouTube shows first 3 above title)
+     Mix: 1-2 broad (#techno #shorts) + 2-3 niche (#holyrave #melodictechno)
 
 Return ONLY valid JSON, no explanation, no markdown:
 
@@ -1065,7 +1069,7 @@ Return ONLY valid JSON, no explanation, no markdown:
             captions[c['length']] = {
                 'tiktok':    data.get('tiktok',    {'caption': '', 'hashtags': ''}),
                 'instagram': data.get('instagram', {'caption': '', 'hashtags': ''}),
-                'youtube':   data.get('youtube',   {'title': '', 'description': ''}),
+                'youtube':   data.get('youtube',   {'title': '', 'description': '', 'hashtags': ''}),
             }
 
         logger.info(f"Run captions generated for track: {track_title}")
@@ -1093,7 +1097,7 @@ def _fallback_run_captions(track_title: str, clips_data: list) -> dict:
         result[c['length']] = {
             'tiktok':    {'caption': cap, 'hashtags': '#holyrave #sunsetsessions #melodictechno'},
             'instagram': {'caption': cap + ' — link in bio', 'hashtags': '#holyrave #sunsetsessions #sacredmusic #melodictechno #tenerife'},
-            'youtube':   {'title': f"Holy Rave — {track_title} | Robert-Jan Mastenbroek", 'description': 'Weekly Sunset Sessions in Tenerife. Free entry, always.'},
+            'youtube':   {'title': f"Holy Rave — {track_title} | Robert-Jan Mastenbroek", 'description': 'Weekly Sunset Sessions in Tenerife. Free entry, always.', 'hashtags': '#holyrave #melodictechno #shorts #techno #tenerife'},
         }
     return result
 
@@ -1159,6 +1163,9 @@ def format_caption_file(filename: str, generated: dict) -> str:
             "",
             "Description:",
             f"   {youtube.get('description', '')}",
+            "",
+            "Hashtags:",
+            f"   {youtube.get('hashtags', '')}",
             "",
             "",
         ]

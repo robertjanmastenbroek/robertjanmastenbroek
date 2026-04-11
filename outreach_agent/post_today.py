@@ -691,7 +691,7 @@ def main():
                     tiktok_caption    = caps.get('tiktok', {}).get('caption', '') + "\n" + caps.get('tiktok', {}).get('hashtags', ''),
                     instagram_caption = caps.get('instagram', {}).get('caption', '') + "\n" + caps.get('instagram', {}).get('hashtags', ''),
                     youtube_title     = caps.get('youtube', {}).get('title', ''),
-                    youtube_desc      = caps.get('youtube', {}).get('description', ''),
+                    youtube_desc      = caps.get('youtube', {}).get('description', '') + "\n\n" + caps.get('youtube', {}).get('hashtags', ''),
                     scheduled_at      = sched,
                 )
                 print(f"    ✓ Queued (TikTok + Reel + Story + YouTube)")
