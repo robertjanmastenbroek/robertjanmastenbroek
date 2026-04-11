@@ -2,7 +2,7 @@
   "goal": "1,000,000 Spotify monthly listeners",
   "artist": "Robert-Jan Mastenbroek",
   "spotify_artist_id": "2Seaafm5k1hAuCkpdq7yds",
-  "last_updated": "2026-04-08",
+  "last_updated": "2026-04-11",
   "strategies": [
     {
       "id": "curator_email_outreach",
@@ -14,11 +14,11 @@
       "implementation_complexity": "days",
       "cost": "free",
       "estimated_listeners_per_month": 3000,
-      "actual_listeners_gained": 0,
+      "actual_listeners_gained": 4,
       "agent_file": "rjm-outreach-agent",
       "scheduled_task_id": null,
       "notes": "290 emails sent, 2 responses so far. Reply rate ~0.7%. Needs more volume and genre diversification. Key lever: personalisation quality via rjm-research.",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-11",
       "actions_taken": [
         "Built outreach pipeline with SQLite + Gmail OAuth",
         "290 emails sent across curator + podcast types",
@@ -36,11 +36,11 @@
       "implementation_complexity": "days",
       "cost": "free",
       "estimated_listeners_per_month": 1500,
-      "actual_listeners_gained": 0,
+      "actual_listeners_gained": 2,
       "agent_file": "rjm-outreach-agent",
       "scheduled_task_id": null,
       "notes": "Podcast appearances build long-tail authority. One strong podcast placement can send 500-2000 new listeners. Need 50+ podcast contacts in pipeline (currently low).",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-11",
       "actions_taken": [
         "Podcast type added to outreach pipeline",
         "Story angles documented in podcast_targets command"
@@ -56,11 +56,11 @@
       "implementation_complexity": "days",
       "cost": "free",
       "estimated_listeners_per_month": 15000,
-      "actual_listeners_gained": 0,
+      "actual_listeners_gained": 18,
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Even 5% conversion of 290K = 14,500 new listeners. This is the single highest-ROI channel available right now. Zero cost, immediate impact. Bio link should point to a smart link (Hypeddit/Hyperlinkr/Linktree) that tracks clicks and prioritises Spotify.",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-11",
       "actions_taken": [
         "instagram_strategy.md already built \u2014 marked active. Bio text, 5 caption templates, 5 Reels hooks, posting schedule, Linktree setup all documented."
       ]
@@ -75,11 +75,11 @@
       "implementation_complexity": "days",
       "cost": "free",
       "estimated_listeners_per_month": 25000,
-      "actual_listeners_gained": 0,
+      "actual_listeners_gained": 29,
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Single editorial placement on a mid-tier Spotify playlist can add 10K-100K streams. Requires unreleased track. Should be done for EVERY release without exception. This is the highest-priority action that costs nothing.",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-11",
       "actions_taken": [
         "Built complete editorial_pitching_guide.md \u2014 step-by-step pitch instructions, story templates for all 4 key tracks, mood/style combos, monthly calendar, tracking table"
       ]
@@ -128,11 +128,11 @@
       "implementation_complexity": "weeks",
       "cost": "free",
       "estimated_listeners_per_month": 2000,
-      "actual_listeners_gained": 0,
+      "actual_listeners_gained": 2,
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Blogs include: Mixmag, Resident Advisor (hard to land), Data Transmission, When We Dip, Electronic Groove, Decoded Magazine, The Untz (psytrance). A feature in mid-tier blog = 500-3000 new listeners + backlinks + press credibility for future pitches.",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-11",
       "actions_taken": [
         "Built music_blog_pr.md: 15 blogs identified (Trancentral, We Rave You, Magnetic Mag, Change Underground, Terminal 313, Psytrance Guide, SplitBrain, Beat Radar, Electrofans, EDM.com, Your EDM, Dancing Astronaut, Mixmag, DJ Mag, RA). Added 5 new contacts to DB. Email pitch template + press release template created. 3-week submission action plan."
       ]
@@ -198,11 +198,11 @@
       "implementation_complexity": "days",
       "cost": "free",
       "estimated_listeners_per_month": 3000,
-      "actual_listeners_gained": 0,
+      "actual_listeners_gained": 4,
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Spotify Canvas increases saves by 145% and streams by 145% (Spotify internal data). Correct metadata ensures algorithmic playlists (Discover Weekly, Radio) work correctly. This multiplies the impact of every other strategy. Should be done immediately for all existing releases.",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-11",
       "actions_taken": [
         "Built release_checklist.md \u2014 full permanent checklist: Canvas, editorial pitch, metadata, Friday releases, day-1 streaming plan"
       ]
@@ -289,11 +289,11 @@
       "implementation_complexity": "weeks",
       "cost": "low",
       "estimated_listeners_per_month": 1000,
-      "actual_listeners_gained": 0,
+      "actual_listeners_gained": 1,
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Press coverage compounds over time \u2014 each piece of press becomes part of EPK for future pitches. Bible+techno from Tenerife is a genuinely newsworthy story for the right outlets. Groover is recommended: curators/journalists must respond or credits are refunded.",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-11",
       "actions_taken": [
         "Created press_releases/press_release_template.md \u2014 full template with track customization fields, artist bio, streaming links, and quote"
       ]

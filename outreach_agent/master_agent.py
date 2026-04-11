@@ -600,6 +600,56 @@ def cmd_health():
 
     print(f"  ℹ️  Today's sends: {today_sent} / {MAX_EMAILS_PER_DAY}")
 
+    # ── Content engine ─────────────────────────────────────────────────────────
+    content_out = BASE_DIR.parent / "content" / "output"
+    if content_out.exists():
+        runs = sorted([r for r in content_out.iterdir() if r.is_dir()], reverse=True)
+        if runs:
+            last_run_name = runs[0].name
+            try:
+                run_dt = datetime.strptime(last_run_name[:13], "%Y-%m-%d_%H%M")
+                age_h = (datetime.now() - run_dt).total_seconds() / 3600
+                if age_h > 30:
+                    issues.append(f"⚠️  Content engine: last run {age_h:.0f}h ago — holy-rave-daily-run may be down")
+                else:
+                    print(f"  ✅ Content last run: {age_h:.1f}h ago ({last_run_name})")
+            except Exception:
+                print(f"  ℹ️  Content last run: {last_run_name}")
+        else:
+            issues.append("⚠️  Content engine: no runs yet — holy-rave-daily-run not yet active")
+    else:
+        print("  ℹ️  Content engine: content/output/ not found")
+
+    # ── Spotify listeners ──────────────────────────────────────────────────────
+    listeners_json = BASE_DIR.parent / "data" / "listeners.json"
+    if listeners_json.exists():
+        try:
+            import json as _json
+            d = _json.loads(listeners_json.read_text(encoding="utf-8"))
+            n = d.get("count", 0)
+            updated = d.get("updatedAt", "")[:10]
+            pct = round(n / 1_000_000 * 100, 3)
+            print(f"  ✅ Spotify listeners: {n:,} ({pct}% of 1M)  [updated {updated}]")
+        except Exception:
+            print("  ℹ️  Spotify: could not read data/listeners.json")
+    else:
+        issues.append("⚠️  Spotify: no listener data — run: python3 master_agent.py log_listeners <n>")
+
+    # ── Playlist pipeline ──────────────────────────────────────────────────────
+    try:
+        import playlist_db as _pdb
+        _pdb.init_playlist_db()
+        s = _pdb.get_summary()
+        total = s.get("_total", 0)
+        verified = s.get("verified", 0)
+        contact_found = s.get("contact_found", 0)
+        if verified > 0 and contact_found == 0:
+            issues.append(f"⚠️  Playlist DB: {verified} playlists verified but no contact found yet — run rjm-playlist-discover")
+        else:
+            print(f"  ✅ Playlist pipeline: {total} total, {contact_found} with contact info")
+    except Exception:
+        pass  # playlist_db not critical for health
+
     if issues:
         print(f"\nISSUES FOUND ({len(issues)}):")
         for i in issues:
@@ -1069,7 +1119,7 @@ def _print_action_plan(strategy_id: str):
 
 
 def cmd_log_listeners(n: int):
-    """Log current Spotify monthly listener count to the tracker."""
+    """Log current Spotify monthly listener count to the tracker and data/listeners.json."""
     result = subprocess.run(
         [sys.executable, str(SPOTIFY_TRACKER_PATH), "log", str(n)],
         capture_output=True, text=True
@@ -1077,6 +1127,86 @@ def cmd_log_listeners(n: int):
     print(result.stdout, end="")
     if result.returncode != 0:
         print(f"Error: {result.stderr.strip()}")
+        return
+
+    # Keep data/listeners.json in sync — used by rjm-master SKILL.md context
+    listeners_json = BASE_DIR.parent / "data" / "listeners.json"
+    try:
+        import json as _json
+        listeners_json.parent.mkdir(exist_ok=True)
+        listeners_json.write_text(
+            _json.dumps({"count": n, "updatedAt": datetime.now().isoformat()}, indent=2),
+            encoding="utf-8",
+        )
+        print(f"✓ data/listeners.json updated → {n:,}")
+    except Exception as exc:
+        print(f"⚠️  Could not update data/listeners.json: {exc}")
+
+    # Attribute listener delta to active strategies in registry
+    try:
+        import json as _json
+        registry_path = BASE_DIR / "strategy_registry.json"
+        if not registry_path.exists():
+            return
+
+        reg = _json.loads(registry_path.read_text(encoding="utf-8"))
+
+        # Get previous listener count from spotify_stats table
+        db.init_db()
+        with db.get_conn() as conn:
+            prev_row = conn.execute(
+                "SELECT monthly_listeners FROM spotify_stats ORDER BY id DESC LIMIT 1 OFFSET 1"
+            ).fetchone()
+        prev_count = prev_row["monthly_listeners"] if prev_row else 0
+        delta = max(0, n - prev_count)
+
+        if delta > 0:
+            active = [s for s in reg["strategies"] if s.get("status") == "active"]
+            total_est = sum(s.get("estimated_listeners_per_month", 1) for s in active) or 1
+            for s in reg["strategies"]:
+                if s.get("status") == "active":
+                    weight = s.get("estimated_listeners_per_month", 0) / total_est
+                    gain = round(delta * weight)
+                    s["actual_listeners_gained"] = s.get("actual_listeners_gained", 0) + gain
+                    s["last_updated"] = str(date.today())
+            reg["last_updated"] = str(date.today())
+            registry_path.write_text(_json.dumps(reg, indent=2), encoding="utf-8")
+            print(f"✓ Attributed +{delta:,} listener delta across {len(active)} active strategies")
+    except Exception as exc:
+        print(f"⚠️  Could not update strategy registry: {exc}")
+
+
+def cmd_log_run(summary: str, contacts_added: int = 0, strategy_worked: str = ""):
+    """Append a timestamped entry to data/master_log.json.
+
+    Called at the end of every rjm-master scheduled task run.
+    Usage: python3 master_agent.py log_run "Built instagram_to_spotify strategy" 5 instagram_to_spotify
+    """
+    import json as _json
+    log_path = BASE_DIR.parent / "data" / "master_log.json"
+    log_path.parent.mkdir(exist_ok=True)
+
+    if log_path.exists():
+        try:
+            entries = _json.loads(log_path.read_text(encoding="utf-8"))
+        except Exception:
+            print("⚠️  master_log.json was corrupt — starting fresh")
+            entries = []
+    else:
+        entries = []
+
+    entry = {
+        "ts":               datetime.now().isoformat(),
+        "summary":          summary,
+        "contacts_added":   contacts_added,
+        "strategy_worked":  strategy_worked,
+    }
+    entries.append(entry)
+
+    # Keep last 500 entries to prevent unbounded growth
+    entries = entries[-500:]
+    log_path.write_text(_json.dumps(entries, indent=2), encoding="utf-8")
+    print(f"✓ Logged run: {summary[:80]}")
 
 
 # ─── Run Sub-Agents ────────────────────────────────────────────────────────────
@@ -1155,6 +1285,15 @@ def main():
             cmd_log_listeners(int(args[1].replace(",", "")))
         else:
             print("Usage: python3 master_agent.py log_listeners <number>")
+    elif args[0] == "log_run":
+        summary = args[1] if len(args) > 1 else "run"
+        try:
+            contacts = int(args[2].replace(",", "")) if len(args) > 2 else 0
+        except ValueError:
+            print("Error: contacts_added must be a number")
+            sys.exit(1)
+        strategy = args[3] if len(args) > 3 else ""
+        cmd_log_run(summary, contacts, strategy)
     elif args[0] == "run":
         agent = args[1] if len(args) > 1 else ""
         if not agent:

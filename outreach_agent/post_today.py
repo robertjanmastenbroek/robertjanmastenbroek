@@ -725,6 +725,22 @@ def main():
             print(f"  YT title:  {caps.get('youtube', {}).get('title', '')}")
             print()
 
+    # ── Log to master audit trail ────────────────────────────────────────────
+    try:
+        subprocess.run(
+            [sys.executable,
+             str(Path(__file__).parent / "master_agent.py"),
+             "log_run",
+             f"content: 3 clips produced for {track_title}",
+             "0",
+             "tiktok_reels_content"],
+            cwd=str(Path(__file__).parent),
+            capture_output=True,
+            timeout=10
+        )
+    except Exception:
+        pass  # logging is non-fatal — never crash the content run
+
 
 if __name__ == "__main__":
     main()

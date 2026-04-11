@@ -1,0 +1,20 @@
+[
+  {
+    "ts": "2026-04-11T23:09:10.799211",
+    "summary": "test run",
+    "contacts_added": 3,
+    "strategy_worked": "test_strategy"
+  },
+  {
+    "ts": "2026-04-11T23:10:49.980274",
+    "summary": "quality fix test",
+    "contacts_added": 5,
+    "strategy_worked": "test"
+  },
+  {
+    "ts": "2026-04-11T23:10:51.432793",
+    "summary": "quality fix test 2",
+    "contacts_added": 1234,
+    "strategy_worked": "test"
+  }
+]
