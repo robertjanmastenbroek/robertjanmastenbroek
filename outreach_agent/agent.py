@@ -47,6 +47,7 @@ import template_engine
 import scheduler
 import reply_detector
 import reply_classifier
+import reply_responder
 import followup_engine
 import learning
 
@@ -245,6 +246,14 @@ def cmd_run():
             log.info("Reply classification: %s", classify_result)
     except Exception as exc:
         log.warning("Reply classification failed (non-fatal): %s", exc)
+
+    # 5b. Auto-reply to warm leads (positive, question, booking_intent)
+    try:
+        reply_result = reply_responder.run(dry_run=DRAFT_MODE)
+        if reply_result.get("sent", 0) > 0:
+            log.info("Auto-replies sent: %s", reply_result)
+    except Exception as exc:
+        log.warning("Auto-reply step failed (non-fatal): %s", exc)
 
     # 6. Maybe generate learning insights (only if enough data)
     try:
