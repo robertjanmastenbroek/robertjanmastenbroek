@@ -16,7 +16,7 @@ OUTPUT_W = 1080
 OUTPUT_H = 1920
 
 # Clip lengths in seconds
-CLIP_LENGTHS = [15, 30, 60]
+CLIP_LENGTHS = [5, 9, 15]
 
 
 def get_video_info(video_path: str) -> dict:

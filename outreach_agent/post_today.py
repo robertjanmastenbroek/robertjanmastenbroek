@@ -38,23 +38,13 @@ import processor   # outreach_agent/processor.py
 FFMPEG  = "/opt/homebrew/bin/ffmpeg"
 FFPROBE = "/opt/homebrew/bin/ffprobe"
 
-# ─── Angle auto-cycle ─────────────────────────────────────────────────────────
-# Every run cycles through emotional → signal → energy → emotional …
-# State persists in /tmp so it survives between runs but resets on reboot.
+# ─── Angle-per-clip mapping ───────────────────────────────────────────────────
+# Each clip length gets a fixed angle every run.
+# 5s = emotional (artist interior, why this exists)
+# 9s = signal    (who this track is for, the specific person/moment)
+# 15s = energy   (what happens to a body in that room)
 
-ANGLE_CYCLE     = ["emotional", "signal", "energy"]
-ANGLE_CYCLE_LOG = Path("/tmp/holyrave_angle_cycle.json")
-
-
-def get_next_cycle_angle() -> str:
-    """Returns the next angle in the rotation and advances the counter."""
-    try:
-        idx = json.loads(ANGLE_CYCLE_LOG.read_text()).get("index", 0)
-    except (FileNotFoundError, json.JSONDecodeError, ValueError):
-        idx = 0
-    angle = ANGLE_CYCLE[idx % len(ANGLE_CYCLE)]
-    ANGLE_CYCLE_LOG.write_text(json.dumps({"index": (idx + 1) % len(ANGLE_CYCLE)}))
-    return angle
+CLIP_ANGLE_MAP = {5: "emotional", 9: "signal", 15: "energy"}
 
 # ─── Track discovery ──────────────────────────────────────────────────────────
 
@@ -299,42 +289,43 @@ def main():
     print(f"  File:  {audio_path.name}")
     audio_start = find_peak_section(audio_path, max(clip_lengths))
 
-    # ── 3. Hooks + captions ───────────────────────────────────────────────────
-    _sep("STEP 3 / 4 — Hooks + captions (Claude)")
-    angle_override = get_next_cycle_angle()
-    print(f"  Angle: {angle_override} (auto-cycle)")
-    hooks_meta = generator.generate_hooks(video_path.name, clip_lengths, angle_override=angle_override)
-    content    = generator.generate_content(video_path.name, clip_lengths, hooks_meta)
-    angle      = content.get("angle") or hooks_meta.get("angle")
+    # ── 3. Hooks + captions — one per angle ──────────────────────────────────
+    _sep("STEP 3 / 4 — Hooks + captions (Claude — 3 angles)")
 
-    print()
-    for length in clip_lengths:
-        hook = hooks_meta["hooks"].get(length, "")
-        print(f"  {length}s → \"{hook}\"")
+    # Each clip length gets its own angle: 5s=emotional, 9s=signal, 15s=energy
+    per_clip = {}  # clip_len → {angle, hooks_meta, content}
+    for clip_len in clip_lengths:
+        angle = CLIP_ANGLE_MAP.get(clip_len, "emotional")
+        print(f"  {clip_len}s [{angle}] — generating hook…")
+        hooks_meta = generator.generate_hooks(video_path.name, [clip_len], angle_override=angle)
+        content    = generator.generate_content(video_path.name, [clip_len], hooks_meta)
+        hook       = hooks_meta["hooks"].get(clip_len, "")
+        print(f"    → \"{hook}\"")
+        per_clip[clip_len] = {"angle": angle, "hooks_meta": hooks_meta, "content": content, "hook": hook}
 
     # ── 4. Cut clips + mix audio ──────────────────────────────────────────────
     _sep("STEP 4 / 4 — Cut clips + mix RJM audio")
-    timestamp   = datetime.now().strftime("%Y-%m-%d_%H%M")
-    safe_track  = _safe_name(track_title)
-    run_dir     = OUTPUT_DIR / f"{timestamp}_{safe_track}"
+    timestamp  = datetime.now().strftime("%Y-%m-%d_%H%M")
+    safe_track = _safe_name(track_title)
+    run_dir    = OUTPUT_DIR / f"{timestamp}_{safe_track}"
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"  Output: {run_dir}\n")
 
     segments    = processor.detect_best_segments(str(video_path), duration)
     best_start  = segments[0][0] if segments else 0.0
-    hooks_dict  = {int(k): v for k, v in hooks_meta["hooks"].items()}
     output_files = []
 
     for clip_len in clip_lengths:
-        print(f"  → {clip_len}s clip…")
+        clip_data = per_clip[clip_len]
+        print(f"  → {clip_len}s [{clip_data['angle']}] clip…")
         out_file  = run_dir / f"{safe_track}_{clip_len}s.mp4"
         vid_start = min(best_start, max(0.0, duration - clip_len))
 
         processor.format_to_vertical(
             str(video_path), str(out_file),
             vid_start, clip_len,
-            hooks_dict.get(clip_len, ""),
-            angle,
+            clip_data["hook"],
+            clip_data["angle"],
         )
         mix_in_track(out_file, audio_path, audio_start, clip_len)
 
@@ -342,8 +333,13 @@ def main():
         print(f"    ✓ {out_file.name}  ({size_mb:.1f} MB)")
         output_files.append(out_file)
 
-    # Captions file
-    caption_text = generator.format_caption_file(video_path.name, content)
+    # Captions file — aggregate all 3 clips
+    caption_lines = []
+    for clip_len in clip_lengths:
+        caption_lines.append(generator.format_caption_file(
+            video_path.name, per_clip[clip_len]["content"]
+        ))
+    caption_text = "\n\n".join(caption_lines)
     caption_file = run_dir / f"{safe_track}_captions.txt"
     caption_file.write_text(caption_text)
     print(f"\n  ✓ {caption_file.name}")
@@ -356,11 +352,12 @@ def main():
         _sep("BUFFER — Queuing to TikTok / Instagram / YouTube")
         from buffer_poster import upload_video_and_queue
         for clip_len, clip_path in zip(clip_lengths, output_files):
-            clips_data  = content.get("clips", {}).get(str(clip_len), {})
-            tiktok      = clips_data.get("tiktok", {})
-            instagram   = clips_data.get("instagram", {})
-            youtube     = clips_data.get("youtube", {})
-            print(f"\n  Queuing {clip_len}s…")
+            clip_content = per_clip[clip_len]["content"]
+            clips_data   = clip_content.get("clips", {}).get(str(clip_len), {})
+            tiktok       = clips_data.get("tiktok", {})
+            instagram    = clips_data.get("instagram", {})
+            youtube      = clips_data.get("youtube", {})
+            print(f"\n  Queuing {clip_len}s [{per_clip[clip_len]['angle']}]…")
             try:
                 upload_video_and_queue(
                     clip_path         = str(clip_path),
@@ -376,24 +373,25 @@ def main():
     # ── Summary ───────────────────────────────────────────────────────────────
     _sep("SUMMARY")
     print(f"\n{mode}Track:  {track_title}")
-    print(f"{mode}Angle:  {angle or 'default'}")
     print(f"{mode}Source: {video_path.name} ({video_path.parent.name}/)")
     print(f"\n{mode}Clips produced ({len(output_files)}):")
-    for f in output_files:
-        print(f"  {f.name}  ({f.stat().st_size / 1_000_000:.1f} MB)")
+    for clip_len, f in zip(clip_lengths, output_files):
+        angle = per_clip[clip_len]["angle"]
+        print(f"  {f.name}  [{angle}]  ({f.stat().st_size / 1_000_000:.1f} MB)")
     print(f"\n{mode}Captions: {caption_file.name}")
     print(f"{mode}Output:   {run_dir}")
 
     if args.dry_run:
         print("\n[DRY RUN] Buffer posting skipped.\n")
-        print("── Caption preview (15s) ──────────────────────────")
-        clip_15 = content.get("clips", {}).get("15", {})
-        if clip_15:
-            print(f"\nTikTok:\n  {clip_15.get('tiktok', {}).get('caption', '')}")
-            print(f"  {clip_15.get('tiktok', {}).get('hashtags', '')}")
-            print(f"\nInstagram:\n  {clip_15.get('instagram', {}).get('caption', '')}")
-            yt = clip_15.get("youtube", {})
-            print(f"\nYouTube title:\n  {yt.get('title', '')}")
+        for clip_len in clip_lengths:
+            angle      = per_clip[clip_len]["angle"]
+            clip_data  = per_clip[clip_len]["content"].get("clips", {}).get(str(clip_len), {})
+            print(f"── {clip_len}s [{angle}] ──────────────────────────────")
+            print(f"  Hook:      {per_clip[clip_len]['hook']}")
+            print(f"  TikTok:    {clip_data.get('tiktok', {}).get('caption', '')}")
+            print(f"  Instagram: {clip_data.get('instagram', {}).get('caption', '')}")
+            print(f"  YT title:  {clip_data.get('youtube', {}).get('title', '')}")
+            print()
 
 
 if __name__ == "__main__":
