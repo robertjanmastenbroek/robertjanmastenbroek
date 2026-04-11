@@ -26,6 +26,7 @@ from pathlib import Path
 
 import db
 import gmail_client
+from brand_context import COMPACT_STORY
 from config import FROM_NAME, CLAUDE_MODEL_FAST
 from template_engine import _call_claude
 
@@ -34,26 +35,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelna
 
 BASE_DIR = Path(__file__).parent
 DB_PATH  = BASE_DIR / "outreach.db"
-
-ARTIST_CONTEXT = """
-ARTIST: Robert-Jan Mastenbroek (signs off as "Robert-Jan")
-Story: Dutch entrepreneur who built a €6M business, lost it all at 30, rebuilt himself in Tenerife through music.
-Sound: tribal techno, psytrance, progressive house — all rooted in biblical depth.
-Releases: Renamed (130 BPM), Halleluyah (140 BPM), Jericho (140 BPM), Fire In Our Hands (130 BPM), Living Water (124 BPM), He Is The Light
-Instagram: @robertjanmastenbroek (290K followers)
-Spotify: https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds
-Email: motomotosings@gmail.com
-Location: Tenerife, Spain (CET timezone)
-Press kit: available on request
-
-VOICE RULES (non-negotiable):
-- Warm, direct, human. Not corporate. Not preachy.
-- Never use: blessed / anointed / spiritual journey / elevated consciousness / worship music / Christian music / sober rave
-- Biblical depth is woven in naturally — never announced.
-- Lead with music and story. Let the sacred dimension surface on its own.
-- Short replies. 3-5 sentences max unless a question requires more.
-- Sign off as: Robert-Jan
-""".strip()
 
 
 # ─── DB migration ─────────────────────────────────────────────────────────────
@@ -170,7 +151,7 @@ def _generate_booking_reply(contact: dict, reply_body: str) -> tuple[str, str]:
 
     prompt = f"""You are writing a reply email on behalf of {FROM_NAME}, a DJ/producer based in Tenerife.
 
-{ARTIST_CONTEXT}
+{COMPACT_STORY}
 
 CONTEXT:
 - Contact: {contact['name']} ({contact['type']}) — {contact.get('notes','') or contact.get('genre','')}
@@ -217,7 +198,7 @@ def _generate_positive_reply(contact: dict, reply_body: str) -> tuple[str, str]:
 
     prompt = f"""You are writing a reply email on behalf of {FROM_NAME}, a DJ/producer based in Tenerife.
 
-{ARTIST_CONTEXT}
+{COMPACT_STORY}
 
 CONTEXT:
 - Contact: {contact['name']} ({contact['type']}) — {contact.get('notes','') or contact.get('genre','')}
@@ -241,7 +222,7 @@ def _generate_question_reply(contact: dict, reply_body: str) -> tuple[str, str]:
     """Generate subject + body answering their question."""
     prompt = f"""You are writing a reply email on behalf of {FROM_NAME}, a DJ/producer based in Tenerife.
 
-{ARTIST_CONTEXT}
+{COMPACT_STORY}
 
 CONTEXT:
 - Contact: {contact['name']} ({contact['type']}) — {contact.get('notes','') or contact.get('genre','')}
