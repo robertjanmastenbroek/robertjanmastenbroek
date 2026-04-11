@@ -1,0 +1,25 @@
+# Exclude everything except the website files Railway needs
+ruflo/
+continuous-claude/
+outreach_agent/
+agents/
+images/
+
+# Docs and non-web files
+*.md
+*.docx
+*.xlsx
+*.csv
+*.py
+*.txt
+*.db
+*.log
+
+# Secrets and local config
+.env
+.gitignore
+.claude/
+
+# OS
+.DS_Store
+.~lock.*
