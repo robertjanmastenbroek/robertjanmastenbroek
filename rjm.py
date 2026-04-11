@@ -37,6 +37,7 @@ import subprocess
 import sys
 import os
 from pathlib import Path
+from datetime import datetime, timezone
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT    = Path(__file__).parent
@@ -206,6 +207,26 @@ def cmd_status():
     queue_status = f"⚠  {depth} post(s) waiting to retry — run: python3 rjm.py content retry" if depth > 0 else "✓  empty"
     print(f"\n[ Failed Post Queue ]\n")
     print(f"  Failed post queue:  {queue_status}")
+
+    # Quality gate summary (last 24h)
+    from datetime import timedelta
+    try:
+        import json as _json
+        _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
+        from quality_gate import LOG_PATH as QUALITY_LOG_PATH
+        q_log = _json.loads(QUALITY_LOG_PATH.read_text()) if QUALITY_LOG_PATH.exists() else []
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        recent = [e for e in q_log if e.get("checked_at", "") >= cutoff]
+        passed_count = sum(1 for e in recent if e["passed"])
+        failed_count = sum(1 for e in recent if not e["passed"])
+        fail_details = [f"  • {e['clip']}: {e['reason']}" for e in recent if not e["passed"]]
+        quality_str = f"✓  {passed_count} passed, {failed_count} failed (last 24h)" if recent else "no clips checked yet"
+        print(f"\n[ Quality Gate ]")
+        print(f"  {quality_str}")
+        for detail in fail_details[:3]:
+            print(detail)
+    except Exception:
+        print("\n[ Quality Gate ]\n  (log unavailable)")
 
 
 def main():
