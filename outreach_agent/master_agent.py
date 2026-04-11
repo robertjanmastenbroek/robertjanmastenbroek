@@ -643,7 +643,7 @@ def cmd_health():
         total = s.get("_total", 0)
         verified = s.get("verified", 0)
         contact_found = s.get("contact_found", 0)
-        if verified > 0:
+        if verified > 0 and contact_found == 0:
             issues.append(f"⚠️  Playlist DB: {verified} playlists verified but no contact found yet — run rjm-playlist-discover")
         else:
             print(f"  ✅ Playlist pipeline: {total} total, {contact_found} with contact info")
