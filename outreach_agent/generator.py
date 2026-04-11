@@ -180,7 +180,7 @@ ANGLE_KEYWORDS = {
     'energy':    ['energy', 'live', 'crowd', 'rave', 'set', 'dance', 'floor', 'sunset', 'session'],
 }
 
-# ── Per-angle hook instructions (mechanism-based, not outcome-based) ───────────
+# ── Per-angle hook instructions (multi-sub-mode, not single-route) ──────────────
 ANGLE_INSTRUCTIONS = {
 
     'emotional': """ANGLE: EMOTIONAL — The artist's interior. What this track cost. Why it exists.
@@ -189,16 +189,39 @@ Psychological target: Self-referential processing + Zeigarnik effect (unresolved
 The viewer's brain must involuntarily map this onto their own experience — then stay because
 the tension is not resolved.
 
-Hook rules:
-- Start with a SPECIFIC MOMENT: a time of day, a number, a place, a physical detail.
-  Not "when I was struggling" — name the actual situation.
-- NEVER open with "I". Start with the time, place, or situation. "I" can appear later.
+FIVE SUB-MODES — pick whichever produces the sharpest hook for this specific track.
+Do NOT default to sub-mode 1 every time. Vary across runs.
+
+[COST] The price of making it. Hours lost, versions abandoned, the moment it almost didn't exist.
+  Entry points: specific session time, number of attempts, what was sacrificed to finish it.
+  "Six versions before this one // none of them were honest enough"
+
+[NAMING] Tracks often exist before they have a name. What was it called before? What does the
+  title actually mean to the person who made it — not the public definition.
+  Entry points: the moment the name arrived, what it replaced, what the name carries.
+  "Named it after the one thing // I stopped expecting to come back"
+
+[DOUBT] The wall. The session where it felt like nothing. What made him keep going anyway.
+  Entry points: the specific form doubt took, what the room felt like, what broke the block.
+  "Sat with it for three weeks // still don't know what made it move"
+
+[DEVOTION] Making from inside a relationship with something larger. Not explaining the faith —
+  showing what it looks like from inside. The discipline, the silence, the unknown receiver.
+  Entry points: why he makes music nobody asked for, what he's making toward, the unseen audience.
+  "Built for one person who // hasn't heard it yet and already needs it"
+
+[RUPTURE] The moment his identity broke from the expected. Dutch, producer, island, Scripture —
+  none of it should coexist, but it does. The contradiction that became the art.
+  Entry points: what he gave up to be here, what surprised him about his own work, the before.
+  "Used to make music for rooms // now makes it for whatever's between the rooms"
+
+UNIVERSAL RULES FOR EMOTIONAL:
+- NEVER open with "I". Start with the moment, number, or situation.
 - END on unresolved tension — never the resolution. Leave the loop open.
 - Avoid all category words: sacred, techno, rave, worship, feel, soul, journey, emotion, music.
-- Must contain one concrete anchor: a time, a number, a physical sensation, or a specific action.
-- NO geographic place names (Atlantic, Tenerife, island, coast) — geography belongs in captions.
-- Specificity test: could this only have been written by someone who lived this exact thing?
-- The spiritual dimension arrives as subtext — an unexplained weight in the specific moment.""",
+- One concrete anchor required: a time, number, physical sensation, or specific action.
+- NO geographic place names — geography belongs in captions.
+- Specificity test: could this only have been written by someone who lived this exact thing?""",
 
     'signal': """ANGLE: SIGNAL — Where this track finds you. The specific person or moment it was made for.
 
@@ -206,37 +229,85 @@ Psychological target: Personal relevance trigger + anticipatory ownership.
 The viewer must feel this track was sent specifically to them, for a situation they already know.
 The save becomes an act of keeping something they don't want to lose access to.
 
-Hook rules:
-- Name the EXACT situation, state, or moment this track is FOR. Not for everyone — for one person.
-- Think: "this track is for the person who..." then name something hyper-specific.
-  NOT "for anyone going through hard times" — worthless.
-  YES "for the version of you that stopped telling people how you actually are" — that's the target.
-- Can address directly ("you") or describe a specific third-party situation.
+FIVE SUB-MODES — pick whichever produces the sharpest hook for this specific track.
+Do NOT default to sub-mode 1 every time. Vary across runs.
+
+[FINDER] The exact person this track finds, named with surgical precision — not a type,
+  a specific situation or internal state almost nobody talks about publicly.
+  Entry points: a behavior, a secret, a quiet decision, something they stopped doing.
+  "For the person who deleted the draft // and called it not ready"
+
+[PERMISSION] What this track gives someone that they couldn't give themselves.
+  Not comfort — permission. The right to stop performing, stop explaining, stop waiting.
+  Entry points: something they've been holding, something they've been postponing.
+  "Permission to stop translating it // for people who weren't there"
+
+[RECOGNITION] The moment they realize this is for them. Not described — enacted.
+  The hook IS the recognition. They feel found before they understand why.
+  Entry points: the specific detail that only the right person understands.
+  "Still checking your phone at 3am // for a message that isn't coming"
+
+[SEASON] The specific life season this track belongs to — not a mood, a period.
+  After something ended. Before something starts. The in-between that has no name.
+  Entry points: what just happened, what hasn't happened yet, what's quietly true right now.
+  "Made for the months between // the ending and knowing what comes next"
+
+[UNSAID] Something the listener hasn't been able to say, that this track says for them.
+  The save is an act of deputizing the music to carry something they can't carry in words.
+  Entry points: an emotion without a word, a truth they're holding, a conversation they haven't had.
+  "Everything you haven't said // to the one person it would actually matter to"
+
+UNIVERSAL RULES FOR SIGNAL:
+- Name the EXACT situation — not a general mood, a specific state.
 - Stakes must be present: what does this person need that this track provides?
 - Creates the felt need to save for later — "I will need this."
-- NEVER open with "I". Start with "For", a person, or drop straight into the specific situation.""",
+- NEVER open with "I". Start with "For", a direct address, or drop into the situation.
+- Can address directly ("you") or describe a third-party situation at a distance.""",
 
     'energy': """ANGLE: ENERGY — What happens to a room. The collective moment.
 
 Psychological target: Embodied simulation + interoceptive cue triggering + motor cortex priming.
 The viewer must simulate being inside a body on that floor — not watching from outside.
 
-Hook rules:
-- Describe what happens to a SPECIFIC BODY PART, not "the crowd" or "the room" generically.
-  Pick a body part that is surprising and specific — NOT "sternum" (overused, banned).
-  Examples of fresh targets: jaw, shoulder blades, the back of the neck, knees, hands, temples.
-  Never repeat a body part that has appeared in a previous run — vary every time.
-- Techno at 130-145 BPM entrains motor neurons involuntarily — reference this physical pull.
-- The sacred/rave collision can be asserted with confidence — assert it, don't explain it.
+FIVE SUB-MODES — pick whichever produces the sharpest hook for this specific track.
+Do NOT default to sub-mode 1 every time. Vary across runs.
+
+[BODY] A specific body part responds before the mind does. Involuntary. Immediate. Precise.
+  Pick surprising body parts — NOT sternum (banned). NOT chest. NOT heart.
+  Fresh targets: collarbone, the small of the back, the soft inside of the elbow, the roof of the mouth,
+  the space behind the eyes, knuckles, the base of the skull, the inside of the wrist.
+  "Collarbone lifts on the second bar // nobody told it to"
+
+[TIME] At high BPM the brain loses its grip on clock time. Hours collapse into minutes.
+  Reference the specific disorientation — what they planned to do that didn't happen.
+  Entry points: what time they thought it was, how long they actually stayed, what they forgot.
+  "Planned to stay one hour // two hours later nobody had moved"
+
+[GEOGRAPHY] Atlantic cliff + volcanic rock + 130 BPM. This is a specific place on earth.
+  The collision of natural landscape and electronic music is rare. Name it precisely.
+  Entry points: the salt, the wind, the height, the ocean underneath the bass.
+  "Salt air and a 130 BPM kick // on a cliff nobody planned to stay this long"
+
+[THRESHOLD] The exact moment before the drop. The held breath. The stillness before the shift.
+  Describe what the room is like in that 2-3 second window. What happens in bodies, not speakers.
+  Entry points: what people do with their hands, whether they're looking at each other or away.
+  "Eight seconds of silence // and the whole cliff already knew"
+
+[DISSOLUTION] The moment the individual disappears into the collective. Not metaphor — neuroscience.
+  At high volume + BPM, the brain's default mode network quiets. Ego drops. Self-reference stops.
+  This is what makes a rave sacred without anyone calling it sacred.
+  Entry points: the moment they forgot their name, what they stopped worrying about, the after.
+  "Nobody remembers their name // for the length of the breakdown"
+
+UNIVERSAL RULES FOR ENERGY:
 - Present tense, declarative. No questions.
-- Reference ego dissolution if the footage supports it (the moment individual identity dissolves).
-- Avoid all rave/genre clichés: dark, pounding, euphoric, underground, transcendent.
-  These words are processed as noise by the exact audience you're reaching.
-- NEVER open with "I". Start with a body part, a number, a room, or a moment.""",
+- Avoid all rave/genre clichés: dark, pounding, euphoric, underground, transcendent — noise words.
+- NEVER open with "I". Start with a body part, a number, a room, a sensory detail, or a moment.
+- The sacred/rave collision: assert it, don't explain it.""",
 }
 
 ANGLE_DEFAULT_INSTRUCTION = """ANGLE: Undetected — default to Signal.
-Where does this track find its listener? What specific moment is it for?
+Where does this track find its listener? What specific life moment or state is it for?
 All other hook rules apply: specific, located, never open with "I", no category language."""
 
 

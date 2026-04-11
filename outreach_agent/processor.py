@@ -456,13 +456,13 @@ def format_to_vertical_multiclip(
         # Defensive guard: if hook_text arrived as an A/B/C dict, take the 'a' variant
         if isinstance(hook_text, dict):
             hook_text = hook_text.get('a') or (list(hook_text.values()) or [''])[0]
-        # Parse two-part hook: "OPENER // REVEAL"
+        # Parse two-part hook: "OPENER // REVEAL" → display as "OPENER.." / "..REVEAL."
         line1_text = line2_text = None
         if hook_text and angle:
             if ' // ' in hook_text:
                 parts = hook_text.split(' // ', 1)
-                line1_text = parts[0].strip()
-                line2_text = parts[1].strip()
+                line1_text = parts[0].strip() + '..'
+                line2_text = '..' + parts[1].strip() + '.'
             else:
                 line1_text = hook_text
 

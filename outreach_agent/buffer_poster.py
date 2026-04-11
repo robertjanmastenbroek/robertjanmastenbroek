@@ -42,9 +42,6 @@ IMGUR_CLIENT_ID = "546c25a59c58ad7"
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
-_ORG_ID_CACHE: str | None = None
-
-
 def _gql(query: str, variables: dict = None) -> dict:
     """Execute a Buffer GraphQL request. Retries once on 429."""
     import time
@@ -157,70 +154,42 @@ def _create_post(channel: str, post_type: str, image_urls: list[str], caption: s
 
 # ─── Video upload ─────────────────────────────────────────────────────────────
 
-def _get_org_id() -> str:
-    """Return the first Buffer organization ID (cached per process)."""
-    global _ORG_ID_CACHE
-    if _ORG_ID_CACHE is None:
-        data = _gql("query { account { organizations { id name } } }")
-        _ORG_ID_CACHE = data["account"]["organizations"][0]["id"]
-    return _ORG_ID_CACHE
-
-
-def _upload_video_to_buffer(filepath: str) -> str:
-    """Upload a local video file to Buffer and return the media ID."""
+def _upload_video_for_buffer(filepath: str) -> str:
+    """Upload a local video file to uguu.se and return the public URL.
+    uguu.se is free, anonymous, no signup, 48-hour expiry (fine — Buffer fetches immediately).
+    Buffer's GraphQL API requires a public URL with proper Content-Length — it has no file upload.
+    """
     p = Path(filepath)
     if not p.exists():
         raise FileNotFoundError(f"Video file not found: {filepath}")
 
     file_size = p.stat().st_size
-    org_id = _get_org_id()
-
-    mutation = """
-    mutation CreateMediaUpload($input: CreateMediaUploadInput!) {
-      createMediaUpload(input: $input) {
-        ... on MediaUploadActionSuccess {
-          mediaUpload {
-            id
-            uploadUrl
-            headers { key value }
-          }
-        }
-        ... on MutationError { message }
-      }
-    }
-    """
-    result = _gql(mutation, {
-        "input": {
-            "organizationId": org_id,
-            "fileSize": file_size,
-            "contentType": "video/mp4",
-        }
-    })
-
-    payload = result["createMediaUpload"]
-    if "message" in payload:
-        raise RuntimeError(f"Buffer media upload request failed: {payload['message']}")
-
-    media_id  = payload["mediaUpload"]["id"]
-    upload_url = payload["mediaUpload"]["uploadUrl"]
-    headers   = {h["key"]: h["value"] for h in payload["mediaUpload"].get("headers", [])}
-
-    print(f"    Uploading {p.name} ({file_size / 1_000_000:.1f} MB) to Buffer…")
+    print(f"    Uploading {p.name} ({file_size / 1_000_000:.1f} MB) to uguu.se…")
     with p.open("rb") as fh:
-        resp = requests.put(upload_url, data=fh, headers=headers, timeout=300)
+        resp = requests.post(
+            "https://uguu.se/upload.php",
+            files={"files[]": (p.name, fh, "video/mp4")},
+            timeout=300,
+        )
     resp.raise_for_status()
-    print(f"    → media_id: {media_id}")
-    return media_id
+    data = resp.json()
+    if not data.get("success"):
+        raise RuntimeError(f"uguu.se upload failed: {data}")
+    url = data["files"][0]["url"]
+    print(f"    → {url}")
+    return url
 
 
 def _create_video_post(
     channel: str,
-    media_id: str,
+    video_url: str,
     caption: str,
     title: str = "",
     description: str = "",
 ) -> str:
-    """Queue a video post to one Buffer channel. Returns the Buffer post ID."""
+    """Queue a video post to one Buffer channel. Returns the Buffer post ID.
+    Buffer's GraphQL API takes a public video URL in assets.videos[].url.
+    """
     channel_id = CHANNELS.get(channel)
     if not channel_id:
         raise ValueError(f"Unknown channel '{channel}'. Valid: {list(CHANNELS.keys())}")
@@ -231,8 +200,8 @@ def _create_video_post(
         metadata = {
             "youtube": {
                 "title": (title or caption)[:100],
-                "description": description or caption,
-                "privacyStatus": "public",
+                "privacy": "public",
+                "categoryId": "10",  # Music
             }
         }
     else:
@@ -253,7 +222,7 @@ def _create_video_post(
             "schedulingType": "automatic",
             "mode": "addToQueue",
             "metadata": metadata,
-            "assets": {"video": {"mediaId": media_id}},
+            "assets": {"videos": [{"url": video_url}]},
         }
     }
 
@@ -277,13 +246,13 @@ def upload_video_and_queue(
 ) -> None:
     """Upload a video and queue it to TikTok, Instagram Reels, and YouTube Shorts via Buffer."""
     import time
-    media_id = _upload_video_to_buffer(clip_path)
+    video_url = _upload_video_for_buffer(clip_path)
 
-    _create_video_post("tiktok",    media_id, tiktok_caption)
+    _create_video_post("tiktok",    video_url, tiktok_caption)
     time.sleep(2)
-    _create_video_post("instagram", media_id, instagram_caption)
+    _create_video_post("instagram", video_url, instagram_caption)
     time.sleep(2)
-    _create_video_post("youtube",   media_id, youtube_desc, title=youtube_title, description=youtube_desc)
+    _create_video_post("youtube",   video_url, youtube_desc, title=youtube_title, description=youtube_desc)
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────
