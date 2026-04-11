@@ -1,0 +1,11 @@
+# RJM Outreach Agent — Python Dependencies
+# Install: pip install -r requirements.txt
+#
+# Note: Email generation uses the Claude Code CLI (your Max plan),
+# not the Anthropic Python SDK. No API key required.
+
+# Google Gmail API
+google-auth>=2.27.0
+google-auth-oauthlib>=1.2.0
+google-auth-httplib2>=0.2.0
+google-api-python-client>=2.118.0
