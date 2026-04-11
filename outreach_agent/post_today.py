@@ -344,6 +344,7 @@ def main():
         angle = CLIP_ANGLE_MAP.get(clip_len, "emotional")
         print(f"  {clip_len}s [{angle}] — generating hooks…")
         hooks_meta = generator.generate_hooks(vpath.name, [clip_len], angle_override=angle)
+        hooks_meta['track_name'] = track_title  # video filename has no track name — inject it
         content    = generator.generate_content(vpath.name, [clip_len], hooks_meta)
         abc        = hooks_meta["hooks"].get(clip_len, {})
         print(f"    A: \"{abc.get('a', '')}\"")
@@ -376,10 +377,11 @@ def main():
         vid_start = segments[0][0] if segments else 0.0
         vid_start = min(vid_start, max(0.0, duration - clip_len))
 
-        # Clean clip — no hook burned in. Hooks A/B/C live in captions file for A/B testing.
         processor.format_to_vertical(
             str(vpath), str(out_file),
             vid_start, clip_len,
+            clip_data["hook"],   # hook A burned into video
+            clip_data["angle"],
         )
         mix_in_track(out_file, audio_path, audio_start, clip_len)
 
