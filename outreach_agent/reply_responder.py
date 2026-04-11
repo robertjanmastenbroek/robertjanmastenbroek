@@ -307,6 +307,19 @@ def run(dry_run: bool = False) -> dict:
         log.info("Processing [%s] %s — %s", intent.upper(), email, name)
 
         try:
+            # ── Guard: check Gmail thread directly before sending ──────────────
+            # Prevents duplicates when master agent or other paths already replied
+            # without updating the DB.
+            if thread_id and gmail_client.already_replied_in_thread(
+                thread_id, contact.get("reply_message_id")
+            ):
+                log.info("SKIP %s — already replied in Gmail thread %s", email, thread_id)
+                if not dry_run:
+                    mark_replied(email)   # sync DB with reality
+                skipped += 1
+                continue
+            # ──────────────────────────────────────────────────────────────────
+
             if intent in ("booking_intent", "booking_inquiry"):
                 subject, body = _generate_booking_reply(contact, reply_body)
             elif intent == "positive":

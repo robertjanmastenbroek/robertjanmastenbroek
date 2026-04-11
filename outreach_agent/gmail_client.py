@@ -128,6 +128,59 @@ def get_thread_messages(thread_id: str) -> list[dict]:
     return thread.get("messages", [])
 
 
+def already_replied_in_thread(thread_id: str, their_message_id: str = None) -> bool:
+    """
+    Return True if we have already sent a reply in this thread AFTER the contact's
+    message. Checks Gmail directly — source of truth regardless of DB state.
+
+    Logic:
+    - Fetch thread messages with full headers.
+    - Find the last message from the contact (by message_id if given, else any non-us message).
+    - Check whether any message FROM us exists AFTER that position in the thread.
+    """
+    if not thread_id:
+        return False
+    try:
+        svc = get_service()
+        thread = svc.users().threads().get(
+            userId="me", id=thread_id, format="metadata",
+            metadataHeaders=["From", "Message-ID"]
+        ).execute()
+        messages = thread.get("messages", [])
+        if not messages:
+            return False
+
+        # Find the index of the contact's message
+        contact_idx = -1
+        for i, msg in enumerate(messages):
+            headers = {h["name"].lower(): h["value"]
+                       for h in msg.get("payload", {}).get("headers", [])}
+            from_hdr = headers.get("from", "")
+            mid = headers.get("message-id", "")
+            is_theirs = FROM_EMAIL.lower() not in from_hdr.lower()
+            if their_message_id and their_message_id in mid:
+                contact_idx = i
+                break
+            if is_theirs:
+                contact_idx = i  # keep updating — we want the LAST one
+
+        if contact_idx == -1:
+            return False
+
+        # Check if any message after that index is from us
+        for msg in messages[contact_idx + 1:]:
+            headers = {h["name"].lower(): h["value"]
+                       for h in msg.get("payload", {}).get("headers", [])}
+            from_hdr = headers.get("from", "")
+            if FROM_EMAIL.lower() in from_hdr.lower():
+                return True
+
+        return False
+    except Exception as exc:
+        log.warning("already_replied_in_thread(%s): %s — defaulting to False", thread_id, exc)
+        return False
+
+
 def scan_inbox_for_replies(sent_thread_ids: list[str]) -> dict[str, dict]:
     """
     Given a list of thread IDs we sent, check which ones have received replies.

@@ -620,20 +620,31 @@ def cmd_health():
     else:
         print("  ℹ️  Content engine: content/output/ not found")
 
-    # ── Spotify listeners ──────────────────────────────────────────────────────
-    listeners_json = BASE_DIR.parent / "data" / "listeners.json"
-    if listeners_json.exists():
-        try:
-            import json as _json
-            d = _json.loads(listeners_json.read_text(encoding="utf-8"))
-            n = d.get("count", 0)
-            updated = d.get("updatedAt", "")[:10]
+    # ── Spotify listeners — DB is source of truth ─────────────────────────────
+    try:
+        db.init_db()
+        with db.get_conn() as _conn:
+            row = _conn.execute(
+                "SELECT monthly_listeners, date FROM spotify_stats ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        if row:
+            n, updated = row["monthly_listeners"], row["date"]
             pct = round(n / 1_000_000 * 100, 3)
             print(f"  ✅ Spotify listeners: {n:,} ({pct}% of 1M)  [updated {updated}]")
-        except Exception:
-            print("  ℹ️  Spotify: could not read data/listeners.json")
-    else:
-        issues.append("⚠️  Spotify: no listener data — run: python3 master_agent.py log_listeners <n>")
+            # Keep listeners.json in sync with DB
+            import json as _json
+            listeners_json = BASE_DIR.parent / "data" / "listeners.json"
+            try:
+                listeners_json.parent.mkdir(exist_ok=True)
+                listeners_json.write_text(
+                    _json.dumps({"count": n, "updatedAt": updated}, indent=2), encoding="utf-8"
+                )
+            except Exception:
+                pass
+        else:
+            issues.append("⚠️  Spotify: no listener data — run: python3 master_agent.py log_listeners <n>")
+    except Exception:
+        issues.append("⚠️  Spotify: could not read listener count from DB")
 
     # ── Playlist pipeline ──────────────────────────────────────────────────────
     try:
