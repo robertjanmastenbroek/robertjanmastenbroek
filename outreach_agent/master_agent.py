@@ -1142,6 +1142,39 @@ def cmd_log_listeners(n: int):
     except Exception as exc:
         print(f"⚠️  Could not update data/listeners.json: {exc}")
 
+    # Attribute listener delta to active strategies in registry
+    try:
+        import json as _json
+        registry_path = BASE_DIR / "strategy_registry.json"
+        if not registry_path.exists():
+            return
+
+        reg = _json.loads(registry_path.read_text(encoding="utf-8"))
+
+        # Get previous listener count from spotify_stats table
+        db.init_db()
+        with db.get_conn() as conn:
+            prev_row = conn.execute(
+                "SELECT monthly_listeners FROM spotify_stats ORDER BY id DESC LIMIT 1 OFFSET 1"
+            ).fetchone()
+        prev_count = prev_row["monthly_listeners"] if prev_row else 0
+        delta = max(0, n - prev_count)
+
+        if delta > 0:
+            active = [s for s in reg["strategies"] if s.get("status") == "active"]
+            total_est = sum(s.get("estimated_listeners_per_month", 1) for s in active) or 1
+            for s in reg["strategies"]:
+                if s.get("status") == "active":
+                    weight = s.get("estimated_listeners_per_month", 0) / total_est
+                    gain = round(delta * weight)
+                    s["actual_listeners_gained"] = s.get("actual_listeners_gained", 0) + gain
+                    s["last_updated"] = str(date.today())
+            reg["last_updated"] = str(date.today())
+            registry_path.write_text(_json.dumps(reg, indent=2), encoding="utf-8")
+            print(f"✓ Attributed +{delta:,} listener delta across {len(active)} active strategies")
+    except Exception as exc:
+        print(f"⚠️  Could not update strategy registry: {exc}")
+
 
 def cmd_log_run(summary: str, contacts_added: int = 0, strategy_worked: str = ""):
     """Append a timestamped entry to data/master_log.json.
