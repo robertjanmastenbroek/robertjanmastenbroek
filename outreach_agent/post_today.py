@@ -336,22 +336,18 @@ def main():
     print(f"  File:  {audio_path.name}")
     audio_start = find_peak_section(audio_path, max(clip_lengths))
 
-    # ── 3. Hooks + captions — one per clip/angle ─────────────────────────────
-    _sep("STEP 3 / 4 — Hooks + captions (Claude — 3 angles)")
+    # ── 3. Captions (Claude — one call per clip, angle-targeted) ─────────────
+    _sep("STEP 3 / 4 — Captions (Claude — 3 angles)")
 
-    per_clip = {}  # clip_len → {video_path, info, angle, hook, hooks_meta, content}
+    per_clip = {}  # clip_len → {video_path, info, angle, content}
     for clip_len, vpath, info in valid_pairs:
         angle = CLIP_ANGLE_MAP.get(clip_len, "emotional")
-        print(f"  {clip_len}s [{angle}] — generating hook…")
-        hooks_meta = generator.generate_hooks(vpath.name, [clip_len], angle_override=angle)
-        content    = generator.generate_content(vpath.name, [clip_len], hooks_meta)
-        hook       = hooks_meta["hooks"].get(clip_len, "")
-        print(f"    → \"{hook}\"")
-        per_clip[clip_len] = {
-            "video_path": vpath, "info": info,
-            "angle": angle, "hook": hook,
-            "hooks_meta": hooks_meta, "content": content,
-        }
+        print(f"  {clip_len}s [{angle}] — {vpath.parent.name}/{vpath.name}")
+        content = generator.generate_content(vpath.name, [clip_len], angle=angle)
+        clips_data = content.get("clips", {}).get(str(clip_len), {})
+        hook_a = clips_data.get("hook_a", "")
+        print(f"    hook A → \"{hook_a}\"")
+        per_clip[clip_len] = {"video_path": vpath, "info": info, "angle": angle, "content": content}
 
     # ── 4. Cut clips + mix audio ──────────────────────────────────────────────
     _sep("STEP 4 / 4 — Cut clips + mix RJM audio")
@@ -367,34 +363,30 @@ def main():
         clip_data = per_clip[clip_len]
         vpath     = clip_data["video_path"]
         duration  = clip_data["info"]["duration"]
-        print(f"  → {clip_len}s [{clip_data['angle']}]  {vpath.parent.name}/{vpath.name}")
+        print(f"  → {clip_len}s  {vpath.parent.name}/{vpath.name}")
         out_file = run_dir / f"{safe_track}_{clip_len}s.mp4"
 
         segments  = processor.detect_best_segments(str(vpath), duration)
         vid_start = segments[0][0] if segments else 0.0
         vid_start = min(vid_start, max(0.0, duration - clip_len))
 
-        processor.format_to_vertical(
-            str(vpath), str(out_file),
-            vid_start, clip_len,
-            clip_data["hook"],
-            clip_data["angle"],
-        )
+        angle    = clip_data["angle"]
+        hook_a   = clip_data["content"].get("clips", {}).get(str(clip_len), {}).get("hook_a", "")
+        processor.format_to_vertical(str(vpath), str(out_file), vid_start, clip_len, hook_a, angle)
         mix_in_track(out_file, audio_path, audio_start, clip_len)
 
         size_mb = out_file.stat().st_size / 1_000_000
         print(f"    ✓ {out_file.name}  ({size_mb:.1f} MB)")
         output_files.append(out_file)
 
-    # Captions file — aggregate all 3 clips
-    caption_lines = []
+    # Single captions file covering all 3 clips
+    caption_sections = []
     for clip_len in clip_lengths:
-        caption_lines.append(generator.format_caption_file(
+        caption_sections.append(generator.format_caption_file(
             per_clip[clip_len]["video_path"].name, per_clip[clip_len]["content"]
         ))
-    caption_text = "\n\n".join(caption_lines)
     caption_file = run_dir / f"{safe_track}_captions.txt"
-    caption_file.write_text(caption_text)
+    caption_file.write_text("\n\n".join(caption_sections))
     print(f"\n  ✓ {caption_file.name}")
 
     mark_track_used(track_title)
@@ -440,8 +432,9 @@ def main():
         for clip_len in clip_lengths:
             angle      = per_clip[clip_len]["angle"]
             clip_data  = per_clip[clip_len]["content"].get("clips", {}).get(str(clip_len), {})
+            hook_a     = clip_data.get("hook_a", "")
             print(f"── {clip_len}s [{angle}] ──────────────────────────────")
-            print(f"  Hook:      {per_clip[clip_len]['hook']}")
+            print(f"  Hook A:    {hook_a}")
             print(f"  TikTok:    {clip_data.get('tiktok', {}).get('caption', '')}")
             print(f"  Instagram: {clip_data.get('instagram', {}).get('caption', '')}")
             print(f"  YT title:  {clip_data.get('youtube', {}).get('title', '')}")
