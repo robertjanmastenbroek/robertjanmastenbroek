@@ -110,6 +110,31 @@ def _disify_check(email: str) -> tuple[str, str]:
         return "unknown", f"Disify unreachable: {exc}"
 
 
+def _is_catchall_domain(domain: str) -> bool:
+    """
+    Detect catch-all domains by probing with a random address.
+    If a clearly-invented address passes Disify's DNS check, the domain
+    accepts everything — individual mailboxes can't be verified.
+    Results are cached in-memory for the process lifetime.
+    """
+    import random, string
+    if not hasattr(_is_catchall_domain, "_cache"):
+        _is_catchall_domain._cache = {}
+
+    if domain in _is_catchall_domain._cache:
+        return _is_catchall_domain._cache[domain]
+
+    probe = "".join(random.choices(string.ascii_lowercase + string.digits, k=14))
+    probe_email = f"{probe}@{domain}"
+    result, _ = _disify_check(probe_email)
+    is_catchall = (result == "valid")
+
+    _is_catchall_domain._cache[domain] = is_catchall
+    if is_catchall:
+        log.info("Catch-all domain detected: %s (probe %s accepted)", domain, probe)
+    return is_catchall
+
+
 def verify_email(email: str) -> tuple[str, str]:
     """
     Returns: ('valid', reason) | ('invalid', reason) | ('unknown', reason)
@@ -138,10 +163,16 @@ def verify_email(email: str) -> tuple[str, str]:
     disify_result, disify_reason = _disify_check(email)
     if disify_result == "invalid":
         return "invalid", disify_reason
+
+    # Stage 3: Catch-all detection for custom domains
+    # If the domain accepts a random probe address, individual mailboxes
+    # can't be verified — mark as unknown rather than valid.
     if disify_result == "valid":
+        if _is_catchall_domain(domain):
+            return "unknown", f"Catch-all domain — mailbox existence unverifiable"
         return "valid", disify_reason
 
-    # Stage 3: Fallback to direct DoH MX check (if Disify was unreachable)
+    # Stage 4: Fallback to direct DoH MX check (if Disify was unreachable)
     status, answers = _doh_query(domain, "MX")
     if status == 0 and answers:
         return "valid", f"MX OK ({len(answers)} record(s))"

@@ -21,6 +21,8 @@ from config import (
     MAX_INTERVAL_SECONDS,
     BATCH_SIZE,
     CRON_INTERVAL_MINUTES,
+    BOUNCE_RATE_LIMIT,
+    BOUNCE_RATE_WINDOW_DAYS,
 )
 from db import today_send_count, get_last_send_timestamp
 
@@ -119,6 +121,37 @@ def wait_for_interval():
         time.sleep(wait)
 
 
+def bounce_rate_safe() -> tuple[bool, str]:
+    """
+    Check recent bounce rate against the configured threshold.
+    Returns (True, status_msg) if safe to send, (False, reason) if paused.
+    """
+    import db as _db
+    with _db.get_conn() as conn:
+        cutoff = (datetime.now() - timedelta(days=BOUNCE_RATE_WINDOW_DAYS)).isoformat()
+        row = conn.execute("""
+            SELECT
+                COUNT(*) FILTER (WHERE status IN ('sent','followup_sent','responded','won','closed')) AS total_sent,
+                COUNT(*) FILTER (WHERE bounce = 'actual') AS actual_bounces
+            FROM contacts
+            WHERE date_sent >= ?
+        """, (cutoff,)).fetchone()
+
+    total_sent     = row["total_sent"] or 0
+    actual_bounces = row["actual_bounces"] or 0
+
+    if total_sent < 10:
+        return True, f"Bounce check: not enough data ({total_sent} sends in window)"
+
+    rate = actual_bounces / total_sent
+    if rate > BOUNCE_RATE_LIMIT:
+        return False, (
+            f"BOUNCE RATE TOO HIGH: {actual_bounces}/{total_sent} = {rate:.1%} "
+            f"over last {BOUNCE_RATE_WINDOW_DAYS}d (limit {BOUNCE_RATE_LIMIT:.0%}) — sends paused"
+        )
+    return True, f"Bounce rate OK: {actual_bounces}/{total_sent} = {rate:.1%} over last {BOUNCE_RATE_WINDOW_DAYS}d"
+
+
 class SendWindow:
     """
     Context manager / guard that checks all rate limit conditions.
@@ -134,9 +167,15 @@ class SendWindow:
         self.in_window      = is_within_active_window()
         self.quota_left     = remaining_quota_today()
         self.interval_ok    = minimum_interval_satisfied()
-        self.can_send       = self.in_window and self.quota_left > 0 and self.interval_ok
+        self.bounce_ok, self.bounce_status = bounce_rate_safe()
+        self.can_send       = (
+            self.in_window and self.quota_left > 0
+            and self.interval_ok and self.bounce_ok
+        )
 
     def status(self) -> str:
+        if not self.bounce_ok:
+            return self.bounce_status
         if not self.in_window:
             secs = seconds_until_window_opens()
             h, m = divmod(secs // 60, 60)
@@ -146,7 +185,7 @@ class SendWindow:
         if not self.interval_ok:
             wait = int(MIN_INTERVAL_SECONDS - seconds_since_last_send())
             return f"Minimum interval not met — wait {wait}s"
-        return f"OK — {self.quota_left} emails remaining today"
+        return f"OK — {self.quota_left} emails remaining today | {self.bounce_status}"
 
     def record_send(self):
         """Call after a successful send to update internal state."""
