@@ -230,9 +230,13 @@ def cmd_run():
     # 3. Verify any new contacts (runs regardless of window)
     _verify_pending_contacts()
 
-    # 4. Scan inbox for replies + bounces
-    inbox_result = reply_detector.run_full_inbox_check()
-    log.info("Inbox check: %s", inbox_result)
+    # 4. Scan inbox for replies + bounces (non-fatal — Gmail OAuth may be temporarily unavailable)
+    try:
+        inbox_result = reply_detector.run_full_inbox_check()
+        log.info("Inbox check: %s", inbox_result)
+    except Exception as exc:
+        log.warning("Inbox check failed (non-fatal — check Gmail OAuth credentials): %s", exc)
+        inbox_result = None
 
     # 5. Classify any unclassified replies (catches backlog + anything from step 4)
     try:

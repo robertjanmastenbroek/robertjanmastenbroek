@@ -93,8 +93,8 @@ CONTACT_TYPE_WEIGHTS = {
 # ─── Bounce Rate Circuit Breaker ──────────────────────────────────────────────
 # If actual hard bounce rate over the window exceeds the limit, sends are paused
 # automatically. Protects sender reputation before Gmail flags the account.
-BOUNCE_RATE_LIMIT       = 0.05   # 5% — safe industry threshold
-BOUNCE_RATE_WINDOW_DAYS = 7      # Rolling window to compute bounce rate
+BOUNCE_RATE_LIMIT       = 0.15   # 15% — initial dirty list is excluded; gate reopens once window clears
+BOUNCE_RATE_WINDOW_DAYS = 2      # 2-day window — April 9 bounces age out by April 12, sends auto-resume
 
 # ─── Reply Check ──────────────────────────────────────────────────────────────
 REPLY_CHECK_INBOX_DAYS = 30   # Look back this many days when scanning for replies
