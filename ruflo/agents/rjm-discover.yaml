@@ -1,0 +1,58 @@
+# rjm-discover — Curator & Podcast Discovery Worker
+type: worker
+version: "1.0.0"
+role: discovery
+
+identity:
+  name: rjm-discover
+  reports_to: rjm-master
+
+capabilities:
+  - web-search
+  - contact-extraction
+  - deduplication
+  - csv-management
+
+cadence: "6x/day"
+contacts_per_run: 25
+
+discovery_criteria:
+  playlists:
+    genres:
+      - melodic techno
+      - tribal psytrance
+      - ethnic electronic
+      - rave culture
+      - consciousness
+      - wellness
+      - world music
+    min_followers: 5000
+    exclude: Christian-specific playlists
+  podcasts:
+    topics:
+      - electronic music
+      - spiritual but not religious
+      - personal transformation
+      - consciousness
+      - rave culture
+    min_downloads_per_episode: 1000
+
+geographic_priority:
+  - Spain
+  - Germany
+  - UK
+  - US
+  - Netherlands
+  - Poland
+  - France
+  - Brazil
+
+output:
+  contacts_file: ../contacts.csv
+  log_file: ../data/discover_log.json
+  next_step: rjm-research  # hand off for personalisation
+
+scripts:
+  run: python3 ../outreach_agent/find_contacts.py
+
+createdAt: "2026-04-11T00:00:00.000Z"

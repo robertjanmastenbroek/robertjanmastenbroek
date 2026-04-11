@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:1080px; height:1080px; overflow:hidden; background:#06040F; }
+.slide {
+  width:1080px; height:1080px; position:relative;
+  background: linear-gradient(160deg, #08060F 0%, #0F0A1A 100%);
+  padding:72px 80px;
+}
+.top-bar { position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, transparent, #D4AF37 30%, #F5D97A 60%, #D4AF37 80%, transparent); }
+.bottom-bar { position:absolute; bottom:0; left:0; right:0; height:4px; background:linear-gradient(90deg, transparent, #D4AF37 30%, #F5D97A 60%, #D4AF37 80%, transparent); }
+.heading { font-family:'Inter'; font-weight:500; font-size:13px; letter-spacing:5px; color:#D4AF37; text-transform:uppercase; margin-bottom:16px; }
+.title { font-family:'Playfair Display'; font-weight:900; font-size:72px; color:#FFFFFF; line-height:1; letter-spacing:-2px; margin-bottom:48px; }
+.track {
+  display:flex; align-items:baseline; padding:28px 0;
+  border-bottom:1px solid rgba(212,175,55,0.1);
+}
+.track:last-child { border-bottom:none; }
+.num { font-family:'Inter'; font-weight:300; font-size:13px; color:#D4AF37; width:36px; flex-shrink:0; letter-spacing:1px; margin-top:2px; }
+.track-info { flex:1; }
+.track-name { font-family:'Playfair Display'; font-weight:700; font-size:38px; color:#FFFFFF; line-height:1; margin-bottom:6px; }
+.track-desc { font-family:'Inter'; font-weight:300; font-size:15px; color:#6A5F50; letter-spacing:0.5px; }
+.bpm { font-family:'Inter'; font-weight:400; font-size:14px; color:#D4AF37; letter-spacing:2px; white-space:nowrap; }
+.handle { position:absolute; bottom:36px; right:80px; font-family:'Inter'; font-weight:400; font-size:16px; letter-spacing:1px; color:#3A3020; }
+.page-num { position:absolute; bottom:36px; left:80px; font-family:'Inter'; font-weight:300; font-size:16px; color:#3A3020; }
+</style>
+</head><body>
+<div class="slide">
+  <div class="top-bar"></div>
+  <div class="heading">Discography highlights</div>
+  <div class="title">Top Tracks</div>
+  <div class="track">
+    <div class="num">01</div>
+    <div class="track-info">
+      <div class="track-name">Living Water</div>
+      <div class="track-desc">Most accessible — crossover</div>
+    </div>
+    <div class="bpm">124 BPM</div>
+  </div>
+  <div class="track">
+    <div class="num">02</div>
+    <div class="track-info">
+      <div class="track-name">Renamed</div>
+      <div class="track-desc">Tribal — Hebrew chanting</div>
+    </div>
+    <div class="bpm">130 BPM</div>
+  </div>
+  <div class="track">
+    <div class="num">03</div>
+    <div class="track-info">
+      <div class="track-name">Halleluyah</div>
+      <div class="track-desc">Psytrance — sacred energy</div>
+    </div>
+    <div class="bpm">140 BPM</div>
+  </div>
+  <div class="track">
+    <div class="num">04</div>
+    <div class="track-info">
+      <div class="track-name">Jericho</div>
+      <div class="track-desc">Dark — heavy — relentless</div>
+    </div>
+    <div class="bpm">140 BPM</div>
+  </div>
+  <div class="track">
+    <div class="num">05</div>
+    <div class="track-info">
+      <div class="track-name">He Is The Light</div>
+      <div class="track-desc">Faith angle strongest</div>
+    </div>
+    <div class="bpm">122 BPM</div>
+  </div>
+  <div class="handle">@robertjanmastenbroek</div>
+  <div class="page-num">3 / 4</div>
+  <div class="bottom-bar"></div>
+</div>
+</body></html>

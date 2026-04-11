@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:1080px; height:1080px; overflow:hidden; background:#06040F; font-family:'Inter',sans-serif; }
+.slide {
+  width:1080px; height:1080px; position:relative;
+  background: linear-gradient(145deg, #06040F 0%, #0D0820 50%, #06040F 100%);
+  display:flex; flex-direction:column; justify-content:center; padding:80px;
+}
+/* subtle grain */
+.slide::before {
+  content:''; position:absolute; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none; opacity:0.6;
+}
+/* gold top bar */
+.top-bar { position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, transparent, #D4AF37 30%, #F5D97A 60%, #D4AF37 80%, transparent); }
+.bottom-bar { position:absolute; bottom:0; left:0; right:0; height:4px; background:linear-gradient(90deg, transparent, #D4AF37 30%, #F5D97A 60%, #D4AF37 80%, transparent); }
+/* content */
+.eyebrow { font-family:'Inter'; font-weight:500; font-size:15px; letter-spacing:4px; color:#D4AF37; text-transform:uppercase; margin-bottom:32px; }
+.headline-sm { font-family:'Playfair Display'; font-weight:400; font-size:52px; color:#B0A090; line-height:1.1; margin-bottom:4px; font-style:italic; }
+.headline-lg { font-family:'Playfair Display'; font-weight:900; font-size:96px; color:#FFFFFF; line-height:0.95; margin-bottom:48px; letter-spacing:-2px; }
+.gold-accent { color:#D4AF37; }
+.divider { width:60px; height:2px; background:#D4AF37; margin:40px 0; }
+.body-text { font-family:'Inter'; font-weight:300; font-size:22px; color:#C8BEB0; line-height:1.7; max-width:780px; }
+.body-text em { color:#FFFFFF; font-style:normal; font-weight:400; }
+.handle { position:absolute; bottom:36px; right:80px; font-family:'Inter'; font-weight:400; font-size:16px; letter-spacing:1px; color:#5A4F40; }
+.page-num { position:absolute; bottom:36px; left:80px; font-family:'Inter'; font-weight:300; font-size:16px; color:#3A3020; }
+.side-accent {
+  position:absolute; left:0; top:180px; bottom:180px; width:3px;
+  background:linear-gradient(180deg, transparent, #D4AF37 30%, #D4AF37 70%, transparent);
+}
+</style>
+</head><body>
+<div class="slide">
+  <div class="top-bar"></div>
+  <div class="side-accent"></div>
+  <div class="eyebrow">The origin story</div>
+  <div class="headline-sm">He built a</div>
+  <div class="headline-lg">€6M<br>startup.</div>
+  <div class="headline-sm" style="font-size:44px; margin-bottom:8px;">Lost it all</div>
+  <div style="font-family:'Playfair Display'; font-weight:900; font-size:72px; color:#D4AF37; line-height:1; margin-bottom:48px;">at 30.</div>
+  <div class="divider"></div>
+  <div class="body-text">
+    Moved to Tenerife. Bought a van.<br>
+    Started making music <em>about God.</em><br><br>
+    <em>30+ tracks.</em> 290K followers.<br>
+    <span style="color:#D4AF37">Bible-inspired tribal techno.</span>
+  </div>
+  <div class="handle">@robertjanmastenbroek</div>
+  <div class="page-num">1 / 4</div>
+  <div class="bottom-bar"></div>
+</div>
+</body></html>

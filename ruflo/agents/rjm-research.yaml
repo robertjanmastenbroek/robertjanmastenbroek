@@ -1,0 +1,34 @@
+# rjm-research — Contact Personalisation Worker
+type: worker
+version: "1.0.0"
+role: research
+
+identity:
+  name: rjm-research
+  reports_to: rjm-master
+
+capabilities:
+  - web-research
+  - personalisation
+  - csv-management
+  - contact-enrichment
+
+cadence: "6x/day"
+
+research_sources:
+  - Spotify playlist descriptions and recent updates
+  - Podcast episode titles and guest patterns
+  - Instagram bios and recent posts
+  - LinkedIn profiles
+
+deliverable: "1-sentence personalisation hook per contact that references something specific to them — not generic"
+
+output:
+  contacts_file: ../contacts.csv  # update with notes column + flag as ready-for-outreach
+  log_file: ../data/research_log.json
+  next_step: rjm-outreach
+
+scripts:
+  run: python3 ../outreach_agent/learning.py
+
+createdAt: "2026-04-11T00:00:00.000Z"

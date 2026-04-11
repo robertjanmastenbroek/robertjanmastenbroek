@@ -1,0 +1,36 @@
+# rjm-playlist-discover — Spotify Playlist Database Builder
+type: worker
+version: "1.0.0"
+role: playlist-discovery
+
+identity:
+  name: rjm-playlist-discover
+  reports_to: rjm-master
+
+capabilities:
+  - spotify-api
+  - playlist-search
+  - database-management
+  - contact-extraction
+
+cadence: "6x/day"
+target_playlist_count: 200
+min_followers_per_playlist: 5000
+
+target_genres:
+  - melodic techno / deep techno
+  - psytrance / tribal
+  - ethnic / world electronic
+  - rave culture
+  - consciousness / meditation / flow state
+  - secular wellness / workout / movement
+
+output:
+  database: ../data/playlist_database.json
+  priority_pitches_per_run: 20
+  feed_into: rjm-discover  # for contact acquisition
+
+scripts:
+  run: python3 ../outreach_agent/playlist_run.py
+
+createdAt: "2026-04-11T00:00:00.000Z"

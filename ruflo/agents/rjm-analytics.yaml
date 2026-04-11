@@ -1,0 +1,51 @@
+# holy-rave-weekly-report — Analytics & KPI Worker
+type: worker
+version: "1.0.0"
+role: analytics
+
+identity:
+  name: holy-rave-weekly-report
+  reports_to: rjm-master
+
+capabilities:
+  - spotify-api
+  - buffer-api
+  - report-generation
+  - kpi-tracking
+
+cadence: "weekly"
+
+report_sections:
+  1_spotify_kpis:
+    primary: true
+    metrics:
+      - monthly_listeners vs 1,000,000 target
+      - stream_count by track
+      - playlist_adds this week
+      - saves and follows
+      - top markets (Spain, US, Germany, UK, Poland, NL, France, Brazil)
+  2_social:
+    secondary: true
+    metrics:
+      - views per clip (TikTok, IG, YouTube)
+      - best performing hook
+      - follower delta
+  3_outreach_pipeline:
+    metrics:
+      - emails sent this week
+      - reply rate
+      - curator placements secured
+      - podcast bookings confirmed
+  4_action_items:
+    - what to double down on
+    - what to cut
+    - next week priority
+
+output:
+  report_file: ../RJM_Daily_Report.md   # overwrite each week
+  north_star_display: "current_listeners / 1,000,000"
+
+scripts:
+  run: python3 ../outreach_agent/spotify_tracker.py status
+
+createdAt: "2026-04-11T00:00:00.000Z"

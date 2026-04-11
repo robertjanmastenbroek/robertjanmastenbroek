@@ -1,0 +1,57 @@
+# rjm-outreach — Gmail Outreach Worker
+type: worker
+version: "1.0.0"
+role: outreach
+
+identity:
+  name: rjm-outreach-agent
+  reports_to: rjm-master
+
+capabilities:
+  - email-generation
+  - gmail-oauth
+  - reply-detection
+  - followup-scheduling
+  - bounce-verification
+
+cadence: "every 30 minutes"
+active_window: "08:00-23:00 CET"
+overnight_break_hours: 8
+max_emails_per_day: 150
+
+pipeline_allocation:
+  playlist_curators: 50%   # 5,000+ followers only, NO Christian-specific playlists
+  podcast_bookings: 35%
+  festivals: 10%
+  labels: 5%
+
+priority_tracks:
+  curators: Renamed          # Isaiah 62 anchor
+  podcasts: Halleluyah       # 140 BPM psytrance — biographical arc
+
+target_markets:
+  - Spain
+  - US
+  - Germany
+  - UK
+  - Poland
+  - Netherlands
+  - France
+  - Brazil
+
+reply_authorization:
+  curator_reply: "thank + send track link + ask if it fits their playlist"
+  podcast_reply: "book interview — offer Tue/Wed/Thu 11:00–17:00 CET, mention Tenerife timezone, offer press kit"
+  podcast_booking: "add to Google Calendar with 1-hour warning"
+
+voice_rules:
+  - Direct, warm, no jargon, specific
+  - Lead with music — never lead with "I'm a Christian artist"
+  - Use personalisation note from rjm-research before sending
+
+scripts:
+  run: python3 ../outreach_agent/agent.py run
+  followups: python3 ../outreach_agent/agent.py followups
+  replies: python3 ../outreach_agent/run_cycle.py
+
+createdAt: "2026-04-11T00:00:00.000Z"

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:1080px; height:1920px; overflow:hidden; background:#06040F; }
+.slide {
+  width:1080px; height:1920px; position:relative;
+  background:linear-gradient(180deg, #06040F 0%, #0C0818 50%, #06040F 100%);
+  display:flex; flex-direction:column; justify-content:center; padding:80px;
+}
+.top-bar { position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg, transparent, #D4AF37 30%, #F5D97A 60%, #D4AF37 80%, transparent); }
+.bottom-bar { position:absolute; bottom:0; left:0; right:0; height:5px; background:linear-gradient(90deg, transparent, #D4AF37 30%, #F5D97A 60%, #D4AF37 80%, transparent); }
+/* vertical gold line accent */
+.v-line { position:absolute; left:0; top:240px; bottom:240px; width:4px; background:linear-gradient(180deg, transparent, #D4AF37 20%, #D4AF37 80%, transparent); }
+.eyebrow { font-family:'Inter'; font-weight:500; font-size:14px; letter-spacing:6px; color:#D4AF37; text-transform:uppercase; margin-bottom:40px; }
+.headline { font-family:'Playfair Display'; font-weight:900; font-size:110px; color:#FFFFFF; line-height:0.9; letter-spacing:-4px; margin-bottom:16px; }
+.headline-gold { font-family:'Playfair Display'; font-weight:400; font-size:90px; color:#D4AF37; font-style:italic; line-height:1; margin-bottom:64px; }
+.divider { width:60px; height:2px; background:#D4AF37; margin-bottom:64px; }
+.tracks { margin-bottom:64px; }
+.track-row { display:flex; align-items:center; padding:20px 0; border-bottom:1px solid rgba(212,175,55,0.08); }
+.track-row:last-child { border:none; }
+.t-name { font-family:'Playfair Display'; font-weight:700; font-size:36px; color:#FFFFFF; flex:1; }
+.t-bpm { font-family:'Inter'; font-weight:300; font-size:16px; color:#D4AF37; letter-spacing:2px; }
+.cta-box {
+  border:1px solid rgba(212,175,55,0.3); padding:40px 48px;
+  background:rgba(212,175,55,0.04);
+}
+.cta-main { font-family:'Playfair Display'; font-weight:700; font-size:44px; color:#FFFFFF; margin-bottom:16px; }
+.cta-sub { font-family:'Inter'; font-weight:300; font-size:20px; color:#6A5F50; line-height:1.5; }
+.cta-sub em { color:#A09080; font-style:normal; }
+.handle { position:absolute; bottom:48px; left:80px; font-family:'Inter'; font-weight:300; font-size:18px; letter-spacing:2px; color:#3A3020; }
+</style>
+</head><body>
+<div class="slide">
+  <div class="top-bar"></div>
+  <div class="v-line"></div>
+  <div class="eyebrow">30+ tracks available now</div>
+  <div class="headline">Ancient<br>Truth.</div>
+  <div class="headline-gold">Future Sound.</div>
+  <div class="divider"></div>
+  <div class="tracks">
+    <div class="track-row"><span class="t-name">Living Water</span><span class="t-bpm">124 BPM</span></div>
+    <div class="track-row"><span class="t-name">Renamed</span><span class="t-bpm">130 BPM</span></div>
+    <div class="track-row"><span class="t-name">Halleluyah</span><span class="t-bpm">140 BPM</span></div>
+    <div class="track-row"><span class="t-name">Jericho</span><span class="t-bpm">140 BPM</span></div>
+  </div>
+  <div class="cta-box">
+    <div class="cta-main">Follow on Spotify</div>
+    <div class="cta-sub">Link in bio &nbsp;·&nbsp; <em>Every save tells the algorithm this music matters.</em></div>
+  </div>
+  <div class="handle">@robertjanmastenbroek</div>
+  <div class="bottom-bar"></div>
+</div>
+</body></html>

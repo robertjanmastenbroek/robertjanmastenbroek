@@ -1,0 +1,61 @@
+# holy-rave-daily-run — Content Publishing Worker
+type: worker
+version: "1.0.0"
+role: content-publisher
+
+identity:
+  name: holy-rave-daily-run
+  reports_to: rjm-master
+
+capabilities:
+  - video-processing
+  - caption-generation
+  - buffer-posting
+  - ffmpeg-editing
+  - brand-voice-enforcement
+
+cadence: "daily"
+
+content_spec:
+  clips_per_run: 3
+  max_clip_length_seconds: 40
+  format: "9:16 vertical"
+  mix:
+    b_roll: 50%
+    performance: 30%
+    phone_footage: 20%
+  hook_format: "OPENER // REVEAL"
+
+caption_formula: "[BPM]. [Unexpected contrast]. [Scripture reference — subtle]"
+
+platforms:
+  - TikTok
+  - Instagram Reels
+  - YouTube Shorts
+
+posting_method: Buffer API
+
+brand_voice_tests:
+  - Visualization Test      # Can the reader see the words?
+  - Falsifiability Test     # Facts over adjectives
+  - Uniqueness Rule         # Could a competitor sign this?
+  - One Mississippi Test    # Value prop in under 2 seconds
+  - Point A→B              # Bridge secular fan to sacred energy
+
+north_star_check: "Every clip must be plausibly shareable by a secular rave attendee who has never been to church."
+
+active_tracks:
+  - halleluyah
+  - renamed
+  - jericho
+  - fire_in_our_hands
+
+sources:
+  audio: ../content/audio/
+  video: ../content/videos/
+  output: ../content/output/
+
+scripts:
+  run: python3 ../outreach_agent/post_today.py
+
+createdAt: "2026-04-11T00:00:00.000Z"

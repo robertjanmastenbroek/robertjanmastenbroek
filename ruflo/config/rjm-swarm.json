@@ -1,0 +1,103 @@
+{
+  "name": "rjm-command-centre",
+  "version": "1.0.0",
+  "description": "Holy Rave autonomous growth fleet — Robert-Jan Mastenbroek",
+  "north_star": "1,000,000 Spotify monthly listeners",
+  "spotify_id": "2Seaafm5k1hAuCkpdq7yds",
+
+  "consensus": "raft",
+
+  "queen": {
+    "agent": "rjm-master",
+    "config": "../agents/rjm-master.yaml",
+    "cadence": "8x/day",
+    "brand_voice": "../../BRAND_VOICE.md",
+    "claude_md": "../../CLAUDE.md"
+  },
+
+  "workers": [
+    {
+      "agent": "holy-rave-daily-run",
+      "config": "../agents/rjm-content.yaml",
+      "priority": 1,
+      "cadence": "daily",
+      "trigger": "queen"
+    },
+    {
+      "agent": "rjm-outreach-agent",
+      "config": "../agents/rjm-outreach.yaml",
+      "priority": 2,
+      "cadence": "every_30_minutes",
+      "trigger": "queen"
+    },
+    {
+      "agent": "rjm-discover",
+      "config": "../agents/rjm-discover.yaml",
+      "priority": 3,
+      "cadence": "6x/day",
+      "trigger": "queen",
+      "feeds_into": "rjm-research"
+    },
+    {
+      "agent": "rjm-research",
+      "config": "../agents/rjm-research.yaml",
+      "priority": 4,
+      "cadence": "6x/day",
+      "trigger": "rjm-discover",
+      "feeds_into": "rjm-outreach-agent"
+    },
+    {
+      "agent": "rjm-playlist-discover",
+      "config": "../agents/rjm-playlist-discover.yaml",
+      "priority": 3,
+      "cadence": "6x/day",
+      "trigger": "queen",
+      "feeds_into": "rjm-discover"
+    },
+    {
+      "agent": "holy-rave-weekly-report",
+      "config": "../agents/rjm-analytics.yaml",
+      "priority": 5,
+      "cadence": "weekly",
+      "trigger": "queen"
+    }
+  ],
+
+  "pipeline": {
+    "discover": ["rjm-playlist-discover", "rjm-discover"],
+    "enrich":   ["rjm-research"],
+    "publish":  ["rjm-outreach-agent", "holy-rave-daily-run"],
+    "report":   ["holy-rave-weekly-report"]
+  },
+
+  "memory": {
+    "persist": true,
+    "shared_keys": [
+      "contacts_db",
+      "playlist_database",
+      "master_log",
+      "daily_stats",
+      "template_performance"
+    ]
+  },
+
+  "brand_enforcement": {
+    "load_on_start": ["../../BRAND_VOICE.md", "../../CLAUDE.md"],
+    "compass": "Is this how God intended it?",
+    "subtle_salt": true,
+    "banned_words": ["blessed", "anointed", "curated", "authentic", "vibration", "energy", "intentional", "journey"],
+    "five_tests": [
+      "Visualization Test",
+      "Falsifiability Test",
+      "Uniqueness Rule",
+      "One Mississippi Test",
+      "Point A→B"
+    ]
+  },
+
+  "logging": {
+    "master_log": "../../data/master_log.json",
+    "discover_log": "../../data/discover_log.json",
+    "research_log": "../../data/research_log.json"
+  }
+}
