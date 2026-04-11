@@ -238,6 +238,19 @@ Where does this track find its listener? What specific moment is it for?
 All other hook rules apply: specific, located, never open with "I", no category language."""
 
 
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def _song_title_only(track_name: str) -> str:
+    """Build a short but findable Spotify search term.
+    'Robert-Jan Mastenbroek & LUCID - Fire In Our Hands' → 'Fire In Our Hands Robert-Jan'
+    'Renamed' → 'Renamed Robert-Jan'
+    """
+    if not track_name:
+        return track_name
+    song = track_name.rsplit(' - ', 1)[-1].strip() if ' - ' in track_name else track_name
+    return f"{song} Robert-Jan"
+
+
 # ── Content type detection ─────────────────────────────────────────────────────
 
 def detect_content_type(filename: str) -> str:
@@ -587,7 +600,7 @@ def generate_content(filename: str, clip_lengths: list,
     hooks        = hooks_meta.get('hooks', {})
 
     track_block       = f"TRACK: {track_name}" if track_name else "TRACK: Unknown"
-    spotify_cta       = f"Search {track_name} on Spotify" if track_name else "Search this track on Spotify"
+    spotify_cta       = f"Search {_song_title_only(track_name)} on Spotify" if track_name else "Search this track on Spotify"
     angle_instruction = ANGLE_INSTRUCTIONS.get(angle, ANGLE_DEFAULT_INSTRUCTION)
     strategy_block    = f"\nPERFORMANCE LEARNINGS:\n{strategy_notes}" if strategy_notes else ""
 
@@ -815,7 +828,7 @@ def generate_run_captions(track_title: str, clips_data: list) -> dict:
         15: {...},
     }
     """
-    spotify_cta = f"Search {track_title} on Spotify"
+    spotify_cta = f"Search {_song_title_only(track_title)} on Spotify"
 
     hooks_context = ""
     for c in clips_data:
@@ -862,12 +875,24 @@ CAPTION RULES:
 8. Biblical references woven in naturally where they fit — never forced.
 9. Content quality benchmark: must sit alongside Anyma, Rüfüs Du Sol, Argy.
 
+HUMAN VOICE — this is the most important rule:
+Write like a real person who just got home from a session, not a brand manager.
+Short sentences. Fragments are fine. Don't over-explain. Don't wrap everything up neatly.
+The reader should feel like this was written in 30 seconds by someone who actually lived it.
+Bad: "This track represents a journey of spiritual discovery set against the backdrop of Tenerife."
+Good: "wrote this at 4am. didn't plan to finish it."
+Bad: "Experience the sacred energy of Holy Rave's latest release."
+Good: "every week. free. show up."
+Imperfect grammar is allowed if it sounds natural. Avoid all marketing language.
+
 For EACH clip:
 1. TIKTOK caption (max 150 chars) + 5-8 hashtags
-   - Raw, first-person, like a text not a press release
+   - Casual first-person, like a voice note turned text
+   - Short bursts, not polished sentences
    - Hashtag tiers: 1-2 mega (#techno #electronicmusic) + 3-4 mid + 3-4 niche (#holyrave)
 
 2. INSTAGRAM REELS caption (max 200 chars) + hashtags (8-12 tags, for first comment)
+   - Slightly more considered than TikTok, but still raw — not curated
 
 3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences)
    - Title patterns: "[Bible ref] at [BPM] BPM" | "Holy Rave Tenerife — [specific]"
@@ -883,7 +908,9 @@ Return ONLY valid JSON, no explanation, no markdown:
 
     try:
         raw = _call_claude(
-            "You write social media captions for underground electronic music. Return only valid JSON.",
+            "You write social media captions for underground electronic music. "
+            "You write like a real person — short, raw, imperfect. Never polished, never marketing. "
+            "Return only valid JSON.",
             prompt, timeout=300,
         )
 
@@ -914,7 +941,7 @@ Return ONLY valid JSON, no explanation, no markdown:
 
 
 def _fallback_run_captions(track_title: str, clips_data: list) -> dict:
-    cta = f"Search {track_title} on Spotify"
+    cta = f"Search {_song_title_only(track_title)} on Spotify"
     result = {}
     for c in clips_data:
         angle = c['angle']
