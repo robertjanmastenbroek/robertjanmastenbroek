@@ -43,6 +43,24 @@ OUTPUT_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_OUTPUT_FOLDER_ID')
 PROCESSED_LOG    = '/tmp/processed_ids.json'
 CHECK_INTERVAL   = 30  # minutes between Drive checks
 
+# ── Angle auto-cycle ──────────────────────────────────────────────────────────
+# When a file has no angle keyword in its name, the system cycles through
+# emotional → signal → energy → emotional → ... automatically.
+ANGLE_CYCLE      = ['emotional', 'signal', 'energy']
+ANGLE_CYCLE_LOG  = '/tmp/holyrave_angle_cycle.json'
+
+def get_next_cycle_angle() -> str:
+    """Returns the next angle in the rotation and advances the counter."""
+    try:
+        with open(ANGLE_CYCLE_LOG, 'r') as f:
+            idx = json.load(f).get('index', 0)
+    except (FileNotFoundError, json.JSONDecodeError):
+        idx = 0
+    angle = ANGLE_CYCLE[idx % len(ANGLE_CYCLE)]
+    with open(ANGLE_CYCLE_LOG, 'w') as f:
+        json.dump({'index': (idx + 1) % len(ANGLE_CYCLE)}, f)
+    return angle
+
 # ── Processed file tracking ───────────────────────────────────────────────────
 def load_processed_ids() -> set:
     try:
@@ -85,14 +103,16 @@ def process_file(svc, file_meta: dict, processed_ids: set):
             save_processed_ids(processed_ids)
             return
 
-        # 3a. Generate hooks — Call 1 (temperature 1.0, no JSON pressure, 5 ranked candidates)
+        # 3a. Determine angle — from filename if present, otherwise auto-cycle
+        meta = generator.parse_filename_metadata(file_name)
+        angle_override = meta.get('angle') or get_next_cycle_angle()
+        logger.info(f"Angle: {angle_override} ({'from filename' if meta.get('angle') else 'auto-cycle'}) | Track: {meta.get('track_name')} | Seed: {meta.get('seed_hint')}")
+
+        # 3b. Generate hooks — Call 1 (temperature 1.0, no JSON pressure, 5 ranked candidates)
         logger.info("Generating hooks with Claude (Call 1)...")
-        hooks_meta = generator.generate_hooks(file_name, possible_lengths)
+        hooks_meta = generator.generate_hooks(file_name, possible_lengths, angle_override=angle_override)
         hooks = hooks_meta.get('hooks', {})
         angle = hooks_meta.get('angle')
-
-        if angle:
-            logger.info(f"Angle: {angle} | Track: {hooks_meta.get('track_name')} | Seed: {hooks_meta.get('seed_hint')}")
 
         # 3b. Generate captions — Call 2 (temperature 0.4, structured JSON)
         logger.info("Generating captions with Claude (Call 2)...")

@@ -224,10 +224,14 @@ def parse_filename_metadata(filename: str) -> dict:
 
 # ── Call 1: Hook generation ────────────────────────────────────────────────────
 
-def generate_hooks(filename: str, clip_lengths: list, strategy_notes: str = None) -> dict:
+def generate_hooks(filename: str, clip_lengths: list,
+                   strategy_notes: str = None, angle_override: str = None) -> dict:
     """
     Call 1 — Hook-only generation. Temperature 1.0. No JSON.
     Produces 5 ranked candidates per clip length, selects rank 1.
+
+    angle_override: bypasses filename detection and uses this angle directly.
+                    Supplied by the auto-cycle in main.py when no angle is in the filename.
 
     Returns:
     {
@@ -240,7 +244,7 @@ def generate_hooks(filename: str, clip_lengths: list, strategy_notes: str = None
     client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
     meta = parse_filename_metadata(filename)
     track_name = meta['track_name']
-    angle      = meta['angle']
+    angle      = angle_override or meta['angle']
     seed_hint  = meta['seed_hint']
 
     angle_instruction = ANGLE_INSTRUCTIONS.get(angle, ANGLE_DEFAULT_INSTRUCTION)
