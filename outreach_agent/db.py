@@ -126,6 +126,17 @@ CREATE TABLE IF NOT EXISTS instagram_outreach (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ig_handle
     ON instagram_outreach(instagram_handle);
 
+CREATE TABLE IF NOT EXISTS events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type  TEXT    NOT NULL,
+    source      TEXT    NOT NULL,
+    payload     TEXT    NOT NULL,
+    created_at  TEXT    NOT NULL,
+    consumed_by TEXT    DEFAULT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
+CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at);
+
 CREATE TABLE IF NOT EXISTS form_submissions (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     playlist_id     TEXT    NOT NULL,
