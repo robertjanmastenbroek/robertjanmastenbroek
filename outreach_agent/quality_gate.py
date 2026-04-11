@@ -18,6 +18,7 @@ import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+import anthropic
 
 EXPECTED_WIDTH  = 1080
 EXPECTED_HEIGHT = 1920
@@ -132,8 +133,6 @@ def _check_visual(clip_path: str, angle: str = "") -> tuple:
 
 def _score_frame(frame_b64: str, angle: str) -> tuple:
     """Send frame to Claude Vision. Returns (passed, reason)."""
-    import anthropic
-
     client = anthropic.Anthropic()
     angle_context = f" The clip angle is '{angle}'." if angle else ""
 
