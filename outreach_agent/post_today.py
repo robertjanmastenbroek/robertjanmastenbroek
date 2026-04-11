@@ -671,7 +671,7 @@ def main():
     if not args.dry_run:
         _sep("BUFFER — Queuing to TikTok / Instagram Reels / Instagram Story / YouTube")
         from buffer_poster import upload_video_and_queue
-        from datetime import datetime, timedelta, timezone
+        from datetime import timedelta, timezone
 
         # Schedule all 3 clips for today — 3-hour gaps starting 30 min from now.
         # Each slot queues: TikTok + Instagram Reel + Instagram Story + YouTube Short.
