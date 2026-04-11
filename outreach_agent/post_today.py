@@ -237,11 +237,11 @@ def _find_top_sections(audio_path: Path, clip_duration: int, n: int = 5) -> list
         return [min(60, max(0, total - clip_duration))]
 
 
-def find_peak_section(audio_path: Path, clip_duration: int = 30) -> int:
+def find_peak_section(audio_path: Path, clip_duration: int = 30, n_results: int = 1) -> list:
     """
-    Return the next audio section start time for this track, rotating through
-    the top-N scoring sections so each run uses a different part of the song.
-    Sections are cached in audio_rotation.json; the index advances each call.
+    Return n_results audio section start times for this track, rotating through
+    the top-N scoring sections so each clip in a run uses a different part of the song.
+    Sections are cached in audio_rotation.json; the index advances by n_results each call.
     """
     track_key = audio_path.stem.lower()
 
@@ -260,16 +260,19 @@ def find_peak_section(audio_path: Path, clip_duration: int = 30) -> int:
         print(f"  Cached sections: {sections}")
 
     next_idx = entry.get("next_idx", 0) % len(sections)
-    best_t   = sections[next_idx]
 
-    state[track_key] = {"sections": sections, "next_idx": (next_idx + 1) % len(sections)}
+    # Return n_results consecutive sections starting at next_idx, advance by n_results
+    result = [sections[(next_idx + i) % len(sections)] for i in range(n_results)]
+
+    state[track_key] = {"sections": sections, "next_idx": (next_idx + n_results) % len(sections)}
     try:
         AUDIO_ROTATION.write_text(json.dumps(state, indent=2))
     except Exception as e:
         print(f"  WARN: Could not save audio rotation: {e}")
 
-    print(f"  Peak beat section at {best_t}s  (section {next_idx + 1}/{len(sections)})")
-    return best_t
+    for i, t in enumerate(result):
+        print(f"  Audio section {next_idx + i + 1}/{len(sections)} at {t}s")
+    return result
 
 
 def _snap_to_beat(audio_path: Path, target_start: int) -> int:
@@ -310,11 +313,13 @@ def _find_videos_in(subdir: str) -> list[Path]:
     ]
 
 
-def pick_source_videos(count: int, exclude: set = None) -> list[Path]:
+def pick_source_videos(count: int, exclude: set = None, lead_cat: str = 'perf') -> list[Path]:
     """
-    Pick `count` unique source videos.
-    Alternates between categories: performances → b-roll → phone → performances → …
-    This ensures visual variety within each clip's segments.
+    Pick `count` unique source videos, starting with `lead_cat` category.
+    lead_cat controls the visual mood of the clip:
+      'perf'  → performances-led (epic, crowd energy)
+      'broll' → b-roll-led (atmospheric, landscape)
+      'phone' → phone-footage-led (raw, intimate)
     Within each category, least-recently-used videos are picked first.
     Excludes any paths in `exclude`.
     """
@@ -347,9 +352,12 @@ def pick_source_videos(count: int, exclude: set = None) -> list[Path]:
     if not broll and not perf and not phone:
         sys.exit("ERROR: no source videos found in content/videos/")
 
-    # Interleave: perf → broll → phone → perf → broll → phone → …
-    # This guarantees alternating visual variety rather than a run of the same type.
-    categories = [lst for lst in [perf, broll, phone] if lst]
+    # Interleave starting with lead_cat so each clip has a different visual character:
+    #   'perf'  → performances-led (epic/crowd energy for 15s)
+    #   'broll' → b-roll-led (atmospheric/landscape for 9s)
+    #   'phone' → phone-footage-led (raw/intimate for 5s)
+    order_map = {'perf': [perf, broll, phone], 'broll': [broll, phone, perf], 'phone': [phone, broll, perf]}
+    categories = [lst for lst in order_map.get(lead_cat, [perf, broll, phone]) if lst]
     iters      = [iter(lst) for lst in categories]
     interleaved: list[Path] = []
     while iters:
@@ -454,10 +462,15 @@ def main():
     bar_dur = 4 * 60.0 / bpm   # one 4/4 bar in seconds
     print(f"  BPM:   {bpm:.1f}  (bar = {bar_dur:.2f}s)")
 
-    audio_start = find_peak_section(audio_path, max(processor.CLIP_LENGTHS))
-    # Start one bar before the peak so the listener hears a lead-in hit (Expert 4)
-    audio_start = max(0, int(audio_start - bar_dur))
-    print(f"  Audio start adjusted to {audio_start}s (1 bar lead-in)")
+    raw_sections = find_peak_section(audio_path, max(processor.CLIP_LENGTHS), n_results=3)
+    # Apply 1-bar lead-in to each section, one per clip
+    clip_lengths_tmp = list(processor.CLIP_LENGTHS)  # [5, 9, 15]
+    audio_starts = {
+        cl: max(0, int(raw_sections[i] - bar_dur))
+        for i, cl in enumerate(clip_lengths_tmp)
+    }
+    for cl, t in audio_starts.items():
+        print(f"  Audio start {cl}s clip → {t}s (1 bar lead-in)")
 
     # ── 2. Source videos — one pool per clip, beat-synced start points ────────
     _sep("STEP 2 / 4 — Source videos + beat-sync")
@@ -478,7 +491,12 @@ def main():
 
         print(f"\n  {clip_len}s [{angle}] — {n_segs} segments × {seg_dur:.2f}s  (4/4 at {bpm:.0f} BPM)")
 
-        sources_raw = pick_source_videos(n_segs, exclude=all_used)
+        # Each angle gets a different visual lead:
+        #   emotional (5s) → phone-footage first (raw/intimate)
+        #   signal (9s)    → b-roll first (atmospheric/landscape)
+        #   energy (15s)   → performances first (crowd energy)
+        lead_cat = {'emotional': 'phone', 'signal': 'broll', 'energy': 'perf'}.get(angle, 'perf')
+        sources_raw = pick_source_videos(n_segs, exclude=all_used, lead_cat=lead_cat)
         sources     = []
         categories  = []
 
@@ -574,7 +592,7 @@ def main():
             angle=angle,
             source_categories=cat_list,
         )
-        mix_in_track(out_file, audio_path, audio_start, clip_len)
+        mix_in_track(out_file, audio_path, audio_starts[clip_len], clip_len)
 
         size_mb = out_file.stat().st_size / 1_000_000
         print(f"    ✓ {out_file.name}  ({size_mb:.1f} MB)")
