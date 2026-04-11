@@ -87,3 +87,53 @@ Outreach limits: max 150 emails/day, active window 08:00–23:00 CET, 8hr overni
 ## Context Navigation
 Use `graphify-out/wiki/index.md` to navigate this codebase before reading raw files.
 Graph: 650 nodes · 889 edges · 109 communities · 149x token reduction vs reading raw files.
+
+## Installed Skills — When to Use Each
+
+Five skills are installed globally and integrated into this project's workflow.
+
+### superpowers (14 lifecycle workflows)
+Trigger each at the right moment — mandatory gates, not suggestions:
+
+| Trigger | When |
+|---------|------|
+| `/brainstorming` | Before any new feature, agent, or growth strategy |
+| `/writing-plans` | Before building anything non-trivial — spec it first |
+| `/executing-plans` | When running a plan in an isolated session |
+| `/systematic-debugging` | Before proposing ANY fix to outreach_agent/ or the fleet |
+| `/test-driven-development` | Before writing implementation code |
+| `/verification-before-completion` | Before claiming any task done |
+| `/requesting-code-review` | Before merging changes to outreach_agent/ |
+| `/using-git-worktrees` | Already in use — all feature work happens in worktrees |
+
+### frontend-design — `/frontend-design`
+Use for: `index.html`, `selah.html`, any Holy Rave visual assets or social media UI.
+Visual identity: Dark, Holy, Futuristic (Anyma / Rüfüs Du Sol / Argy references).
+No generic fonts (no Inter, no Arial). No purple gradients. Sacred geometry aesthetics.
+
+### code-review — `/code-review <PR-number>`
+Mandatory after any changes to `outreach_agent/` (Gmail OAuth, bounce logic, rate limiting),
+`rjm.py`, or any autonomous agent behaviour. Runs 5 parallel review agents, filters below 80% confidence.
+Run from project root: `/code-review 42`
+
+### security-guidance — AUTO (PreToolUse hook, no trigger needed)
+Fires on every Edit/Write. Proactively catches dangerous patterns in code before they land.
+Especially relevant for `outreach_agent/` — subprocess calls to Claude CLI, Gmail OAuth token
+handling, and DNS lookups in bounce.py are all in scope.
+
+### gstack — `/gstack`
+Use for QA testing the Holy Rave website before publishing or scheduling Buffer posts.
+Screenshots, responsive layout (mobile/desktop), form validation, before/after diffs.
+Requires `bun` — install once with: `curl -fsSL https://bun.sh/install | bash`
+Then run setup: `~/.claude/skills/gstack/setup`
+
+## Unified Entry Point
+All agent commands run through `rjm.py` at the project root:
+```
+python3 rjm.py status          # system health
+python3 rjm.py briefing        # daily priorities
+python3 rjm.py outreach run    # fire outreach agent
+python3 rjm.py master gaps     # pipeline gaps
+python3 rjm.py contacts sync   # CSV → SQLite bridge
+python3 rjm.py skills          # show skill trigger reference
+```

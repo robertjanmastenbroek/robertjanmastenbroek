@@ -96,6 +96,43 @@ def cmd_briefing():
     sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "briefing"], cwd=str(OUTREACH_DIR)))
 
 
+def cmd_skills():
+    """Print the installed skill trigger reference."""
+    print("""
+╔══════════════════════════════════════════════════════════════╗
+║           RJM COMMAND CENTRE — INSTALLED SKILLS              ║
+╚══════════════════════════════════════════════════════════════╝
+
+SUPERPOWERS (14 lifecycle workflows) — invoke before key actions:
+  /brainstorming              Before any new feature or growth strategy
+  /writing-plans              Before building anything — spec it first
+  /executing-plans            Run a plan in an isolated session
+  /systematic-debugging       Before proposing any fix to outreach_agent/
+  /test-driven-development    Before writing implementation code
+  /verification-before-completion  Before claiming work done
+  /requesting-code-review     Before merging changes
+  /using-git-worktrees        Feature isolation (already in use)
+
+FRONTEND-DESIGN               /frontend-design
+  Use for: index.html, selah.html, Holy Rave visuals, social UI
+  Style: Dark, Holy, Futuristic — Anyma / Rüfüs Du Sol aesthetics
+
+CODE-REVIEW                   /code-review <PR-number>
+  Mandatory after: outreach_agent/ changes, rjm.py, agent behaviour
+  Runs 5 parallel agents, filters <80% confidence issues
+  Example: /code-review 42
+
+SECURITY-GUIDANCE             AUTO — fires on every Edit/Write
+  Proactively catches dangerous patterns before they land in code
+  Especially active on outreach_agent/ (OAuth, subprocess, DNS)
+
+GSTACK                        /gstack
+  QA test Holy Rave website — screenshots, responsive layout, forms
+  Requires bun: curl -fsSL https://bun.sh/install | bash
+  Then: ~/.claude/skills/gstack/setup
+""")
+
+
 def cmd_status():
     """
     Full system status — runs master health + outreach status in sequence.
@@ -148,6 +185,8 @@ def main():
             cmd_run(agent, rest[1:])
     elif cmd == "sync":
         cmd_sync()
+    elif cmd in ("skills", "skill"):
+        cmd_skills()
     elif cmd in ("help", "--help", "-h"):
         print(__doc__)
     else:
