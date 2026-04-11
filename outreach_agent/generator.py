@@ -223,7 +223,9 @@ The viewer must simulate being inside a body on that floor — not watching from
 
 Hook rules:
 - Describe what happens to a SPECIFIC BODY PART, not "the crowd" or "the room" generically.
-  Sternum. Spine. Feet. Chest cavity. The body's anticipation before the beat lands.
+  Pick a body part that is surprising and specific — NOT "sternum" (overused, banned).
+  Examples of fresh targets: jaw, shoulder blades, the back of the neck, knees, hands, temples.
+  Never repeat a body part that has appeared in a previous run — vary every time.
 - Techno at 130-145 BPM entrains motor neurons involuntarily — reference this physical pull.
 - The sacred/rave collision can be asserted with confidence — assert it, don't explain it.
 - Present tense, declarative. No questions.
@@ -465,20 +467,20 @@ Bold is correct. Do not self-censor."""
     try:
         raw        = _call_claude(system_prompt, user_prompt, timeout=180)
         candidates = _parse_hook_candidates(raw, list(clips_by_length.keys()))
-        hooks      = _assign_abc_hooks(candidates)
+        # Pick the top-ranked hook per clip — single unique hook, no A/B/C
+        hooks = {
+            length: (cands[0]['text'] if cands else _fallback_hook(clips_by_length.get(length)))
+            for length, cands in candidates.items()
+        }
         logger.info(f"Run hooks generated: {track_title}")
-        for length, abc in hooks.items():
-            logger.info(f"  {length}s [{clips_by_length.get(length,'?')}] A→ \"{abc['a']}\"")
+        for length, hook in hooks.items():
+            logger.info(f"  {length}s [{clips_by_length.get(length,'?')}] → \"{hook}\"")
         return hooks
 
     except Exception as e:
         logger.error(f"Run hook generation failed: {e}")
         return {
-            c['length']: {
-                'a': _fallback_hook(c['angle']),
-                'b': _fallback_hook(c['angle']),
-                'c': _fallback_hook(c['angle']),
-            }
+            c['length']: _fallback_hook(c['angle'])
             for c in clips_config
         }
 
@@ -816,9 +818,9 @@ def generate_run_captions(track_title: str, clips_data: list) -> dict:
     Enforces 100% unique captions across clips.
 
     clips_data: [
-        {'length': 5, 'angle': 'emotional', 'hook_a': str, 'hook_b': str, 'hook_c': str},
-        {'length': 9, 'angle': 'signal',    'hook_a': str, ...},
-        {'length': 15, 'angle': 'energy',   'hook_a': str, ...},
+        {'length': 5, 'angle': 'emotional', 'hook': str},
+        {'length': 9, 'angle': 'signal',    'hook': str},
+        {'length': 15, 'angle': 'energy',   'hook': str},
     ]
 
     Returns:
@@ -834,9 +836,7 @@ def generate_run_captions(track_title: str, clips_data: list) -> dict:
     for c in clips_data:
         hooks_context += (
             f"\n{c['length']}s [{c['angle'].upper()}]\n"
-            f'  A: "{c.get("hook_a", "")}"\n'
-            f'  B: "{c.get("hook_b", "")}"\n'
-            f'  C: "{c.get("hook_c", "")}"\n'
+            f'  Hook: "{c.get("hook", "")}"\n'
         )
 
     lengths_str = ", ".join(str(c['length']) + "s" for c in clips_data)

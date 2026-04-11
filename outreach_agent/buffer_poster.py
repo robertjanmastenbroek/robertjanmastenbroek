@@ -28,7 +28,7 @@ import requests
 # ─── Config ───────────────────────────────────────────────────────────────────
 
 BUFFER_API_KEY = os.environ.get("BUFFER_API_KEY", "131Alg-sjqKP6XuUZj3KOvMvoI8UmWGV8v2th47JQRf")
-BUFFER_ENDPOINT = "https://api.buffer.com"
+BUFFER_ENDPOINT = "https://api.buffer.com/graphql"
 
 # Channel IDs (fetched via --list-channels)
 CHANNELS = {
@@ -42,21 +42,28 @@ IMGUR_CLIENT_ID = "546c25a59c58ad7"
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
+_ORG_ID_CACHE: str | None = None
+
+
 def _gql(query: str, variables: dict = None) -> dict:
-    """Execute a Buffer GraphQL request."""
+    """Execute a Buffer GraphQL request. Retries once on 429."""
+    import time
     payload = {"query": query}
     if variables:
         payload["variables"] = variables
-    resp = requests.post(
-        BUFFER_ENDPOINT,
-        json=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {BUFFER_API_KEY}",
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {BUFFER_API_KEY}",
+    }
+    for attempt in range(2):
+        resp = requests.post(BUFFER_ENDPOINT, json=payload, headers=headers, timeout=30)
+        if resp.status_code == 429:
+            retry_after = int(resp.headers.get("Retry-After", 60))
+            print(f"    [Buffer] rate limited — waiting {retry_after}s…")
+            time.sleep(retry_after)
+            continue
+        resp.raise_for_status()
+        break
     data = resp.json()
     if "errors" in data:
         sys.exit(f"Buffer API error: {data['errors']}")
@@ -146,6 +153,137 @@ def _create_post(channel: str, post_type: str, image_urls: list[str], caption: s
     status = payload["post"]["status"]
     print(f"  → Post queued: {post_id} ({status})")
     return post_id
+
+
+# ─── Video upload ─────────────────────────────────────────────────────────────
+
+def _get_org_id() -> str:
+    """Return the first Buffer organization ID (cached per process)."""
+    global _ORG_ID_CACHE
+    if _ORG_ID_CACHE is None:
+        data = _gql("query { account { organizations { id name } } }")
+        _ORG_ID_CACHE = data["account"]["organizations"][0]["id"]
+    return _ORG_ID_CACHE
+
+
+def _upload_video_to_buffer(filepath: str) -> str:
+    """Upload a local video file to Buffer and return the media ID."""
+    p = Path(filepath)
+    if not p.exists():
+        raise FileNotFoundError(f"Video file not found: {filepath}")
+
+    file_size = p.stat().st_size
+    org_id = _get_org_id()
+
+    mutation = """
+    mutation CreateMediaUpload($input: CreateMediaUploadInput!) {
+      createMediaUpload(input: $input) {
+        ... on MediaUploadActionSuccess {
+          mediaUpload {
+            id
+            uploadUrl
+            headers { key value }
+          }
+        }
+        ... on MutationError { message }
+      }
+    }
+    """
+    result = _gql(mutation, {
+        "input": {
+            "organizationId": org_id,
+            "fileSize": file_size,
+            "contentType": "video/mp4",
+        }
+    })
+
+    payload = result["createMediaUpload"]
+    if "message" in payload:
+        raise RuntimeError(f"Buffer media upload request failed: {payload['message']}")
+
+    media_id  = payload["mediaUpload"]["id"]
+    upload_url = payload["mediaUpload"]["uploadUrl"]
+    headers   = {h["key"]: h["value"] for h in payload["mediaUpload"].get("headers", [])}
+
+    print(f"    Uploading {p.name} ({file_size / 1_000_000:.1f} MB) to Buffer…")
+    with p.open("rb") as fh:
+        resp = requests.put(upload_url, data=fh, headers=headers, timeout=300)
+    resp.raise_for_status()
+    print(f"    → media_id: {media_id}")
+    return media_id
+
+
+def _create_video_post(
+    channel: str,
+    media_id: str,
+    caption: str,
+    title: str = "",
+    description: str = "",
+) -> str:
+    """Queue a video post to one Buffer channel. Returns the Buffer post ID."""
+    channel_id = CHANNELS.get(channel)
+    if not channel_id:
+        raise ValueError(f"Unknown channel '{channel}'. Valid: {list(CHANNELS.keys())}")
+
+    if channel == "instagram":
+        metadata = {"instagram": {"type": "reel", "shouldShareToFeed": True}}
+    elif channel == "youtube":
+        metadata = {
+            "youtube": {
+                "title": (title or caption)[:100],
+                "description": description or caption,
+                "privacyStatus": "public",
+            }
+        }
+    else:
+        metadata = {}
+
+    mutation = """
+    mutation CreatePost($input: CreatePostInput!) {
+      createPost(input: $input) {
+        ... on PostActionSuccess { post { id status } }
+        ... on MutationError { message }
+      }
+    }
+    """
+    variables = {
+        "input": {
+            "channelId": channel_id,
+            "text": caption,
+            "schedulingType": "automatic",
+            "mode": "addToQueue",
+            "metadata": metadata,
+            "assets": {"video": {"mediaId": media_id}},
+        }
+    }
+
+    result = _gql(mutation, variables)
+    payload = result["createPost"]
+    if "message" in payload:
+        raise RuntimeError(f"Buffer rejected {channel} post: {payload['message']}")
+
+    post_id = payload["post"]["id"]
+    status  = payload["post"]["status"]
+    print(f"    → {channel} queued: {post_id} ({status})")
+    return post_id
+
+
+def upload_video_and_queue(
+    clip_path: str,
+    tiktok_caption: str,
+    instagram_caption: str,
+    youtube_title: str,
+    youtube_desc: str,
+) -> None:
+    """Upload a video and queue it to TikTok, Instagram Reels, and YouTube Shorts via Buffer."""
+    import time
+    media_id = _upload_video_to_buffer(clip_path)
+
+    _create_video_post("tiktok",    media_id, tiktok_caption)
+    time.sleep(2)
+    _create_video_post("instagram", media_id, instagram_caption)
+    time.sleep(2)
+    _create_video_post("youtube",   media_id, youtube_desc, title=youtube_title, description=youtube_desc)
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────

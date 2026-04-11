@@ -19,6 +19,7 @@ Usage:
 import argparse
 import json
 import os
+import random
 import re
 import subprocess
 import sys
@@ -286,9 +287,26 @@ def pick_source_videos(count: int, exclude: set = None) -> list[Path]:
 
     rotation = json.loads(VIDEO_ROTATION.read_text()) if VIDEO_ROTATION.exists() else {}
 
-    broll = sorted(_find_videos_in("b-roll"),        key=lambda p: rotation.get(str(p), 0))
-    perf  = sorted(_find_videos_in("performances"),  key=lambda p: rotation.get(str(p), 0))
-    phone = sorted(_find_videos_in("phone-footage"), key=lambda p: rotation.get(str(p), 0))
+    def _sort_with_jitter(videos: list) -> list:
+        """Sort by LRU, but shuffle clips with the same day-level timestamp so
+        re-runs through a fully-used library always produce fresh combinations."""
+        DAY = 86400
+        # Group by day bucket, shuffle within each bucket, then sort buckets ascending
+        from collections import defaultdict
+        buckets: dict = defaultdict(list)
+        for p in videos:
+            ts = rotation.get(str(p), 0)
+            buckets[ts // DAY].append(p)
+        result = []
+        for day_key in sorted(buckets):
+            group = buckets[day_key]
+            random.shuffle(group)
+            result.extend(group)
+        return result
+
+    broll = _sort_with_jitter(_find_videos_in("b-roll"))
+    perf  = _sort_with_jitter(_find_videos_in("performances"))
+    phone = _sort_with_jitter(_find_videos_in("phone-footage"))
 
     if not broll and not perf and not phone:
         sys.exit("ERROR: no source videos found in content/videos/")
@@ -460,20 +478,14 @@ def main():
     print("  Generating hooks (all 3 angles — 1 call)…")
     run_hooks = generator.generate_run_hooks(track_title, clips_config)
     for cl in clip_lengths:
-        abc = run_hooks.get(cl, {})
-        print(f"    {cl}s [{per_clip[cl]['angle']}]")
-        print(f"      A: \"{abc.get('a', '')}\"")
-        print(f"      B: \"{abc.get('b', '')}\"")
-        print(f"      C: \"{abc.get('c', '')}\"")
+        print(f"    {cl}s [{per_clip[cl]['angle']}]  \"{run_hooks.get(cl, '')}\"")
 
     print("\n  Generating captions (all 3 clips — 1 call)…")
     clips_data = [
         {
-            "length":  cl,
-            "angle":   per_clip[cl]["angle"],
-            "hook_a":  run_hooks.get(cl, {}).get("a", ""),
-            "hook_b":  run_hooks.get(cl, {}).get("b", ""),
-            "hook_c":  run_hooks.get(cl, {}).get("c", ""),
+            "length": cl,
+            "angle":  per_clip[cl]["angle"],
+            "hook":   run_hooks.get(cl, ""),
         }
         for cl in clip_lengths
     ]
@@ -493,7 +505,7 @@ def main():
         clip_data = per_clip[clip_len]
         angle     = clip_data["angle"]
         sources   = clip_data["video_sources"]
-        hook_a    = run_hooks.get(clip_len, {}).get("a", "")
+        hook      = run_hooks.get(clip_len, "")
 
         print(f"  → {clip_len}s [{angle}]  {len(sources)} segments")
         out_file = run_dir / f"{safe_track}_{clip_len}s.mp4"
@@ -502,7 +514,7 @@ def main():
             video_sources=sources,
             output_path=str(out_file),
             clip_duration=float(clip_len),
-            hook_text=hook_a,
+            hook_text=hook,
             angle=angle,
         )
         mix_in_track(out_file, audio_path, audio_start, clip_len)
@@ -514,7 +526,7 @@ def main():
     # ── Captions file ─────────────────────────────────────────────────────────
     caption_lines = []
     for cl in clip_lengths:
-        abc   = run_hooks.get(cl, {})
+        hook  = run_hooks.get(cl, "")
         caps  = run_captions.get(cl, {})
         angle = per_clip[cl]["angle"]
 
@@ -524,10 +536,7 @@ def main():
             f"│  File: {safe_track}_{cl}s.mp4",
             f"└─────────────────────────────────────────────",
             "",
-            "HOOKS (A/B/C — post same clip on different days with each variant):",
-            f'   A: "{abc.get("a", "")}"',
-            f'   B: "{abc.get("b", "")}"',
-            f'   C: "{abc.get("c", "")}"',
+            f'HOOK: "{hook}"',
             "",
             "━━━ TIKTOK ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             f"   {caps.get('tiktok', {}).get('caption', '')}",
@@ -593,12 +602,9 @@ def main():
         print("\n[DRY RUN] Buffer posting skipped.\n")
         for cl in clip_lengths:
             angle = per_clip[cl]["angle"]
-            abc   = run_hooks.get(cl, {})
             caps  = run_captions.get(cl, {})
             print(f"── {cl}s [{angle}] ──────────────────────────────")
-            print(f"  Hook A:    {abc.get('a', '')}")
-            print(f"  Hook B:    {abc.get('b', '')}")
-            print(f"  Hook C:    {abc.get('c', '')}")
+            print(f"  Hook:      {run_hooks.get(cl, '')}")
             print(f"  TikTok:    {caps.get('tiktok', {}).get('caption', '')}")
             print(f"  Instagram: {caps.get('instagram', {}).get('caption', '')}")
             print(f"  YT title:  {caps.get('youtube', {}).get('title', '')}")
