@@ -399,6 +399,38 @@ Do not explain your choices. Do not apologise for bold hooks. Bold is correct.""
     }
 
 
+def _force_two_part(text: str) -> str:
+    """
+    Split a single-line hook into OPENER // REVEAL at the best natural break:
+    comma, semicolon, 'and'/'but'/'then'/'so', or word midpoint fallback.
+    """
+    # Try splitting at a comma or semicolon near the middle
+    words = text.split()
+    mid   = len(words) // 2
+    for i in range(mid, len(words)):
+        if words[i].endswith(',') or words[i].endswith(';'):
+            opener = ' '.join(words[:i + 1]).rstrip(',;')
+            reveal = ' '.join(words[i + 1:])
+            if reveal:
+                return f"{opener} // {reveal}"
+    for i in range(mid - 1, 0, -1):
+        if words[i].endswith(',') or words[i].endswith(';'):
+            opener = ' '.join(words[:i + 1]).rstrip(',;')
+            reveal = ' '.join(words[i + 1:])
+            if reveal:
+                return f"{opener} // {reveal}"
+    # Try splitting before a conjunction near the middle
+    conjunctions = {'and', 'but', 'then', 'so', 'because', 'until', 'before', 'after', 'while'}
+    for i in range(mid, len(words)):
+        if words[i].lower() in conjunctions:
+            opener = ' '.join(words[:i])
+            reveal = ' '.join(words[i:])
+            if opener and reveal:
+                return f"{opener} // {reveal}"
+    # Hard split at word midpoint
+    return ' '.join(words[:mid]) + ' // ' + ' '.join(words[mid:])
+
+
 def _normalize_hook(text) -> str:
     """Ensure hook is a plain string. Handles dict objects or dict-syntax strings from Claude."""
     if isinstance(text, dict):
@@ -410,6 +442,8 @@ def _normalize_hook(text) -> str:
         m = re.search(r"'a'\s*:\s*['\"](.+?)['\"]", text)
         if m:
             return m.group(1).strip()
+    # Strip markdown bold markers that Claude sometimes adds
+    text = text.strip('*').strip()
     return text
 
 
@@ -499,11 +533,21 @@ Bold is correct. Do not self-censor."""
     try:
         raw        = _call_claude(system_prompt, user_prompt, timeout=300)
         candidates = _parse_hook_candidates(raw, list(clips_by_length.keys()))
-        # Pick the top-ranked hook per clip — single unique hook, no A/B/C
-        hooks = {
-            length: (cands[0]['text'] if cands else _fallback_hook(clips_by_length.get(length)))
-            for length, cands in candidates.items()
-        }
+
+        # Pick rank 1 per clip, enforcing the OPENER // REVEAL two-part format.
+        hooks = {}
+        for length, cands in candidates.items():
+            if not cands:
+                hooks[length] = _fallback_hook(clips_by_length.get(length))
+                continue
+            # Prefer any candidate that already has //
+            two_part = next((c['text'] for c in cands if ' // ' in c['text']), None)
+            if two_part:
+                hooks[length] = two_part
+            else:
+                # Claude didn't follow the format — split rank 1 at a natural break
+                hooks[length] = _force_two_part(cands[0]['text'])
+
         # Safety: if Claude returned dict-syntax strings, extract the 'a' value
         hooks = {l: _normalize_hook(h) for l, h in hooks.items()}
         logger.info(f"Run hooks generated: {track_title}")

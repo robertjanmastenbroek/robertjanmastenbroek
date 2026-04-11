@@ -352,12 +352,43 @@ def pick_source_videos(count: int, exclude: set = None, lead_cat: str = 'perf') 
     if not broll and not perf and not phone:
         sys.exit("ERROR: no source videos found in content/videos/")
 
-    # Interleave starting with lead_cat so each clip has a different visual character:
-    #   'perf'  → performances-led (epic/crowd energy for 15s)
-    #   'broll' → b-roll-led (atmospheric/landscape for 9s)
-    #   'phone' → phone-footage-led (raw/intimate for 5s)
-    order_map = {'perf': [perf, broll, phone], 'broll': [broll, phone, perf], 'phone': [phone, broll, perf]}
-    categories = [lst for lst in order_map.get(lead_cat, [perf, broll, phone]) if lst]
+    # Target mix: 50% b-roll, 30% performances, 20% phone-footage (user-specified)
+    n_perf  = max(0, round(count * 0.30))
+    n_phone = max(0, round(count * 0.20))
+    n_broll = max(1, count - n_perf - n_phone)
+
+    # Clamp to what's actually available
+    n_broll = min(n_broll, len(broll))
+    n_perf  = min(n_perf,  len(perf))
+    n_phone = min(n_phone, len(phone))
+
+    # Draw from each pool in LRU order, no overlaps
+    excl = set(exclude or [])
+
+    def _take(pool, n):
+        out = []
+        for v in pool:
+            if str(v) not in excl and len(out) < n:
+                out.append(v)
+                excl.add(str(v))
+        return out
+
+    br = _take(broll, n_broll)
+    pf = _take(perf,  n_perf)
+    ph = _take(phone, n_phone)
+
+    # Split broll into two halves so each contributes distinct clips to the interleave
+    br_a, br_b = br[::2], br[1::2]
+
+    # Interleave: lead_cat opens, broll is doubled (50% share), others fill remaining
+    if lead_cat == 'phone':
+        cycle_lists = [ph, br_a, br_b, pf]
+    elif lead_cat == 'broll':
+        cycle_lists = [br_a, br_b, pf, ph]
+    else:  # perf
+        cycle_lists = [pf, br_a, br_b, ph]
+
+    categories = [lst for lst in cycle_lists if lst]
     iters      = [iter(lst) for lst in categories]
     interleaved: list[Path] = []
     while iters:
@@ -367,22 +398,15 @@ def pick_source_videos(count: int, exclude: set = None, lead_cat: str = 'perf') 
             except StopIteration:
                 iters.remove(it)
 
-    picked, seen = [], set(exclude)
-    for v in interleaved:
-        if str(v) not in seen:
-            picked.append(v)
-            seen.add(str(v))
-        if len(picked) == count:
-            break
+    picked = interleaved[:count]
 
-    # Fallback: cycle without exclude constraint
+    # Fallback: fill remaining from any pool if we're short
     if len(picked) < count:
-        for v in interleaved:
-            if str(v) not in seen:
-                picked.append(v)
-                seen.add(str(v))
-            if len(picked) == count:
+        all_remaining = [v for v in broll + phone + perf if str(v) not in excl]
+        for v in all_remaining:
+            if len(picked) >= count:
                 break
+            picked.append(v)
 
     return picked
 
