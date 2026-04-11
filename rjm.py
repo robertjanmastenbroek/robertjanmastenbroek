@@ -12,6 +12,7 @@ Usage:
   python3 rjm.py master [cmd]             # Master agent (dashboard, gaps, weekly, run, ...)
   python3 rjm.py contacts [cmd]           # Contact manager (status, queue, sync, add, ...)
   python3 rjm.py content [--dry-run]      # Holy Rave daily content run (3 clips → Buffer)
+  python3 rjm.py content retry            # Retry all failed posts in queue
   python3 rjm.py playlist [cmd]           # Playlist DB (status, add, pending_contact, list)
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
   python3 rjm.py run <agent>              # Trigger a sub-agent directly
@@ -42,10 +43,13 @@ Examples:
   python3 rjm.py run research             # Trigger research agent
 """
 
+from __future__ import annotations
+
 import subprocess
 import sys
 import os
 from pathlib import Path
+from datetime import datetime, timezone
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT    = Path(__file__).parent
@@ -234,6 +238,45 @@ def _fleet_status():
         print("  strategy_registry.json not found")
 
 
+def cmd_content_retry():
+    """Retry all posts in data/failed_posts.json."""
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
+    from post_queue import load_failed_posts, clear_failed_post, queue_depth
+    from buffer_poster import upload_video_and_queue
+
+    posts = load_failed_posts()
+    if not posts:
+        print("✓ No failed posts in queue.")
+        return
+
+    print(f"Retrying {len(posts)} failed post(s)…\n")
+    for i in range(len(posts) - 1, -1, -1):
+        post = posts[i]
+        clip_name = Path(post["clip_path"]).name
+        print(f"  [{i+1}/{len(posts)}] {clip_name} — originally failed: {post['error'][:60]}")
+        try:
+            results = upload_video_and_queue(
+                clip_path         = post["clip_path"],
+                tiktok_caption    = post["tiktok_caption"],
+                instagram_caption = post["instagram_caption"],
+                youtube_title     = post["youtube_title"],
+                youtube_desc      = post["youtube_desc"],
+                scheduled_at      = None,
+            )
+            failed = [p for p, r in results.items() if not r["success"]]
+            if not failed:
+                clear_failed_post(i)
+                print(f"    ✓ Retried successfully — removed from queue")
+            else:
+                print(f"    ⚠ Still failing on: {', '.join(failed)}")
+        except Exception as exc:
+            print(f"    ✗ Still failing: {exc}")
+
+    remaining = queue_depth()
+    print(f"\nDone. {remaining} post(s) still in queue.")
+
+
 def cmd_status():
     """
     Full system status — runs master health + outreach status in sequence.
@@ -258,6 +301,34 @@ def cmd_status():
 
     # 4. Fleet-wide status (Spotify, content, playlist, strategies)
     _fleet_status()
+
+    # 5. Failed post queue
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
+    from post_queue import queue_depth
+    depth = queue_depth()
+    queue_status = f"⚠  {depth} post(s) waiting to retry — run: python3 rjm.py content retry" if depth > 0 else "✓  empty"
+    print(f"\n[ Failed Post Queue ]\n")
+    print(f"  Failed post queue:  {queue_status}")
+
+    # 6. Quality gate summary (last 24h)
+    from datetime import timedelta
+    try:
+        import json as _json
+        from quality_gate import LOG_PATH as QUALITY_LOG_PATH
+        q_log = _json.loads(QUALITY_LOG_PATH.read_text()) if QUALITY_LOG_PATH.exists() else []
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        recent = [e for e in q_log if e.get("checked_at", "") >= cutoff]
+        passed_count = sum(1 for e in recent if e["passed"])
+        failed_count = sum(1 for e in recent if not e["passed"])
+        fail_details = [f"  • {e['clip']}: {e['reason']}" for e in recent if not e["passed"]]
+        quality_str = f"✓  {passed_count} passed, {failed_count} failed (last 24h)" if recent else "no clips checked yet"
+        print(f"\n[ Quality Gate ]")
+        print(f"  {quality_str}")
+        for detail in fail_details[:3]:
+            print(detail)
+    except Exception:
+        print("\n[ Quality Gate ]\n  (log unavailable)")
 
 
 def main():
@@ -293,6 +364,13 @@ def main():
             print("Agents: outreach, discover, research, verify")
         else:
             cmd_run(agent, rest[1:])
+    elif cmd == "content":
+        action = rest[0].lower() if rest else ""
+        if action == "retry":
+            cmd_content_retry()
+        else:
+            print("Usage: python3 rjm.py content retry")
+            sys.exit(1)
     elif cmd == "sync":
         cmd_sync()
     elif cmd in ("skills", "skill"):
