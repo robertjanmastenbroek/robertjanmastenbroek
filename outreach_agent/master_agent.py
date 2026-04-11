@@ -39,6 +39,11 @@ from config import (
     MAX_EMAILS_PER_DAY, CONTACT_TYPE_WEIGHTS, FOLLOWUP_DAYS, FOLLOWUP2_DAYS,
     DB_PATH, BASE_DIR
 )
+try:
+    from learning import get_learning_context_for_template
+    _LEARNING_AVAILABLE = True
+except ImportError:
+    _LEARNING_AVAILABLE = False
 
 STRATEGY_REGISTRY_PATH = Path(__file__).parent / "strategy_registry.json"
 SPOTIFY_TRACKER_PATH   = Path(__file__).parent / "spotify_tracker.py"
@@ -391,8 +396,20 @@ def cmd_briefing():
     print(f"  rjm-playlist-discover: on-demand (Spotify playlist sourcing)")
 
     print(f"\nWEIGHTS: curator={CONTACT_TYPE_WEIGHTS.get('curator',0)}  podcast={CONTACT_TYPE_WEIGHTS.get('podcast',0)}")
+
+    # Learning insights — what's working right now
+    if _LEARNING_AVAILABLE:
+        for ctype in ["podcast", "curator"]:
+            ctx = get_learning_context_for_template(ctype)
+            if ctx:
+                print(f"\nLEARNING INSIGHTS ({ctype.upper()}):")
+                for line in ctx.splitlines()[:6]:
+                    if line.strip():
+                        print(f"  {line}")
+
     print(f"\nRun 'python3 master_agent.py gaps' for gap analysis.")
-    print(f"Run 'python3 master_agent.py weekly' for full performance report.\n")
+    print(f"Run 'python3 master_agent.py weekly' for full performance report.")
+    print(f"Run 'python3 master_agent.py run <agent>' to trigger an agent.\n")
 
 
 # ─── Weekly Report ────────────────────────────────────────────────────────────
@@ -1062,6 +1079,51 @@ def cmd_log_listeners(n: int):
         print(f"Error: {result.stderr.strip()}")
 
 
+# ─── Run Sub-Agents ────────────────────────────────────────────────────────────
+
+# Map agent names → Python script paths (relative to this file's directory)
+_AGENT_SCRIPTS = {
+    "outreach":  BASE_DIR / "agent.py",
+    "discover":  BASE_DIR / "discover_agent.py",
+    "research":  BASE_DIR / "research_agent.py",
+    "verify":    BASE_DIR / "agent.py",   # agent.py verify command
+}
+
+_AGENT_COMMANDS = {
+    "outreach": ["run"],
+    "discover": [],
+    "research": [],
+    "verify":   ["verify"],
+}
+
+
+def cmd_run(agent_name: str, extra_args: list[str]):
+    """
+    Trigger a sub-agent by name. Shows live output.
+
+    Available agents: outreach, discover, research, verify
+    """
+    known = list(_AGENT_SCRIPTS.keys())
+
+    if agent_name not in known:
+        print(f"Unknown agent: {agent_name!r}")
+        print(f"Available: {', '.join(known)}")
+        return
+
+    script = _AGENT_SCRIPTS[agent_name]
+    if not script.exists():
+        print(f"⚠️  Script not found: {script}")
+        print(f"   Make sure {script.name} exists in {BASE_DIR}")
+        return
+
+    base_cmd = _AGENT_COMMANDS.get(agent_name, [])
+    cmd = [sys.executable, str(script)] + base_cmd + extra_args
+
+    print(f"\n→ Running {agent_name}: {' '.join(cmd)}\n")
+    result = subprocess.run(cmd, cwd=str(BASE_DIR))
+    sys.exit(result.returncode)
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1093,6 +1155,13 @@ def main():
             cmd_log_listeners(int(args[1].replace(",", "")))
         else:
             print("Usage: python3 master_agent.py log_listeners <number>")
+    elif args[0] == "run":
+        agent = args[1] if len(args) > 1 else ""
+        if not agent:
+            print("Usage: python3 master_agent.py run <agent>")
+            print("Agents: outreach, discover, research, verify")
+        else:
+            cmd_run(agent, args[2:])
     else:
         print(__doc__)
 

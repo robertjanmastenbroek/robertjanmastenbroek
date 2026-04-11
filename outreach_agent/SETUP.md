@@ -202,21 +202,43 @@ All settings are in `config.py`:
 |---|---|
 | `agent.py` | Main entrypoint — run this |
 | `config.py` | All tunable settings |
-| `story.py` | RJM's canonical story (edit to update facts) |
+| `brand_context.py` | **Single source of truth** for brand identity injected into all AI prompts |
+| `story.py` | RJM's canonical facts (ARTIST, TRACKS, STORY_BEATS) — imported by brand_context |
 | `db.py` | SQLite database layer |
-| `bounce.py` | Email pre-validation |
+| `bounce.py` | Email pre-validation (DNS, catch-all detection, dead address cache) |
 | `gmail_client.py` | Gmail API wrapper |
-| `template_engine.py` | Claude email generator |
-| `scheduler.py` | Rate limiter + timing |
-| `reply_detector.py` | Inbox scanning |
-| `followup_engine.py` | 7-day follow-up logic |
-| `learning.py` | Performance tracking + self-improvement |
+| `template_engine.py` | Claude email generator (imports from brand_context) |
+| `generator.py` | Batch email generator |
+| `scheduler.py` | Rate limiter + timing + bounce circuit breaker |
+| `reply_detector.py` | Inbox scanning + reply classification trigger |
+| `reply_classifier.py` | Claude-powered reply intent classifier (8 intents) |
+| `followup_engine.py` | Follow-up logic (day 5 + day 12) |
+| `learning.py` | Performance tracking + self-improvement insights |
+| `master_agent.py` | Strategic brain — briefing, gaps, health, run sub-agents |
 | `migrate.py` | One-time legacy CSV import |
 | `outreach.db` | SQLite database (auto-created) |
-| `credentials.json` | Google OAuth creds (you provide) |
-| `token.json` | Gmail token (auto-created on first auth) |
+| `credentials.json` | Google OAuth creds (you provide — never commit) |
+| `token.json` | Gmail token (auto-created on first auth — never commit) |
 | `drafts/` | Local copies of every sent email |
 | `agent.log` | Running log of all activity |
+
+> **Brand identity:** Edit `brand_context.py` (or its source `story.py`) to update facts.
+> Changes propagate to all email generation, follow-ups, and briefings automatically.
+
+---
+
+## Security
+
+The **security-guidance** skill is installed globally and fires automatically as a
+PreToolUse hook on every Edit/Write operation. It proactively catches dangerous
+code patterns before they land — especially relevant for this directory because:
+
+- `template_engine.py`, `generator.py`, `reply_classifier.py` — call Claude CLI via subprocess
+- `gmail_client.py` — handles OAuth tokens
+- `bounce.py` — makes outbound DNS/HTTP requests
+
+If the hook warns during a code edit, acknowledge and fix the pattern before proceeding.
+You do not need to do anything to activate it — it is always on.
 
 ---
 

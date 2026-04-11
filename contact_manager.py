@@ -17,6 +17,7 @@ Usage:
 import csv
 import sys
 import os
+from pathlib import Path
 from datetime import date
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "contacts.csv")
@@ -280,6 +281,100 @@ def bulk_add_from_file(rows, filepath):
     print(f"\n  Done. Added: {added}, Skipped (duplicates): {skipped}\n")
     return rows
 
+def sync_to_sqlite():
+    """
+    Import contacts from contacts.csv into outreach_agent/outreach.db.
+
+    Skips contacts already in SQLite. Maps CSV status/bounce → SQLite status:
+      CSV 'pending'  → SQLite 'new'    (will go through bounce verification)
+      CSV 'sent'     → SQLite 'sent'
+      CSV 'bounced'  → SQLite 'closed' + bounce='actual'
+      CSV 'response' → SQLite 'responded'
+      other          → SQLite 'new'
+
+    outreach.db is authoritative for all contacts the outreach engine knows about.
+    This sync is a one-way import bridge: CSV → SQLite, never the reverse.
+    """
+    # Locate outreach_agent db module
+    outreach_dir = Path(__file__).parent / "outreach_agent"
+    if not (outreach_dir / "db.py").exists():
+        print(f"\n✗ outreach_agent/db.py not found at {outreach_dir}")
+        print("  Make sure you run this from the project root.\n")
+        return
+
+    sys.path.insert(0, str(outreach_dir))
+    import db as _db
+    _db.init_db()
+
+    STATUS_MAP = {
+        "pending":  "new",
+        "sent":     "sent",
+        "bounced":  "closed",
+        "response": "responded",
+        "responded": "responded",
+        "skip":     "closed",
+    }
+    BOUNCE_MAP = {
+        "bounced": "actual",
+        "skip":    "no",
+    }
+
+    rows = load_db()
+    if not rows:
+        print("\n  contacts.csv is empty or not found.\n")
+        return
+
+    added   = 0
+    skipped = 0
+    errors  = 0
+
+    print(f"\n  Syncing {len(rows)} contacts from contacts.csv → outreach.db ...\n")
+
+    with _db.get_conn() as conn:
+        for r in rows:
+            email = r.get("email", "").strip().lower()
+            if not email or "@" not in email:
+                continue
+
+            # Check if already in SQLite
+            existing = conn.execute(
+                "SELECT id FROM contacts WHERE email = ?", (email,)
+            ).fetchone()
+
+            if existing:
+                skipped += 1
+                continue
+
+            csv_status  = r.get("status", "pending").strip().lower()
+            sqlite_status = STATUS_MAP.get(csv_status, "new")
+            bounce_val    = BOUNCE_MAP.get(csv_status, "no")
+            if r.get("bounce", "no").lower() == "yes":
+                bounce_val = "actual"
+
+            name  = r.get("name", "").strip()
+            ctype = r.get("type", "curator").strip()
+            genre = r.get("genre", "").strip()
+            notes = r.get("notes", "").strip()
+            date_added = r.get("date_added", str(date.today()))
+            date_sent  = r.get("date_sent", "") or None
+
+            try:
+                conn.execute("""
+                    INSERT INTO contacts
+                      (email, name, type, genre, notes, status, bounce,
+                       date_added, date_sent, source)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'csv_sync')
+                """, (email, name, ctype, genre, notes, sqlite_status,
+                      bounce_val, date_added, date_sent))
+                added += 1
+                print(f"  + {email} ({ctype}) → {sqlite_status}")
+            except Exception as exc:
+                print(f"  ✗ {email}: {exc}")
+                errors += 1
+
+    print(f"\n  Done. Added: {added}  |  Already in DB: {skipped}  |  Errors: {errors}\n")
+
+
 def main():
     rows = load_db()
     args = sys.argv[1:]
@@ -300,6 +395,8 @@ def main():
         search_db(rows, args[1])
     elif args[0] == "new_from_file" and len(args) >= 2:
         rows = bulk_add_from_file(rows, args[1])
+    elif args[0] == "sync":
+        sync_to_sqlite()
     else:
         print(__doc__)
 
