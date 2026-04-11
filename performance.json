@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "batches": [
+    {
+      "id": "86680718-5e2e-4d3b-8ace-53979642876f",
+      "filename": "Robert-Jan Mastenbroek - Renamed",
+      "bucket": "reach",
+      "content_type": "event",
+      "clip_lengths": [
+        7,
+        15,
+        30,
+        60
+      ],
+      "hooks": {},
+      "timestamp": "2026-04-08T16:38:30Z"
+    },
+    {
+      "id": "40f62c1f-4192-4030-9b29-f43a6cb86a54",
+      "filename": "Robert-Jan Mastenbroek & LUCID - Fire In Our Hands",
+      "bucket": "reach",
+      "content_type": "event",
+      "clip_lengths": [
+        5
+      ],
+      "hooks": {
+        "5": "Fire in our hands. Jeremiah 23:29."
+      },
+      "timestamp": "2026-04-09T13:10:15Z"
+    },
+    {
+      "id": "b116f7a7-239a-4ffc-89f0-99280557859f",
+      "filename": "Robert-Jan Mastenbroek & LUCID - Fire In Our Hands",
+      "bucket": "follow",
+      "content_type": "event",
+      "clip_lengths": [
+        9,
+        15
+      ],
+      "hooks": {
+        "9": "Follow for the next Holy Rave.",
+        "15": "Follow for the next drop."
+      },
+      "timestamp": "2026-04-09T13:10:15Z"
+    },
+    {
+      "id": "d1af47d4-b019-4d57-9e12-ff3893669f7a",
+      "filename": "Robert-Jan Mastenbroek - Halleluyah",
+      "bucket": "reach",
+      "content_type": "event",
+      "clip_lengths": [
+        5
+      ],
+      "hooks": {
+        "5": "The last psalm ends with a rave."
+      },
+      "timestamp": "2026-04-10T08:11:08Z"
+    },
+    {
+      "id": "f1ab48c7-f9a6-489f-ba55-ac8c48a455fa",
+      "filename": "Robert-Jan Mastenbroek - Halleluyah",
+      "bucket": "follow",
+      "content_type": "event",
+      "clip_lengths": [
+        9,
+        15
+      ],
+      "hooks": {
+        "9": "Follow to find out where.",
+        "15": "Follow. We do this regularly."
+      },
+      "timestamp": "2026-04-10T08:11:08Z"
+    },
+    {
+      "id": "3c41777a-8a39-49ca-a6ed-e122137882de",
+      "filename": "Robert-Jan Mastenbroek - Renamed",
+      "bucket": "reach",
+      "content_type": "event",
+      "clip_lengths": [
+        5
+      ],
+      "hooks": {
+        "5": "You are not what they called you."
+      },
+      "timestamp": "2026-04-11T01:52:08Z"
+    },
+    {
+      "id": "31166fa4-c2cf-4ef5-96e4-3a50f1fb5d5e",
+      "filename": "Robert-Jan Mastenbroek - Renamed",
+      "bucket": "follow",
+      "content_type": "event",
+      "clip_lengths": [
+        9,
+        15
+      ],
+      "hooks": {
+        "9": "For the overcomers. Follow for more.",
+        "15": "For the overcomers. Follow for more."
+      },
+      "timestamp": "2026-04-11T01:52:08Z"
+    }
+  ],
+  "metrics": []
+}

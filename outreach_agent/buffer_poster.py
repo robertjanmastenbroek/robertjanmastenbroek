@@ -180,15 +180,27 @@ def _upload_video_for_buffer(filepath: str) -> str:
     return url
 
 
+_VIDEO_POST_MUTATION = """
+mutation CreatePost($input: CreatePostInput!) {
+  createPost(input: $input) {
+    ... on PostActionSuccess { post { id status } }
+    ... on MutationError { message }
+  }
+}
+"""
+
+
 def _create_video_post(
     channel: str,
     video_url: str,
     caption: str,
     title: str = "",
     description: str = "",
+    scheduled_at: str = None,
 ) -> str:
     """Queue a video post to one Buffer channel. Returns the Buffer post ID.
     Buffer's GraphQL API takes a public video URL in assets.videos[].url.
+    If scheduled_at is provided (ISO-8601 UTC string), posts at that exact time today.
     """
     channel_id = CHANNELS.get(channel)
     if not channel_id:
@@ -207,26 +219,18 @@ def _create_video_post(
     else:
         metadata = {}
 
-    mutation = """
-    mutation CreatePost($input: CreatePostInput!) {
-      createPost(input: $input) {
-        ... on PostActionSuccess { post { id status } }
-        ... on MutationError { message }
-      }
+    inp = {
+        "channelId": channel_id,
+        "text": caption,
+        "schedulingType": "scheduled" if scheduled_at else "automatic",
+        "mode": "addToQueue",
+        "metadata": metadata,
+        "assets": {"videos": [{"url": video_url}]},
     }
-    """
-    variables = {
-        "input": {
-            "channelId": channel_id,
-            "text": caption,
-            "schedulingType": "automatic",
-            "mode": "addToQueue",
-            "metadata": metadata,
-            "assets": {"videos": [{"url": video_url}]},
-        }
-    }
+    if scheduled_at:
+        inp["scheduledAt"] = scheduled_at
 
-    result = _gql(mutation, variables)
+    result = _gql(_VIDEO_POST_MUTATION, {"input": inp})
     payload = result["createPost"]
     if "message" in payload:
         raise RuntimeError(f"Buffer rejected {channel} post: {payload['message']}")
@@ -237,22 +241,54 @@ def _create_video_post(
     return post_id
 
 
+def _create_video_story_post(channel: str, video_url: str, scheduled_at: str = None) -> str:
+    """Queue a video as an Instagram Story via Buffer."""
+    channel_id = CHANNELS.get(channel)
+    if not channel_id:
+        raise ValueError(f"Unknown channel '{channel}'. Valid: {list(CHANNELS.keys())}")
+
+    inp = {
+        "channelId": channel_id,
+        "text": "",
+        "schedulingType": "scheduled" if scheduled_at else "automatic",
+        "mode": "addToQueue",
+        "metadata": {"instagram": {"type": "story"}},
+        "assets": {"videos": [{"url": video_url}]},
+    }
+    if scheduled_at:
+        inp["scheduledAt"] = scheduled_at
+
+    result = _gql(_VIDEO_POST_MUTATION, {"input": inp})
+    payload = result["createPost"]
+    if "message" in payload:
+        raise RuntimeError(f"Buffer rejected {channel} story: {payload['message']}")
+
+    post_id = payload["post"]["id"]
+    status  = payload["post"]["status"]
+    print(f"    → {channel} story queued: {post_id} ({status})")
+    return post_id
+
+
 def upload_video_and_queue(
     clip_path: str,
     tiktok_caption: str,
     instagram_caption: str,
     youtube_title: str,
     youtube_desc: str,
+    scheduled_at: str = None,
 ) -> None:
-    """Upload a video and queue it to TikTok, Instagram Reels, and YouTube Shorts via Buffer."""
+    """Upload a video and queue it to TikTok, Instagram Reels, Instagram Story,
+    and YouTube Shorts via Buffer. scheduled_at is an ISO-8601 UTC string for today."""
     import time
     video_url = _upload_video_for_buffer(clip_path)
 
-    _create_video_post("tiktok",    video_url, tiktok_caption)
+    _create_video_post("tiktok",    video_url, tiktok_caption,  scheduled_at=scheduled_at)
     time.sleep(2)
-    _create_video_post("instagram", video_url, instagram_caption)
+    _create_video_post("instagram", video_url, instagram_caption, scheduled_at=scheduled_at)
     time.sleep(2)
-    _create_video_post("youtube",   video_url, youtube_desc, title=youtube_title, description=youtube_desc)
+    _create_video_story_post("instagram", video_url, scheduled_at=scheduled_at)
+    time.sleep(2)
+    _create_video_post("youtube",   video_url, youtube_desc, title=youtube_title, description=youtube_desc, scheduled_at=scheduled_at)
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────

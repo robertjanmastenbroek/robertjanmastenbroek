@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SELAH — Ancient Truth. Future Sound. | Tenerife</title>
+  <meta name="description" content="An outdoor electronic music experience at sunset. Tenerife, Summer 2026. Music by Robert-Jan Mastenbroek. Early access tickets from €25.">
+
+  <!-- ═══ OPEN GRAPH ═══ -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="SELAH — Ancient Truth. Future Sound.">
+  <meta property="og:description" content="An outdoor electronic music experience at sunset. Tenerife, Summer 2026. Music by Robert-Jan Mastenbroek.">
+  <meta property="og:url"         content="https://robertjanmastenbroek.com/selah">
+  <meta property="og:image"       content="https://robertjanmastenbroek.com/selah-og.jpg">
+  <!-- TODO: Create a 1200×630px branded image at /selah-og.jpg on your server before going live -->
+  <meta property="og:image:width"  content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name"   content="Robert-Jan Mastenbroek">
+
+  <!-- ═══ TWITTER / X CARD ═══ -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="SELAH — Ancient Truth. Future Sound.">
+  <meta name="twitter:description" content="An outdoor electronic music experience at sunset. Tenerife, Summer 2026.">
+  <meta name="twitter:image"       content="https://robertjanmastenbroek.com/selah-og.jpg">
+
+  <!-- ═══ SCHEMA.ORG EVENT ═══ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": "SELAH",
+    "description": "An outdoor electronic music experience at sunset in Tenerife. Music by Robert-Jan Mastenbroek.",
+    "startDate": "2026-07-01T19:00",
+    "endDate":   "2026-07-02T02:00",
+    "eventStatus": "https://schema.org/EventScheduled",
+    "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+    "location": {
+      "@type": "Place",
+      "name": "Tenerife",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Tenerife",
+        "addressCountry": "ES"
+      }
+    },
+    "offers": {
+      "@type": "Offer",
+      "name": "Early Access",
+      "price": "25",
+      "priceCurrency": "EUR",
+      "availability": "https://schema.org/LimitedAvailability",
+      "validFrom": "2026-04-01"
+    },
+    "performer": {
+      "@type": "Person",
+      "name": "Robert-Jan Mastenbroek",
+      "url": "https://robertjanmastenbroek.com"
+    },
+    "organizer": {
+      "@type": "Person",
+      "name": "Robert-Jan Mastenbroek",
+      "url": "https://robertjanmastenbroek.com"
+    },
+    "image": "https://robertjanmastenbroek.com/selah-og.jpg"
+  }
+  </script>
+  <!-- TODO: Update startDate / endDate / location name once confirmed -->
+
+  <!-- ═══ ANALYTICS — uncomment and configure before any paid traffic ═══
+
+  Google Analytics 4:
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+
+  Meta / Facebook Pixel:
+  <script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', 'YOUR_PIXEL_ID');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+
+  ═══ END ANALYTICS ═══ -->
+
+  <!-- Fonts — display=swap prevents invisible text during load -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:  #05050a;
+      --deep:   #0b0812;
+      --amber:  #c07838;
+      --gold:   #d4a058;
+      --cream:  #ede0cc;
+      --muted:  rgba(237,224,204,0.45);
+      --faint:  rgba(237,224,204,0.20);
+      --border: rgba(237,224,204,0.14);
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--black);
+      color: var(--cream);
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      letter-spacing: 0.02em;
+      overflow-x: hidden;
+    }
+
+    /* ── Focus styles for keyboard navigation ── */
+    *:focus-visible {
+      outline: 2px solid var(--amber);
+      outline-offset: 3px;
+    }
+
+    /* ─────────────── HERO ─────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;   /* fallback for older browsers */
+      min-height: 100dvh;  /* dynamic viewport — fixes iOS Safari chrome bug */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 7rem 2rem 5rem;
+      overflow: hidden;
+    }
+
+    /* Layered twilight sky */
+    .hero-sky {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 90% 55% at 50% 102%, rgba(160,68,22,0.55) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 45% at 50%  95%, rgba(100,30,50,0.45) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 20%  85%, rgba(55,20,70,0.30) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 80%  90%, rgba(40,15,60,0.30) 0%, transparent 55%),
+        linear-gradient(180deg,
+          #05050a 0%,
+          #0b0916 20%,
+          #160c20 40%,
+          #200c18 58%,
+          #280c0c 75%,
+          #1a0808 100%
+        );
+      z-index: 0;
+    }
+
+    /* Horizon burn */
+    .hero-glow {
+      position: absolute;
+      bottom: -10%; left: 50%;
+      transform: translateX(-50%);
+      width: 130%; height: 55%;
+      background: radial-gradient(
+        ellipse 65% 100% at 50% 100%,
+        rgba(192,100,36,0.28) 0%,
+        rgba(160,60,20,0.10) 45%,
+        transparent 100%
+      );
+      z-index: 0;
+    }
+
+    /* Stars */
+    .hero-stars {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .hero-stars::before,
+    .hero-stars::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      background: transparent;
+      animation: starDrift 80s linear infinite;
+    }
+    .hero-stars::before {
+      width: 1px; height: 1px; top: 8%; left: 15%;
+      box-shadow:
+        120px 40px 0 0 rgba(237,224,204,0.35),
+        340px 18px 0 0 rgba(237,224,204,0.25),
+        500px 55px 0 0 rgba(237,224,204,0.20),
+        640px 22px 0 0 rgba(237,224,204,0.30),
+        760px 70px 0 0 rgba(237,224,204,0.22),
+        900px 15px 0 0 rgba(237,224,204,0.28),
+        1050px 44px 0 0 rgba(237,224,204,0.18),
+        1180px 30px 0 0 rgba(237,224,204,0.32),
+        1300px 62px 0 0 rgba(237,224,204,0.20),
+        60px 120px 0 0 rgba(237,224,204,0.18),
+        280px 95px 0 0 rgba(237,224,204,0.22),
+        420px 140px 0 0 rgba(237,224,204,0.15),
+        580px 110px 0 0 rgba(237,224,204,0.20),
+        820px 130px 0 0 rgba(237,224,204,0.16);
+    }
+    .hero-stars::after {
+      width: 1px; height: 1px; top: 3%; left: 5%;
+      box-shadow:
+        200px 25px 0 0 rgba(237,224,204,0.22),
+        450px 8px  0 0 rgba(237,224,204,0.18),
+        700px 38px 0 0 rgba(237,224,204,0.26),
+        950px 12px 0 0 rgba(237,224,204,0.20),
+        1100px 50px 0 0 rgba(237,224,204,0.15),
+        150px 80px 0 0 rgba(237,224,204,0.18),
+        380px 65px 0 0 rgba(237,224,204,0.14),
+        620px 90px 0 0 rgba(237,224,204,0.20),
+        850px 72px 0 0 rgba(237,224,204,0.16),
+        1200px 88px 0 0 rgba(237,224,204,0.18);
+    }
+    @keyframes starDrift {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-4px); }
+    }
+
+    /* Film grain */
+    .hero-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.032;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 760px;
+      width: 100%;
+    }
+
+    /* Overline */
+    .overline {
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--amber);
+      opacity: 0.85;
+      margin-bottom: 2.8rem;
+    }
+
+    /* Wordmark */
+    .selah-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(5.5rem, 17vw, 12rem);
+      font-weight: 400;
+      letter-spacing: 0.20em;
+      line-height: 1;
+      color: var(--cream);
+      margin-bottom: 1.8rem;
+      text-shadow:
+        0 0 60px  rgba(192,120,56,0.22),
+        0 0 140px rgba(192,100,36,0.10),
+        0 0 280px rgba(192,80,20,0.06);
+    }
+
+    /* Rule */
+    .title-rule {
+      width: 44px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--amber), transparent);
+      margin: 0 auto 1.8rem;
+      opacity: 0.55;
+    }
+
+    /* Tagline — full opacity: this is the strongest brand statement */
+    .tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      font-weight: 300;
+      font-style: italic;
+      letter-spacing: 0.10em;
+      color: var(--cream);
+      opacity: 1;           /* was 0.65 — raised: this line should be fully present */
+      margin-bottom: 3rem;
+    }
+
+    /* Meta */
+    .meta {
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+    }
+    .meta-inner {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.3rem 0;
+    }
+    .meta span { padding: 0 0.9rem; }
+    .meta .sep { color: var(--amber); opacity: 0.4; padding: 0; }
+
+    /* Pull-quote — closes the persuasion loop before the ask */
+    .hero-prelude {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      font-weight: 300;
+      font-style: italic;
+      letter-spacing: 0.06em;
+      color: var(--cream);
+      opacity: 0.55;
+      margin-bottom: 2.8rem;
+      line-height: 1.6;
+    }
+
+    /* CTA stack */
+    .cta-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    /* Email form — primary CTA */
+    .email-form {
+      display: flex;
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid var(--border);
+      background: rgba(5,5,10,0.60);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .email-form input[type="email"] {
+      flex: 1;
+      min-width: 0;
+      min-height: 48px; /* accessibility tap target */
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 0.95rem 1.1rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      color: var(--cream);
+    }
+    .email-form input[type="email"]:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 1px var(--amber);
+    }
+    .email-form input::placeholder {
+      color: rgba(237,224,204,0.30);
+      letter-spacing: 0.09em;
+    }
+
+    .email-form button[type="submit"] {
+      background: transparent;
+      border: none;
+      border-left: 1px solid var(--border);
+      min-height: 48px; /* accessibility tap target */
+      padding: 0.95rem 1.4rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--amber);
+      cursor: pointer;
+      transition: color 0.25s, background 0.25s;
+      white-space: nowrap;
+    }
+    .email-form button:hover {
+      color: var(--cream);
+      background: rgba(192,120,56,0.12);
+    }
+
+    /* Micro-copy beneath email form */
+    .email-note {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      color: var(--faint);
+    }
+
+    /* Form success */
+    .form-success {
+      display: none;
+      text-align: center;
+    }
+    .form-success-primary {
+      font-size: 0.72rem;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      color: var(--amber);
+      display: block;
+      margin-bottom: 1rem;
+    }
+    .form-success-share {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 0.8rem;
+    }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+      background: transparent;
+      border: 1px solid rgba(192,120,56,0.35);
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      transition: border-color 0.25s, color 0.25s;
+    }
+    .share-btn:hover { color: var(--gold); border-color: var(--gold); }
+
+    /* Divider */
+    .or-divider {
+      font-size: 0.68rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    /* Ticket button — secondary hierarchy in hero, primary in tickets section */
+    .btn-ticket {
+      display: inline-block;
+      padding: 0.95rem 2.6rem;
+      min-height: 48px; /* accessibility tap target */
+      background: var(--amber);
+      color: #05050a;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.25s, transform 0.2s;
+      cursor: pointer;
+      border: none;
+      line-height: 1;
+    }
+    .btn-ticket:hover {
+      background: var(--gold);
+      transform: translateY(-1px);
+    }
+
+    /* Early-bird pricing note */
+    .price-note {
+      font-size: 0.70rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+    .price-note em {
+      font-style: normal;
+      color: var(--amber);
+      opacity: 0.7;
+    }
+
+    /* Scroll cue */
+    .scroll-cue {
+      position: absolute;
+      bottom: 2.5rem; left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .scroll-cue span {
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--faint);
+      animation: cueIn 2s ease 1.5s both;
+    }
+    .scroll-cue-line {
+      width: 1px; height: 44px;
+      background: linear-gradient(to bottom, rgba(237,224,204,0.25), transparent);
+      animation: cueIn 2s ease 1.5s both, cueBreath 2.5s ease-in-out 3.5s infinite;
+    }
+    @keyframes cueIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes cueBreath {
+      0%, 100% { opacity: 0.35; }
+      50%       { opacity: 0.85; }
+    }
+
+    /* ─────────────── EXPERIENCE ─────────────── */
+    .section-exp {
+      padding: 7rem 2rem 6rem;
+      max-width: 580px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .section-exp::before {
+      content: '';
+      display: block;
+      width: 1px; height: 64px;
+      background: linear-gradient(to bottom, transparent, rgba(192,120,56,0.35));
+      margin: 0 auto 4rem;
+    }
+    .section-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--amber);
+      opacity: 0.65;
+      margin-bottom: 2.5rem;
+    }
+    .exp-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.25rem, 3.2vw, 1.7rem);
+      font-weight: 300;
+      line-height: 1.82;
+      color: var(--cream);
+      opacity: 0.82;
+    }
+    .exp-text em {
+      font-style: italic;
+      color: var(--cream);
+      opacity: 0.55;
+    }
+
+    /* ─────────────── ARTIST ─────────────── */
+    .section-artist {
+      padding: 5rem 2rem 6rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+    .artist-by {
+      font-size: 0.72rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.4rem;
+    }
+    .artist-name {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.1rem, 3.2vw, 1.7rem);
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      color: var(--cream);
+      margin-bottom: 0.7rem;
+    }
+    .artist-role {
+      font-size: 0.70rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.6rem;
+    }
+    /* Evocative artist statement — replaces follower count as primary identifier */
+    .artist-statement {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1rem, 2.4vw, 1.25rem);
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.7;
+      color: var(--cream);
+      opacity: 0.60;
+      max-width: 480px;
+      margin-bottom: 2rem;
+    }
+    .artist-insta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(192,120,56,0.28);
+      padding-bottom: 2px;
+      transition: color 0.25s, border-color 0.25s;
+    }
+    .artist-insta:hover { color: var(--gold); border-color: var(--gold); }
+
+    /* ─────────────── TICKETS ─────────────── */
+    .section-tickets {
+      padding: 6rem 2rem 9rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .section-tickets::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; height: 70%;
+      background: radial-gradient(
+        ellipse 55% 90% at 50% 100%,
+        rgba(160,70,18,0.14) 0%,
+        transparent 100%
+      );
+      pointer-events: none;
+    }
+    .tix-eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.70rem;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: var(--amber);
+      opacity: 0.55;
+      margin-bottom: 2rem;
+    }
+    .tix-headline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.45;
+      color: var(--cream);
+      opacity: 0.88;
+      margin-bottom: 3rem;
+    }
+    .tix-cta {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.9rem;
+    }
+    /* Scarcity — specific number, not vague "limited" */
+    .tix-scarcity {
+      font-size: 0.70rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+    .tix-scarcity em {
+      font-style: normal;
+      color: var(--amber);
+      opacity: 0.75;
+    }
+    /* Risk reversal — removes purchase anxiety */
+    .tix-refund {
+      margin-top: 0.5rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      color: rgba(237,224,204,0.22);
+    }
+
+    /* ─────────────── FOOTER ─────────────── */
+    footer {
+      padding: 2.2rem 2rem;
+      text-align: center;
+      border-top: 1px solid rgba(237,224,204,0.05);
+    }
+    .footer-copy {
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(237,224,204,0.20);
+    }
+
+    /* ─────────────── HERO ANIMATIONS ─────────────── */
+    .fade-in { animation: heroIn 1.3s ease both; }
+    .fi-1    { animation: heroIn 1.3s ease 0.10s both; }
+    .fi-2    { animation: heroIn 1.3s ease 0.28s both; }
+    .fi-3    { animation: heroIn 1.3s ease 0.46s both; }
+    .fi-4    { animation: heroIn 1.3s ease 0.64s both; }
+    .fi-5    { animation: heroIn 1.3s ease 0.82s both; }
+    .fi-6    { animation: heroIn 1.3s ease 1.00s both; }
+    .fi-7    { animation: heroIn 1.3s ease 1.18s both; }
+
+    @keyframes heroIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─────────────── SCROLL REVEAL ─────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.95s ease, transform 0.95s ease;
+    }
+    .reveal.on {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─────────────── RESPONSIVE ─────────────── */
+    @media (max-width: 500px) {
+      .meta-inner { flex-direction: column; gap: 0.2rem; }
+      .sep { display: none !important; }
+      .email-form { max-width: 100%; }
+      .selah-title { letter-spacing: 0.10em; }
+      .hero-prelude { padding: 0 1rem; }
+    }
+
+    /* ─────────────── REDUCED MOTION ─────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      /* Instantly show all animated elements */
+      .fade-in, .fi-1, .fi-2, .fi-3, .fi-4, .fi-5, .fi-6, .fi-7 {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+      .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+      .hero-stars::before,
+      .hero-stars::after {
+        animation: none;
+      }
+      .scroll-cue span,
+      .scroll-cue-line {
+        animation: none;
+        opacity: 0.35;
+      }
+      .btn-ticket {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section class="hero">
+    <div class="hero-sky"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-stars"></div>
+    <div class="hero-grain"></div>
+
+    <div class="hero-content">
+      <p class="overline fade-in fi-1">An outdoor electronic music experience</p>
+
+      <h1 class="selah-title fade-in fi-2">SELAH</h1>
+
+      <div class="title-rule fade-in fi-3"></div>
+
+      <!-- Tagline at full opacity — this is the strongest brand statement on the page -->
+      <p class="tagline fade-in fi-3">Ancient Truth. Future Sound.</p>
+
+      <div class="meta fade-in fi-4">
+        <div class="meta-inner">
+          <span>Summer 2026</span>
+          <span class="sep">·</span>
+          <span>Tenerife</span>
+          <span class="sep">·</span>
+          <span>At Sunset</span>
+        </div>
+      </div>
+
+      <!-- Experience teaser — gives cold traffic a reason to act before the ask -->
+      <p class="hero-prelude fade-in fi-5">
+        Not a party.<br>A passage.
+      </p>
+
+      <div class="cta-stack fade-in fi-6">
+
+        <!-- PRIMARY CTA: email capture -->
+        <form class="email-form" id="emailForm">
+          <input
+            type="email"
+            name="email"
+            placeholder="Your email — get first access"
+            required
+            autocomplete="email"
+          >
+          <button type="submit">Get Access</button>
+        </form>
+
+        <!-- Success state with share prompt -->
+        <div class="form-success" id="formSuccess">
+          <span class="form-success-primary">You're in. We'll be in touch.</span>
+          <span class="form-success-share">Know someone who should be there?</span>
+          <button class="share-btn" id="shareBtn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share SELAH
+          </button>
+        </div>
+
+        <p class="email-note fade-in fi-7">First access to tickets. No noise. Unsubscribe any time.</p>
+
+        <p class="or-divider">or, if you're already in —</p>
+
+        <!-- SECONDARY CTA: direct ticket purchase -->
+        <div>
+          <a href="STRIPE_LINK_HERE" class="btn-ticket" id="ticketBtn">Early Access — €25</a>
+        </div>
+        <!-- TODO: Replace STRIPE_LINK_HERE with your Stripe payment link -->
+
+        <!-- Early-bird pricing anchor -->
+        <p class="price-note">
+          <em>Early access</em> &nbsp;·&nbsp; Full price €35 at door
+          <!-- TODO: Confirm door price before publishing -->
+        </p>
+
+      </div>
+    </div>
+
+    <div class="scroll-cue" aria-hidden="true">
+      <span>Scroll</span>
+      <div class="scroll-cue-line"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ EXPERIENCE ═══════════════ -->
+  <section class="section-exp">
+    <p class="section-label reveal">The experience</p>
+    <p class="exp-text reveal">
+      At the edge of the Atlantic,<br>
+      as the sun dissolves into the ocean,<br>
+      a space opens.<br>
+      <br>
+      <em>Strangers arrive. Something shifts.</em><br>
+      <br>
+      SELAH is not a party.<br>
+      It is a passage.
+    </p>
+  </section>
+
+  <!-- ═══════════════ ARTIST ═══════════════ -->
+  <section class="section-artist">
+    <p class="artist-by reveal">Music by</p>
+    <h2 class="artist-name reveal">Robert-Jan Mastenbroek</h2>
+    <p class="artist-role reveal">DJ &amp; Producer</p>
+
+    <!-- Evocative artist statement — replaces follower count as primary framing -->
+    <p class="artist-statement reveal">
+      A decade spent at the edge —<br>
+      where electronic music stops being entertainment<br>
+      and becomes something harder to name.
+    </p>
+
+    <a
+      class="artist-insta reveal"
+      href="https://www.instagram.com/robertjanmastenbroek"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Robert-Jan Mastenbroek on Instagram — 290K followers"
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+      290K on Instagram
+    </a>
+  </section>
+
+  <!-- ═══════════════ TICKETS ═══════════════ -->
+  <section class="section-tickets" id="tickets">
+    <p class="tix-eyebrow reveal">SELAH</p>
+
+    <h2 class="tix-headline reveal">
+      One night.<br>
+      One sound.<br>
+      No return.
+    </h2>
+
+    <div class="tix-cta reveal">
+      <a href="STRIPE_LINK_HERE" class="btn-ticket" id="ticketBtn2">Secure Your Place — €25</a>
+
+      <!-- Specific scarcity — far more effective than vague "limited" -->
+      <p class="tix-scarcity">
+        <em>200 places only</em> &nbsp;·&nbsp; Tenerife &nbsp;·&nbsp; Summer 2026
+      </p>
+
+      <!-- Risk reversal — removes purchase anxiety for cold traffic -->
+      <p class="tix-refund">Full refund available up to 30 days before the event</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ FOOTER ═══════════════ -->
+  <footer>
+    <p class="footer-copy">
+      &copy; 2026 Robert-Jan Mastenbroek &mdash; robertjanmastenbroek.com
+    </p>
+  </footer>
+
+  <script>
+    // ── Scroll reveal (with stagger)
+    const reveals = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('on'), i * 90);
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    reveals.forEach(el => io.observe(el));
+
+    // ── Ticket button: graceful fallback when Stripe link isn't set yet
+    function handleTicketClick(e) {
+      const href = this.getAttribute('href');
+      if (!href || href === 'STRIPE_LINK_HERE') {
+        e.preventDefault();
+        // Guide user to email form instead
+        const form = document.getElementById('emailForm');
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => form.querySelector('input[type="email"]').focus(), 650);
+      }
+      // Once Stripe link is live, this handler does nothing and the link works normally
+    }
+    document.querySelectorAll('#ticketBtn, #ticketBtn2').forEach(btn => {
+      btn.addEventListener('click', handleTicketClick);
+    });
+
+    // ── Email form
+    document.getElementById('emailForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const email = this.querySelector('input[type="email"]').value;
+
+      // ── TODO: Wire to your email service before going live
+      // Example for Mailchimp:
+      // fetch('https://YOUR_MAILCHIMP_ENDPOINT', { method: 'POST', body: new FormData(this) });
+      // Example for Kit (ConvertKit):
+      // fetch('https://api.convertkit.com/v3/forms/FORM_ID/subscribe', {
+      //   method: 'POST', headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ api_key: 'YOUR_API_KEY', email })
+      // });
+
+      // Fire Meta Pixel lead event (if pixel is active)
+      if (typeof fbq !== 'undefined') fbq('track', 'Lead');
+      // Fire GA4 event (if Analytics is active)
+      if (typeof gtag !== 'undefined') gtag('event', 'generate_lead', { value: 25, currency: 'EUR' });
+
+      // Show success state
+      this.style.display = 'none';
+      document.querySelector('.email-note').style.display = 'none';
+      document.getElementById('formSuccess').style.display = 'block';
+    });
+
+    // ── Share button (Web Share API with clipboard fallback)
+    document.getElementById('shareBtn').addEventListener('click', async function() {
+      const shareData = {
+        title: 'SELAH — Ancient Truth. Future Sound.',
+        text: 'An outdoor electronic music experience at sunset in Tenerife. Music by Robert-Jan Mastenbroek.',
+        url: 'https://robertjanmastenbroek.com/selah'
+      };
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else {
+          await navigator.clipboard.writeText(shareData.url);
+          this.textContent = 'Link copied';
+          setTimeout(() => this.textContent = 'Share SELAH', 2500);
+        }
+      } catch (err) {
+        // User cancelled share — no action needed
+      }
+    });
+  </script>
+
+</body>
+</html>

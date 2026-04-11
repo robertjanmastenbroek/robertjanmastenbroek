@@ -9,7 +9,7 @@ post_today.py — Holy Rave daily content run
 5. Single Claude call: unique captions for all 3 clips
 6. Cuts 3 vertical multi-clip reels with burned-in hooks + RJM audio
 7. Saves to content/output/YYYY-MM-DD_HHMM_trackname/
-8. (Live run) Queues to Buffer: TikTok + Instagram Reels + YouTube Shorts
+8. (Live run) Queues to Buffer: TikTok + Instagram Reels + Instagram Story + YouTube Shorts
 
 Usage:
   python3 post_today.py           # live run
@@ -669,11 +669,22 @@ def main():
 
     # ── Buffer (live only) ────────────────────────────────────────────────────
     if not args.dry_run:
-        _sep("BUFFER — Queuing to TikTok / Instagram / YouTube")
+        _sep("BUFFER — Queuing to TikTok / Instagram Reels / Instagram Story / YouTube")
         from buffer_poster import upload_video_and_queue
-        for clip_len, clip_path in zip(clip_lengths, output_files):
-            caps = run_captions.get(clip_len, {})
-            print(f"\n  Queuing {clip_len}s [{per_clip[clip_len]['angle']}]…")
+        from datetime import datetime, timedelta, timezone
+
+        # Schedule all 3 clips for today — 3-hour gaps starting 30 min from now.
+        # Each slot queues: TikTok + Instagram Reel + Instagram Story + YouTube Short.
+        now = datetime.now(timezone.utc)
+        schedule_times = [
+            (now + timedelta(minutes=30) + timedelta(hours=i * 3)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            for i in range(len(output_files))
+        ]
+
+        for i, (clip_len, clip_path) in enumerate(zip(clip_lengths, output_files)):
+            caps  = run_captions.get(clip_len, {})
+            sched = schedule_times[i]
+            print(f"\n  Queuing {clip_len}s [{per_clip[clip_len]['angle']}] → {sched}…")
             try:
                 upload_video_and_queue(
                     clip_path         = str(clip_path),
@@ -681,8 +692,9 @@ def main():
                     instagram_caption = caps.get('instagram', {}).get('caption', '') + "\n" + caps.get('instagram', {}).get('hashtags', ''),
                     youtube_title     = caps.get('youtube', {}).get('title', ''),
                     youtube_desc      = caps.get('youtube', {}).get('description', ''),
+                    scheduled_at      = sched,
                 )
-                print(f"    ✓ Queued")
+                print(f"    ✓ Queued (TikTok + Reel + Story + YouTube)")
             except Exception as e:
                 print(f"    ✗ Buffer error: {e}")
 
@@ -696,6 +708,10 @@ def main():
         print(f"  {f.name}  [{ag}]  {n} beat-synced segments  ({f.stat().st_size / 1_000_000:.1f} MB)")
     print(f"\n{mode}Captions: {caption_file.name}")
     print(f"{mode}Output:   {run_dir}")
+
+    if not args.dry_run:
+        print(f"\n{mode}Total posts queued: {len(output_files) * 4}  "
+              f"(TikTok×{len(output_files)} + Reels×{len(output_files)} + Stories×{len(output_files)} + YouTube×{len(output_files)})")
 
     if args.dry_run:
         print("\n[DRY RUN] Buffer posting skipped.\n")
