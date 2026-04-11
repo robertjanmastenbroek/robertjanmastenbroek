@@ -127,6 +127,32 @@ Screenshots, responsive layout (mobile/desktop), form validation, before/after d
 Requires `bun` — install once with: `curl -fsSL https://bun.sh/install | bash`
 Then run setup: `~/.claude/skills/gstack/setup`
 
+## Continuous Claude (Intelligence Layer)
+
+Hooks auto-fire on every session — injecting TLDR code summaries, architecture context, and edit helpers.
+
+Active hooks: `tldr-context-inject` (Task), `arch-context-inject` (Task), `edit-context-inject` (Edit), `smart-search-router` (Grep), `path-rules` (Read/Edit/Write), `import-validator` (Edit/Write), `session-end-cleanup` (SessionEnd)
+
+57 agents in `~/.claude/agents/` — 9 RJM brand agents + 48 Continuous Claude agents:
+- **maestro** — orchestrator, coordinates other CC agents
+- **kraken** — TDD implementation
+- **critic** — code review
+- **architect** — system design
+- **aegis** — security analysis
+
+## RuFlo Swarm (Orchestration Layer)
+
+Swarm config: `ruflo/config/rjm-swarm.json` | Discovery: `AGENTS.md`
+
+```
+python3 rjm.py swarm init       # Start the swarm
+python3 rjm.py swarm status     # Agent health
+python3 rjm.py memory list      # Shared memory keys
+python3 rjm.py memory get <key> # Read memory
+```
+
+Topology: hierarchical | Consensus: raft | Queen: rjm-master
+
 ## Unified Entry Point
 All agent commands run through `rjm.py` at the project root:
 ```
