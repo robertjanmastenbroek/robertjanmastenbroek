@@ -448,13 +448,24 @@ Write each angle as if the others don't exist."""
 Generate hooks for {len(clips_config)} clips. Each clip has a different angle.
 {angle_sections}
 
+TWO-PART REVEAL FORMAT (rank 1 only):
+Rank 1 MUST use the format: "OPENER // REVEAL"
+  OPENER: 3–5 words that open a loop — incomplete, located, tension or rupture.
+  REVEAL: 3–5 words that escalate or pivot. NOT a resolution. Deepens the wound or shifts the frame.
+  The two parts feel like one thought with a held breath in the middle.
+  Examples:
+    "Started the night everything fell // and that room held it first"
+    "For you still carrying it // three years is not a rounding error"
+    "Jaw drops before the mind // knows what just happened in there"
+  Ranks 2–5 can be single-line hooks (no " // " needed).
+
 For EACH clip, generate 5 ranked candidates (1 = most scroll-stopping).
 After each hook add: | mechanism: [tension/identity/scene/claim/rupture]
 
 Format EXACTLY as shown — no preamble, no explanation:
 
 --- {clips_config[0]['length']}s ---
-1. Hook text | mechanism: tension
+1. OPENER // REVEAL | mechanism: tension
 2. Hook text | mechanism: identity
 3. Hook text | mechanism: scene
 4. Hook text | mechanism: claim
@@ -558,13 +569,13 @@ def _assign_abc_hooks(candidates_by_length: dict) -> dict:
 
 
 def _fallback_hook(angle: str) -> str:
-    """Minimal fallback hooks — specific and located, never generic."""
+    """Minimal fallback hooks in two-part reveal format."""
     fallbacks = {
-        'emotional': 'Made this the night I almost stopped.',
-        'signal':    'For the version of you still figuring it out.',
-        'energy':    'The room stopped. Then everything moved.',
+        'emotional': 'Made this the night I almost stopped // and the track knew before I did.',
+        'signal':    'For the version of you still carrying it // without telling anyone why.',
+        'energy':    'The room stopped. Then everything // moved at once.',
     }
-    return fallbacks.get(angle, 'Something shifted here. Atlantic coast. 4am.')
+    return fallbacks.get(angle, 'Something shifted here // Atlantic coast, 4am.')
 
 
 # ── Call 2: Caption generation ─────────────────────────────────────────────────

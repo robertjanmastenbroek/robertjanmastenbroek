@@ -343,6 +343,16 @@ def pick_source_videos(count: int, exclude: set = None) -> list[Path]:
     return picked
 
 
+def _get_video_category(vpath: Path) -> str:
+    """Determine category from directory structure: performances / phone-footage / b-roll."""
+    parts = str(vpath).lower()
+    if 'phone-footage' in parts:
+        return 'phone-footage'
+    if 'performances' in parts:
+        return 'performances'
+    return 'b-roll'
+
+
 def mark_video_used(video_path: Path):
     rotation = json.loads(VIDEO_ROTATION.read_text()) if VIDEO_ROTATION.exists() else {}
     rotation[str(video_path)] = int(time.time())
@@ -403,11 +413,15 @@ def main():
     audio_path, track_title = pick_next_track(args.track)
     print(f"  Track: {track_title}")
     print(f"  File:  {audio_path.name}")
-    audio_start = find_peak_section(audio_path, max(processor.CLIP_LENGTHS))
 
     bpm     = processor.get_bpm(str(audio_path))
     bar_dur = 4 * 60.0 / bpm   # one 4/4 bar in seconds
     print(f"  BPM:   {bpm:.1f}  (bar = {bar_dur:.2f}s)")
+
+    audio_start = find_peak_section(audio_path, max(processor.CLIP_LENGTHS))
+    # Start one bar before the peak so the listener hears a lead-in hit (Expert 4)
+    audio_start = max(0, int(audio_start - bar_dur))
+    print(f"  Audio start adjusted to {audio_start}s (1 bar lead-in)")
 
     # ── 2. Source videos — one pool per clip, beat-synced start points ────────
     _sep("STEP 2 / 4 — Source videos + beat-sync")
@@ -430,6 +444,7 @@ def main():
 
         sources_raw = pick_source_videos(n_segs, exclude=all_used)
         sources     = []
+        categories  = []
 
         for vpath in sources_raw:
             try:
@@ -449,20 +464,24 @@ def main():
             beat_start = _snap_to_beat(audio_path, int(raw_start))
             beat_start = min(float(beat_start), max(0.0, vid_dur - seg_dur))
 
+            cat = _get_video_category(vpath)
             sources.append((str(vpath), beat_start))
+            categories.append(cat)
             all_used.add(str(vpath))
-            print(f"    {vpath.parent.name}/{vpath.name}  start={beat_start:.1f}s  ({vid_dur:.1f}s total)")
+            print(f"    [{cat}] {vpath.parent.name}/{vpath.name}  start={beat_start:.1f}s  ({vid_dur:.1f}s total)")
 
         if not sources:
             # Fallback: pick any video, start at 0
             fallback = pick_source_videos(1)
             if fallback:
-                sources = [(str(fallback[0]), 0.0)]
+                sources    = [(str(fallback[0]), 0.0)]
+                categories = [_get_video_category(fallback[0])]
                 all_used.add(str(fallback[0]))
                 print(f"    FALLBACK: {fallback[0].name}")
 
         per_clip[clip_len] = {
-            "video_sources": sources,
+            "video_sources":     sources,
+            "source_categories": categories,
             "angle":  angle,
             "n_segs": n_segs,
         }
@@ -502,10 +521,11 @@ def main():
     output_files = []
 
     for clip_len in clip_lengths:
-        clip_data = per_clip[clip_len]
-        angle     = clip_data["angle"]
-        sources   = clip_data["video_sources"]
-        hook      = run_hooks.get(clip_len, "")
+        clip_data  = per_clip[clip_len]
+        angle      = clip_data["angle"]
+        sources    = clip_data["video_sources"]
+        cat_list   = clip_data.get("source_categories", [])
+        hook       = run_hooks.get(clip_len, "")
 
         print(f"  → {clip_len}s [{angle}]  {len(sources)} segments")
         out_file = run_dir / f"{safe_track}_{clip_len}s.mp4"
@@ -516,6 +536,7 @@ def main():
             clip_duration=float(clip_len),
             hook_text=hook,
             angle=angle,
+            source_categories=cat_list,
         )
         mix_in_track(out_file, audio_path, audio_start, clip_len)
 
