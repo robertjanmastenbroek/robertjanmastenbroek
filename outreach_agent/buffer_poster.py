@@ -26,6 +26,8 @@ from pathlib import Path
 
 import requests
 from video_host import upload_video
+import db
+from config import MAX_CONTENT_POSTS_PER_DAY
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -292,6 +294,13 @@ def upload_video_and_queue(
 
     Returns a dict of {platform: {"success": bool, "id": str|None, "error": str|None}}.
     """
+    db.init_db()
+    posts_today = db.today_content_count()
+    if posts_today >= MAX_CONTENT_POSTS_PER_DAY:
+        print(f"  [Buffer] Daily content cap reached ({posts_today}/{MAX_CONTENT_POSTS_PER_DAY}) — skipping upload")
+        return {p: {"success": False, "id": None, "error": "daily_cap_reached"}
+                for p in ("tiktok", "instagram_reel", "instagram_story", "youtube")}
+
     video_url = upload_video(clip_path)  # raises on total failure
 
     platforms = {
@@ -310,6 +319,9 @@ def upload_video_and_queue(
             print(f"    ✗ {platform} failed: {exc}")
             results[platform] = {"success": False, "id": None, "error": str(exc)}
         time.sleep(2)
+
+    if any(r["success"] for r in results.values()):
+        db.increment_content_count()
 
     return results
 

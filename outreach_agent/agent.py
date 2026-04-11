@@ -86,8 +86,8 @@ def _send_batch(batch_size: int) -> dict:
     Send a batch of emails to verified/queued contacts.
     Returns summary dict.
     """
-    # Pull from 'verified' contacts (verified = passed bounce check, not yet sent)
-    contacts = db.get_contacts_by_status("verified", limit=batch_size * 3)
+    # Pull verified contacts — researched ones first (higher reply rates)
+    contacts = db.get_verified_contacts_prioritized(limit=batch_size * 3)
     if not contacts:
         # Fall back to 'queued' (shouldn't normally happen but safe)
         contacts = db.get_contacts_by_status("queued", limit=batch_size * 3)

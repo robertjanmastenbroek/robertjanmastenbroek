@@ -29,6 +29,7 @@ from zoneinfo import ZoneInfo
 sys.path.insert(0, os.path.dirname(__file__))
 
 from config import ACTIVE_HOUR_END, ACTIVE_HOUR_START, CLAUDE_MODEL_FAST, DB_PATH
+import scheduler
 from story import TRACKS
 
 log = logging.getLogger("outreach.instagram_dm")
@@ -302,19 +303,12 @@ def _send_dm(cl, handle: str, text: str) -> bool:
         return False
 
 
-# ─── Active window ────────────────────────────────────────────────────────────
-
-def _in_active_window() -> bool:
-    now = datetime.now(CET)
-    return ACTIVE_HOUR_START <= now.hour < ACTIVE_HOUR_END
-
-
 # ─── Commands ─────────────────────────────────────────────────────────────────
 
 def run():
     _init_ig_table()
 
-    if not _in_active_window():
+    if not scheduler.is_within_active_window():
         log.info(
             "Outside active window (%d:00–%d:00 CET) — exiting",
             ACTIVE_HOUR_START,

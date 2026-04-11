@@ -35,9 +35,10 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(__file__))
 
 import db
+import scheduler
 from config import (
     MAX_EMAILS_PER_DAY, CONTACT_TYPE_WEIGHTS, FOLLOWUP_DAYS, FOLLOWUP2_DAYS,
-    DB_PATH, BASE_DIR
+    DB_PATH, BASE_DIR, MAX_CONTENT_POSTS_PER_DAY
 )
 try:
     from learning import get_learning_context_for_template
@@ -326,6 +327,25 @@ def cmd_briefing():
     reply_rate = summary.get("_reply_rate", "—")
     remaining_today = max(0, MAX_EMAILS_PER_DAY - today_sent)
 
+    content_posts  = db.today_content_count()
+    contacts_found = db.today_contacts_found()
+
+    # Spotify freshness
+    spotify_listeners = None
+    spotify_last_date = None
+    spotify_days_stale = None
+    try:
+        with db.get_conn() as _conn:
+            _row = _conn.execute(
+                "SELECT date, monthly_listeners FROM spotify_stats ORDER BY date DESC LIMIT 1"
+            ).fetchone()
+        if _row:
+            spotify_listeners  = _row["monthly_listeners"]
+            spotify_last_date  = _row["date"]
+            spotify_days_stale = (date.today() - date.fromisoformat(spotify_last_date)).days
+    except Exception:
+        pass
+
     with db.get_conn() as conn:
         verified = conn.execute(
             "SELECT COUNT(*) as n FROM contacts WHERE status='verified'"
@@ -348,13 +368,25 @@ def cmd_briefing():
         total_responded = summary.get("responded", 0)
 
     print(f"\n=== RJM MASTER AGENT — DAILY BRIEFING ({date.today()}) ===\n")
-    print(f"GOAL: Maximum playlist placements + podcast interviews\n")
+    print(f"NORTH STAR: 1,000,000 Spotify monthly listeners\n")
+
+    # Spotify progress line
+    if spotify_listeners is not None:
+        pct  = spotify_listeners / 1_000_000 * 100
+        stale_warn = f"  ⚠️  ({spotify_days_stale}d old — run: rjm.py spotify log <n>)" if spotify_days_stale and spotify_days_stale >= 3 else f"  (as of {spotify_last_date})"
+        print(f"SPOTIFY: {spotify_listeners:,} monthly listeners  ({pct:.2f}% of goal){stale_warn}\n")
+    else:
+        print(f"SPOTIFY: ⚠️  No data — run: python3 rjm.py spotify log <n>\n")
+
+    print(f"TODAY'S ACTIVITY:")
+    print(f"  Emails sent      : {today_sent} / {MAX_EMAILS_PER_DAY}  ({remaining_today} remaining)")
+    print(f"  Content posted   : {content_posts} / {MAX_CONTENT_POSTS_PER_DAY} clips")
+    print(f"  Contacts found   : {contacts_found} / {MAX_CONTACTS_FOUND_PER_DAY}")
+    print(f"")
     print(f"PIPELINE HEALTH:")
     print(f"  Total contacted  : {total_sent_all}")
     print(f"  Responded        : {total_responded}  (reply rate: {reply_rate})")
     print(f"  Verified & ready : {verified} ({podcast_verified} podcasts, {curator_verified} curators)")
-    print(f"  Sent today       : {today_sent} / {MAX_EMAILS_PER_DAY}")
-    print(f"  Quota remaining  : {remaining_today}")
     print(f"  Follow-ups due   : {fu1_due} first  |  {fu2_due} second")
 
     if new_responses > 0:
@@ -387,6 +419,15 @@ def cmd_briefing():
 
     if curator_verified < 20:
         print(f"  {priority}. Low curator pipeline ({curator_verified}) — rjm-discover needs to run")
+        priority += 1
+
+    if spotify_days_stale is not None and spotify_days_stale >= 3:
+        print(f"  {priority}. ⚠️  Spotify data is {spotify_days_stale} days old — log today's count:")
+        print(f"          python3 rjm.py spotify log <n>")
+        priority += 1
+    elif spotify_listeners is None:
+        print(f"  {priority}. Log Spotify listeners to track progress toward 1M:")
+        print(f"          python3 rjm.py spotify log <n>")
         priority += 1
 
     print(f"\nSUB-AGENT STATUS:")
@@ -599,6 +640,13 @@ def cmd_health():
         print(f"  ℹ️  {new_c} new contacts pending verification")
 
     print(f"  ℹ️  Today's sends: {today_sent} / {MAX_EMAILS_PER_DAY}")
+    content_today = db.today_content_count()
+    print(f"  ℹ️  Content posts today: {content_today} / {MAX_CONTENT_POSTS_PER_DAY}")
+
+    # Send window status
+    window = scheduler.SendWindow()
+    window_icon = "✅" if window.can_send else "⏸ "
+    print(f"  {window_icon} Send window: {window.status()}")
 
     # ── Content engine ─────────────────────────────────────────────────────────
     content_out = BASE_DIR.parent / "content" / "output"

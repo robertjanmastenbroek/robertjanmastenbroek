@@ -285,6 +285,39 @@ def cmd_status():
     print("  RJM COMMAND CENTRE — SYSTEM STATUS")
     print("═" * 60)
 
+    # ── Rate-limit snapshot (inline — no subprocess) ─────────────────────────
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
+        import scheduler as _sched
+        import db as _db
+        from config import MAX_EMAILS_PER_DAY, MAX_CONTENT_POSTS_PER_DAY, MAX_CONTACTS_FOUND_PER_DAY
+        _db.init_db()
+        window = _sched.SendWindow()
+        icon   = "✅" if window.can_send else "⏸ "
+        print(f"\n[ Rate Limits ]\n")
+        print(f"  {icon} {window.status()}")
+        print(f"  📧  Emails today:    {_db.today_send_count()} / {MAX_EMAILS_PER_DAY}")
+        print(f"  🎬  Content posts:   {_db.today_content_count()} / {MAX_CONTENT_POSTS_PER_DAY}")
+        print(f"  🔍  Contacts found:  {_db.today_contacts_found()} / {MAX_CONTACTS_FOUND_PER_DAY}")
+        # IG DM count (separate table, same DB)
+        try:
+            from datetime import date as _date
+            import sqlite3 as _sqlite3
+            from config import DB_PATH as _DB_PATH
+            _ig_conn = _sqlite3.connect(str(_DB_PATH))
+            _ig_row = _ig_conn.execute(
+                "SELECT COUNT(*) FROM instagram_outreach WHERE date_sent=? AND status='sent'",
+                (str(_date.today()),)
+            ).fetchone()
+            _ig_conn.close()
+            ig_today = _ig_row[0] if _ig_row else 0
+            print(f"  📱  IG DMs today:    {ig_today} / 20")
+        except Exception:
+            pass
+    except Exception as _e:
+        print(f"\n[ Rate Limits ]\n  (unavailable: {_e})")
+
     # 1. Master health check
     print("\n[ Master Agent Health ]\n")
     _run([_OUTREACH_PYTHON, str(MASTER_PY), "health"], cwd=str(OUTREACH_DIR))

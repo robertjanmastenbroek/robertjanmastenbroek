@@ -16,6 +16,7 @@ import time
 
 import db
 import gmail_client
+import scheduler
 import template_engine
 from config import FOLLOWUP_DAYS, DRAFT_MODE
 
@@ -118,7 +119,7 @@ def run_followup_batch(max_generates: int = 10) -> dict:
         else:
             failed1 += 1
         if sent1 + sent2 < max_generates:
-            time.sleep(2)   # brief pause between follow-up sends
+            time.sleep(scheduler.random_interval())
 
     # ── Second follow-ups (use remaining quota) ─────────────────────────────────
     remaining = max_generates - sent1 - failed1
