@@ -47,14 +47,6 @@
       "feeds_into": "rjm-outreach-agent"
     },
     {
-      "agent": "rjm-playlist-discover",
-      "config": "../agents/rjm-playlist-discover.yaml",
-      "priority": 3,
-      "cadence": "6x/day",
-      "trigger": "queen",
-      "feeds_into": "rjm-discover"
-    },
-    {
       "agent": "holy-rave-weekly-report",
       "config": "../agents/rjm-analytics.yaml",
       "priority": 5,
@@ -64,7 +56,7 @@
   ],
 
   "pipeline": {
-    "discover": ["rjm-playlist-discover", "rjm-discover"],
+    "discover": ["rjm-discover"],
     "enrich":   ["rjm-research"],
     "publish":  ["rjm-outreach-agent", "holy-rave-daily-run"],
     "report":   ["holy-rave-weekly-report"]

@@ -51,10 +51,9 @@ When promoting a specific track, find its scripture anchor and lead with it — 
 | `rjm-master` | 8×/day | Orchestrates all growth activity — never idles |
 | `holy-rave-daily-run` | Daily | 3 beat-synced clips → TikTok/IG/YouTube |
 | `holy-rave-weekly-report` | Weekly | Analytics — Spotify KPI primary, Buffer secondary |
-| `rjm-discover` | 6×/day | Curator + podcast discovery (25 contacts/run) |
+| `rjm-discover` | 6×/day | Contact + Spotify playlist discovery (merged pipeline) |
 | `rjm-outreach-agent` | Every 30min | Email outreach via Gmail OAuth |
 | `rjm-research` | 6×/day | Contact personalisation |
-| `rjm-playlist-discover` | 6×/day | Build 200-playlist database |
 
 Outreach limits: max 150 emails/day, active window 08:00–23:00 CET, 8hr overnight break.
 

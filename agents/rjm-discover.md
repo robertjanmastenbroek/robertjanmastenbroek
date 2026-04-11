@@ -1,21 +1,29 @@
 # Agent: rjm-discover
 **Cadence:** 6×/day
-**Role:** Podcast + non-Spotify curator discovery — 10 net-new contacts per run
+**Role:** Contact + Spotify playlist discovery — runs both pipelines in one session
 
-> NOTE: Spotify playlist discovery is handled exclusively by `rjm-playlist-discover`.
-> This agent covers: podcasts, SoundCloud curators, Mixcloud, Bandcamp labels, blogs, editorial contacts.
+> This agent covers both pipelines:
+> - **Part A:** podcasts, SoundCloud curators, Mixcloud, Bandcamp labels, blogs, editorial contacts (non-Spotify)
+> - **Part B:** Spotify playlists only → `data/playlist_database.json`
 
 ---
 
 ## Hard Execution Limits (non-negotiable)
-- **Max WebSearch queries per run: 8**
-- **Max contacts to evaluate: 20**
-- **Target net-new appended: 10**
-- **STOP after 8 searches**, even if target isn't reached — append what you have and exit
+- **Part A — Max WebSearch queries per run: 8**
+- **Part A — Max contacts to evaluate: 20**
+- **Part A — Target net-new appended: 10**
+- **Part A — STOP after 8 searches**, even if target isn't reached — append what you have and continue to Part B
+- **Part B — Max WebSearch queries per run: 6**
+- **Part B — Max playlists to evaluate: 15**
+- **Part B — Target net-new added: 5–10**
+- **Part B — Stop condition:** once `playlist_database.json` has ≥200 entries, skip Part B and log `{"skipped": true, "reason": "database_complete"}`
+- **Total queries per run: 14 (8 + 6) — fire all in parallel within each part**
 
 ---
 
-## Step 0 — Intelligence Brief (run before any search)
+## PART A — Contact Discovery (podcasts, blogs, labels, curators)
+
+### Step 0 — Intelligence Brief (run before any search)
 
 Pull live signal from the existing systems to make searches targeted, not generic.
 
@@ -61,7 +69,7 @@ This is the canonical Subtle Salt targeting filter. Use it verbatim, do not re-d
 
 ---
 
-## Step 1 — Assemble 8 Search Queries
+### Step 1 — Assemble 8 Search Queries
 
 Based on the gap analysis from Step 0, assemble exactly 8 queries. Prioritize gaps.
 
@@ -83,13 +91,13 @@ Spain, Germany, Netherlands, UK, Poland, France, Brazil, US
 
 ---
 
-## Step 2 — Run Queries in Parallel
+### Step 2 — Run Queries in Parallel
 
 Fire all 8 WebSearch queries **simultaneously** (single parallel call block). Do not wait for one before launching the next.
 
 ---
 
-## Step 3 — Evaluate Results (max 20 candidates)
+### Step 3 — Evaluate Results (max 20 candidates)
 
 From all search results combined, extract up to 20 unique candidates.
 
@@ -111,7 +119,7 @@ From all search results combined, extract up to 20 unique candidates.
 
 ---
 
-## Step 4 — Append to contacts.csv
+### Step 4 — Append to contacts.csv
 
 Format per row:
 ```
@@ -124,7 +132,7 @@ email, name, type, genre, notes, status, date_added, date_sent, bounce, audience
 
 ---
 
-## Step 5 — Log to DB + File
+### Step 5 — Log to DB + File
 
 **Write to `outreach_agent/db.py` `discovery_log` table** (already exists):
 ```python
@@ -136,6 +144,8 @@ email, name, type, genre, notes, status, date_added, date_sent, bounce, audience
 ```json
 {
   "ts": "<ISO timestamp>",
+  "agent": "rjm-discover",
+  "part": "A",
   "queries_used": <number>,
   "query_slots_by_type": {"podcast": 4, "curator": 2, "blog": 2},
   "candidates_evaluated": <number>,
@@ -146,4 +156,77 @@ email, name, type, genre, notes, status, date_added, date_sent, bounce, audience
 }
 ```
 
+Then proceed to Part B.
+
+---
+
+## PART B — Spotify Playlist Discovery
+
+### Step 1 — Pre-Check
+
+Read `data/playlist_database.json`. Extract all existing playlist IDs/URLs into a dedup set.
+Count current total. If ≥ 200, log skipped and exit immediately.
+
+---
+
+### Step 2 — Run 6 Parallel Searches
+
+Use WebSearch. Run all 6 simultaneously:
+
+1. `site:open.spotify.com/playlist "melodic techno" followers`
+2. `site:open.spotify.com/playlist "psytrance" OR "tribal" followers`
+3. `site:open.spotify.com/playlist "consciousness" OR "flow state" electronic`
+4. `site:open.spotify.com/playlist "ethnic electronic" OR "world electronic"`
+5. `"spotify playlist" melodic techno curator contact submit 2025`
+6. `"spotify playlist" psytrance tribal rave consciousness 5000 followers`
+
+---
+
+### Step 3 — Evaluate (max 15 candidates)
+
+For each playlist, collect:
+
+```
+playlist_name | spotify_url | playlist_id | follower_count | genre_tags | curator_name | curator_contact (if findable)
+```
+
+**Skip immediately if:**
+- Already in playlist_database.json
+- Followers < 5,000
+- Playlist name/description contains: "worship", "gospel", "CCM", "praise", "church", "Jesus" (as explicit category, not subtle)
+
+**Tag each:**
+- `audience_type`: `seeker` | `music-first` | `faith-adjacent` | `avoid`
+- `priority`: `high` (>50K followers) | `medium` (10K–50K) | `low` (5K–10K)
+
+---
+
+### Step 4 — Update playlist_database.json
+
+Append new entries. Flag top 5 by follower count as `priority: high` for this run.
+
+---
+
+### Step 5 — Log
+
+Append to `data/discover_log.json`:
+
+```json
+{
+  "ts": "<ISO timestamp>",
+  "agent": "rjm-discover",
+  "part": "B",
+  "queries_used": <number>,
+  "playlists_evaluated": <number>,
+  "playlists_added": <number>,
+  "database_total": <number>
+}
+```
+
 Then STOP. Do not trigger any downstream agent.
+
+---
+
+## Execution Order
+
+Run Part A first, then Part B. Both parts log to `data/discover_log.json` with `"agent": "rjm-discover"` and their respective `"part": "A"` or `"part": "B"` tag.

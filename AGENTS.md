@@ -12,7 +12,7 @@ Spotify: 2Seaafm5k1hAuCkpdq7yds | Instagram: @holyraveofficial (290K)
 - **Workers** (priority order):
   1. holy-rave-daily-run — 3 beat-synced clips → TikTok/IG/YouTube (daily)
   2. rjm-outreach-agent — email outreach via Gmail OAuth (every 30min)
-  3. rjm-discover + rjm-playlist-discover — 25 contacts/run (6×/day)
+  3. rjm-discover — contacts + Spotify playlists (6×/day, merged pipeline)
   4. rjm-research — contact personalisation (6×/day)
   5. holy-rave-weekly-report — Spotify KPI analytics (weekly)
 

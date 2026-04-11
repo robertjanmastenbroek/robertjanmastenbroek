@@ -2,7 +2,7 @@
 """
 RJM Master Agent — Command Centre Brain
 
-Sits above rjm-discover, rjm-research, rjm-outreach-agent, rjm-playlist-discover.
+Sits above rjm-discover, rjm-research, rjm-outreach-agent.
 Provides strategic intelligence: pipeline health, gap analysis, response escalation,
 weight adjustment, daily briefings, and growth strategy portfolio management.
 
@@ -434,7 +434,7 @@ def cmd_briefing():
     print(f"  rjm-discover      : runs 6× daily (curator + podcast discovery)")
     print(f"  rjm-research      : runs 6× daily (personalisation facts)")
     print(f"  rjm-outreach-agent: runs every 30m (sends + follow-ups)")
-    print(f"  rjm-playlist-discover: on-demand (Spotify playlist sourcing)")
+    print(f"  rjm-discover          : runs 6× daily (contacts + Spotify playlist discovery — merged)")
 
     print(f"\nWEIGHTS: curator={CONTACT_TYPE_WEIGHTS.get('curator',0)}  podcast={CONTACT_TYPE_WEIGHTS.get('podcast',0)}")
 
@@ -703,7 +703,7 @@ def cmd_health():
         verified = s.get("verified", 0)
         contact_found = s.get("contact_found", 0)
         if verified > 0 and contact_found == 0:
-            issues.append(f"⚠️  Playlist DB: {verified} playlists verified but no contact found yet — run rjm-playlist-discover")
+            issues.append(f"⚠️  Playlist DB: {verified} playlists verified but no contact found yet — run rjm-discover (Part B)")
         else:
             print(f"  ✅ Playlist pipeline: {total} total, {contact_found} with contact info")
     except Exception:

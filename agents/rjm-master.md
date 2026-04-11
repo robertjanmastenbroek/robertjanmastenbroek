@@ -3,7 +3,7 @@
 **Role:** Orchestrator — coordinates all growth activity, never idles
 
 ## Responsibilities
-- Check status of all sub-agents (holy-rave-daily-run, rjm-discover, rjm-outreach-agent, rjm-research, rjm-playlist-discover)
+- Check status of all sub-agents (holy-rave-daily-run, rjm-discover, rjm-outreach-agent, rjm-research)
 - Identify gaps or failures and re-trigger as needed
 - Enforce priority order: Content → Replies → Discover → Research → Analytics
 - Log each run to `data/master_log.json`

@@ -22,7 +22,6 @@ Config: `agents/rjm-master.yaml` | Swarm: `config/rjm-swarm.json`
 | rjm-outreach-agent | agents/rjm-outreach.yaml | Every 30min |
 | rjm-discover | agents/rjm-discover.yaml | 6×/day |
 | rjm-research | agents/rjm-research.yaml | 6×/day |
-| rjm-playlist-discover | agents/rjm-playlist-discover.yaml | 6×/day |
 | holy-rave-weekly-report | agents/rjm-analytics.yaml | Weekly |
 
 ---
