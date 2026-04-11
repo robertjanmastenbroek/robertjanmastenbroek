@@ -32,31 +32,31 @@ FONT_CANDIDATES = [
 # Differentiated only by size and vertical position.
 HOOK_STYLES = {
     'emotional': {
-        'fontsize': 72,
+        'fontsize': 78,
         'uppercase': True,
-        'y_pct':    0.50,   # vertical center — intimate, inward
-        'stroke_w': 5,
+        'y_pct':    0.50,   # always center
+        'stroke_w': 9,
         'wrap_at':  18,
     },
     'signal': {
-        'fontsize': 68,
+        'fontsize': 78,
         'uppercase': True,
-        'y_pct':    0.72,   # bottom third — addresses directly
-        'stroke_w': 5,
-        'wrap_at':  20,
+        'y_pct':    0.50,   # always center
+        'stroke_w': 9,
+        'wrap_at':  18,
     },
     'energy': {
-        'fontsize': 82,
+        'fontsize': 84,
         'uppercase': True,
-        'y_pct':    0.08,   # top — punchy, loud
-        'stroke_w': 6,
+        'y_pct':    0.50,   # always center
+        'stroke_w': 10,
         'wrap_at':  16,
     },
     'default': {
-        'fontsize': 72,
+        'fontsize': 78,
         'uppercase': True,
-        'y_pct':    0.50,
-        'stroke_w': 5,
+        'y_pct':    0.50,   # always center
+        'stroke_w': 9,
         'wrap_at':  18,
     },
 }
@@ -187,7 +187,8 @@ def detect_best_segments(video_path: str, duration: float) -> list:
                 continue
 
     if not segments:
-        for pct in [0.1, 0.25, 0.4, 0.55, 0.7]:
+        # Prefer middle section — skip first/last 20% to avoid intros/outros
+        for pct in [0.3, 0.45, 0.55, 0.4, 0.6]:
             start = duration * pct
             if start + min(CLIP_LENGTHS) <= duration:
                 segments.append((start, 1.0))

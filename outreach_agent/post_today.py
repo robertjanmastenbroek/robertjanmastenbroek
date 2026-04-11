@@ -178,36 +178,61 @@ def _get_duration(path: Path) -> int:
 
 
 def find_peak_section(audio_path: Path, clip_duration: int = 30) -> int:
-    """Return start time (seconds) of peak-energy section. Skips intro/outro (30s each)."""
-    total      = _get_duration(audio_path)
-    scan_start = 30
-    scan_end   = max(scan_start + clip_duration, total - 30)
-    window     = 5
-    best_start = scan_start
-    best_rms   = -999.0
+    """
+    Find the start time (seconds) of the best beat-dense section to use as audio.
 
-    print(f"  Scanning {audio_path.name} ({total//60}:{total%60:02d}) for peak energy…")
-    t = scan_start
-    while t + clip_duration <= scan_end:
-        result = subprocess.run(
-            [FFMPEG, "-v", "quiet", "-ss", str(t), "-t", str(window),
-             "-i", str(audio_path), "-af", "astats=metadata=1:reset=1",
-             "-f", "null", "-"],
-            capture_output=True, text=True, timeout=15,
-        )
-        for line in result.stderr.splitlines():
-            if "RMS level dB" in line:
-                try:
-                    rms = float(line.split()[-1])
-                    if rms > best_rms:
-                        best_rms   = rms
-                        best_start = t
-                except ValueError:
-                    pass
-        t += window
+    Uses librosa onset-strength × RMS to score every 1-second window, then picks
+    the window with the highest combined score.  Onset strength rewards sections
+    where beats are landing consistently — so a flat intro or quiet breakdown will
+    score low even if it's loud.
 
-    print(f"  Peak at {best_start}s (RMS: {best_rms:.1f} dB)")
-    return best_start
+    Skip window:
+      - First 60 s (intro ramp-up — beats usually not fully in yet)
+      - Last  30 s (outro fade)
+    """
+    try:
+        import librosa
+        import numpy as np
+
+        total      = _get_duration(audio_path)
+        scan_start = 60                                  # skip intro
+        scan_end   = max(scan_start + clip_duration, total - 30)
+        load_dur   = scan_end - scan_start
+
+        print(f"  Scanning {audio_path.name} ({total//60}:{total%60:02d}) "
+              f"for best beat section (t={scan_start}s–{scan_end}s)…")
+
+        y, sr = librosa.load(str(audio_path), sr=22050, mono=True,
+                             offset=scan_start, duration=load_dur)
+
+        hop      = 512
+        fps      = sr / hop                              # frames per second
+
+        onset    = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop)
+        rms      = librosa.feature.rms(y=y, hop_length=hop)[0]
+
+        n        = min(len(onset), len(rms))
+        score    = onset[:n] * rms[:n]
+
+        win_frames = max(1, int(clip_duration * fps))
+        step       = max(1, int(fps))                    # step 1 s at a time
+
+        best_t     = scan_start
+        best_score = -1.0
+        for i in range(0, n - win_frames, step):
+            s = float(np.mean(score[i : i + win_frames]))
+            if s > best_score:
+                best_score = s
+                best_t     = scan_start + i / fps
+
+        best_t = int(min(best_t, total - clip_duration))
+        print(f"  Peak beat section at {best_t}s  (score={best_score:.5f})")
+        return best_t
+
+    except Exception as e:
+        print(f"  WARN: librosa beat-scan failed ({e}) — falling back to t=60s")
+        total = _get_duration(audio_path)
+        return min(60, max(0, total - clip_duration))
 
 
 def _snap_to_beat(audio_path: Path, target_start: int) -> int:
@@ -251,8 +276,9 @@ def _find_videos_in(subdir: str) -> list[Path]:
 def pick_source_videos(count: int, exclude: set = None) -> list[Path]:
     """
     Pick `count` unique source videos.
-    Weighting: b-roll 40%, performances 40%, phone-footage 20%.
-    Within each pool, least-recently-used videos are picked first.
+    Alternates between categories: performances → b-roll → phone → performances → …
+    This ensures visual variety within each clip's segments.
+    Within each category, least-recently-used videos are picked first.
     Excludes any paths in `exclude`.
     """
     if exclude is None:
@@ -260,30 +286,36 @@ def pick_source_videos(count: int, exclude: set = None) -> list[Path]:
 
     rotation = json.loads(VIDEO_ROTATION.read_text()) if VIDEO_ROTATION.exists() else {}
 
-    broll = _find_videos_in("b-roll")
-    perf  = _find_videos_in("performances")
-    phone = _find_videos_in("phone-footage")
+    broll = sorted(_find_videos_in("b-roll"),        key=lambda p: rotation.get(str(p), 0))
+    perf  = sorted(_find_videos_in("performances"),  key=lambda p: rotation.get(str(p), 0))
+    phone = sorted(_find_videos_in("phone-footage"), key=lambda p: rotation.get(str(p), 0))
 
     if not broll and not perf and not phone:
         sys.exit("ERROR: no source videos found in content/videos/")
 
-    # Build weighted pool (b-roll × 2, perf × 2, phone × 1) for roughly 40/40/20
-    pool = sorted(
-        broll + broll + perf + perf + phone,
-        key=lambda p: rotation.get(str(p), 0),
-    )
+    # Interleave: perf → broll → phone → perf → broll → phone → …
+    # This guarantees alternating visual variety rather than a run of the same type.
+    categories = [lst for lst in [perf, broll, phone] if lst]
+    iters      = [iter(lst) for lst in categories]
+    interleaved: list[Path] = []
+    while iters:
+        for it in list(iters):
+            try:
+                interleaved.append(next(it))
+            except StopIteration:
+                iters.remove(it)
 
     picked, seen = [], set(exclude)
-    for v in pool:
+    for v in interleaved:
         if str(v) not in seen:
             picked.append(v)
             seen.add(str(v))
         if len(picked) == count:
             break
 
-    # If still not enough, cycle back through all pools ignoring exclude
+    # Fallback: cycle without exclude constraint
     if len(picked) < count:
-        for v in sorted(broll + perf + phone, key=lambda p: rotation.get(str(p), 0)):
+        for v in interleaved:
             if str(v) not in seen:
                 picked.append(v)
                 seen.add(str(v))
@@ -305,8 +337,8 @@ def mix_in_track(clip_path: Path, audio_path: Path, audio_start: int, clip_durat
     """Replace clip audio with a peak-energy segment from the RJM track."""
     tmp = clip_path.with_suffix(".tmp.mp4")
     clip_path.rename(tmp)
-    fade_start   = max(0, clip_duration - 2)
-    audio_filter = f"afade=t=out:st={fade_start}:d=2"
+    fade_start   = max(0, clip_duration - 0.8)
+    audio_filter = f"afade=t=out:st={fade_start:.3f}:d=0.8"
     cmd = [
         FFMPEG, "-y",
         "-i", str(tmp),
@@ -368,8 +400,12 @@ def main():
 
     for clip_len in clip_lengths:
         angle  = CLIP_ANGLE_MAP.get(clip_len, "emotional")
-        # n_segs = how many 4/4 bars fit in this clip (min 2, max sensible)
-        n_segs = max(2, round(clip_len / bar_dur))
+        # n_segs: 5s clips use 2-beat (half-bar) cuts for faster pacing;
+        # longer clips use full 4/4 bars.
+        if clip_len <= 5:
+            n_segs = max(4, round(clip_len / (bar_dur / 2)))
+        else:
+            n_segs = max(2, round(clip_len / bar_dur))
         seg_dur = clip_len / n_segs
 
         print(f"\n  {clip_len}s [{angle}] — {n_segs} segments × {seg_dur:.2f}s  (4/4 at {bpm:.0f} BPM)")
