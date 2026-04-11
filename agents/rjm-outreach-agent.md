@@ -1,12 +1,11 @@
 # Agent: rjm-outreach-agent
 **Cadence:** Every 30 minutes
-**Role:** Gmail OAuth outreach — curators, podcasts, festivals, labels
+**Role:** Gmail OAuth outreach — curators and podcasts
 
-## Pipeline Allocation
-- 50% playlist curators (5,000+ followers only)
-- 35% podcast guest bookings
-- 10% festivals
-- 5% labels
+## Pipeline Allocation (live weights in `outreach_agent/config.py`)
+- 40% playlist curators (500–10,000 followers)
+- 60% podcast guest bookings
+- Festivals / labels / wellness / sync: paused (weight=0)
 
 ## Priority Tracks
 - Curators → "Renamed" (Isaiah 62 anchor)
