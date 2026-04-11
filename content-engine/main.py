@@ -85,20 +85,22 @@ def process_file(svc, file_meta: dict, processed_ids: set):
             save_processed_ids(processed_ids)
             return
 
-        # 3. Generate hooks + captions (before processing so we can burn hooks in)
-        logger.info("Generating captions with Claude...")
-        generated = generator.generate_content(file_name, possible_lengths)
-        clips_data = generated.get('clips', {})
+        # 3a. Generate hooks — Call 1 (temperature 1.0, no JSON pressure, 5 ranked candidates)
+        logger.info("Generating hooks with Claude (Call 1)...")
+        hooks_meta = generator.generate_hooks(file_name, possible_lengths)
+        hooks = hooks_meta.get('hooks', {})
+        angle = hooks_meta.get('angle')
 
-        # Build hooks dict for processor
-        hooks = {}
-        for length in possible_lengths:
-            clip_data = clips_data.get(str(length)) or clips_data.get(length, {})
-            hooks[length] = clip_data.get('hook', '')
+        if angle:
+            logger.info(f"Angle: {angle} | Track: {hooks_meta.get('track_name')} | Seed: {hooks_meta.get('seed_hint')}")
+
+        # 3b. Generate captions — Call 2 (temperature 0.4, structured JSON)
+        logger.info("Generating captions with Claude (Call 2)...")
+        generated = generator.generate_content(file_name, possible_lengths, hooks_meta)
 
         # 4. Process video into clips
         clips_dir = os.path.join(work_dir, 'clips')
-        output_files = processor.process_video(local_path, clips_dir, hooks)
+        output_files = processor.process_video(local_path, clips_dir, hooks, angle)
 
         if not output_files:
             logger.error(f"No clips produced for {file_name}")
