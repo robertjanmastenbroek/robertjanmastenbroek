@@ -406,11 +406,13 @@ def format_to_vertical_multiclip(
             tmp.close()
             tmp_segs.append(tmp.name)
 
+            seg_cat = cats[i] if i < len(cats) else 'b-roll'
+
             # Find the best entry frame (avoid motion blur / very dark opens)
             best_start, brightness = _find_best_entry_frame(src_path, src_start, seg_dur)
             best_start = max(0.0, min(best_start, src_start + 0.5))  # never drift >0.5s from beat
 
-            # Build per-segment filter: crop → eq correction → grain (phone only)
+            # Build per-segment filter: crop → eq correction → grain (phone only) → watermark removal
             vf_parts = [
                 f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase",
                 f"crop={OUTPUT_W}:{OUTPUT_H}",
@@ -419,8 +421,11 @@ def format_to_vertical_multiclip(
             eq = _get_eq_filter(brightness)
             if eq:
                 vf_parts.append(eq)
-            if is_phone:
+            if seg_cat == 'phone-footage':
                 vf_parts.append("noise=alls=8:allf=t+u")   # film grain
+            if seg_cat == 'performances':
+                # Cover Insta360 watermark (top-left corner, ~250×90px after crop)
+                vf_parts.append("drawbox=x=0:y=0:w=260:h=95:color=black@0.95:t=fill")
             vf = ','.join(vf_parts)
 
             cmd = [
