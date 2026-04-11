@@ -1107,6 +1107,7 @@ def cmd_log_run(summary: str, contacts_added: int = 0, strategy_worked: str = ""
         try:
             entries = _json.loads(log_path.read_text(encoding="utf-8"))
         except Exception:
+            print("⚠️  master_log.json was corrupt — starting fresh")
             entries = []
     else:
         entries = []
@@ -1203,7 +1204,11 @@ def main():
             print("Usage: python3 master_agent.py log_listeners <number>")
     elif args[0] == "log_run":
         summary = args[1] if len(args) > 1 else "run"
-        contacts = int(args[2]) if len(args) > 2 else 0
+        try:
+            contacts = int(args[2].replace(",", "")) if len(args) > 2 else 0
+        except ValueError:
+            print("Error: contacts_added must be a number")
+            sys.exit(1)
         strategy = args[3] if len(args) > 3 else ""
         cmd_log_run(summary, contacts, strategy)
     elif args[0] == "run":
