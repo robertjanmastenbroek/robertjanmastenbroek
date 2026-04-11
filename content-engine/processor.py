@@ -94,12 +94,58 @@ def detect_best_segments(video_path: str, duration: float) -> list:
     return segments if segments else [(0, 1.0)]
 
 
+# Visual style per angle — controls how hook text is rendered on the clip
+HOOK_STYLES = {
+    # Emotional: intimate, cinematic — smaller text, centered vertically, softer border
+    'emotional': {
+        'fontsize':    44,
+        'fontcolor':   'white',
+        'borderw':     2,
+        'bordercolor': 'black',
+        'y':           '(h-text_h)/2',   # vertical center
+        'uppercase':   False,
+        'wrap_at':     32,
+    },
+    # Signal: intimate, bottom-third — small text, caption-like, reads as personal address
+    'signal': {
+        'fontsize':    40,
+        'fontcolor':   'white',
+        'borderw':     2,
+        'bordercolor': 'black',
+        'y':           'h*0.72',          # bottom third
+        'uppercase':   False,
+        'wrap_at':     36,
+    },
+    # Energy: punchy, loud — biggest text, all-caps, top position, thick border
+    'energy': {
+        'fontsize':    64,
+        'fontcolor':   'white',
+        'borderw':     4,
+        'bordercolor': 'black',
+        'y':           '100',             # top
+        'uppercase':   True,
+        'wrap_at':     28,
+    },
+    # Default fallback (original behaviour)
+    'default': {
+        'fontsize':    52,
+        'fontcolor':   'white',
+        'borderw':     3,
+        'bordercolor': 'black',
+        'y':           '120',
+        'uppercase':   False,
+        'wrap_at':     38,
+    },
+}
+
+
 def format_to_vertical(video_path: str, output_path: str,
-                        start: float, duration: float, hook_text: str = None):
+                        start: float, duration: float,
+                        hook_text: str = None, angle: str = None):
     """
     Cut a clip starting at `start` for `duration` seconds,
     format to 9:16 (1080x1920) with blurred background fill,
-    and optionally burn in hook text at the top.
+    and optionally burn in hook text styled for the given angle.
     """
     # Build filter chain:
     # 1. Scale to fit width (1080), keeping aspect ratio
@@ -113,14 +159,21 @@ def format_to_vertical(video_path: str, output_path: str,
     )
 
     if hook_text:
+        style = HOOK_STYLES.get(angle, HOOK_STYLES['default'])
+
+        # Apply uppercase if style requires it
+        display_text = hook_text.upper() if style['uppercase'] else hook_text
+
         # Sanitise text for ffmpeg drawtext
-        safe_text = hook_text.replace("'", "\\'").replace(':', '\\:').replace('%', '\\%')
-        # Wrap at ~40 chars
+        safe_text = display_text.replace("'", "\\'").replace(':', '\\:').replace('%', '\\%')
+
+        # Wrap at style-defined char width
+        wrap_at = style['wrap_at']
         words = safe_text.split()
         lines, line = [], []
         for w in words:
             line.append(w)
-            if len(' '.join(line)) > 38:
+            if len(' '.join(line)) > wrap_at:
                 lines.append(' '.join(line[:-1]))
                 line = [w]
         if line:
@@ -130,12 +183,12 @@ def format_to_vertical(video_path: str, output_path: str,
         text_filter = (
             f";[composited]drawtext="
             f"text='{wrapped}':"
-            f"fontsize=52:"
-            f"fontcolor=white:"
-            f"borderw=3:"
-            f"bordercolor=black:"
+            f"fontsize={style['fontsize']}:"
+            f"fontcolor={style['fontcolor']}:"
+            f"borderw={style['borderw']}:"
+            f"bordercolor={style['bordercolor']}:"
             f"x=(w-text_w)/2:"
-            f"y=120:"
+            f"y={style['y']}:"
             f"line_spacing=12"
             f"[out]"
         )
@@ -171,10 +224,11 @@ def format_to_vertical(video_path: str, output_path: str,
     logger.info(f"Created clip: {output_path} ({duration}s from {start:.1f}s)")
 
 
-def process_video(video_path: str, output_dir: str, hooks: dict = None) -> list:
+def process_video(video_path: str, output_dir: str, hooks: dict = None, angle: str = None) -> list:
     """
     Process a video into short-form clips.
     - hooks: dict mapping clip_length (int) to hook text string
+    - angle: "emotional" | "bts" | "energy" | None — controls hook overlay style
     Returns list of output file paths.
     """
     os.makedirs(output_dir, exist_ok=True)
@@ -208,7 +262,7 @@ def process_video(video_path: str, output_dir: str, hooks: dict = None) -> list:
         out_file = os.path.join(output_dir, f"{base_name}_{clip_len}s.mp4")
 
         try:
-            format_to_vertical(video_path, out_file, start, clip_len, hook_text)
+            format_to_vertical(video_path, out_file, start, clip_len, hook_text, angle)
             output_files.append(out_file)
         except Exception as e:
             logger.error(f"Failed to create {clip_len}s clip: {e}")
