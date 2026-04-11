@@ -171,6 +171,47 @@ def scan_inbox_for_replies(sent_thread_ids: list[str]) -> dict[str, dict]:
     return replies_found
 
 
+def _extract_body_from_payload(payload: dict) -> str:
+    """Extract plain text from a Gmail message payload (handles MIME multipart)."""
+    import base64
+
+    def decode(data: str) -> str:
+        padded = data + "=" * (4 - len(data) % 4)
+        return base64.urlsafe_b64decode(padded).decode("utf-8", errors="replace")
+
+    mime = payload.get("mimeType", "")
+
+    # Simple text/plain body
+    if mime == "text/plain":
+        data = payload.get("body", {}).get("data", "")
+        if data:
+            return decode(data)
+
+    # Multipart — walk parts recursively, prefer text/plain
+    for part in payload.get("parts", []):
+        result = _extract_body_from_payload(part)
+        if result:
+            return result
+
+    return ""
+
+
+def get_full_message_body(message_id: str) -> str:
+    """
+    Fetch the full plain-text body of a Gmail message by ID.
+    Falls back to empty string on any error (caller uses stored snippet instead).
+    """
+    svc = get_service()
+    try:
+        msg = svc.users().messages().get(
+            userId="me", id=message_id, format="full"
+        ).execute()
+        return _extract_body_from_payload(msg.get("payload", {})).strip()
+    except Exception as exc:
+        log.warning("Could not fetch body for message %s: %s", message_id, exc)
+        return ""
+
+
 def search_messages(query: str, max_results: int = 50) -> list[dict]:
     """Search Gmail with a query string. Returns list of message stubs."""
     svc = get_service()

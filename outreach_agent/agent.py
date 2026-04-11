@@ -46,6 +46,7 @@ import gmail_client
 import template_engine
 import scheduler
 import reply_detector
+import reply_classifier
 import followup_engine
 import learning
 
@@ -233,13 +234,21 @@ def cmd_run():
     inbox_result = reply_detector.run_full_inbox_check()
     log.info("Inbox check: %s", inbox_result)
 
-    # 5. Maybe generate learning insights (only if enough data)
+    # 5. Classify any unclassified replies (catches backlog + anything from step 4)
+    try:
+        classify_result = reply_classifier.classify_pending()
+        if classify_result.get("classified", 0) > 0:
+            log.info("Reply classification: %s", classify_result)
+    except Exception as exc:
+        log.warning("Reply classification failed (non-fatal): %s", exc)
+
+    # 6. Maybe generate learning insights (only if enough data)
     try:
         learning.maybe_generate_insights()
     except Exception as exc:
         log.warning("Learning step failed (non-fatal): %s", exc)
 
-    # 6. Send follow-ups (they count toward daily quota)
+    # 7. Send follow-ups (they count toward daily quota)
     followup_quota = min(10, scheduler.remaining_quota_today() // 3)
     if followup_quota > 0 and window.can_send:
         followup_result = followup_engine.run_followup_batch(max_generates=followup_quota)
@@ -249,7 +258,7 @@ def cmd_run():
             db.increment_today_count()
         log.info("Follow-ups: %s", followup_result)
 
-    # 7. Send initial emails
+    # 8. Send initial emails
     batch_size = scheduler.compute_batch_size()
     if batch_size > 0 and window.can_send:
         send_result = _send_batch(batch_size)
@@ -257,7 +266,7 @@ def cmd_run():
     else:
         log.info("No sends this cycle — %s", window.status())
 
-    # 8. Summary
+    # 9. Summary
     summary = db.get_pipeline_summary()
     log.info(
         "Cycle complete — DB: %s | Today: %d sent | Reply rate: %s",

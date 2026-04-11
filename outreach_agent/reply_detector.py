@@ -13,6 +13,7 @@ from datetime import date
 
 import db
 import gmail_client
+import reply_classifier
 from bounce import add_confirmed_dead_address, add_confirmed_dead_domain
 
 log = logging.getLogger("outreach.reply_detector")
@@ -139,7 +140,8 @@ def scan_for_bounces() -> dict:
 
 
 def run_full_inbox_check() -> dict:
-    """Run both reply and bounce scans. Called once per agent cycle."""
+    """Run reply scan, bounce scan, then classify any new replies. Called once per agent cycle."""
     reply_result  = scan_for_replies()
     bounce_result = scan_for_bounces()
-    return {**reply_result, **bounce_result}
+    classify_result = reply_classifier.classify_pending()
+    return {**reply_result, **bounce_result, **classify_result}

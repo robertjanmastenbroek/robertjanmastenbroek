@@ -109,6 +109,35 @@ CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts(status);
 CREATE INDEX IF NOT EXISTS idx_contacts_type   ON contacts(type);
 CREATE INDEX IF NOT EXISTS idx_contacts_date_sent ON contacts(date_sent);
 CREATE INDEX IF NOT EXISTS idx_email_log_ts    ON email_log(timestamp);
+
+CREATE TABLE IF NOT EXISTS instagram_outreach (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    instagram_handle TEXT    NOT NULL,
+    playlist_name    TEXT,
+    playlist_id      TEXT,
+    dm_text          TEXT,
+    status           TEXT    DEFAULT 'pending',
+    date_sent        TEXT,
+    date_replied     TEXT,
+    reply_snippet    TEXT,
+    error_msg        TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ig_handle
+    ON instagram_outreach(instagram_handle);
+
+CREATE TABLE IF NOT EXISTS form_submissions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    playlist_id     TEXT    NOT NULL,
+    playlist_name   TEXT,
+    form_url        TEXT    NOT NULL,
+    form_type       TEXT,
+    status          TEXT    DEFAULT 'pending',
+    date_submitted  TEXT,
+    error_msg       TEXT,
+    fields_filled   INTEGER DEFAULT 0
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_form_playlist
+    ON form_submissions(playlist_id, form_url);
 """
 
 
@@ -132,10 +161,14 @@ def init_db():
     with get_conn() as conn:
         conn.executescript(SCHEMA)
         for col, definition in [
-            ("playlist_size",       "TEXT DEFAULT NULL"),
-            ("date_followup2_sent", "TEXT DEFAULT NULL"),
-            ("sent_body",           "TEXT DEFAULT NULL"),  # full sent body (no truncation)
-            ("followup_body",       "TEXT DEFAULT NULL"),  # full follow-up body
+            ("playlist_size",          "TEXT DEFAULT NULL"),
+            ("date_followup2_sent",    "TEXT DEFAULT NULL"),
+            ("sent_body",              "TEXT DEFAULT NULL"),  # full sent body (no truncation)
+            ("followup_body",          "TEXT DEFAULT NULL"),  # full follow-up body
+            ("reply_message_id",       "TEXT DEFAULT NULL"),  # Gmail message ID of the reply
+            ("reply_intent",           "TEXT DEFAULT NULL"),  # classified intent
+            ("reply_action",           "TEXT DEFAULT NULL"),  # suggested action from classifier
+            ("reply_classified_at",    "TEXT DEFAULT NULL"),  # when classification ran
         ]:
             try:
                 conn.execute(f"ALTER TABLE contacts ADD COLUMN {col} {definition}")
@@ -308,6 +341,7 @@ def mark_responded(email, reply_snippet, reply_message_id=None, thread_id=None):
         status="responded",
         date_response_received=str(datetime.now().isoformat()),
         response_snippet=reply_snippet[:300],
+        reply_message_id=reply_message_id,
     )
     log_email(
         contact_email=email,
@@ -316,6 +350,31 @@ def mark_responded(email, reply_snippet, reply_message_id=None, thread_id=None):
         body_snippet=reply_snippet[:300],
         gmail_message_id=reply_message_id,
         gmail_thread_id=thread_id,
+    )
+
+
+def get_unclassified_replies() -> list[dict]:
+    """
+    Return all contacts in 'responded' status whose reply hasn't been classified yet.
+    Used by reply_classifier.classify_pending().
+    """
+    with get_conn() as conn:
+        rows = conn.execute("""
+            SELECT * FROM contacts
+            WHERE status = 'responded'
+              AND reply_classified_at IS NULL
+            ORDER BY date_response_received ASC
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def update_reply_classification(email: str, intent: str, suggested_action: str = ""):
+    """Persist a reply classification result. Called by reply_classifier."""
+    update_contact(
+        email,
+        reply_intent=intent,
+        reply_action=suggested_action,
+        reply_classified_at=str(datetime.now().isoformat()),
     )
 
 
