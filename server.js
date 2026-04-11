@@ -196,6 +196,46 @@ app.get('/api/spotify-followers', async (req, res) => {
   }
 });
 
+// ─── Email Subscribe ──────────────────────────────────────────────────────────
+app.post('/api/subscribe', async (req, res) => {
+  const { email } = req.body;
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Invalid email' });
+
+  // Save to file
+  try {
+    const fs = require('fs');
+    const subPath = path.join(__dirname, 'data', 'subscribers.json');
+    let subs = [];
+    try { subs = JSON.parse(fs.readFileSync(subPath, 'utf8')); } catch (e) {}
+    if (!subs.find(s => s.email === email)) {
+      subs.push({ email, subscribedAt: new Date().toISOString() });
+      fs.writeFileSync(subPath, JSON.stringify(subs, null, 2));
+    }
+  } catch (e) { console.error('Subscriber save error:', e.message); }
+
+  // Send welcome email
+  const resend = getResend();
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: 'Robert-Jan <robert-jan@robertjanmastenbroek.com>',
+        to: email,
+        subject: 'New music. Every Friday.',
+        html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,sans-serif}.w{max-width:520px;margin:0 auto;padding:48px 32px}h1{font-size:26px;color:#fff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase}.gold{color:#d4af37}p{font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px}hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0}.footer{font-size:13px;color:#555}</style></head><body><div class="w"><p class="gold" style="font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">Robert-Jan Mastenbroek</p><h1>You're <span class="gold">in.</span></h1><hr><p>New music drops every Friday.</p><p>You'll hear it first.</p><hr><p class="footer">All the glory belongs to Jesus.<br>— Robert-Jan</p></div></body></html>`,
+      });
+      // Notify RJM
+      await resend.emails.send({
+        from: 'robert-jan@robertjanmastenbroek.com',
+        to: 'robert-jan@robertjanmastenbroek.com',
+        subject: `New subscriber: ${email}`,
+        html: `<p style="font-family:sans-serif">New subscriber: <strong>${email}</strong></p>`,
+      });
+    } catch (e) { console.error('Subscribe email error:', e.message); }
+  }
+
+  res.json({ ok: true });
+});
+
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.send('OK'));
 

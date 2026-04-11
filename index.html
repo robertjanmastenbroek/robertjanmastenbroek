@@ -165,38 +165,8 @@
 
         /* Hero Section */
         .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
             position: relative;
             background: var(--gradient-dark);
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            width: 800px;
-            height: 800px;
-            background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation: pulse 10s ease-in-out infinite;
-        }
-
-        .hero::after {
-            content: '';
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(74, 144, 226, 0.06) 0%, transparent 70%);
-            top: 40%;
-            left: 60%;
-            transform: translate(-50%, -50%);
-            animation: pulse 12s ease-in-out infinite reverse;
         }
 
         @keyframes pulse {
@@ -204,47 +174,9 @@
             50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
         }
 
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 1000px;
-            padding: 2rem;
-        }
-
-        .hero h1 {
-            font-size: clamp(3rem, 8vw, 5.5rem);
-            font-weight: 600;
-            letter-spacing: 4px;
-            margin-bottom: 1.5rem;
-            text-transform: uppercase;
-            background: linear-gradient(135deg, #ffffff 0%, #d4af37 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero .subtitle {
-            font-size: clamp(1rem, 2.5vw, 1.3rem);
-            color: var(--text-secondary);
-            letter-spacing: 4px;
-            margin-bottom: 2rem;
-            font-weight: 300;
-            text-transform: uppercase;
-        }
-
-        .hero .tagline {
-            font-size: 1.2rem;
-            color: var(--accent-gold);
-            letter-spacing: 2px;
-            font-style: italic;
-            font-weight: 400;
-        }
-
         .hero-cta {
-            margin-top: 3rem;
             display: flex;
             gap: 1rem;
-            justify-content: center;
             flex-wrap: wrap;
         }
 
@@ -1042,8 +974,151 @@
         }
         .hero-secondary-links a:hover { color: var(--text-primary); }
         .hero-secondary-links .sep { margin: 0 0.6rem; opacity: 0.4; }
+
+        /* ── Hero Two-Column Layout ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7rem 3rem 4rem;
+        }
+        .hero-inner {
+            display: flex;
+            align-items: center;
+            gap: 6rem;
+            max-width: 1100px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+        .hero-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .hero-eyebrow {
+            font-size: 0.78rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        .hero-text h1 {
+            font-size: clamp(2.6rem, 5.5vw, 4.2rem);
+            text-align: left;
+            letter-spacing: 2px;
+            margin-bottom: 1.25rem;
+            line-height: 1.1;
+        }
+        .hero-desc {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 2.5rem;
+            max-width: 480px;
+        }
+        .hero-visual {
+            flex: 0 0 380px;
+        }
+        .hero-visual img {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid rgba(212,175,55,0.2);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 60px rgba(212,175,55,0.08);
+            display: block;
+        }
+        @media (max-width: 900px) {
+            .hero { padding: 7rem 2rem 4rem; }
+            .hero-inner { flex-direction: column-reverse; gap: 2.5rem; text-align: center; }
+            .hero-text { text-align: center; }
+            .hero-text h1 { text-align: center; font-size: clamp(2.4rem, 8vw, 3.5rem); }
+            .hero-desc { margin-left: auto; margin-right: auto; }
+            .hero-cta { justify-content: center; }
+            .hero-secondary-links { text-align: center; }
+            .hero-visual { flex: none; width: 200px; }
+            .hero-visual img { aspect-ratio: 1/1; border-radius: 50%; }
+        }
+
+        /* ── Email Capture Section ── */
+        .email-section {
+            background: var(--secondary-bg);
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+        .email-inner {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .email-section .eyebrow {
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 1.25rem;
+            font-weight: 600;
+        }
+        .email-section h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            letter-spacing: 1px;
+        }
+        .email-section .sub {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 2.25rem;
+            line-height: 1.7;
+        }
+        .email-form {
+            display: flex;
+            max-width: 420px;
+            margin: 0 auto 1rem;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .email-form:focus-within { border-color: var(--accent-gold); }
+        .email-form input {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: var(--font-sans);
+        }
+        .email-form input::placeholder { color: #555; }
+        .email-form button {
+            padding: 1rem 1.5rem;
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .email-form button:hover { background: #e8c84a; }
+        .email-form button:disabled { opacity: 0.6; cursor: wait; }
+        .email-note { font-size: 0.8rem; color: #444; }
+        .email-success { color: var(--accent-gold); font-size: 1.05rem; display: none; font-family: var(--font-serif); font-style: italic; }
+        @media (max-width: 480px) {
+            .email-form { flex-direction: column; }
+            .email-form input { border-bottom: 1px solid var(--border-subtle); }
+        }
     </style>
-</style>
 </head>
 <body>
     <!-- Navigation -->
@@ -1067,31 +1142,31 @@
 
     <!-- Hero Section -->
     <section class="hero">
-        <div class="hero-content">
-            <h1>Robert-Jan Mastenbroek</h1>
-            <p class="subtitle">Jesus Loving Raver · Sacred Music for Every Dancefloor</p>
-            <p class="tagline">"Ancient Truth. Future Sound."</p>
-            <div class="hero-cta">
-                <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 1.05rem; padding: 1.1rem 3rem;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
-                    </svg>
-                    Follow on Spotify
-                </a>
+        <div class="hero-inner">
+            <div class="hero-text">
+                <p class="hero-eyebrow">Robert-Jan Mastenbroek</p>
+                <h1>Sacred Music<br>for Every Dancefloor</h1>
+                <p class="hero-desc">Bible-based melodic techno and tribal psytrance — ancient scripture at 140 BPM. New track every Friday.</p>
+                <div class="hero-cta">
+                    <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 1.05rem; padding: 1.1rem 2.75rem;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                        </svg>
+                        Listen on Spotify
+                    </a>
+                </div>
+                <p class="hero-secondary-links" style="margin-top: 1.25rem;">
+                    <a href="https://www.youtube.com/@robertjanmastenbroekofficial" target="_blank">YouTube</a>
+                    <span class="sep">·</span>
+                    <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank">WhatsApp</a>
+                    <span class="sep">·</span>
+                    <a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank">Instagram</a>
+                </p>
             </div>
-            <p class="hero-secondary-links">
-                <a href="https://www.youtube.com/@robertjanmastenbroekofficial" target="_blank">YouTube</a>
-                <span class="sep">·</span>
-                <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank">WhatsApp Community</a>
-                <span class="sep">·</span>
-                <a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank">Instagram</a>
-            </p>
-            <div class="hero-image" style="margin-top: 3rem;">
-                <img src="images/robert-jan-mastenbroek.jpg" alt="Robert-Jan Mastenbroek"
-                     style="width: 200px; height: 200px; border-radius: 50%;
-                            border: 3px solid var(--accent-gold); object-fit: cover;
-                            box-shadow: 0 10px 40px rgba(212, 175, 55, 0.3);"
-                     onerror="this.style.display='none'">
+            <div class="hero-visual">
+                <img src="images/robert-jan-mastenbroek.jpg"
+                     alt="Robert-Jan Mastenbroek — electronic music producer, Holy Rave"
+                     onerror="this.parentElement.style.display='none'">
             </div>
         </div>
     </section>
@@ -1100,16 +1175,16 @@
     <div class="stats-bar">
         <div class="stats-container">
             <div class="stat-item">
-                <h3 id="stat-listeners" style="color: #1DB954;">—</h3>
-                <p>Spotify Followers</p>
-            </div>
-            <div class="stat-item">
-                <h3>Every Week</h3>
-                <p>New Song Released</p>
-            </div>
-            <div class="stat-item">
                 <h3>291K</h3>
                 <p>Instagram Followers</p>
+            </div>
+            <div class="stat-item">
+                <h3>50+</h3>
+                <p>Original Tracks — All Owned</p>
+            </div>
+            <div class="stat-item">
+                <h3>Every Friday</h3>
+                <p>New Song Released</p>
             </div>
         </div>
     </div>
@@ -1132,29 +1207,9 @@
                 </iframe>
             </div>
         </div>
-        <p style="text-align: center; color: var(--text-secondary); margin-top: 2rem; font-size: 0.95rem;">
-            🎵 1 new song released every week
-        </p>
-        <div class="platform-links">
-            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="platform-link">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-                Spotify
-            </a>
-            <a href="https://music.apple.com/us/artist/robert-jan-mastenbroek/1875064180" target="_blank" class="platform-link">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                Apple Music
-            </a>
-            <a href="https://www.youtube.com/@robertjanmastenbroekofficial" target="_blank" class="platform-link">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                YouTube
-            </a>
-            <a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank" class="platform-link">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/></svg>
-                Instagram
-            </a>
-            <a href="https://tiktok.com/@robertjanmastenbroek" target="_blank" class="platform-link">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
-                TikTok
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 0.9rem; padding: 0.85rem 2rem;">
+                Open full catalogue on Spotify →
             </a>
         </div>
     </section>
@@ -1162,83 +1217,48 @@
     <!-- Spotify Mission Goal Section -->
     <div class="spotify-goal-section">
         <div class="spotify-goal-inner">
-            <p class="spotify-eyebrow">Follow the Music</p>
-            <h2 class="spotify-goal-title">Spreading the Gospel Through Sound</h2>
+            <p class="spotify-eyebrow">Join the Mission</p>
+            <h2 class="spotify-goal-title">Follow. Share. Let It Spread.</h2>
             <p class="spotify-goal-sub">
-                Every follow tells Spotify this music deserves to reach more people.
-                Ancient truth. Future sound. The gospel spreading through music — one listener at a time.
+                Every follow, every save, every share tells the algorithm this music deserves a bigger stage.
+                That's how the gospel spreads now — one listener at a time.
             </p>
-            <div class="listener-count-display">
-                <span class="listener-current" id="goal-listeners">—</span>
-                <span class="listener-goal-label">followers and growing</span>
-            </div>
-            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 1rem; padding: 1rem 2.5rem; margin-bottom: 2rem;">
+            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 1rem; padding: 1rem 2.5rem;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;">
                     <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
                 </svg>
-                Follow on Spotify — it's free
+                Add to Spotify — it's free
             </a>
         </div>
     </div>
 
+
     <!-- Story Section -->
-    <section id="story" class="story-section">
+    <section id="story">
         <div class="section-header">
-            <h2>The Sound Between Worlds</h2>
+            <h2>The Story Behind the Music</h2>
             <div class="gold-line"></div>
         </div>
-        <div class="story-content">
-            <div class="story-grid">
-                <div class="story-text">
-                    <p>
-                        It started with a Christmas dinner.
-                    </p>
-                    <p>
-                        Robert-Jan and his friend <span class="highlight">Rob Casserly</span> decided to do something simple: open the doors for people who would otherwise spend Christmas alone. No alcohol. Free food. Just presence. 65 people showed up.
-                    </p>
-                    <p>
-                        They didn't plan what happened next. They just kept showing up — every week, in a church in the south of Tenerife. Rob bought the speakers. Rob paid for the food. Rob was there every single week as host, as barman, as the person to think out loud with. 11 editions. Growing to 50+ every week, gathering in the name of Jesus.
-                    </p>
-                    <p>
-                        Then it was time to move on. The mission was never about the building. Robert-Jan shook the dust off his feet and walked out.
-                    </p>
-                    <p>
-                        <span class="highlight">The dancefloor moved with him.</span>
-                    </p>
-                    <p>
-                        Now the gatherings happen wherever there's space and people willing to move — outdoors, in hidden locations, in places where people live outside the reach of conventional religion. Communities that mainstream culture has written off. Every event is free. Every song is rooted in Scripture. Always in the name of Jesus — no dress code, no membership card, no performance of faith required.
-                    </p>
-                    <p>
-                        None of it exists without the people who held it before it had a name — his parents <span class="highlight">Emiel and Roosmarie Mastenbroek</span>, his brother <span class="highlight">Roderick</span>, Rob Casserly, and the many others praying in the background whose fingerprints are on every event.
-                    </p>
-                    <p>
-                        The music — every track, every week — is an offering. Not a product. Every time someone screams "Hallelujah" on a dancefloor and doesn't quite know why, that's not him. That's Him.
-                    </p>
-                    <p style="color: var(--accent-gold); font-style: italic;">
-                        All the glory belongs to Jesus.
-                    </p>
-                    <div style="margin-top: 2.5rem;">
-                        <a href="/story" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.85rem 1.75rem; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: var(--text-primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; letter-spacing: 0.02em; transition: all 0.2s;">
-                            Read the full story →
-                        </a>
-                    </div>
-                </div>
-                <div class="story-visual">
-                    <img src="images/robert-jan-mastenbroek.jpg"
-                         alt="Robert-Jan Mastenbroek"
-                         style="width: 100%; border-radius: 12px;
-                                border: 1px solid var(--border-subtle);
-                                margin-bottom: 2rem; object-fit: cover;
-                                max-height: 500px;"
-                         onerror="this.style.display='none'">
-                    <div class="story-quote">
-                        <blockquote>
-                            "Let everything that has breath praise the Lord."
-                        </blockquote>
-                        <cite>— Psalm 150:6</cite>
-                    </div>
-                </div>
-            </div>
+        <div style="max-width: 640px; margin: 0 auto; text-align: center;">
+            <p style="font-size: 1.15rem; line-height: 1.95; color: var(--text-secondary); margin-bottom: 2.5rem;">
+                He built a €6M empire, lost it all at thirty, and ended up living in a camper van on a beach in Tenerife. One night, on his knees, he asked to be happy again the way he was as a child. That prayer became the music.
+            </p>
+            <a href="/story" class="btn btn-secondary">Read the full story →</a>
+        </div>
+    </section>
+
+    <!-- Email Capture -->
+    <section class="email-section">
+        <div class="email-inner">
+            <p class="eyebrow">Stay Close</p>
+            <h2>New track. Every Friday.</h2>
+            <p class="sub">Be the first to hear it — straight to your inbox.</p>
+            <form class="email-form" id="email-form" onsubmit="handleSubscribe(event)">
+                <input type="email" id="subscribe-email" placeholder="your@email.com" required autocomplete="email">
+                <button type="submit" id="subscribe-btn">Notify Me</button>
+            </form>
+            <p class="email-success" id="email-success">You're in. See you Friday.</p>
+            <p class="email-note">No spam. Just music. Unsubscribe anytime.</p>
         </div>
     </section>
 
@@ -1379,55 +1399,32 @@
             });
         });
 
-        // ── Spotify Followers ─────────────────────────────────────────────────
-        // Count is stored in data/listeners.json on the server.
-        // Update it via: POST /api/spotify-listeners { "count": 1234 }
-        // with header:   Authorization: Bearer <LISTENERS_UPDATE_TOKEN>
-        function formatListeners(n) {
-            if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0','') + 'M';
-            if (n >= 1000) return (n / 1000).toFixed(1).replace('.0','') + 'K';
-            return n.toLocaleString();
-        }
-
-        function animateCount(el, target, duration) {
-            if (!el) return;
-            const start = performance.now();
-            function step(now) {
-                const t = Math.min((now - start) / duration, 1);
-                const eased = 1 - Math.pow(1 - t, 3);
-                el.textContent = formatListeners(Math.round(target * eased));
-                if (t < 1) requestAnimationFrame(step);
-            }
-            requestAnimationFrame(step);
-        }
-
-        async function initSpotifyFollowers() {
-            let count = 0;
+        async function handleSubscribe(e) {
+            e.preventDefault();
+            const btn = document.getElementById('subscribe-btn');
+            const email = document.getElementById('subscribe-email').value;
+            const success = document.getElementById('email-success');
+            const form = document.getElementById('email-form');
+            btn.textContent = '...';
+            btn.disabled = true;
             try {
-                const res = await fetch('/api/spotify-followers');
+                const res = await fetch('/api/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
+                });
                 const data = await res.json();
-                if (typeof data.count === 'number') count = data.count;
-            } catch (e) {}
-
-            const statEl = document.getElementById('stat-listeners');
-            if (statEl) animateCount(statEl, count, 1200);
-
-            const goalEl = document.getElementById('goal-listeners');
-            const goalSection = document.querySelector('.spotify-goal-section');
-            if (goalSection && goalEl) {
-                const obs = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            animateCount(goalEl, count, 1800);
-                            obs.disconnect();
-                        }
-                    });
-                }, { threshold: 0.2 });
-                obs.observe(goalSection);
+                if (data.ok) {
+                    form.style.display = 'none';
+                    success.style.display = 'block';
+                } else {
+                    throw new Error(data.error || 'Failed');
+                }
+            } catch (err) {
+                btn.textContent = 'Try Again';
+                btn.disabled = false;
             }
         }
-
-        initSpotifyFollowers();
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
