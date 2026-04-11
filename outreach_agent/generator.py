@@ -152,6 +152,63 @@ Spiritual failures (manipulative even when unintentional):
   — turns a transcendent experience into a product feature
 """
 
+# ── Brand voice layer (from BRAND_VOICE.md — built from 23-question interview) ──
+BRAND_VOICE_LAYER = """
+BRAND VOICE — THE SIX RULES (from RJM's own words, not invented)
+
+1. DESCENDING, NOT ASCENDING
+Every other guru, self-help system, and spiritual brand tells people to climb up.
+This brand descends — comes toward people, meets them where they are.
+Never position RJM above the audience. Never lecture, improve, fix, or elevate.
+The voice comes from the floor, not the stage.
+
+2. JOY IS THE PRIMARY EMOTION — NOT URGENCY, NOT SCARCITY
+RJM said: "I feel happy as a child all day, every day now. Because I know I have a father in heaven who loves me."
+The underlying emotional register of everything is child-like, unguarded, free joy.
+Not "here's what you're missing" — "here is what I found and I want you to feel it too."
+No hustle. No countdown. No pressure.
+
+3. HONEST ABOUT UNCERTAINTY
+His exact words: "Nobody knows the truth, until we die. But I believe."
+The voice is allowed to not have all the answers. Conviction without crushing doubt.
+This disarms cynicism instantly. It does not claim superiority. It shares.
+
+4. PLANT SEEDS — DON'T HARVEST
+"All we can do is plant seeds. The rest God will do."
+Content does not pressure. Does not convert. Does not explain.
+Places a moment, a lyric, a beat — trusts that something else does the rest.
+Never close the loop for the audience. Leave space.
+
+5. THE TWO-STAGE FUNNEL — music builds, events convert
+MUSIC CONTENT (clips, studio, track promo — the daily engine):
+Goal: audience growth. Target feeling: "I need to save this / follow this artist / hear more."
+The hook and caption create music pull — curiosity, recognition, the need to find the full track.
+CTA always drives to Spotify. This is how 1M listeners is built.
+
+EVENT CONTENT (crowd footage, live sets, Holy Rave):
+Goal: conversion. Target feeling: "I need to be in that room."
+Casual listeners become true fans when they experience the live show.
+"You just should have been there" is the ideal word-of-mouth — but the CTA still drives Spotify,
+because new people discovering the event clip haven't heard the music yet.
+
+6. THE SEEKER IS THE AUDIENCE
+Not Christians. Not techno fans. The person searching for God in their own way —
+through drugs, sex, relationships, experiences — finding something different in the room.
+A joy, a hope, a freedom they didn't find anywhere else.
+They may not call it God. They don't need to yet.
+The SIGNAL angle specifically targets this person.
+
+WORDS NEVER TO USE:
+blessed / anointed / fellowship / spiritual journey / elevated consciousness /
+manifestation / vibration (in new-age sense) / safe space / worship music /
+Christian music / sober rave / exclusive / ascend / better version of yourself /
+curated / intentional (as performance word) / sacred energy / transcendence (as a claim)
+
+THE SCHIJNHEILIG CONTRAST (the villain — name it in your head, never say it aloud):
+The enemy is performative holiness — people who found God and built a wall around Him.
+Content should feel like the opposite of that: open, present, unguarded, no dress code.
+"""
+
 # ── Spotify growth model (Nic D method) ───────────────────────────────────────
 NIC_D_SPOTIFY_LAYER = """
 SPOTIFY GROWTH MODEL — every caption drives search + save:
@@ -541,6 +598,7 @@ def generate_run_hooks(track_title: str, clips_config: list) -> dict:
 
 {ARTIST_CONTEXT}
 {SUBTLE_SALT_LAYER}
+{BRAND_VOICE_LAYER}
 {HOOK_MECHANISM_LIBRARY}
 {HOOK_FAILURE_MODES}
 
@@ -927,6 +985,8 @@ def generate_run_captions(track_title: str, clips_data: list) -> dict:
     )
 
     prompt = f"""{ARTIST_CONTEXT}
+{SUBTLE_SALT_LAYER}
+{BRAND_VOICE_LAYER}
 {NIC_D_SPOTIFY_LAYER}
 
 TASK: Write platform captions for {len(clips_data)} short-form clips.
