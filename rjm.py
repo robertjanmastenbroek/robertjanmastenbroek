@@ -31,6 +31,8 @@ Examples:
   python3 rjm.py run discover             # Trigger discovery agent
 """
 
+from __future__ import annotations
+
 import subprocess
 import sys
 import os
