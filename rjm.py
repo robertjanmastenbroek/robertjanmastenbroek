@@ -11,6 +11,7 @@ Usage:
   python3 rjm.py outreach [cmd]           # Outreach agent (run, status, verify, add, ...)
   python3 rjm.py master [cmd]             # Master agent (dashboard, gaps, weekly, run, ...)
   python3 rjm.py contacts [cmd]           # Contact manager (status, queue, sync, add, ...)
+  python3 rjm.py content retry            # Retry all failed posts in queue
   python3 rjm.py run <agent>              # Trigger a sub-agent directly
   python3 rjm.py sync                     # Sync contacts.csv → outreach.db
 
@@ -133,6 +134,46 @@ GSTACK                        /gstack
 """)
 
 
+def cmd_content_retry():
+    """Retry all posts in data/failed_posts.json."""
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
+    from post_queue import load_failed_posts, clear_failed_post, queue_depth
+    from buffer_poster import upload_video_and_queue
+
+    posts = load_failed_posts()
+    if not posts:
+        print("✓ No failed posts in queue.")
+        return
+
+    print(f"Retrying {len(posts)} failed post(s)…\n")
+    # Iterate in reverse so clearing by index doesn't shift remaining indices
+    for i in range(len(posts) - 1, -1, -1):
+        post = posts[i]
+        clip_name = Path(post["clip_path"]).name
+        print(f"  [{i+1}/{len(posts)}] {clip_name} — originally failed: {post['error'][:60]}")
+        try:
+            results = upload_video_and_queue(
+                clip_path         = post["clip_path"],
+                tiktok_caption    = post["tiktok_caption"],
+                instagram_caption = post["instagram_caption"],
+                youtube_title     = post["youtube_title"],
+                youtube_desc      = post["youtube_desc"],
+                scheduled_at      = None,  # reschedule immediately
+            )
+            failed = [p for p, r in results.items() if not r["success"]]
+            if not failed:
+                clear_failed_post(i)
+                print(f"    ✓ Retried successfully — removed from queue")
+            else:
+                print(f"    ⚠ Still failing on: {', '.join(failed)}")
+        except Exception as exc:
+            print(f"    ✗ Still failing: {exc}")
+
+    remaining = queue_depth()
+    print(f"\nDone. {remaining} post(s) still in queue.")
+
+
 def cmd_status():
     """
     Full system status — runs master health + outreach status in sequence.
@@ -154,6 +195,15 @@ def cmd_status():
     if CONTACT_MGR_PY.exists():
         print("\n[ Contact Manager (CSV) ]\n")
         _run([_BASE_PYTHON, str(CONTACT_MGR_PY), "status"], cwd=str(PROJECT_ROOT))
+
+    # 4. Failed post queue
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
+    from post_queue import queue_depth
+    depth = queue_depth()
+    queue_status = f"⚠  {depth} post(s) waiting to retry — run: python3 rjm.py content retry" if depth > 0 else "✓  empty"
+    print(f"\n[ Failed Post Queue ]\n")
+    print(f"  Failed post queue:  {queue_status}")
 
 
 def main():
@@ -183,6 +233,13 @@ def main():
             print("Agents: outreach, discover, research, verify")
         else:
             cmd_run(agent, rest[1:])
+    elif cmd == "content":
+        action = rest[0].lower() if rest else ""
+        if action == "retry":
+            cmd_content_retry()
+        else:
+            print("Usage: python3 rjm.py content retry")
+            sys.exit(1)
     elif cmd == "sync":
         cmd_sync()
     elif cmd in ("skills", "skill"):
