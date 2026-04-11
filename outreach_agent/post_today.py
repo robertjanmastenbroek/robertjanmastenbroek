@@ -685,18 +685,39 @@ def main():
             caps  = run_captions.get(clip_len, {})
             sched = schedule_times[i]
             print(f"\n  Queuing {clip_len}s [{per_clip[clip_len]['angle']}] → {sched}…")
+
+            tt_caption = caps.get('tiktok', {}).get('caption', '') + "\n" + caps.get('tiktok', {}).get('hashtags', '')
+            ig_caption = caps.get('instagram', {}).get('caption', '') + "\n" + caps.get('instagram', {}).get('hashtags', '')
+            yt_title   = caps.get('youtube', {}).get('title', '')
+            yt_desc    = caps.get('youtube', {}).get('description', '') + "\n\n" + caps.get('youtube', {}).get('hashtags', '')
+
             try:
-                upload_video_and_queue(
+                results = upload_video_and_queue(
                     clip_path         = str(clip_path),
-                    tiktok_caption    = caps.get('tiktok', {}).get('caption', '') + "\n" + caps.get('tiktok', {}).get('hashtags', ''),
-                    instagram_caption = caps.get('instagram', {}).get('caption', '') + "\n" + caps.get('instagram', {}).get('hashtags', ''),
-                    youtube_title     = caps.get('youtube', {}).get('title', ''),
-                    youtube_desc      = caps.get('youtube', {}).get('description', '') + "\n\n" + caps.get('youtube', {}).get('hashtags', ''),
+                    tiktok_caption    = tt_caption,
+                    instagram_caption = ig_caption,
+                    youtube_title     = yt_title,
+                    youtube_desc      = yt_desc,
                     scheduled_at      = sched,
                 )
-                print(f"    ✓ Queued (TikTok + Reel + Story + YouTube)")
+                succeeded = [p for p, r in results.items() if r["success"]]
+                failed_platforms = [p for p, r in results.items() if not r["success"]]
+                print(f"    ✓ Queued: {', '.join(succeeded)}")
+                if failed_platforms:
+                    print(f"    ⚠ Failed platforms (will retry next run): {', '.join(failed_platforms)}")
             except Exception as e:
-                print(f"    ✗ Buffer error: {e}")
+                # Total failure (video upload failed on all hosts) — save for retry
+                print(f"    ✗ Total posting failure — saving to retry queue: {e}")
+                from post_queue import save_failed_post
+                save_failed_post(
+                    clip_path         = str(clip_path),
+                    tiktok_caption    = tt_caption,
+                    instagram_caption = ig_caption,
+                    youtube_title     = yt_title,
+                    youtube_desc      = yt_desc,
+                    scheduled_at      = sched,
+                    error             = str(e),
+                )
 
     # ── Summary ───────────────────────────────────────────────────────────────
     _sep("SUMMARY")
