@@ -686,6 +686,17 @@ def main():
             sched = schedule_times[i]
             print(f"\n  Queuing {clip_len}s [{per_clip[clip_len]['angle']}] → {sched}…")
 
+            # ── Quality gate ──────────────────────────────────────────────
+            from quality_gate import check_clip
+            angle = per_clip[clip_len]["angle"]
+            print(f"    Checking quality…")
+            gate_passed, gate_reason = check_clip(str(clip_path), expected_duration=clip_len, angle=angle)
+            if not gate_passed:
+                print(f"    ✗ Quality gate failed — skipping post: {gate_reason}")
+                continue
+            print(f"    ✓ Quality gate passed")
+            # ─────────────────────────────────────────────────────────────
+
             tt_caption = caps.get('tiktok', {}).get('caption', '') + "\n" + caps.get('tiktok', {}).get('hashtags', '')
             ig_caption = caps.get('instagram', {}).get('caption', '') + "\n" + caps.get('instagram', {}).get('hashtags', '')
             yt_title   = caps.get('youtube', {}).get('title', '')
