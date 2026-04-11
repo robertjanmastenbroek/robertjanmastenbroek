@@ -16,5 +16,17 @@
     "summary": "quality fix test 2",
     "contacts_added": 1234,
     "strategy_worked": "test"
+  },
+  {
+    "ts": "2026-04-12T00:13:47.482221",
+    "summary": "Handled 22 responses: 7 podcast booking replies sent, 15 curator/label replies drafted (Gmail MCP unavailable for curator agent)",
+    "contacts_added": 0,
+    "strategy_worked": "podcast_outreach"
+  },
+  {
+    "ts": "2026-04-12T00:22:17.214118",
+    "summary": "research: 7 personalized, 3 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
   }
 ]

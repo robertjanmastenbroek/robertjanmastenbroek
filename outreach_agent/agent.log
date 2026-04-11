@@ -3886,3 +3886,5 @@ Run: python agent.py setup
 2026-04-11 23:11:37,084 [outreach.agent] INFO: Auto-replies sent: {'sent': 12, 'skipped': 0, 'failed': 0}
 2026-04-11 23:11:37,088 [outreach.agent] INFO: No sends this cycle — BOUNCE RATE TOO HIGH: 2/10 = 20.0% over last 2d (limit 15%) — sends paused
 2026-04-11 23:11:37,089 [outreach.agent] INFO: Cycle complete — DB: {'bounced': 134, 'closed': 16, 'followup_sent': 43, 'queued': 1, 'responded': 22, 'sent': 259, 'skip': 87, 'verified': 193, 'won': 1} | Today: 24 sent | Reply rate: 6.8%
+2026-04-12 00:06:51,061 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
+2026-04-12 00:09:38,243 [outreach.db] INFO: Database initialised at /Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/outreach.db
