@@ -301,6 +301,10 @@ def main():
         help="Generate videos + captions locally. Skip Buffer posting."
     )
     parser.add_argument("--track", help="Force a specific track (partial name match).")
+    parser.add_argument(
+        "--preview", action="store_true",
+        help="Open output folder for review before queuing to Buffer."
+    )
     args = parser.parse_args()
 
     mode = "[DRY RUN] " if args.dry_run else ""
@@ -342,15 +346,17 @@ def main():
     per_clip = {}  # clip_len → {video_path, info, angle, hook, hooks_meta, content}
     for clip_len, vpath, info in valid_pairs:
         angle = CLIP_ANGLE_MAP.get(clip_len, "emotional")
-        print(f"  {clip_len}s [{angle}] — generating hook…")
+        print(f"  {clip_len}s [{angle}] — generating hooks…")
         hooks_meta = generator.generate_hooks(vpath.name, [clip_len], angle_override=angle)
         content    = generator.generate_content(vpath.name, [clip_len], hooks_meta)
-        hook       = hooks_meta["hooks"].get(clip_len, "")
-        print(f"    → \"{hook}\"")
+        abc        = hooks_meta["hooks"].get(clip_len, {})
+        print(f"    A: \"{abc.get('a', '')}\"")
+        print(f"    B: \"{abc.get('b', '')}\"")
+        print(f"    C: \"{abc.get('c', '')}\"")
         per_clip[clip_len] = {
             "video_path": vpath, "info": info,
-            "angle": angle, "hook": hook,
-            "hooks_meta": hooks_meta, "content": content,
+            "angle": angle, "hook": abc.get("a", ""),
+            "hooks_abc": abc, "hooks_meta": hooks_meta, "content": content,
         }
 
     # ── 4. Cut clips + mix audio ──────────────────────────────────────────────
@@ -374,11 +380,10 @@ def main():
         vid_start = segments[0][0] if segments else 0.0
         vid_start = min(vid_start, max(0.0, duration - clip_len))
 
+        # Clean clip — no hook burned in. Hooks A/B/C live in captions file for A/B testing.
         processor.format_to_vertical(
             str(vpath), str(out_file),
             vid_start, clip_len,
-            clip_data["hook"],
-            clip_data["angle"],
         )
         mix_in_track(out_file, audio_path, audio_start, clip_len)
 
@@ -400,6 +405,16 @@ def main():
     mark_track_used(track_title)
     for clip_len in clip_lengths:
         mark_video_used(per_clip[clip_len]["video_path"])
+
+    # ── Preview gate (optional) ───────────────────────────────────────────────
+    if args.preview and not args.dry_run:
+        _sep("PREVIEW — Review before posting to Buffer")
+        subprocess.run(["open", str(run_dir)])
+        try:
+            input("  Press Enter to continue → Buffer, or Ctrl+C to cancel...\n")
+        except KeyboardInterrupt:
+            print("\n  Cancelled. Output saved locally. Buffer posting skipped.")
+            sys.exit(0)
 
     # ── Buffer (live only) ────────────────────────────────────────────────────
     if not args.dry_run:
@@ -438,10 +453,13 @@ def main():
     if args.dry_run:
         print("\n[DRY RUN] Buffer posting skipped.\n")
         for clip_len in clip_lengths:
-            angle      = per_clip[clip_len]["angle"]
-            clip_data  = per_clip[clip_len]["content"].get("clips", {}).get(str(clip_len), {})
+            angle     = per_clip[clip_len]["angle"]
+            abc       = per_clip[clip_len].get("hooks_abc", {})
+            clip_data = per_clip[clip_len]["content"].get("clips", {}).get(str(clip_len), {})
             print(f"── {clip_len}s [{angle}] ──────────────────────────────")
-            print(f"  Hook:      {per_clip[clip_len]['hook']}")
+            print(f"  Hook A:    {abc.get('a', '')}")
+            print(f"  Hook B:    {abc.get('b', '')}")
+            print(f"  Hook C:    {abc.get('c', '')}")
             print(f"  TikTok:    {clip_data.get('tiktok', {}).get('caption', '')}")
             print(f"  Instagram: {clip_data.get('instagram', {}).get('caption', '')}")
             print(f"  YT title:  {clip_data.get('youtube', {}).get('title', '')}")
