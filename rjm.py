@@ -409,12 +409,7 @@ def cmd_status():
         print("\n[ Outreach Agent Status ]\n")
         _run([_OUTREACH_PYTHON, str(AGENT_PY), "status"], cwd=str(OUTREACH_DIR))
 
-    # 3. Contact DB overview
-    if CONTACT_MGR_PY.exists():
-        print("\n[ Contact Manager (CSV) ]\n")
-        _run([_BASE_PYTHON, str(CONTACT_MGR_PY), "status"], cwd=str(PROJECT_ROOT))
-
-    # 4. Fleet-wide status (Spotify, content, playlist, strategies)
+    # 3. Fleet-wide status (Spotify, content, playlist, strategies)
     _fleet_status()
 
     # 5. Failed post queue
