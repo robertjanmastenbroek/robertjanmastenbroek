@@ -151,6 +151,51 @@ app.post('/api/create-checkout', async (req, res) => {
   }
 });
 
+// ─── Spotify Follower Count (auto-updates via public API) ────────────────────
+// Requires env vars: SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET
+// Get them free at developer.spotify.com — register any app, copy the keys.
+const SPOTIFY_ARTIST_ID = '2Seaafm5k1hAuCkpdq7yds';
+let spotifyToken = { value: null, expiresAt: 0 };
+let spotifyFollowers = { count: 0, fetchedAt: 0 };
+const FOLLOWERS_TTL = 60 * 60 * 1000; // refresh every hour
+
+async function getSpotifyToken() {
+  if (spotifyToken.value && Date.now() < spotifyToken.expiresAt) return spotifyToken.value;
+  const id = process.env.SPOTIFY_CLIENT_ID;
+  const secret = process.env.SPOTIFY_CLIENT_SECRET;
+  if (!id || !secret) return null;
+  const res = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + Buffer.from(id + ':' + secret).toString('base64'),
+    },
+    body: 'grant_type=client_credentials',
+  });
+  const data = await res.json();
+  spotifyToken = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
+  return data.access_token;
+}
+
+app.get('/api/spotify-followers', async (req, res) => {
+  if (Date.now() - spotifyFollowers.fetchedAt < FOLLOWERS_TTL) {
+    return res.json({ count: spotifyFollowers.count });
+  }
+  try {
+    const token = await getSpotifyToken();
+    if (!token) return res.json({ count: 0 });
+    const r = await fetch(`https://api.spotify.com/v1/artists/${SPOTIFY_ARTIST_ID}`, {
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    const data = await r.json();
+    spotifyFollowers = { count: data.followers?.total || 0, fetchedAt: Date.now() };
+    res.json({ count: spotifyFollowers.count });
+  } catch (err) {
+    console.error('Spotify followers error:', err.message);
+    res.json({ count: spotifyFollowers.count });
+  }
+});
+
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.send('OK'));
 
