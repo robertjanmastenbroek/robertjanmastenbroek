@@ -301,10 +301,6 @@ def main():
         help="Generate videos + captions locally. Skip Buffer posting."
     )
     parser.add_argument("--track", help="Force a specific track (partial name match).")
-    parser.add_argument(
-        "--preview", action="store_true",
-        help="Open output folder for review before queuing to Buffer."
-    )
     args = parser.parse_args()
 
     mode = "[DRY RUN] " if args.dry_run else ""
@@ -405,16 +401,6 @@ def main():
     mark_track_used(track_title)
     for clip_len in clip_lengths:
         mark_video_used(per_clip[clip_len]["video_path"])
-
-    # ── Preview gate (optional) ───────────────────────────────────────────────
-    if args.preview and not args.dry_run:
-        _sep("PREVIEW — Review before posting to Buffer")
-        subprocess.run(["open", str(run_dir)])
-        try:
-            input("  Press Enter to continue → Buffer, or Ctrl+C to cancel...\n")
-        except KeyboardInterrupt:
-            print("\n  Cancelled. Output saved locally. Buffer posting skipped.")
-            sys.exit(0)
 
     # ── Buffer (live only) ────────────────────────────────────────────────────
     if not args.dry_run:
