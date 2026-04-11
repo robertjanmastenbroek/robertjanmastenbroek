@@ -17,6 +17,10 @@ Usage:
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
   python3 rjm.py run <agent>              # Trigger a sub-agent directly
   python3 rjm.py sync                     # Sync contacts.csv → outreach.db
+  python3 rjm.py swarm init               # Initialise RuFlo agent swarm
+  python3 rjm.py swarm status             # Show swarm agent status
+  python3 rjm.py memory list              # List shared memory keys
+  python3 rjm.py memory get <key>         # Read a memory key
 
 Examples:
   python3 rjm.py status                   # Is everything running?
@@ -277,6 +281,84 @@ def cmd_content_retry():
     print(f"\nDone. {remaining} post(s) still in queue.")
 
 
+def cmd_swarm(args: list[str]):
+    """Manage the RuFlo agent swarm."""
+    import shutil
+    ruflo = shutil.which("ruflo") or "npx ruflo@latest"
+    swarm_config = str(PROJECT_ROOT / "ruflo" / "config" / "rjm-swarm.json")
+    agents_dir = str(PROJECT_ROOT / "ruflo" / ".agents")
+
+    sub = args[0] if args else "status"
+
+    if sub == "init":
+        print("Initialising RJM swarm (hierarchical, raft consensus)...")
+        result = subprocess.run(
+            f"{ruflo} swarm init --config {swarm_config} --topology hierarchical --agents-dir {agents_dir}",
+            shell=True, cwd=str(PROJECT_ROOT / "ruflo")
+        )
+        sys.exit(result.returncode)
+
+    elif sub == "status":
+        print("RJM Swarm — agent status:")
+        result = subprocess.run(
+            f"{ruflo} swarm status",
+            shell=True, cwd=str(PROJECT_ROOT / "ruflo")
+        )
+        sys.exit(result.returncode)
+
+    elif sub == "stop":
+        result = subprocess.run(
+            f"{ruflo} swarm stop",
+            shell=True, cwd=str(PROJECT_ROOT / "ruflo")
+        )
+        sys.exit(result.returncode)
+
+    else:
+        print(f"Unknown swarm sub-command: {sub}")
+        print("Usage: rjm.py swarm [init|status|stop]")
+        sys.exit(1)
+
+
+def cmd_memory(args: list[str]):
+    """Read/write shared swarm memory keys."""
+    import shutil
+    ruflo = shutil.which("ruflo") or "npx ruflo@latest"
+
+    if len(args) < 1:
+        print("Usage: rjm.py memory get <key> | rjm.py memory set <key> <value>")
+        sys.exit(1)
+
+    sub = args[0]
+
+    if sub == "get" and len(args) >= 2:
+        key = args[1]
+        result = subprocess.run(
+            f"{ruflo} memory get --key {key}",
+            shell=True, cwd=str(PROJECT_ROOT / "ruflo")
+        )
+        sys.exit(result.returncode)
+
+    elif sub == "set" and len(args) >= 3:
+        key, value = args[1], args[2]
+        result = subprocess.run(
+            f"{ruflo} memory set --key {key} --value \"{value}\"",
+            shell=True, cwd=str(PROJECT_ROOT / "ruflo")
+        )
+        sys.exit(result.returncode)
+
+    elif sub == "list":
+        result = subprocess.run(
+            f"{ruflo} memory list",
+            shell=True, cwd=str(PROJECT_ROOT / "ruflo")
+        )
+        sys.exit(result.returncode)
+
+    else:
+        print(f"Unknown memory sub-command or missing args: {args}")
+        print("Usage: rjm.py memory get <key> | set <key> <value> | list")
+        sys.exit(1)
+
+
 def cmd_status():
     """
     Full system status — runs master health + outreach status in sequence.
@@ -371,6 +453,10 @@ def main():
         else:
             print("Usage: python3 rjm.py content retry")
             sys.exit(1)
+    elif cmd == "swarm":
+        cmd_swarm(rest)
+    elif cmd == "memory":
+        cmd_memory(rest)
     elif cmd == "sync":
         cmd_sync()
     elif cmd in ("skills", "skill"):
