@@ -461,6 +461,9 @@ def format_to_vertical_multiclip(
             raise RuntimeError(f"Concat failed: {r.stderr[-300:]}")
 
         # ── Step 3: animated hook overlay + final encode ──────────────────────
+        # Defensive guard: if hook_text arrived as an A/B/C dict, take the 'a' variant
+        if isinstance(hook_text, dict):
+            hook_text = hook_text.get('a') or (list(hook_text.values()) or [''])[0]
         # Parse two-part hook: "OPENER // REVEAL"
         line1_text = line2_text = None
         if hook_text and angle:

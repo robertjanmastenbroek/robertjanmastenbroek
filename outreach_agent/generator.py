@@ -399,6 +399,20 @@ Do not explain your choices. Do not apologise for bold hooks. Bold is correct.""
     }
 
 
+def _normalize_hook(text) -> str:
+    """Ensure hook is a plain string. Handles dict objects or dict-syntax strings from Claude."""
+    if isinstance(text, dict):
+        return text.get('a') or (list(text.values()) or [''])[0]
+    if not isinstance(text, str):
+        return str(text)
+    # Detect dict-syntax string like "{'a': 'foo', 'b': 'bar'}" and extract 'a'
+    if text.strip().startswith('{') and "'a'" in text:
+        m = re.search(r"'a'\s*:\s*['\"](.+?)['\"]", text)
+        if m:
+            return m.group(1).strip()
+    return text
+
+
 def generate_run_hooks(track_title: str, clips_config: list) -> dict:
     """
     Single Claude call that generates hooks for ALL clips/angles in one run.
@@ -441,7 +455,14 @@ Each clip has a different angle. The hooks MUST use completely different:
 - Body parts or sensations
 - Emotional registers
 If two clips share any visual image, word, or theme, the system has failed.
-Write each angle as if the others don't exist."""
+Write each angle as if the others don't exist.
+
+FORMAT OVERRIDE — THIS RUN USES A DIFFERENT FORMAT THAN THE A/B/C SYSTEM ABOVE:
+The A/B/C variant section in the mechanism library does NOT apply here.
+Do NOT return dict-style output like {{'a': '...', 'b': '...', 'c': '...'}}
+Return ranked numbered lists ONLY, in the exact format shown in the user prompt.
+Rank 1 must follow the "OPENER // REVEAL" two-part format.
+Ranks 2–5 are single-line hooks. No dict syntax anywhere."""
 
     user_prompt = f"""TRACK: {track_title}
 
@@ -476,13 +497,15 @@ Format EXACTLY as shown — no preamble, no explanation:
 Bold is correct. Do not self-censor."""
 
     try:
-        raw        = _call_claude(system_prompt, user_prompt, timeout=180)
+        raw        = _call_claude(system_prompt, user_prompt, timeout=300)
         candidates = _parse_hook_candidates(raw, list(clips_by_length.keys()))
         # Pick the top-ranked hook per clip — single unique hook, no A/B/C
         hooks = {
             length: (cands[0]['text'] if cands else _fallback_hook(clips_by_length.get(length)))
             for length, cands in candidates.items()
         }
+        # Safety: if Claude returned dict-syntax strings, extract the 'a' value
+        hooks = {l: _normalize_hook(h) for l, h in hooks.items()}
         logger.info(f"Run hooks generated: {track_title}")
         for length, hook in hooks.items():
             logger.info(f"  {length}s [{clips_by_length.get(length,'?')}] → \"{hook}\"")
@@ -749,76 +772,6 @@ def _fallback_content(filename: str, clip_lengths: list,
         "angle":        angle,
         "clips":        clips,
     }
-
-
-# ── Single-call multi-angle hooks ─────────────────────────────────────────────
-
-def generate_run_hooks(track_title: str, clips_config: list) -> dict:
-    """
-    Single Claude call that generates hooks for ALL clips/angles in one run.
-
-    clips_config: [{'length': 5, 'angle': 'emotional'}, {'length': 9, 'angle': 'signal'}, ...]
-
-    Returns:
-    {
-        5:  {'a': str, 'b': str, 'c': str},
-        9:  {'a': str, 'b': str, 'c': str},
-        15: {'a': str, 'b': str, 'c': str},
-    }
-    """
-    per_angle_blocks = ""
-    for cfg in clips_config:
-        length = cfg['length']
-        angle  = cfg['angle']
-        instr  = ANGLE_INSTRUCTIONS.get(angle, ANGLE_DEFAULT_INSTRUCTION)
-        per_angle_blocks += f"\n\n{'─'*60}\n{instr}\n\nGenerate 5 hook candidates for the {length}s clip.\nFormat:\n--- {length}s ---\n1. Hook text | mechanism: tension\n2. Hook text | mechanism: identity\n3. Hook text | mechanism: scene\n4. Hook text | mechanism: claim\n5. Hook text | mechanism: rupture"
-
-    system_prompt = f"""You write hooks for short-form video. Your only job is hooks —
-not captions, not hashtags. Just the 5-8 words burned into the first frame that make someone
-stop scrolling on a rave-adjacent social feed.
-
-{ARTIST_CONTEXT}
-{SUBTLE_SALT_LAYER}
-{HOOK_MECHANISM_LIBRARY}
-{HOOK_FAILURE_MODES}
-
-UNIVERSAL HOOK RULES:
-- 5-8 words. Must be readable in under 2 seconds.
-- NEVER open with "I". Start with situation, time, place, number, or body.
-- No exclamation marks. The energy is internal, not performative.
-- Every hook must be LOCATED: a specific time, physical sensation, or concrete detail.
-- Never describe what the music sounds like. Describe what it does to a body or a moment.
-- No Spotify CTAs in the hook. That belongs in the caption.
-- EACH ANGLE PRODUCES COMPLETELY DIFFERENT HOOKS — no recycled phrases across angles.
-- All 3 A/B/C variants per angle stay inside their angle. Angle rules dominate."""
-
-    user_prompt = f"""TRACK: {track_title}
-
-Generate hooks for {len(clips_config)} clips. Each clip has its own angle.
-Produce 5 ranked candidates per clip.
-After each hook add: | mechanism: [tension/identity/scene/claim/rupture]
-
-Do not explain your choices. Do not apologise for bold hooks. Bold is correct.
-{per_angle_blocks}"""
-
-    lengths = [cfg['length'] for cfg in clips_config]
-
-    try:
-        raw        = _call_claude(system_prompt, user_prompt, timeout=180)
-        candidates = _parse_hook_candidates(raw, lengths)
-        hooks      = _assign_abc_hooks(candidates)
-        logger.info(f"Run hooks generated for track: {track_title}")
-        for l, abc in hooks.items():
-            logger.info(f"  {l}s A→ \"{abc['a']}\"")
-        return hooks
-
-    except Exception as e:
-        logger.error(f"generate_run_hooks failed: {e}")
-        result = {}
-        for cfg in clips_config:
-            fb = _fallback_hook(cfg['angle'])
-            result[cfg['length']] = {'a': fb, 'b': fb, 'c': fb}
-        return result
 
 
 # ── Single-call multi-clip captions ───────────────────────────────────────────
