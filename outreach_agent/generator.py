@@ -122,10 +122,9 @@ AVOID: "Check out this unique track" — describes rather than challenges.
 WHY: The creator betrays the expected identity. Brain recalibrates and wants the explanation.
 AVOID: "Music that transcends genre" — genre commentary, not human truth.
 
-Hook assignment when writing A/B/C variants:
-  hook_a = most scroll-stopping (tension or rupture preferred)
-  hook_b = identity or scene mechanism
-  hook_c = contrarian or claim mechanism
+A/B/C variants — ALL THREE stay inside their assigned angle. Angle rules dominate.
+Use different mechanisms across A/B/C for variety, but never let mechanism selection
+override angle identity. A "signal" clip must still feel like Signal even in variant C.
 """
 
 # ── Named failure modes ────────────────────────────────────────────────────────
@@ -196,7 +195,8 @@ Hook rules:
 - NEVER open with "I". Start with the time, place, or situation. "I" can appear later.
 - END on unresolved tension — never the resolution. Leave the loop open.
 - Avoid all category words: sacred, techno, rave, worship, feel, soul, journey, emotion, music.
-- Must contain one concrete anchor: a time, a number, a location, a physical sensation.
+- Must contain one concrete anchor: a time, a number, a physical sensation, or a specific action.
+- NO geographic place names (Atlantic, Tenerife, island, coast) — geography belongs in captions.
 - Specificity test: could this only have been written by someone who lived this exact thing?
 - The spiritual dimension arrives as subtext — an unexplained weight in the specific moment.""",
 
@@ -637,6 +637,213 @@ def _fallback_content(filename: str, clip_lengths: list,
         "angle":        angle,
         "clips":        clips,
     }
+
+
+# ── Single-call multi-angle hooks ─────────────────────────────────────────────
+
+def generate_run_hooks(track_title: str, clips_config: list) -> dict:
+    """
+    Single Claude call that generates hooks for ALL clips/angles in one run.
+
+    clips_config: [{'length': 5, 'angle': 'emotional'}, {'length': 9, 'angle': 'signal'}, ...]
+
+    Returns:
+    {
+        5:  {'a': str, 'b': str, 'c': str},
+        9:  {'a': str, 'b': str, 'c': str},
+        15: {'a': str, 'b': str, 'c': str},
+    }
+    """
+    per_angle_blocks = ""
+    for cfg in clips_config:
+        length = cfg['length']
+        angle  = cfg['angle']
+        instr  = ANGLE_INSTRUCTIONS.get(angle, ANGLE_DEFAULT_INSTRUCTION)
+        per_angle_blocks += f"\n\n{'─'*60}\n{instr}\n\nGenerate 5 hook candidates for the {length}s clip.\nFormat:\n--- {length}s ---\n1. Hook text | mechanism: tension\n2. Hook text | mechanism: identity\n3. Hook text | mechanism: scene\n4. Hook text | mechanism: claim\n5. Hook text | mechanism: rupture"
+
+    system_prompt = f"""You write hooks for short-form video. Your only job is hooks —
+not captions, not hashtags. Just the 5-8 words burned into the first frame that make someone
+stop scrolling on a rave-adjacent social feed.
+
+{ARTIST_CONTEXT}
+{SUBTLE_SALT_LAYER}
+{HOOK_MECHANISM_LIBRARY}
+{HOOK_FAILURE_MODES}
+
+UNIVERSAL HOOK RULES:
+- 5-8 words. Must be readable in under 2 seconds.
+- NEVER open with "I". Start with situation, time, place, number, or body.
+- No exclamation marks. The energy is internal, not performative.
+- Every hook must be LOCATED: a specific time, physical sensation, or concrete detail.
+- Never describe what the music sounds like. Describe what it does to a body or a moment.
+- No Spotify CTAs in the hook. That belongs in the caption.
+- EACH ANGLE PRODUCES COMPLETELY DIFFERENT HOOKS — no recycled phrases across angles.
+- All 3 A/B/C variants per angle stay inside their angle. Angle rules dominate."""
+
+    user_prompt = f"""TRACK: {track_title}
+
+Generate hooks for {len(clips_config)} clips. Each clip has its own angle.
+Produce 5 ranked candidates per clip.
+After each hook add: | mechanism: [tension/identity/scene/claim/rupture]
+
+Do not explain your choices. Do not apologise for bold hooks. Bold is correct.
+{per_angle_blocks}"""
+
+    lengths = [cfg['length'] for cfg in clips_config]
+
+    try:
+        raw        = _call_claude(system_prompt, user_prompt, timeout=180)
+        candidates = _parse_hook_candidates(raw, lengths)
+        hooks      = _assign_abc_hooks(candidates)
+        logger.info(f"Run hooks generated for track: {track_title}")
+        for l, abc in hooks.items():
+            logger.info(f"  {l}s A→ \"{abc['a']}\"")
+        return hooks
+
+    except Exception as e:
+        logger.error(f"generate_run_hooks failed: {e}")
+        result = {}
+        for cfg in clips_config:
+            fb = _fallback_hook(cfg['angle'])
+            result[cfg['length']] = {'a': fb, 'b': fb, 'c': fb}
+        return result
+
+
+# ── Single-call multi-clip captions ───────────────────────────────────────────
+
+def generate_run_captions(track_title: str, clips_data: list) -> dict:
+    """
+    Single Claude call that generates captions for ALL clips in one run.
+    Enforces 100% unique captions across clips.
+
+    clips_data: [
+        {'length': 5, 'angle': 'emotional', 'hook_a': str, 'hook_b': str, 'hook_c': str},
+        {'length': 9, 'angle': 'signal',    'hook_a': str, ...},
+        {'length': 15, 'angle': 'energy',   'hook_a': str, ...},
+    ]
+
+    Returns:
+    {
+        5:  {'tiktok': {'caption': str, 'hashtags': str}, 'instagram': {...}, 'youtube': {...}},
+        9:  {...},
+        15: {...},
+    }
+    """
+    spotify_cta = f"Search {track_title} on Spotify"
+
+    hooks_context = ""
+    for c in clips_data:
+        hooks_context += (
+            f"\n{c['length']}s [{c['angle'].upper()}]\n"
+            f'  A: "{c.get("hook_a", "")}"\n'
+            f'  B: "{c.get("hook_b", "")}"\n'
+            f'  C: "{c.get("hook_c", "")}"\n'
+        )
+
+    lengths_str = ", ".join(str(c['length']) + "s" for c in clips_data)
+    json_template = ", ".join(
+        f'"{c["length"]}": {{"tiktok": {{"caption": "", "hashtags": ""}}, '
+        f'"instagram": {{"caption": "", "hashtags": ""}}, '
+        f'"youtube": {{"title": "", "description": ""}}}}'
+        for c in clips_data
+    )
+
+    prompt = f"""{ARTIST_CONTEXT}
+{NIC_D_SPOTIFY_LAYER}
+
+TASK: Write platform captions for {len(clips_data)} short-form clips.
+
+TRACK: {track_title}
+CLIP LENGTHS: {lengths_str}
+
+HOOK VARIANTS PER CLIP (captions must serve the ANGLE, not one specific hook):
+{hooks_context}
+
+ANGLE CONTEXT:
+- 5s = EMOTIONAL: artist's interior, cost, why this exists
+- 9s = SIGNAL: who this is for, exact moment/person
+- 15s = ENERGY: what happens to a body in that room
+
+CAPTION RULES:
+1. EVERY clip must have a 100% UNIQUE caption — zero recycled phrases across the 3 clips.
+   Each clip's caption opens from a completely different angle on the track and moment.
+2. Captions continue Act 2 — they open where the hook left off. Never repeat the hook.
+3. Never open with the track name or artist name.
+4. End every TikTok and Instagram caption with: "{spotify_cta}"
+5. Instagram caption ends: "{spotify_cta} — link in bio"
+6. No URLs. Text CTAs only.
+7. Tenerife / Atlantic coast / Sunset Sessions can appear — but only in ONE of the three clips.
+8. Biblical references woven in naturally where they fit — never forced.
+9. Content quality benchmark: must sit alongside Anyma, Rüfüs Du Sol, Argy.
+
+For EACH clip:
+1. TIKTOK caption (max 150 chars) + 5-8 hashtags
+   - Raw, first-person, like a text not a press release
+   - Hashtag tiers: 1-2 mega (#techno #electronicmusic) + 3-4 mid + 3-4 niche (#holyrave)
+
+2. INSTAGRAM REELS caption (max 200 chars) + hashtags (8-12 tags, for first comment)
+
+3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences)
+   - Title patterns: "[Bible ref] at [BPM] BPM" | "Holy Rave Tenerife — [specific]"
+                     | "[Song title] — Sacred Melodic Techno"
+
+Return ONLY valid JSON, no explanation, no markdown:
+
+{{
+  "clips": {{
+    {json_template}
+  }}
+}}"""
+
+    try:
+        raw = _call_claude(
+            "You write social media captions for underground electronic music. Return only valid JSON.",
+            prompt, timeout=300,
+        )
+
+        if raw.startswith('```'):
+            raw = raw.split('\n', 1)[1]
+            raw = raw.rsplit('```', 1)[0]
+
+        result = json.loads(raw)
+        captions = {}
+        for c in clips_data:
+            key  = str(c['length'])
+            data = result.get('clips', {}).get(key, {})
+            captions[c['length']] = {
+                'tiktok':    data.get('tiktok',    {'caption': '', 'hashtags': ''}),
+                'instagram': data.get('instagram', {'caption': '', 'hashtags': ''}),
+                'youtube':   data.get('youtube',   {'title': '', 'description': ''}),
+            }
+
+        logger.info(f"Run captions generated for track: {track_title}")
+        return captions
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Caption JSON parse error: {e}")
+        return _fallback_run_captions(track_title, clips_data)
+    except Exception as e:
+        logger.error(f"generate_run_captions failed: {e}")
+        return _fallback_run_captions(track_title, clips_data)
+
+
+def _fallback_run_captions(track_title: str, clips_data: list) -> dict:
+    cta = f"Search {track_title} on Spotify"
+    result = {}
+    for c in clips_data:
+        angle = c['angle']
+        if angle == 'emotional':
+            cap = f"Made this the night I almost stopped. {cta}"
+        elif angle == 'signal':
+            cap = f"For the version of you that's still figuring it out. {cta}"
+        else:
+            cap = f"Free events. Tenerife. Every week. {cta}"
+        result[c['length']] = {
+            'tiktok':    {'caption': cap, 'hashtags': '#holyrave #sunsetsessions #melodictechno'},
+            'instagram': {'caption': cap + ' — link in bio', 'hashtags': '#holyrave #sunsetsessions #sacredmusic #melodictechno #tenerife'},
+            'youtube':   {'title': f"Holy Rave — {track_title} | Robert-Jan Mastenbroek", 'description': 'Weekly Sunset Sessions in Tenerife. Free entry, always.'},
+        }
+    return result
 
 
 # ── Caption file formatter ─────────────────────────────────────────────────────

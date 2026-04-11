@@ -2,12 +2,14 @@
 """
 post_today.py — Holy Rave daily content run
 
-1. Picks a source video from content/videos/ (rotation)
-2. Picks an RJM track via rotation (peak-energy audio overlay)
-3. Generates hooks + captions via Claude (15s / 30s / 60s clips)
-4. Cuts 3 vertical clips with burned-in hooks + RJM audio
-5. Saves to content/output/YYYY-MM-DD_HHMM_trackname/
-6. (Live run) Queues to Buffer: TikTok + Instagram Reels + YouTube Shorts
+1. Picks source videos from content/videos/ (rotation, 40/40/20 weighting)
+2. Picks one of 4 active RJM tracks via rotation
+3. Detects BPM — calculates beat-sync cut points (4/4 bar length)
+4. Single Claude call: hooks for all 3 angles (emotional/signal/energy)
+5. Single Claude call: unique captions for all 3 clips
+6. Cuts 3 vertical multi-clip reels with burned-in hooks + RJM audio
+7. Saves to content/output/YYYY-MM-DD_HHMM_trackname/
+8. (Live run) Queues to Buffer: TikTok + Instagram Reels + YouTube Shorts
 
 Usage:
   python3 post_today.py           # live run
@@ -39,7 +41,25 @@ _load_env()
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
 
-BASE           = Path(__file__).parent.parent
+def _find_base() -> Path:
+    """
+    Find the project root that contains content/.
+    Handles both normal layout (outreach_agent/../) and git worktrees
+    where the code lives inside .claude/worktrees/<name>/.
+    """
+    candidate = Path(__file__).parent.parent
+    if (candidate / "content").exists():
+        return candidate
+    # Worktree case: walk up until we find a directory with content/
+    for parent in candidate.parents:
+        if (parent / "content").exists():
+            return parent
+        # Stop at filesystem root
+        if parent == parent.parent:
+            break
+    return candidate  # fall back to original
+
+BASE           = _find_base()
 VIDEOS_DIR     = BASE / "content" / "videos"
 OUTPUT_DIR     = BASE / "content" / "output"
 TRACK_ROTATION = Path(__file__).parent / "track_rotation.json"
@@ -53,11 +73,15 @@ FFPROBE = "/opt/homebrew/bin/ffprobe"
 
 # ─── Angle-per-clip mapping ───────────────────────────────────────────────────
 # Each clip length gets a fixed angle every run.
-# 5s = emotional (artist interior, why this exists)
-# 9s = signal    (who this track is for, the specific person/moment)
-# 15s = energy   (what happens to a body in that room)
+# 5s  = emotional (artist interior — why this exists, what it cost)
+# 9s  = signal    (who this track is for — specific person/moment)
+# 15s = energy    (what happens to a body in that room)
 
 CLIP_ANGLE_MAP = {5: "emotional", 9: "signal", 15: "energy"}
+
+# ─── Active tracks (only these 4 are currently being promoted) ───────────────
+
+ACTIVE_TRACKS = {"halleluyah", "renamed", "jericho", "fire in our hands"}
 
 # ─── Track discovery ──────────────────────────────────────────────────────────
 
@@ -75,14 +99,6 @@ SKIP_PATTERNS = [
     r"\(Edit\)", r"\(MP3\)", r"DJ Lucid", r"RENAMED IN THE LIGHT",
     r"You're At The Door", r"He Has Been Good To Me",
 ]
-
-SPOTIFY_LIVE = {
-    "fire in our hands", "he is the light", "my hope is in you", "shema",
-    "under your wings", "thunder", "not by might", "living water",
-    "halala king jesus", "good to me", "good_to_me", "better is one day",
-    "better_is_one_day", "at the door", "renamed", "jericho", "halleluyah",
-    "you see it all",
-}
 
 
 def _should_skip(path: Path) -> bool:
@@ -109,7 +125,8 @@ def find_tracks() -> list[tuple[Path, str]]:
                 dedup = re.sub(r"\s*-\s*psalm\s*\d+.*$", "", dedup).strip()
                 dedup = re.sub(r"^title\s+", "", dedup).strip()
 
-                if not any(live in dedup for live in SPOTIFY_LIVE):
+                # Only promote the 4 active tracks
+                if not any(active in dedup for active in ACTIVE_TRACKS):
                     continue
 
                 def _prio(p: Path) -> int:
@@ -130,7 +147,7 @@ def find_tracks() -> list[tuple[Path, str]]:
 def pick_next_track(override: str = None) -> tuple[Path, str]:
     tracks = find_tracks()
     if not tracks:
-        sys.exit("ERROR: no RJM Spotify tracks found in audio directories.")
+        sys.exit("ERROR: no active RJM tracks found in audio directories.")
 
     if override:
         matches = [(p, t) for p, t in tracks if override.lower() in t.lower()]
@@ -193,9 +210,29 @@ def find_peak_section(audio_path: Path, clip_duration: int = 30) -> int:
     return best_start
 
 
+def _snap_to_beat(audio_path: Path, target_start: int) -> int:
+    """
+    Snap target_start to the nearest beat in the audio track.
+    Loads a 12-second window around target to find beat positions.
+    """
+    try:
+        import librosa
+        offset = max(0, target_start - 3)
+        y, sr  = librosa.load(str(audio_path), offset=offset, duration=12,
+                               sr=22050, mono=True)
+        _, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
+        beat_times     = librosa.frames_to_time(beat_frames, sr=sr) + offset
+        if len(beat_times) == 0:
+            return target_start
+        snapped = int(round(min(beat_times, key=lambda t: abs(t - target_start))))
+        return snapped
+    except Exception:
+        return target_start
+
+
 # ─── Source video rotation ────────────────────────────────────────────────────
-# performances/ = highest quality footage → listed twice in the pool (2x weight)
-# b-roll/, phone-footage/, music-videos/ = supporting footage → listed once
+# b-roll/ and performances/ each get 40% weight; phone-footage/ gets 20%.
+# Within each pool, least-recently-used videos are picked first.
 
 VIDEO_EXTS  = {".mp4", ".mov", ".MP4", ".MOV"}
 MIN_SIZE_MB = 2
@@ -211,26 +248,32 @@ def _find_videos_in(subdir: str) -> list[Path]:
     ]
 
 
-def pick_source_videos(count: int = 3) -> list[Path]:
+def pick_source_videos(count: int, exclude: set = None) -> list[Path]:
     """
-    Pick `count` different source videos.
-    performances/ is weighted 2x — roughly half the picks come from there.
+    Pick `count` unique source videos.
+    Weighting: b-roll 40%, performances 40%, phone-footage 20%.
     Within each pool, least-recently-used videos are picked first.
+    Excludes any paths in `exclude`.
     """
+    if exclude is None:
+        exclude = set()
+
     rotation = json.loads(VIDEO_ROTATION.read_text()) if VIDEO_ROTATION.exists() else {}
 
-    perf   = _find_videos_in("performances")
-    other  = (_find_videos_in("b-roll") + _find_videos_in("phone-footage")
-              + _find_videos_in("music-videos"))
+    broll = _find_videos_in("b-roll")
+    perf  = _find_videos_in("performances")
+    phone = _find_videos_in("phone-footage")
 
-    if not perf and not other:
+    if not broll and not perf and not phone:
         sys.exit("ERROR: no source videos found in content/videos/")
 
-    # Build weighted pool: performances appears twice
-    pool = sorted(perf + perf + other, key=lambda p: rotation.get(str(p), 0))
+    # Build weighted pool (b-roll × 2, perf × 2, phone × 1) for roughly 40/40/20
+    pool = sorted(
+        broll + broll + perf + perf + phone,
+        key=lambda p: rotation.get(str(p), 0),
+    )
 
-    # Pick `count` unique videos (deduplicate while preserving order)
-    picked, seen = [], set()
+    picked, seen = [], set(exclude)
     for v in pool:
         if str(v) not in seen:
             picked.append(v)
@@ -238,9 +281,9 @@ def pick_source_videos(count: int = 3) -> list[Path]:
         if len(picked) == count:
             break
 
-    # If we don't have enough unique videos, cycle back through all
+    # If still not enough, cycle back through all pools ignoring exclude
     if len(picked) < count:
-        for v in sorted(perf + other, key=lambda p: rotation.get(str(p), 0)):
+        for v in sorted(broll + perf + phone, key=lambda p: rotation.get(str(p), 0)):
             if str(v) not in seen:
                 picked.append(v)
                 seen.add(str(v))
@@ -305,55 +348,100 @@ def main():
 
     mode = "[DRY RUN] " if args.dry_run else ""
 
-    # ── 1. Source videos (one per clip) ──────────────────────────────────────
-    _sep("STEP 1 / 4 — Source videos")
-    clip_lengths = processor.CLIP_LENGTHS  # [5, 9, 15]
-    source_videos = pick_source_videos(len(clip_lengths))
-
-    # Validate each video is long enough for its clip length; skip if not
-    valid_pairs = []
-    for clip_len, vpath in zip(clip_lengths, source_videos):
-        try:
-            info = processor.get_video_info(str(vpath))
-        except Exception as e:
-            print(f"  WARN: cannot read {vpath.name} — {e}, skipping")
-            continue
-        if info["duration"] < clip_len:
-            print(f"  WARN: {vpath.name} too short ({info['duration']:.1f}s) for {clip_len}s clip, skipping")
-            continue
-        valid_pairs.append((clip_len, vpath, info))
-        print(f"  {clip_len}s → {vpath.parent.name}/{vpath.name}  ({info['duration']:.1f}s  {info['width']}×{info['height']})")
-
-    if not valid_pairs:
-        sys.exit("ERROR: no valid video/clip-length pairs found")
-
-    clip_lengths = [cl for cl, _, _ in valid_pairs]
-
-    # ── 2. RJM track + peak section ──────────────────────────────────────────
-    _sep("STEP 2 / 4 — RJM track")
+    # ── 1. RJM track + peak section + BPM ────────────────────────────────────
+    _sep("STEP 1 / 4 — RJM track + BPM")
     audio_path, track_title = pick_next_track(args.track)
     print(f"  Track: {track_title}")
     print(f"  File:  {audio_path.name}")
-    audio_start = find_peak_section(audio_path, max(clip_lengths))
+    audio_start = find_peak_section(audio_path, max(processor.CLIP_LENGTHS))
 
-    # ── 3. Hooks + captions — one per clip/angle ─────────────────────────────
-    _sep("STEP 3 / 4 — Hooks + captions (Claude — 3 angles)")
+    bpm     = processor.get_bpm(str(audio_path))
+    bar_dur = 4 * 60.0 / bpm   # one 4/4 bar in seconds
+    print(f"  BPM:   {bpm:.1f}  (bar = {bar_dur:.2f}s)")
 
-    per_clip = {}  # clip_len → {video_path, info, angle, hook, hooks_meta, content}
-    for clip_len, vpath, info in valid_pairs:
-        angle = CLIP_ANGLE_MAP.get(clip_len, "emotional")
-        print(f"  {clip_len}s [{angle}] — generating hooks…")
-        hooks_meta = generator.generate_hooks(vpath.name, [clip_len], angle_override=angle)
-        content    = generator.generate_content(vpath.name, [clip_len], hooks_meta)
-        abc        = hooks_meta["hooks"].get(clip_len, {})
-        print(f"    A: \"{abc.get('a', '')}\"")
-        print(f"    B: \"{abc.get('b', '')}\"")
-        print(f"    C: \"{abc.get('c', '')}\"")
+    # ── 2. Source videos — one pool per clip, beat-synced start points ────────
+    _sep("STEP 2 / 4 — Source videos + beat-sync")
+    clip_lengths = list(processor.CLIP_LENGTHS)   # [5, 9, 15]
+
+    per_clip = {}   # clip_len → {video_sources, angle, n_segs}
+    all_used = set()
+
+    for clip_len in clip_lengths:
+        angle  = CLIP_ANGLE_MAP.get(clip_len, "emotional")
+        # n_segs = how many 4/4 bars fit in this clip (min 2, max sensible)
+        n_segs = max(2, round(clip_len / bar_dur))
+        seg_dur = clip_len / n_segs
+
+        print(f"\n  {clip_len}s [{angle}] — {n_segs} segments × {seg_dur:.2f}s  (4/4 at {bpm:.0f} BPM)")
+
+        sources_raw = pick_source_videos(n_segs, exclude=all_used)
+        sources     = []
+
+        for vpath in sources_raw:
+            try:
+                info     = processor.get_video_info(str(vpath))
+                vid_dur  = info["duration"]
+            except Exception as e:
+                print(f"    WARN: cannot read {vpath.name} — {e}, skipping")
+                continue
+
+            if vid_dur < seg_dur:
+                print(f"    WARN: {vpath.name} too short ({vid_dur:.1f}s) for {seg_dur:.1f}s segment, skipping")
+                continue
+
+            segs       = processor.detect_best_segments(str(vpath), vid_dur)
+            raw_start  = segs[0][0] if segs else 0.0
+            raw_start  = min(raw_start, max(0.0, vid_dur - seg_dur))
+            beat_start = _snap_to_beat(audio_path, int(raw_start))
+            beat_start = min(float(beat_start), max(0.0, vid_dur - seg_dur))
+
+            sources.append((str(vpath), beat_start))
+            all_used.add(str(vpath))
+            print(f"    {vpath.parent.name}/{vpath.name}  start={beat_start:.1f}s  ({vid_dur:.1f}s total)")
+
+        if not sources:
+            # Fallback: pick any video, start at 0
+            fallback = pick_source_videos(1)
+            if fallback:
+                sources = [(str(fallback[0]), 0.0)]
+                all_used.add(str(fallback[0]))
+                print(f"    FALLBACK: {fallback[0].name}")
+
         per_clip[clip_len] = {
-            "video_path": vpath, "info": info,
-            "angle": angle, "hook": abc.get("a", ""),
-            "hooks_abc": abc, "hooks_meta": hooks_meta, "content": content,
+            "video_sources": sources,
+            "angle":  angle,
+            "n_segs": n_segs,
         }
+
+    # ── 3. Hooks + captions — single Claude call each ─────────────────────────
+    _sep("STEP 3 / 4 — Hooks + captions (2 Claude calls)")
+
+    clips_config = [
+        {"length": cl, "angle": per_clip[cl]["angle"]}
+        for cl in clip_lengths
+    ]
+
+    print("  Generating hooks (all 3 angles — 1 call)…")
+    run_hooks = generator.generate_run_hooks(track_title, clips_config)
+    for cl in clip_lengths:
+        abc = run_hooks.get(cl, {})
+        print(f"    {cl}s [{per_clip[cl]['angle']}]")
+        print(f"      A: \"{abc.get('a', '')}\"")
+        print(f"      B: \"{abc.get('b', '')}\"")
+        print(f"      C: \"{abc.get('c', '')}\"")
+
+    print("\n  Generating captions (all 3 clips — 1 call)…")
+    clips_data = [
+        {
+            "length":  cl,
+            "angle":   per_clip[cl]["angle"],
+            "hook_a":  run_hooks.get(cl, {}).get("a", ""),
+            "hook_b":  run_hooks.get(cl, {}).get("b", ""),
+            "hook_c":  run_hooks.get(cl, {}).get("c", ""),
+        }
+        for cl in clip_lengths
+    ]
+    run_captions = generator.generate_run_captions(track_title, clips_data)
 
     # ── 4. Cut clips + mix audio ──────────────────────────────────────────────
     _sep("STEP 4 / 4 — Cut clips + mix RJM audio")
@@ -367,19 +455,19 @@ def main():
 
     for clip_len in clip_lengths:
         clip_data = per_clip[clip_len]
-        vpath     = clip_data["video_path"]
-        duration  = clip_data["info"]["duration"]
-        print(f"  → {clip_len}s [{clip_data['angle']}]  {vpath.parent.name}/{vpath.name}")
+        angle     = clip_data["angle"]
+        sources   = clip_data["video_sources"]
+        hook_a    = run_hooks.get(clip_len, {}).get("a", "")
+
+        print(f"  → {clip_len}s [{angle}]  {len(sources)} segments")
         out_file = run_dir / f"{safe_track}_{clip_len}s.mp4"
 
-        segments  = processor.detect_best_segments(str(vpath), duration)
-        vid_start = segments[0][0] if segments else 0.0
-        vid_start = min(vid_start, max(0.0, duration - clip_len))
-
-        # Clean clip — no hook burned in. Hooks A/B/C live in captions file for A/B testing.
-        processor.format_to_vertical(
-            str(vpath), str(out_file),
-            vid_start, clip_len,
+        processor.format_to_vertical_multiclip(
+            video_sources=sources,
+            output_path=str(out_file),
+            clip_duration=float(clip_len),
+            hook_text=hook_a,
+            angle=angle,
         )
         mix_in_track(out_file, audio_path, audio_start, clip_len)
 
@@ -387,39 +475,68 @@ def main():
         print(f"    ✓ {out_file.name}  ({size_mb:.1f} MB)")
         output_files.append(out_file)
 
-    # Captions file — aggregate all 3 clips
+    # ── Captions file ─────────────────────────────────────────────────────────
     caption_lines = []
-    for clip_len in clip_lengths:
-        caption_lines.append(generator.format_caption_file(
-            per_clip[clip_len]["video_path"].name, per_clip[clip_len]["content"]
-        ))
-    caption_text = "\n\n".join(caption_lines)
+    for cl in clip_lengths:
+        abc   = run_hooks.get(cl, {})
+        caps  = run_captions.get(cl, {})
+        angle = per_clip[cl]["angle"]
+
+        caption_lines += [
+            f"┌─────────────────────────────────────────────",
+            f"│  {cl}-SECOND CLIP  [{angle.upper()}]",
+            f"│  File: {safe_track}_{cl}s.mp4",
+            f"└─────────────────────────────────────────────",
+            "",
+            "HOOKS (A/B/C — post same clip on different days with each variant):",
+            f'   A: "{abc.get("a", "")}"',
+            f'   B: "{abc.get("b", "")}"',
+            f'   C: "{abc.get("c", "")}"',
+            "",
+            "━━━ TIKTOK ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"   {caps.get('tiktok', {}).get('caption', '')}",
+            f"   {caps.get('tiktok', {}).get('hashtags', '')}",
+            "",
+            "━━━ INSTAGRAM REELS ━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"   {caps.get('instagram', {}).get('caption', '')}",
+            f"   {caps.get('instagram', {}).get('hashtags', '')}",
+            "",
+            "━━━ YOUTUBE SHORTS ━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"   {caps.get('youtube', {}).get('title', '')}",
+            f"   {caps.get('youtube', {}).get('description', '')}",
+            "",
+            "",
+        ]
+
+    caption_lines += [
+        "═══════════════════════════════════════════════",
+        "  All glory to Jesus.",
+        "═══════════════════════════════════════════════",
+    ]
+
     caption_file = run_dir / f"{safe_track}_captions.txt"
-    caption_file.write_text(caption_text)
+    caption_file.write_text('\n'.join(caption_lines))
     print(f"\n  ✓ {caption_file.name}")
 
     mark_track_used(track_title)
-    for clip_len in clip_lengths:
-        mark_video_used(per_clip[clip_len]["video_path"])
+    for cl in clip_lengths:
+        for src_path, _ in per_clip[cl]["video_sources"]:
+            mark_video_used(Path(src_path))
 
     # ── Buffer (live only) ────────────────────────────────────────────────────
     if not args.dry_run:
         _sep("BUFFER — Queuing to TikTok / Instagram / YouTube")
         from buffer_poster import upload_video_and_queue
         for clip_len, clip_path in zip(clip_lengths, output_files):
-            clip_content = per_clip[clip_len]["content"]
-            clips_data   = clip_content.get("clips", {}).get(str(clip_len), {})
-            tiktok       = clips_data.get("tiktok", {})
-            instagram    = clips_data.get("instagram", {})
-            youtube      = clips_data.get("youtube", {})
+            caps = run_captions.get(clip_len, {})
             print(f"\n  Queuing {clip_len}s [{per_clip[clip_len]['angle']}]…")
             try:
                 upload_video_and_queue(
                     clip_path         = str(clip_path),
-                    tiktok_caption    = tiktok.get("caption", "") + "\n" + tiktok.get("hashtags", ""),
-                    instagram_caption = instagram.get("caption", "") + "\n" + instagram.get("hashtags", ""),
-                    youtube_title     = youtube.get("title", ""),
-                    youtube_desc      = youtube.get("description", ""),
+                    tiktok_caption    = caps.get('tiktok', {}).get('caption', '') + "\n" + caps.get('tiktok', {}).get('hashtags', ''),
+                    instagram_caption = caps.get('instagram', {}).get('caption', '') + "\n" + caps.get('instagram', {}).get('hashtags', ''),
+                    youtube_title     = caps.get('youtube', {}).get('title', ''),
+                    youtube_desc      = caps.get('youtube', {}).get('description', ''),
                 )
                 print(f"    ✓ Queued")
             except Exception as e:
@@ -427,28 +544,28 @@ def main():
 
     # ── Summary ───────────────────────────────────────────────────────────────
     _sep("SUMMARY")
-    print(f"\n{mode}Track:  {track_title}")
-    print(f"\n{mode}Clips produced ({len(output_files)}):")
-    for clip_len, f in zip(clip_lengths, output_files):
-        vp    = per_clip[clip_len]["video_path"]
-        angle = per_clip[clip_len]["angle"]
-        print(f"  {f.name}  [{angle}]  ← {vp.parent.name}/{vp.name}  ({f.stat().st_size / 1_000_000:.1f} MB)")
+    print(f"\n{mode}Track:  {track_title}  ({bpm:.1f} BPM)")
+    print(f"{mode}Clips produced ({len(output_files)}):")
+    for cl, f in zip(clip_lengths, output_files):
+        n  = per_clip[cl]["n_segs"]
+        ag = per_clip[cl]["angle"]
+        print(f"  {f.name}  [{ag}]  {n} beat-synced segments  ({f.stat().st_size / 1_000_000:.1f} MB)")
     print(f"\n{mode}Captions: {caption_file.name}")
     print(f"{mode}Output:   {run_dir}")
 
     if args.dry_run:
         print("\n[DRY RUN] Buffer posting skipped.\n")
-        for clip_len in clip_lengths:
-            angle     = per_clip[clip_len]["angle"]
-            abc       = per_clip[clip_len].get("hooks_abc", {})
-            clip_data = per_clip[clip_len]["content"].get("clips", {}).get(str(clip_len), {})
-            print(f"── {clip_len}s [{angle}] ──────────────────────────────")
+        for cl in clip_lengths:
+            angle = per_clip[cl]["angle"]
+            abc   = run_hooks.get(cl, {})
+            caps  = run_captions.get(cl, {})
+            print(f"── {cl}s [{angle}] ──────────────────────────────")
             print(f"  Hook A:    {abc.get('a', '')}")
             print(f"  Hook B:    {abc.get('b', '')}")
             print(f"  Hook C:    {abc.get('c', '')}")
-            print(f"  TikTok:    {clip_data.get('tiktok', {}).get('caption', '')}")
-            print(f"  Instagram: {clip_data.get('instagram', {}).get('caption', '')}")
-            print(f"  YT title:  {clip_data.get('youtube', {}).get('title', '')}")
+            print(f"  TikTok:    {caps.get('tiktok', {}).get('caption', '')}")
+            print(f"  Instagram: {caps.get('instagram', {}).get('caption', '')}")
+            print(f"  YT title:  {caps.get('youtube', {}).get('title', '')}")
             print()
 
 
