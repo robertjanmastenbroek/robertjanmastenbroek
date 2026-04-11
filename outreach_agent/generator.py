@@ -48,7 +48,8 @@ CLAUDE_BIN = _find_claude()
 def _call_claude(system_prompt: str, user_prompt: str, timeout: int = 120) -> str:
     """Call claude CLI and return the text response. Uses Max plan — no API key."""
     result = subprocess.run(
-        [CLAUDE_BIN, "--print", "--no-session-persistence",
+        [CLAUDE_BIN, "--model", "claude-haiku-4-5-20251001",
+         "--print", "--no-session-persistence",
          "--system-prompt", system_prompt, user_prompt],
         capture_output=True, text=True, timeout=timeout,
     )
