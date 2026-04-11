@@ -21,9 +21,11 @@ import os
 import subprocess
 import sys
 import json
+import time
 from pathlib import Path
 
 import requests
+from video_host import upload_video
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -43,8 +45,12 @@ IMGUR_CLIENT_ID = "546c25a59c58ad7"
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _gql(query: str, variables: dict = None) -> dict:
-    """Execute a Buffer GraphQL request. Retries once on 429."""
-    import time
+    """Execute a Buffer GraphQL request.
+
+    Retries up to 3 times on network errors, 5xx, and 429.
+    Uses exponential backoff: 5s, 15s, 45s.
+    Raises RuntimeError on GraphQL-level errors (never calls sys.exit).
+    """
     payload = {"query": query}
     if variables:
         payload["variables"] = variables
@@ -52,19 +58,45 @@ def _gql(query: str, variables: dict = None) -> dict:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {BUFFER_API_KEY}",
     }
-    for attempt in range(2):
-        resp = requests.post(BUFFER_ENDPOINT, json=payload, headers=headers, timeout=30)
+
+    max_attempts = 3
+    backoff = [5, 15, 45]
+
+    for attempt in range(max_attempts):
+        try:
+            resp = requests.post(BUFFER_ENDPOINT, json=payload, headers=headers, timeout=30)
+        except requests.exceptions.RequestException as exc:
+            if attempt < max_attempts - 1:
+                wait = backoff[attempt]
+                print(f"    [Buffer] network error (attempt {attempt + 1}/{max_attempts}): {exc} — retrying in {wait}s…")
+                time.sleep(wait)
+                continue
+            raise
+
         if resp.status_code == 429:
-            retry_after = int(resp.headers.get("Retry-After", 60))
-            print(f"    [Buffer] rate limited — waiting {retry_after}s…")
-            time.sleep(retry_after)
+            wait = int(resp.headers.get("Retry-After", backoff[attempt]))
+            print(f"    [Buffer] rate limited — waiting {wait}s…")
+            time.sleep(wait)
             continue
+
+        if resp.status_code >= 500:
+            wait = backoff[attempt]
+            if attempt < max_attempts - 1:
+                print(f"    [Buffer] server error {resp.status_code} (attempt {attempt + 1}/{max_attempts}) — retrying in {wait}s…")
+                time.sleep(wait)
+                try:
+                    resp.raise_for_status()
+                except Exception:
+                    pass
+                continue
+
         resp.raise_for_status()
-        break
-    data = resp.json()
-    if "errors" in data:
-        sys.exit(f"Buffer API error: {data['errors']}")
-    return data["data"]
+        data = resp.json()
+        if "errors" in data:
+            raise RuntimeError(f"Buffer API error: {data['errors']}")
+        return data["data"]
+
+    raise RuntimeError("Buffer API: max retries exceeded")
 
 
 def upload_image(filepath: str) -> str:
@@ -154,31 +186,7 @@ def _create_post(channel: str, post_type: str, image_urls: list[str], caption: s
 
 # ─── Video upload ─────────────────────────────────────────────────────────────
 
-def _upload_video_for_buffer(filepath: str) -> str:
-    """Upload a local video file to uguu.se and return the public URL.
-    uguu.se is free, anonymous, no signup, 48-hour expiry (fine — Buffer fetches immediately).
-    Buffer's GraphQL API requires a public URL with proper Content-Length — it has no file upload.
-    """
-    p = Path(filepath)
-    if not p.exists():
-        raise FileNotFoundError(f"Video file not found: {filepath}")
-
-    file_size = p.stat().st_size
-    print(f"    Uploading {p.name} ({file_size / 1_000_000:.1f} MB) to uguu.se…")
-    with p.open("rb") as fh:
-        resp = requests.post(
-            "https://uguu.se/upload.php",
-            files={"files[]": (p.name, fh, "video/mp4")},
-            timeout=300,
-        )
-    resp.raise_for_status()
-    data = resp.json()
-    if not data.get("success"):
-        raise RuntimeError(f"uguu.se upload failed: {data}")
-    url = data["files"][0]["url"]
-    print(f"    → {url}")
-    return url
-
+# Video upload is handled by video_host.upload_video (imported at top of file)
 
 _VIDEO_POST_MUTATION = """
 mutation CreatePost($input: CreatePostInput!) {
@@ -276,19 +284,34 @@ def upload_video_and_queue(
     youtube_title: str,
     youtube_desc: str,
     scheduled_at: str = None,
-) -> None:
+) -> dict:
     """Upload a video and queue it to TikTok, Instagram Reels, Instagram Story,
-    and YouTube Shorts via Buffer. scheduled_at is an ISO-8601 UTC string for today."""
-    import time
-    video_url = _upload_video_for_buffer(clip_path)
+    and YouTube Shorts via Buffer.
 
-    _create_video_post("tiktok",    video_url, tiktok_caption,  scheduled_at=scheduled_at)
-    time.sleep(2)
-    _create_video_post("instagram", video_url, instagram_caption, scheduled_at=scheduled_at)
-    time.sleep(2)
-    _create_video_story_post("instagram", video_url, scheduled_at=scheduled_at)
-    time.sleep(2)
-    _create_video_post("youtube",   video_url, youtube_desc, title=youtube_title, description=youtube_desc, scheduled_at=scheduled_at)
+    Each platform is attempted independently — one failure does not cancel others.
+
+    Returns a dict of {platform: {"success": bool, "id": str|None, "error": str|None}}.
+    """
+    video_url = upload_video(clip_path)  # raises on total failure
+
+    platforms = {
+        "tiktok":           lambda: _create_video_post("tiktok",    video_url, tiktok_caption,    scheduled_at=scheduled_at),
+        "instagram_reel":   lambda: _create_video_post("instagram", video_url, instagram_caption, scheduled_at=scheduled_at),
+        "instagram_story":  lambda: _create_video_story_post("instagram", video_url, scheduled_at=scheduled_at),
+        "youtube":          lambda: _create_video_post("youtube",   video_url, youtube_desc, title=youtube_title, description=youtube_desc, scheduled_at=scheduled_at),
+    }
+
+    results = {}
+    for platform, post_fn in platforms.items():
+        try:
+            post_id = post_fn()
+            results[platform] = {"success": True, "id": post_id, "error": None}
+        except Exception as exc:
+            print(f"    ✗ {platform} failed: {exc}")
+            results[platform] = {"success": False, "id": None, "error": str(exc)}
+        time.sleep(2)
+
+    return results
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────
