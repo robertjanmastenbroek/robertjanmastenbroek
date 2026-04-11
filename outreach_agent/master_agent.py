@@ -1069,7 +1069,7 @@ def _print_action_plan(strategy_id: str):
 
 
 def cmd_log_listeners(n: int):
-    """Log current Spotify monthly listener count to the tracker."""
+    """Log current Spotify monthly listener count to the tracker and data/listeners.json."""
     result = subprocess.run(
         [sys.executable, str(SPOTIFY_TRACKER_PATH), "log", str(n)],
         capture_output=True, text=True
@@ -1077,6 +1077,52 @@ def cmd_log_listeners(n: int):
     print(result.stdout, end="")
     if result.returncode != 0:
         print(f"Error: {result.stderr.strip()}")
+        return
+
+    # Keep data/listeners.json in sync — used by rjm-master SKILL.md context
+    listeners_json = BASE_DIR.parent / "data" / "listeners.json"
+    try:
+        import json as _json
+        listeners_json.parent.mkdir(exist_ok=True)
+        listeners_json.write_text(
+            _json.dumps({"count": n, "updatedAt": datetime.now().isoformat()}, indent=2),
+            encoding="utf-8",
+        )
+        print(f"✓ data/listeners.json updated → {n:,}")
+    except Exception as exc:
+        print(f"⚠️  Could not update data/listeners.json: {exc}")
+
+
+def cmd_log_run(summary: str, contacts_added: int = 0, strategy_worked: str = ""):
+    """Append a timestamped entry to data/master_log.json.
+
+    Called at the end of every rjm-master scheduled task run.
+    Usage: python3 master_agent.py log_run "Built instagram_to_spotify strategy" 5 instagram_to_spotify
+    """
+    import json as _json
+    log_path = BASE_DIR.parent / "data" / "master_log.json"
+    log_path.parent.mkdir(exist_ok=True)
+
+    if log_path.exists():
+        try:
+            entries = _json.loads(log_path.read_text(encoding="utf-8"))
+        except Exception:
+            entries = []
+    else:
+        entries = []
+
+    entry = {
+        "ts":               datetime.now().isoformat(),
+        "summary":          summary,
+        "contacts_added":   contacts_added,
+        "strategy_worked":  strategy_worked,
+    }
+    entries.append(entry)
+
+    # Keep last 500 entries to prevent unbounded growth
+    entries = entries[-500:]
+    log_path.write_text(_json.dumps(entries, indent=2), encoding="utf-8")
+    print(f"✓ Logged run: {summary[:80]}")
 
 
 # ─── Run Sub-Agents ────────────────────────────────────────────────────────────
@@ -1155,6 +1201,11 @@ def main():
             cmd_log_listeners(int(args[1].replace(",", "")))
         else:
             print("Usage: python3 master_agent.py log_listeners <number>")
+    elif args[0] == "log_run":
+        summary = args[1] if len(args) > 1 else "run"
+        contacts = int(args[2]) if len(args) > 2 else 0
+        strategy = args[3] if len(args) > 3 else ""
+        cmd_log_run(summary, contacts, strategy)
     elif args[0] == "run":
         agent = args[1] if len(args) > 1 else ""
         if not agent:
