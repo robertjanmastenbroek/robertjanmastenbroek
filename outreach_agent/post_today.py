@@ -194,31 +194,60 @@ def find_peak_section(audio_path: Path, clip_duration: int = 30) -> int:
 
 
 # ─── Source video rotation ────────────────────────────────────────────────────
+# performances/ = highest quality footage → listed twice in the pool (2x weight)
+# b-roll/, phone-footage/, music-videos/ = supporting footage → listed once
 
-VIDEO_SUBDIRS = ["phone-footage", "b-roll", "performances", "music-videos"]
-VIDEO_EXTS    = {".mp4", ".mov", ".MP4", ".MOV"}
-MIN_SIZE_MB   = 2
-
-
-def _find_all_videos() -> list[Path]:
-    videos = []
-    for subdir in VIDEO_SUBDIRS:
-        d = VIDEOS_DIR / subdir
-        if not d.exists():
-            continue
-        for f in sorted(d.rglob("*")):
-            if f.suffix in VIDEO_EXTS and f.stat().st_size > MIN_SIZE_MB * 1_000_000:
-                videos.append(f)
-    return videos
+VIDEO_EXTS  = {".mp4", ".mov", ".MP4", ".MOV"}
+MIN_SIZE_MB = 2
 
 
-def pick_source_video() -> Path:
-    videos = _find_all_videos()
-    if not videos:
-        sys.exit("ERROR: no source videos found in content/videos/")
+def _find_videos_in(subdir: str) -> list[Path]:
+    d = VIDEOS_DIR / subdir
+    if not d.exists():
+        return []
+    return [
+        f for f in sorted(d.rglob("*"))
+        if f.suffix in VIDEO_EXTS and f.stat().st_size > MIN_SIZE_MB * 1_000_000
+    ]
+
+
+def pick_source_videos(count: int = 3) -> list[Path]:
+    """
+    Pick `count` different source videos.
+    performances/ is weighted 2x — roughly half the picks come from there.
+    Within each pool, least-recently-used videos are picked first.
+    """
     rotation = json.loads(VIDEO_ROTATION.read_text()) if VIDEO_ROTATION.exists() else {}
-    videos.sort(key=lambda p: rotation.get(str(p), 0))
-    return videos[0]
+
+    perf   = _find_videos_in("performances")
+    other  = (_find_videos_in("b-roll") + _find_videos_in("phone-footage")
+              + _find_videos_in("music-videos"))
+
+    if not perf and not other:
+        sys.exit("ERROR: no source videos found in content/videos/")
+
+    # Build weighted pool: performances appears twice
+    pool = sorted(perf + perf + other, key=lambda p: rotation.get(str(p), 0))
+
+    # Pick `count` unique videos (deduplicate while preserving order)
+    picked, seen = [], set()
+    for v in pool:
+        if str(v) not in seen:
+            picked.append(v)
+            seen.add(str(v))
+        if len(picked) == count:
+            break
+
+    # If we don't have enough unique videos, cycle back through all
+    if len(picked) < count:
+        for v in sorted(perf + other, key=lambda p: rotation.get(str(p), 0)):
+            if str(v) not in seen:
+                picked.append(v)
+                seen.add(str(v))
+            if len(picked) == count:
+                break
+
+    return picked
 
 
 def mark_video_used(video_path: Path):
@@ -276,24 +305,29 @@ def main():
 
     mode = "[DRY RUN] " if args.dry_run else ""
 
-    # ── 1. Source video ───────────────────────────────────────────────────────
-    _sep("STEP 1 / 4 — Source video")
-    video_path = pick_source_video()
-    print(f"  File:   {video_path.name}")
-    print(f"  Folder: {video_path.parent.name}/")
+    # ── 1. Source videos (one per clip) ──────────────────────────────────────
+    _sep("STEP 1 / 4 — Source videos")
+    clip_lengths = processor.CLIP_LENGTHS  # [5, 9, 15]
+    source_videos = pick_source_videos(len(clip_lengths))
 
-    try:
-        info = processor.get_video_info(str(video_path))
-    except Exception as e:
-        sys.exit(f"ERROR: cannot read video — {e}")
+    # Validate each video is long enough for its clip length; skip if not
+    valid_pairs = []
+    for clip_len, vpath in zip(clip_lengths, source_videos):
+        try:
+            info = processor.get_video_info(str(vpath))
+        except Exception as e:
+            print(f"  WARN: cannot read {vpath.name} — {e}, skipping")
+            continue
+        if info["duration"] < clip_len:
+            print(f"  WARN: {vpath.name} too short ({info['duration']:.1f}s) for {clip_len}s clip, skipping")
+            continue
+        valid_pairs.append((clip_len, vpath, info))
+        print(f"  {clip_len}s → {vpath.parent.name}/{vpath.name}  ({info['duration']:.1f}s  {info['width']}×{info['height']})")
 
-    duration = info["duration"]
-    print(f"  Duration: {duration:.1f}s  ({info['width']}×{info['height']})")
+    if not valid_pairs:
+        sys.exit("ERROR: no valid video/clip-length pairs found")
 
-    clip_lengths = [l for l in processor.CLIP_LENGTHS if duration >= l]
-    if not clip_lengths:
-        sys.exit(f"ERROR: video too short ({duration:.1f}s) — need at least {min(processor.CLIP_LENGTHS)}s")
-    print(f"  Clip lengths: {clip_lengths}s")
+    clip_lengths = [cl for cl, _, _ in valid_pairs]
 
     # ── 2. RJM track + peak section ──────────────────────────────────────────
     _sep("STEP 2 / 4 — RJM track")
@@ -302,19 +336,22 @@ def main():
     print(f"  File:  {audio_path.name}")
     audio_start = find_peak_section(audio_path, max(clip_lengths))
 
-    # ── 3. Hooks + captions — one per angle ──────────────────────────────────
+    # ── 3. Hooks + captions — one per clip/angle ─────────────────────────────
     _sep("STEP 3 / 4 — Hooks + captions (Claude — 3 angles)")
 
-    # Each clip length gets its own angle: 5s=emotional, 9s=signal, 15s=energy
-    per_clip = {}  # clip_len → {angle, hooks_meta, content}
-    for clip_len in clip_lengths:
+    per_clip = {}  # clip_len → {video_path, info, angle, hook, hooks_meta, content}
+    for clip_len, vpath, info in valid_pairs:
         angle = CLIP_ANGLE_MAP.get(clip_len, "emotional")
         print(f"  {clip_len}s [{angle}] — generating hook…")
-        hooks_meta = generator.generate_hooks(video_path.name, [clip_len], angle_override=angle)
-        content    = generator.generate_content(video_path.name, [clip_len], hooks_meta)
+        hooks_meta = generator.generate_hooks(vpath.name, [clip_len], angle_override=angle)
+        content    = generator.generate_content(vpath.name, [clip_len], hooks_meta)
         hook       = hooks_meta["hooks"].get(clip_len, "")
         print(f"    → \"{hook}\"")
-        per_clip[clip_len] = {"angle": angle, "hooks_meta": hooks_meta, "content": content, "hook": hook}
+        per_clip[clip_len] = {
+            "video_path": vpath, "info": info,
+            "angle": angle, "hook": hook,
+            "hooks_meta": hooks_meta, "content": content,
+        }
 
     # ── 4. Cut clips + mix audio ──────────────────────────────────────────────
     _sep("STEP 4 / 4 — Cut clips + mix RJM audio")
@@ -324,18 +361,21 @@ def main():
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"  Output: {run_dir}\n")
 
-    segments    = processor.detect_best_segments(str(video_path), duration)
-    best_start  = segments[0][0] if segments else 0.0
     output_files = []
 
     for clip_len in clip_lengths:
         clip_data = per_clip[clip_len]
-        print(f"  → {clip_len}s [{clip_data['angle']}] clip…")
-        out_file  = run_dir / f"{safe_track}_{clip_len}s.mp4"
-        vid_start = min(best_start, max(0.0, duration - clip_len))
+        vpath     = clip_data["video_path"]
+        duration  = clip_data["info"]["duration"]
+        print(f"  → {clip_len}s [{clip_data['angle']}]  {vpath.parent.name}/{vpath.name}")
+        out_file = run_dir / f"{safe_track}_{clip_len}s.mp4"
+
+        segments  = processor.detect_best_segments(str(vpath), duration)
+        vid_start = segments[0][0] if segments else 0.0
+        vid_start = min(vid_start, max(0.0, duration - clip_len))
 
         processor.format_to_vertical(
-            str(video_path), str(out_file),
+            str(vpath), str(out_file),
             vid_start, clip_len,
             clip_data["hook"],
             clip_data["angle"],
@@ -350,7 +390,7 @@ def main():
     caption_lines = []
     for clip_len in clip_lengths:
         caption_lines.append(generator.format_caption_file(
-            video_path.name, per_clip[clip_len]["content"]
+            per_clip[clip_len]["video_path"].name, per_clip[clip_len]["content"]
         ))
     caption_text = "\n\n".join(caption_lines)
     caption_file = run_dir / f"{safe_track}_captions.txt"
@@ -358,7 +398,8 @@ def main():
     print(f"\n  ✓ {caption_file.name}")
 
     mark_track_used(track_title)
-    mark_video_used(video_path)
+    for clip_len in clip_lengths:
+        mark_video_used(per_clip[clip_len]["video_path"])
 
     # ── Buffer (live only) ────────────────────────────────────────────────────
     if not args.dry_run:
@@ -386,11 +427,11 @@ def main():
     # ── Summary ───────────────────────────────────────────────────────────────
     _sep("SUMMARY")
     print(f"\n{mode}Track:  {track_title}")
-    print(f"{mode}Source: {video_path.name} ({video_path.parent.name}/)")
     print(f"\n{mode}Clips produced ({len(output_files)}):")
     for clip_len, f in zip(clip_lengths, output_files):
+        vp    = per_clip[clip_len]["video_path"]
         angle = per_clip[clip_len]["angle"]
-        print(f"  {f.name}  [{angle}]  ({f.stat().st_size / 1_000_000:.1f} MB)")
+        print(f"  {f.name}  [{angle}]  ← {vp.parent.name}/{vp.name}  ({f.stat().st_size / 1_000_000:.1f} MB)")
     print(f"\n{mode}Captions: {caption_file.name}")
     print(f"{mode}Output:   {run_dir}")
 
