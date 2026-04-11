@@ -17,3 +17,24 @@
 ## Output
 - Updated `contacts.csv` with personalisation notes
 - Log to `data/research_log.json`
+
+## Brand Fit
+
+Personalisation notes must pass two tests before the contact is flagged as ready-for-outreach:
+
+**Visualization Test** — can the reader *see* the observation?
+- Fail: "They cover electronic music"
+- Pass: "Their last episode opened with 4 minutes of crowd audio from Ozora Festival"
+
+**Falsifiability Test** — verifiable facts only, no adjectives:
+- Fail: "Great playlist with a nice vibe"
+- Pass: "32K followers, last update 6 days ago, 140 BPM average, no vocal tracks"
+
+**Audience type tagging** — carry the `audience_type` field from rjm-discover into the personalisation note. Use it to select the track angle:
+- `seeker` or consciousness audience → Living Water (John 4 anchor — "what the soul is actually thirsty for")
+- `music-first` psytrance/tribal → Halleluyah or Jericho
+- `music-first` melodic/house → Living Water or Renamed
+- `faith-adjacent` → He Is The Light or Renamed
+- `avoid` → do not research, do not flag ready
+
+**Track Spotify links are in `brand_context.TRACK_SCRIPTURE` — never hardcode them in research notes.**

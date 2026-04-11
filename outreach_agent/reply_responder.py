@@ -26,7 +26,10 @@ from pathlib import Path
 
 import db
 import gmail_client
-from brand_context import COMPACT_STORY
+from brand_context import (
+    COMPACT_STORY, get_voice_rules, get_track_for_contact,
+    TRACK_SCRIPTURE, SPOTIFY_ARTIST_URL,
+)
 from config import FROM_NAME, CLAUDE_MODEL_FAST
 from template_engine import _call_claude
 
@@ -153,6 +156,8 @@ def _generate_booking_reply(contact: dict, reply_body: str) -> tuple[str, str]:
 
 {COMPACT_STORY}
 
+{get_voice_rules()}
+
 CONTEXT:
 - Contact: {contact['name']} ({contact['type']}) — {contact.get('notes','') or contact.get('genre','')}
 - Their reply: "{reply_body or contact.get('response_snippet','')}"
@@ -176,39 +181,29 @@ Instructions:
 
 def _generate_positive_reply(contact: dict, reply_body: str) -> tuple[str, str]:
     """Generate subject + body for a positive/interested reply."""
-    # Pick best track fit based on genre
-    genre = (contact.get("genre") or "").lower()
-    notes = (contact.get("notes") or "").lower()
-    combined = genre + " " + notes
-    if "psytrance" in combined or "goa" in combined or "140" in combined:
-        track = "Halleluyah (140 BPM psytrance)"
-        link  = "https://open.spotify.com/track/1BUkl3hTL0i2QGl8N4q6sZ"
-    elif "tribal" in combined or "ethnic" in combined or "130" in combined:
-        track = "Renamed (130 BPM tribal techno)"
-        link  = "https://open.spotify.com/track/4iUQ0sQ1mGKbEsMJ7Gk8VH"
-    elif "faith" in combined or "christian" in combined or "worship" in combined:
-        track = "He Is The Light"
-        link  = "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
-    elif "melodic" in combined or "house" in combined or "124" in combined:
-        track = "Living Water (124 BPM)"
-        link  = "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
-    else:
-        track = "Renamed (130 BPM tribal techno)"
-        link  = "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
+    # Use canonical track selection from brand_context (fixes wrong hardcoded Spotify links)
+    track_entry = get_track_for_contact(
+        genre=contact.get("genre") or "",
+        notes=contact.get("notes") or "",
+    )
+    track_label = f"{track_entry['title']} ({track_entry['bpm']} BPM {track_entry['genre']})"
+    track_link  = track_entry["spotify"]
 
     prompt = f"""You are writing a reply email on behalf of {FROM_NAME}, a DJ/producer based in Tenerife.
 
 {COMPACT_STORY}
 
+{get_voice_rules()}
+
 CONTEXT:
 - Contact: {contact['name']} ({contact['type']}) — {contact.get('notes','') or contact.get('genre','')}
 - Their reply: "{reply_body or contact.get('response_snippet','')}"
 - Original email subject we sent: "{contact.get('sent_subject','')}"
-- Best track fit: {track} — {link}
+- Best track fit: {track_label} — {track_link}
 
 TASK: Write a warm, brief follow-up that deepens the connection.
 - Thank them genuinely (reference something specific from their reply if possible)
-- Naturally share the Spotify link for {track}
+- Naturally share the Spotify link for {track_entry['title']}
 - Ask one clear next-step question (e.g. "Would this fit your playlist?" or "Happy to send a WAV if that works better")
 - Under 5 sentences. No fluff.
 - Sign off as: Robert-Jan
@@ -224,6 +219,8 @@ def _generate_question_reply(contact: dict, reply_body: str) -> tuple[str, str]:
 
 {COMPACT_STORY}
 
+{get_voice_rules()}
+
 CONTEXT:
 - Contact: {contact['name']} ({contact['type']}) — {contact.get('notes','') or contact.get('genre','')}
 - Their reply / question: "{reply_body or contact.get('response_snippet','')}"
@@ -231,9 +228,9 @@ CONTEXT:
 - Suggested action from classifier: "{contact.get('reply_action','')}"
 
 KEY LINKS to include as relevant:
-- Spotify artist: https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds
-- Renamed (tribal techno, 130 BPM): https://open.spotify.com/track/4iUQ0sQ1mGKbEsMJ7Gk8VH
-- Halleluyah (psytrance, 140 BPM): https://open.spotify.com/track/1BUkl3hTL0i2QGl8N4q6sZ
+- Spotify artist: {SPOTIFY_ARTIST_URL}
+- Renamed (tribal techno, 130 BPM): {TRACK_SCRIPTURE['Renamed']['spotify']}
+- Halleluyah (psytrance, 140 BPM): {TRACK_SCRIPTURE['Halleluyah']['spotify']}
 - Press kit: available on request (mention it)
 
 TASK: Answer their question directly and completely.

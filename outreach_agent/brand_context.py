@@ -143,3 +143,163 @@ SPOTIFY_ARTIST_URL = ARTIST["spotify_artist"]
 ARTIST_INSTAGRAM   = ARTIST["instagram"]
 ARTIST_WEBSITE     = ARTIST["website"]
 ARTIST_EMAIL       = ARTIST["email"]
+
+
+# ─── Track → Scripture mapping ────────────────────────────────────────────────
+# Single source of truth for track-scripture anchors and pitch angles.
+# Import this in any agent that selects a track to pitch per contact type.
+# Spotify links sourced from story.py TRACKS — do not hardcode links elsewhere.
+
+from story import TRACKS as _TRACKS
+
+
+def _track_spotify(title: str) -> str:
+    """Look up canonical Spotify link for a track by title."""
+    for tracks in _TRACKS.values():
+        for t in tracks:
+            if t["title"] == title:
+                return t["spotify"]
+    return SPOTIFY_ARTIST_URL  # fallback to artist page
+
+
+TRACK_SCRIPTURE: dict[str, dict] = {
+    "Renamed": {
+        "ref":     "Isaiah 62",
+        "angle":   "new name, new identity — the moment everything changed",
+        "bpm":     130,
+        "genre":   "tribal techno",
+        "spotify": _track_spotify("Renamed"),
+    },
+    "Halleluyah": {
+        "ref":     None,
+        "angle":   "pure praise, 140 BPM — the body as an act of worship",
+        "bpm":     140,
+        "genre":   "psytrance",
+        "spotify": _track_spotify("Halleluyah"),
+    },
+    "Jericho": {
+        "ref":     "Joshua 6",
+        "angle":   "walls come down — eventually, always",
+        "bpm":     140,
+        "genre":   "psytrance",
+        "spotify": _track_spotify("Jericho"),
+    },
+    "Fire In Our Hands": {
+        "ref":     None,
+        "angle":   "130 BPM tribal — the call to act",
+        "bpm":     130,
+        "genre":   "tribal techno",
+        "spotify": _track_spotify("Fire In Our Hands"),
+    },
+    "Living Water": {
+        "ref":     "John 4",
+        "angle":   "what the soul is actually thirsty for",
+        "bpm":     124,
+        "genre":   "melodic techno",
+        "spotify": _track_spotify("Living Water"),
+    },
+    "He Is The Light": {
+        "ref":     "John 8",
+        "angle":   "light in every room, including this one",
+        "bpm":     122,
+        "genre":   "melodic techno",
+        "spotify": _track_spotify("He Is The Light"),
+    },
+}
+
+
+def get_track_for_contact(genre: str = "", notes: str = "") -> dict:
+    """
+    Select the best TRACK_SCRIPTURE entry for an outreach contact.
+    Falls back to Renamed (strongest crossover) if no match.
+
+    Args:
+        genre: contact's playlist/podcast genre string
+        notes: contact's personalisation notes
+
+    Returns:
+        TRACK_SCRIPTURE entry dict with title included as 'title' key.
+    """
+    combined = (genre + " " + notes).lower()
+    if any(w in combined for w in ("psytrance", "goa", "140")):
+        title = "Halleluyah"
+    elif any(w in combined for w in ("tribal", "ethnic", "130")):
+        title = "Renamed"
+    elif any(w in combined for w in ("faith", "christian", "worship", "church")):
+        title = "He Is The Light"
+    elif any(w in combined for w in ("melodic", "house", "124", "deep")):
+        title = "Living Water"
+    else:
+        title = "Renamed"  # default crossover track
+
+    entry = dict(TRACK_SCRIPTURE[title])
+    entry["title"] = title
+    return entry
+
+
+# ─── Seeker audience profile ──────────────────────────────────────────────────
+# Compact extract of BRAND_VOICE.md Part 3. Defined inline (not file-read)
+# so it never silently fails if the file moves or is renamed.
+# Use in discovery and research agents to score audience fit.
+
+SEEKER_PROFILE = """THE SEEKER — RJM's Target Audience
+
+WHO: Someone searching for God in their own way — through music, substances, experiences, escapes.
+Not finding it. Trying harder. Still not finding it. Then walking into a room where something is different.
+
+EXTERNAL PROBLEM: They've tried everything — the substances, the scenes, the self-help books.
+None of it lasts. The escape ends. Something is still missing.
+
+INTERNAL PROBLEM: They feel spiritually homeless. They believe in *something* but the church felt
+hypocritical or irrelevant, and the rave felt true but hollow. No room was made for both halves.
+
+PHILOSOPHICAL PROBLEM: Nobody told them that sacred experience and a 140 BPM dance floor can exist
+in the same room. The church took one half. The club took the other. The lie is they have to choose.
+
+FALSE BELIEFS THEY CARRY:
+- "I can't dance like that sober."
+- "Believing in God means Sunday morning in a building I don't belong in."
+- "Jesus doesn't show up at raves."
+- "I'm too far gone for the church crowd."
+
+WHO THIS IS NOT FOR: People who came for the content. The explicitly churched. Those who need
+the artist to lead with their faith credentials.
+
+SEEKER MARKERS: Goes searching. Stays curious. Suspicious of institutions but not of truth.
+Loves music that moves something deeper than the body. Has felt God in unexpected places
+(a sunset, a conversation, a melody) — even if they don't call it God."""
+
+
+# ─── Discovery filter ──────────────────────────────────────────────────────────
+
+def get_discovery_filter() -> str:
+    """
+    Returns targeting rules for injection into discovery/research agent Claude prompts.
+    Call this in any agent that qualifies new contacts before adding to the pipeline.
+    """
+    return """DISCOVERY FILTER — RJM Brand Fit (Subtle Salt Principle)
+
+TARGET audiences — music leads, faith surfaces naturally:
+- Melodic techno, tribal psytrance, world/ethnic electronic listeners
+- Rave culture, consciousness, flow state, secular wellness audiences
+- People who feel something sacred without having a vocabulary for it
+- "Spiritual but not religious" communities
+- Podcast audiences: electronic music, personal transformation, expat/nomad life
+
+AVOID — do not qualify these contacts:
+- Christian-specific playlists (worship, gospel, CCM, contemporary Christian music)
+- Explicitly faith-branded podcasts or platforms that expect a Christian artist identity
+- Church music editorial playlists
+- Audiences where secular rave attendees would feel out of place
+
+AUDIENCE TYPE TAGS — assign exactly one per contact:
+  seeker         → searching, spiritual-but-not-religious, rave/festival culture
+  music-first    → genre-only focus, no spiritual dimension visible or needed
+  faith-adjacent → open to spiritual themes, not explicitly Christian
+  avoid          → explicitly Christian/church audience — do not add to pipeline
+
+SUBTLE SALT CHECK (mandatory gate before adding any contact):
+  Ask: "Would a secular rave attendee who has never been to church share this
+  playlist / appear on this podcast willingly — and enjoy it?"
+  If yes: qualify the contact.
+  If no: tag as 'avoid', do not append to contacts.csv."""

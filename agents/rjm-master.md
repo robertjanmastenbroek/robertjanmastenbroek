@@ -16,3 +16,15 @@
 
 ## North Star Check
 Before every action: does this drive Spotify streams toward 1,000,000 monthly listeners?
+
+## Compass Test
+
+Before triggering any agent or action, apply this gate:
+
+**"Does this action serve The Seeker — the secular/searching audience — not the churched crowd?"**
+
+- Yes → proceed
+- Doubt → default to the more secular framing
+- Clearly targeting the churched only → skip this run
+
+The Seeker is someone who feels something sacred on a dance floor but has never had a room that welcomed both halves of who they are. Every agent run should be traceable to that person.

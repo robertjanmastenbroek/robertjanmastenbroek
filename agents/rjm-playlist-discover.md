@@ -21,3 +21,21 @@
 - Maintain `data/playlist_database.json` (target: 200 playlists)
 - Flag top 20 priority pitches per run
 - Feed into rjm-discover for contact acquisition
+
+## Brand Fit
+
+**NO — do not target these playlist categories:**
+- Christian worship, gospel, CCM (Contemporary Christian Music)
+- Church music or explicitly faith-branded editorial playlists
+- Any playlist where "Jesus" or "worship" is in the playlist name or description
+
+**YES — Third Path positioning** (not better church, not better techno — a third thing):
+- Consciousness / flow state / altered state playlists
+- Rave culture and tribal electronic
+- Ethnic / world electronic / sacred geometry aesthetic playlists
+- Secular wellness where the music creates movement or altered experience
+- Progressive / melodic techno with depth — "music that moves something deeper than the body"
+
+**Tag each playlist with audience_type**: `seeker` / `music-first` / `faith-adjacent` / `avoid`
+
+Store `audience_type` in `data/playlist_database.json` alongside each entry.

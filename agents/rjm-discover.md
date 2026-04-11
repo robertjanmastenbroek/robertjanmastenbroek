@@ -18,3 +18,20 @@
 ## Output
 - Append to `contacts.csv`
 - Log run summary to `data/discover_log.json`
+
+## Brand Fit
+
+Before qualifying any contact, apply the Subtle Salt filter (full rules in `brand_context.get_discovery_filter()`):
+
+**Assign one audience_type tag per contact:**
+- `seeker` — searching, spiritual-but-not-religious, rave/festival culture
+- `music-first` — genre-only focus, no spiritual dimension visible or needed
+- `faith-adjacent` — open to spiritual themes, not explicitly Christian
+- `avoid` — explicitly Christian/church audience — do not add to pipeline
+
+**Mandatory gate before appending to contacts.csv:**
+Ask: "Would a secular rave attendee who has never been to church share this playlist or appear on this podcast willingly?"
+- Yes → qualify and tag with audience_type
+- No → tag as `avoid`, do not append
+
+**Append audience_type as a field in contacts.csv for every new contact.**
