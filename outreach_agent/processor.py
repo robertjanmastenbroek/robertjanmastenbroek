@@ -1,11 +1,10 @@
 """
 Video processor — cuts clips and formats to 9:16 vertical.
-Burns hook text into the clip using high-quality Pillow rendering with drop shadows.
-Uses ffmpeg under the hood.
+Uses center-crop to fill (no blur bars).
+Burns hook text using Impact font with thick stroke — matches Holy Rave visual style.
 """
 
 import os
-import io
 import json
 import logging
 import subprocess
@@ -18,51 +17,53 @@ OUTPUT_W    = 1080
 OUTPUT_H    = 1920
 CLIP_LENGTHS = [5, 9, 15]
 
-# ── Text overlay styles ────────────────────────────────────────────────────────
-# Per-angle positioning, sizing, and shadow parameters.
+# Impact is the primary font — bold, condensed, readable at any size, matches reference style.
+# Fall back down the list if not found.
+FONT_CANDIDATES = [
+    '/Library/Fonts/Impact.ttf',
+    '/Library/Fonts/Arial Black.ttf',
+    '/Library/Fonts/DIN Condensed Bold.ttf',
+    '/Library/Fonts/DIN Alternate Bold.ttf',
+    '/System/Library/Fonts/HelveticaNeue.ttc',
+]
 
+# Per-angle hook style — all use Impact, all uppercase.
+# Differentiated only by size and vertical position.
 HOOK_STYLES = {
     'emotional': {
-        'fontsize':      44,
-        'uppercase':     False,
-        'y_pct':         0.50,   # vertically centered
-        'shadow_offset': 3,
-        'shadow_blur':   4,
-        'wrap_at':       28,
-        'align':         'center',
+        'fontsize':   72,
+        'uppercase':  True,
+        'y_pct':      0.50,   # vertical center — intimate, inward
+        'stroke_w':   5,
+        'wrap_at':    18,
     },
     'signal': {
-        'fontsize':      40,
-        'uppercase':     False,
-        'y_pct':         0.72,   # bottom third
-        'shadow_offset': 3,
-        'shadow_blur':   3,
-        'wrap_at':       30,
-        'align':         'center',
+        'fontsize':   68,
+        'uppercase':  True,
+        'y_pct':      0.72,   # bottom third — addresses directly
+        'stroke_w':   5,
+        'wrap_at':    20,
     },
     'energy': {
-        'fontsize':      68,
-        'uppercase':     True,
-        'y_pct':         0.06,   # top
-        'shadow_offset': 5,
-        'shadow_blur':   6,
-        'wrap_at':       20,
-        'align':         'center',
+        'fontsize':   82,
+        'uppercase':  True,
+        'y_pct':      0.08,   # top — punchy, loud
+        'stroke_w':   6,
+        'wrap_at':    16,
+    },
+    'default': {
+        'fontsize':   72,
+        'uppercase':  True,
+        'y_pct':      0.50,
+        'stroke_w':   5,
+        'wrap_at':    18,
     },
 }
 
-FONT_CANDIDATES = [
-    '/Library/Fonts/DIN Condensed Bold.ttf',
-    '/Library/Fonts/DIN Alternate Bold.ttf',
-    '/Library/Fonts/Futura.ttc',
-    '/System/Library/Fonts/HelveticaNeue.ttc',
-    '/Library/Fonts/Arial Bold.ttf',
-    '/Library/Fonts/Impact.ttf',
-]
+PAD_X = 60   # horizontal padding from frame edge
 
 
 def _load_font(size: int):
-    """Load the best available font at the given size."""
     from PIL import ImageFont
     for path in FONT_CANDIDATES:
         if os.path.isfile(path):
@@ -75,58 +76,56 @@ def _load_font(size: int):
 
 def _render_hook_overlay(hook_text: str, angle: str) -> str:
     """
-    Render hook text onto a transparent 1080×1920 PNG with drop shadow.
-    Returns the path to a temp PNG file (caller must delete it).
+    Render hook text onto a transparent 1080×1920 PNG.
+    Uses Impact font + thick black stroke (no shadow) to match reference style.
+    Returns path to temp PNG (caller must delete).
     """
-    from PIL import Image, ImageDraw, ImageFilter
+    from PIL import Image, ImageDraw
 
-    style = HOOK_STYLES.get(angle, HOOK_STYLES['emotional'])
-
-    text = hook_text.upper() if style['uppercase'] else hook_text
+    style = HOOK_STYLES.get(angle, HOOK_STYLES['default'])
+    text  = hook_text.upper()                          # always uppercase
     lines = textwrap.wrap(text, width=style['wrap_at'])
+    if not lines:
+        lines = [text]
 
-    font      = _load_font(style['fontsize'])
-    shadow_px = style['shadow_offset']
-    blur_r    = style['shadow_blur']
+    font     = _load_font(style['fontsize'])
+    stroke_w = style['stroke_w']
+    max_text_w = OUTPUT_W - PAD_X * 2
 
-    # Measure total text block height
-    from PIL import ImageDraw as _ID
-    probe = Image.new('RGBA', (1, 1))
-    probe_draw = _ID.Draw(probe)
-    line_heights = []
-    line_widths  = []
+    # Measure each line
+    probe      = Image.new('RGBA', (1, 1))
+    probe_draw = ImageDraw.Draw(probe)
+    line_bboxes = []
     for line in lines:
-        bb = probe_draw.textbbox((0, 0), line, font=font)
-        line_widths.append(bb[2] - bb[0])
-        line_heights.append(bb[3] - bb[1])
+        bb = probe_draw.textbbox((0, 0), line, font=font,
+                                  stroke_width=stroke_w)
+        line_bboxes.append(bb)
 
-    line_spacing = int(style['fontsize'] * 0.25)
-    total_h = sum(line_heights) + line_spacing * (len(lines) - 1)
-    max_w   = max(line_widths) if line_widths else OUTPUT_W
+    line_h    = max(bb[3] - bb[1] for bb in line_bboxes) if line_bboxes else style['fontsize']
+    spacing   = int(style['fontsize'] * 0.18)
+    total_h   = line_h * len(lines) + spacing * (len(lines) - 1)
 
-    # Canvas
-    canvas = Image.new('RGBA', (OUTPUT_W, OUTPUT_H), (0, 0, 0, 0))
-
-    # Y anchor
+    # Y anchor: y_pct of canvas height, centred on the block
     y_anchor = int(OUTPUT_H * style['y_pct']) - total_h // 2
-    y_anchor = max(20, min(y_anchor, OUTPUT_H - total_h - 20))
+    y_anchor = max(stroke_w + 10, min(y_anchor, OUTPUT_H - total_h - stroke_w - 10))
+
+    canvas = Image.new('RGBA', (OUTPUT_W, OUTPUT_H), (0, 0, 0, 0))
+    draw   = ImageDraw.Draw(canvas)
 
     for i, line in enumerate(lines):
-        y = y_anchor + sum(line_heights[:i]) + line_spacing * i
-        x = (OUTPUT_W - line_widths[i]) // 2
+        bb = line_bboxes[i]
+        lw = bb[2] - bb[0]
+        x  = max(PAD_X, (OUTPUT_W - lw) // 2)        # centered, never under pad
+        y  = y_anchor + i * (line_h + spacing)
 
-        # Shadow layer: draw text at offset onto its own RGBA canvas, then blur
-        shadow_layer = Image.new('RGBA', (OUTPUT_W, OUTPUT_H), (0, 0, 0, 0))
-        sd = ImageDraw.Draw(shadow_layer)
-        sd.text((x + shadow_px, y + shadow_px), line, font=font, fill=(0, 0, 0, 210))
-        shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(blur_r))
+        # White fill + thick black stroke — Impact reference look
+        draw.text(
+            (x, y), line, font=font,
+            fill=(255, 255, 255, 255),
+            stroke_width=stroke_w,
+            stroke_fill=(0, 0, 0, 255),
+        )
 
-        # Composite shadow then white text
-        canvas = Image.alpha_composite(canvas, shadow_layer)
-        draw   = ImageDraw.Draw(canvas)
-        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
-
-    # Save to temp file
     tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
     canvas.save(tmp.name, 'PNG')
     tmp.close()
@@ -134,7 +133,7 @@ def _render_hook_overlay(hook_text: str, angle: str) -> str:
 
 
 def get_video_info(video_path: str) -> dict:
-    """Return duration, width, height of a video file using ffprobe."""
+    """Return duration, width, height of a video file."""
     cmd = [
         'ffprobe', '-v', 'quiet',
         '-print_format', 'json',
@@ -202,28 +201,32 @@ def format_to_vertical(video_path: str, output_path: str,
                         hook_text: str = None, angle: str = None):
     """
     Cut a clip starting at `start` for `duration` seconds.
-    Formats to 9:16 (1080x1920) with blurred background fill.
-    If hook_text and angle are provided, burns text in with drop shadow.
-    """
-    overlay_path = None
+    Formats to 9:16 (1080×1920) using center-crop fill — no blur bars.
+    Optionally burns in hook text with Impact stroke overlay.
 
+    Crop strategy: scale-to-fill then center crop.
+    For 1920×1080 source → scales to 3413×1920 → crops to 1080×1920.
+    For 1080×1920 source → already fits → scale to 1080×1920.
+    """
+    # Scale to fill, then center crop — no black bars, no blur
+    crop_filter = (
+        f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase,"
+        f"crop={OUTPUT_W}:{OUTPUT_H}"
+    )
+
+    overlay_path = None
     try:
         if hook_text and angle:
             try:
                 overlay_path = _render_hook_overlay(hook_text, angle)
-            except ImportError:
-                logger.warning("Pillow not installed — skipping text overlay. Run: pip install Pillow")
-                overlay_path = None
             except Exception as e:
-                logger.warning(f"Text overlay render failed: {e} — producing clean clip")
+                logger.warning(f"Hook overlay failed: {e} — producing clean clip")
                 overlay_path = None
 
         if overlay_path:
             vf = (
-                f"[0:v]scale={OUTPUT_W}:-1,setsar=1[scaled];"
-                f"[0:v]scale={OUTPUT_W}:{OUTPUT_H},boxblur=20:1[blurred];"
-                f"[blurred][scaled]overlay=(W-w)/2:(H-h)/2[composited];"
-                f"[composited][1:v]overlay=0:0[out]"
+                f"[0:v]{crop_filter}[cropped];"
+                f"[cropped][1:v]overlay=0:0[out]"
             )
             cmd = [
                 'ffmpeg', '-y',
@@ -234,31 +237,23 @@ def format_to_vertical(video_path: str, output_path: str,
                 '-filter_complex', vf,
                 '-map', '[out]',
                 '-map', '0:a?',
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
                 '-c:a', 'aac', '-b:a', '128k',
                 '-movflags', '+faststart',
-                '-s', f'{OUTPUT_W}x{OUTPUT_H}',
                 output_path,
             ]
         else:
-            vf = (
-                f"[0:v]scale={OUTPUT_W}:-1,setsar=1[scaled];"
-                f"[0:v]scale={OUTPUT_W}:{OUTPUT_H},boxblur=20:1[blurred];"
-                f"[blurred][scaled]overlay=(W-w)/2:(H-h)/2[composited];"
-                f"[composited]copy[out]"
-            )
             cmd = [
                 'ffmpeg', '-y',
                 '-ss', str(start),
                 '-i', video_path,
                 '-t', str(duration),
-                '-filter_complex', vf,
-                '-map', '[out]',
+                '-vf', crop_filter,
+                '-map', '0:v:0',
                 '-map', '0:a?',
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
                 '-c:a', 'aac', '-b:a', '128k',
                 '-movflags', '+faststart',
-                '-s', f'{OUTPUT_W}x{OUTPUT_H}',
                 output_path,
             ]
 

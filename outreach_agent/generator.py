@@ -384,6 +384,92 @@ Do not explain your choices. Do not apologise for bold hooks. Bold is correct.""
     }
 
 
+def generate_run_hooks(track_title: str, clips_config: list) -> dict:
+    """
+    Single Claude call that generates hooks for ALL clips/angles in one run.
+    Ensures hooks are unique across angles — no repeated imagery, themes, or words.
+
+    clips_config: [{'length': 5, 'angle': 'emotional'}, {'length': 9, 'angle': 'signal'}, ...]
+
+    Returns: {5: {'a': str, 'b': str, 'c': str}, 9: {...}, 15: {...}}
+    """
+    clips_by_length = {c['length']: c['angle'] for c in clips_config}
+
+    # Build per-angle sections for the prompt
+    angle_sections = ""
+    for clip in clips_config:
+        length = clip['length']
+        angle  = clip['angle']
+        instr  = ANGLE_INSTRUCTIONS.get(angle, ANGLE_DEFAULT_INSTRUCTION)
+        angle_sections += f"\n\n{'='*50}\nCLIP {length}s — ANGLE: {angle.upper()}\n{'='*50}\n{instr}\n"
+
+    system_prompt = f"""You write hooks for short-form video. Your only job is hooks.
+
+{ARTIST_CONTEXT}
+{SUBTLE_SALT_LAYER}
+{HOOK_MECHANISM_LIBRARY}
+{HOOK_FAILURE_MODES}
+
+UNIVERSAL HOOK RULES:
+- 5-8 words. Readable in under 2 seconds.
+- NEVER open with "I". Start with situation, time, place, number, or body.
+- No exclamation marks. Energy is internal.
+- Every hook must be LOCATED: a specific time, place, physical sensation, or concrete detail.
+- Never describe what music sounds like — describe what it does to a body or a moment.
+- No Spotify CTAs in hooks.
+
+CRITICAL — UNIQUENESS ACROSS ALL CLIPS:
+You are writing for {len(clips_config)} different clips in the same run.
+Each clip has a different angle. The hooks MUST use completely different:
+- Imagery and metaphors
+- Time references and locations
+- Body parts or sensations
+- Emotional registers
+If two clips share any visual image, word, or theme, the system has failed.
+Write each angle as if the others don't exist."""
+
+    user_prompt = f"""TRACK: {track_title}
+
+Generate hooks for {len(clips_config)} clips. Each clip has a different angle.
+{angle_sections}
+
+For EACH clip, generate 5 ranked candidates (1 = most scroll-stopping).
+After each hook add: | mechanism: [tension/identity/scene/claim/rupture]
+
+Format EXACTLY as shown — no preamble, no explanation:
+
+--- {clips_config[0]['length']}s ---
+1. Hook text | mechanism: tension
+2. Hook text | mechanism: identity
+3. Hook text | mechanism: scene
+4. Hook text | mechanism: claim
+5. Hook text | mechanism: rupture
+
+(repeat block for each clip)
+
+Bold is correct. Do not self-censor."""
+
+    try:
+        raw        = _call_claude(system_prompt, user_prompt, timeout=180)
+        candidates = _parse_hook_candidates(raw, list(clips_by_length.keys()))
+        hooks      = _assign_abc_hooks(candidates)
+        logger.info(f"Run hooks generated: {track_title}")
+        for length, abc in hooks.items():
+            logger.info(f"  {length}s [{clips_by_length.get(length,'?')}] A→ \"{abc['a']}\"")
+        return hooks
+
+    except Exception as e:
+        logger.error(f"Run hook generation failed: {e}")
+        return {
+            c['length']: {
+                'a': _fallback_hook(c['angle']),
+                'b': _fallback_hook(c['angle']),
+                'c': _fallback_hook(c['angle']),
+            }
+            for c in clips_config
+        }
+
+
 def _parse_hook_candidates(raw: str, clip_lengths: list) -> dict:
     """
     Parse ranked hook output from Call 1.
