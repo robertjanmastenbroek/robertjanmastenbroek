@@ -476,6 +476,15 @@ def main():
 
     mode = "[DRY RUN] " if args.dry_run else ""
 
+    # ── Active window gate (live runs only) ───────────────────────────────────
+    if not args.dry_run:
+        import scheduler
+        if not scheduler.is_within_active_window():
+            window = scheduler.SendWindow()
+            print(f"  ⏸  Outside active send window — {window.status()}")
+            print("  Use --dry-run to render clips without posting.")
+            sys.exit(0)
+
     # ── 1. RJM track + peak section + BPM ────────────────────────────────────
     _sep("STEP 1 / 4 — RJM track + BPM")
     audio_path, track_title = pick_next_track(args.track)
@@ -587,6 +596,9 @@ def main():
         for cl in clip_lengths
     ]
     run_captions = generator.generate_run_captions(track_title, clips_data)
+
+    print("\n  Running caption quality gate (5 brand tests)…")
+    run_captions = generator.validate_run_captions(run_captions, clips_data)
 
     # ── 4. Cut clips + mix audio ──────────────────────────────────────────────
     _sep("STEP 4 / 4 — Cut clips + mix RJM audio")
@@ -744,6 +756,15 @@ def main():
     if not args.dry_run:
         print(f"\n{mode}Total posts queued: {len(output_files) * 4}  "
               f"(TikTok×{len(output_files)} + Reels×{len(output_files)} + Stories×{len(output_files)} + YouTube×{len(output_files)})")
+
+        # Auto-log Spotify listeners once daily (non-fatal if Playwright not installed)
+        try:
+            import spotify_auto_logger
+            count = spotify_auto_logger.run()
+            if count:
+                print(f"\n  📊 Spotify: {count:,} monthly listeners logged automatically")
+        except Exception as _e:
+            print(f"\n  ℹ️  Spotify auto-log skipped: {_e}")
 
     if args.dry_run:
         print("\n[DRY RUN] Buffer posting skipped.\n")

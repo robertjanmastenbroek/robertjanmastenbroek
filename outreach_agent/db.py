@@ -69,11 +69,12 @@ CREATE TABLE IF NOT EXISTS email_log (
 );
 
 CREATE TABLE IF NOT EXISTS daily_stats (
-    date            TEXT    PRIMARY KEY,
-    emails_sent     INTEGER DEFAULT 0,
-    emails_bounced  INTEGER DEFAULT 0,
-    replies_received INTEGER DEFAULT 0,
-    last_send_ts    TEXT
+    date                TEXT    PRIMARY KEY,
+    emails_sent         INTEGER DEFAULT 0,
+    emails_bounced      INTEGER DEFAULT 0,
+    replies_received    INTEGER DEFAULT 0,
+    last_send_ts        TEXT,
+    content_posts_today INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS template_performance (
@@ -160,6 +161,17 @@ def get_conn():
 def init_db():
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        # daily_stats migrations
+        for col, definition in [
+            ("content_posts_today",   "INTEGER DEFAULT 0"),
+            ("contacts_found_today",  "INTEGER DEFAULT 0"),
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE daily_stats ADD COLUMN {col} {definition}")
+                log.info("Migrated daily_stats: added %s column", col)
+            except Exception:
+                pass  # column already exists
+
         for col, definition in [
             ("playlist_size",          "TEXT DEFAULT NULL"),
             ("date_followup2_sent",    "TEXT DEFAULT NULL"),
@@ -234,6 +246,23 @@ def get_contacts_by_status(status, limit=None):
             q += " LIMIT ?"
             args += (limit,)
         return [dict(r) for r in conn.execute(q, args).fetchall()]
+
+
+def get_verified_contacts_prioritized(limit: int) -> list[dict]:
+    """
+    Return verified contacts ordered so researched ones go first.
+    research_done=1 contacts lead — they get personalised emails and higher reply rates.
+    research_done=0/NULL fill remaining slots so the queue never stalls.
+    Within each tier, oldest-added goes first (FIFO).
+    """
+    with get_conn() as conn:
+        rows = conn.execute("""
+            SELECT * FROM contacts
+            WHERE status = 'verified'
+            ORDER BY COALESCE(research_done, 0) DESC, date_added ASC
+            LIMIT ?
+        """, (limit,)).fetchall()
+        return [dict(r) for r in rows]
 
 
 def get_contact(email):
@@ -462,6 +491,52 @@ def get_last_send_timestamp():
                 "SELECT last_send_ts FROM daily_stats ORDER BY date DESC LIMIT 1"
             ).fetchone()
         return row["last_send_ts"] if row else None
+
+
+# ─── Content post tracking ───────────────────────────────────────────────────
+
+def today_content_count() -> int:
+    """How many content batches have been posted to Buffer today."""
+    today = str(date.today())
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT content_posts_today FROM daily_stats WHERE date = ?", (today,)
+        ).fetchone()
+        return row["content_posts_today"] if row else 0
+
+
+def increment_content_count():
+    """Increment today's content post counter after a successful Buffer batch."""
+    today = str(date.today())
+    with get_conn() as conn:
+        conn.execute("""
+            INSERT INTO daily_stats (date, content_posts_today)
+            VALUES (?, 1)
+            ON CONFLICT(date) DO UPDATE SET
+                content_posts_today = content_posts_today + 1
+        """, (today,))
+
+
+def today_contacts_found() -> int:
+    """How many new contacts have been discovered today via find_contacts."""
+    today = str(date.today())
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT contacts_found_today FROM daily_stats WHERE date = ?", (today,)
+        ).fetchone()
+        return row["contacts_found_today"] if row else 0
+
+
+def increment_contacts_found():
+    """Increment today's discovered-contacts counter."""
+    today = str(date.today())
+    with get_conn() as conn:
+        conn.execute("""
+            INSERT INTO daily_stats (date, contacts_found_today)
+            VALUES (?, 1)
+            ON CONFLICT(date) DO UPDATE SET
+                contacts_found_today = contacts_found_today + 1
+        """, (today,))
 
 
 # ─── Template performance tracking ───────────────────────────────────────────

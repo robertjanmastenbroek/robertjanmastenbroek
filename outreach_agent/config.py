@@ -27,6 +27,8 @@ FROM_NAME      = "Robert-Jan Mastenbroek"
 
 # ─── Rate Limits ──────────────────────────────────────────────────────────────
 MAX_EMAILS_PER_DAY   = 80           # Daily cap — safe for warmed personal Gmail doing targeted cold outreach
+MAX_CONTENT_POSTS_PER_DAY = 3       # Daily cap for Buffer video posts (TikTok + IG Reels + YouTube count as 1 batch)
+MAX_CONTACTS_FOUND_PER_DAY = 50     # Daily cap for new contacts discovered via find_contacts.py
 ACTIVE_HOUR_START    = 8            # 08:00 — start of send window
 ACTIVE_HOUR_END      = 23           # 23:00 — end of send window
 MIN_INTERVAL_SECONDS = 60           # 1 min minimum between sends — fits 7 emails in 30-min cycle

@@ -30,7 +30,9 @@ import argparse
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(__file__))
+import db
 import playlist_db
+from config import MAX_CONTACTS_FOUND_PER_DAY
 
 logging.basicConfig(
     format="%(asctime)s  %(levelname)s  %(message)s",
@@ -394,12 +396,32 @@ def main():
     log.info("\n── Phase 2: Web search for remaining playlists ──")
     to_search = playlists[:args.limit] if args.limit else playlists
 
+    if not args.dry_run:
+        db.init_db()
+        already_found = db.today_contacts_found()
+        if already_found >= MAX_CONTACTS_FOUND_PER_DAY:
+            log.info(
+                "Daily discovery cap reached (%d/%d) — skipping web search",
+                already_found, MAX_CONTACTS_FOUND_PER_DAY,
+            )
+            to_search = []
+        else:
+            remaining_cap = MAX_CONTACTS_FOUND_PER_DAY - already_found
+            if args.limit:
+                to_search = to_search[:min(args.limit, remaining_cap)]
+            else:
+                to_search = to_search[:remaining_cap]
+            log.info("Discovery quota: %d found today, %d slots remaining",
+                     already_found, remaining_cap)
+
     found_count = 0
     for i, p in enumerate(to_search, 1):
         log.info(f"\n[{i}/{len(to_search)}] ─────────────────────────────")
         found = process_playlist(p, dry_run=args.dry_run)
         if found:
             found_count += 1
+            if not args.dry_run:
+                db.increment_contacts_found()
         time.sleep(random.uniform(0.5, 1.5))
 
     print(f"\n{'='*50}")

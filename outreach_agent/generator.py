@@ -1178,3 +1178,75 @@ def format_caption_file(filename: str, generated: dict) -> str:
     ]
 
     return '\n'.join(lines)
+
+
+# ── Caption quality gate ───────────────────────────────────────────────────────
+
+_BRAND_TEST_SYSTEM = """You are a brand quality reviewer for Robert-Jan Mastenbroek / Holy Rave.
+Evaluate captions against these 5 mandatory tests:
+
+1. VISUALIZATION — Can the reader physically see the words? ("The dust on the synth" passes. "The legacy of the music" fails.)
+2. FALSIFIABILITY — Facts over adjectives. Numbers, places, and specifics pass. Vague praise fails.
+3. UNIQUENESS — Could a competitor artist sign their name to this caption? If yes, it fails.
+4. ONE MISSISSIPPI — Is the value prop clear in under 2 seconds? A confused reader fails.
+5. A→B BRIDGE — Does it move a secular/searching person toward experiencing sacred energy? Pure club-marketing fails. Preachy religion fails.
+
+Respond ONLY with valid JSON:
+{"pass": true}          ← all 5 tests pass
+{"pass": false, "failures": ["test_name: reason", ...], "fix": "rewritten caption that passes all 5"}
+"""
+
+
+def validate_and_fix_caption(caption: str, platform: str, angle: str) -> tuple[bool, str]:
+    """
+    Run the 5 brand tests on a single caption.
+    Returns (passed, caption_to_use).
+    On failure, returns the Claude-suggested fix.
+    Falls back to original on any error (never blocks posting).
+    """
+    try:
+        user_msg = f"Platform: {platform}\nAngle: {angle}\nCaption to review:\n{caption}"
+        raw = _call_claude(_BRAND_TEST_SYSTEM, user_msg, timeout=30)
+        # strip markdown fences if present
+        raw = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        data = json.loads(raw)
+        if data.get("pass"):
+            return True, caption
+        fix = data.get("fix", "").strip()
+        if fix:
+            logger.info("Brand test failed (%s %s) — using Claude fix", platform, angle)
+            return False, fix
+        return False, caption
+    except Exception as exc:
+        logger.debug("Caption validator error (non-fatal): %s", exc)
+        return True, caption  # fail-open: never block posting on validator error
+
+
+def validate_run_captions(run_captions: dict, clips_data: list) -> dict:
+    """
+    Run the 5 brand tests on TikTok + Instagram captions for each clip.
+    YouTube descriptions are skipped (different format, less visible).
+    Returns a (possibly improved) captions dict with the same structure.
+    Bad captions are replaced in-place; passing captions are untouched.
+    """
+    angle_map = {c["length"]: c["angle"] for c in clips_data}
+    fixed_any = False
+
+    for clip_len, platforms in run_captions.items():
+        angle = angle_map.get(clip_len, "unknown")
+        for platform in ("tiktok", "instagram"):
+            cap_data = platforms.get(platform, {})
+            caption  = cap_data.get("caption", "")
+            if not caption:
+                continue
+            passed, final = validate_and_fix_caption(caption, platform, angle)
+            if not passed:
+                run_captions[clip_len][platform]["caption"] = final
+                fixed_any = True
+
+    if fixed_any:
+        logger.info("Caption quality gate: some captions were improved")
+    else:
+        logger.info("Caption quality gate: all captions passed")
+
+    return run_captions
