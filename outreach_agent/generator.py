@@ -1,20 +1,28 @@
 """
-Content generator — uses Claude to write hooks, captions, and hashtags
-for each processed clip, targeted by angle.
+Content generator — two-call architecture.
 
-ANGLE SYSTEM (per-clip hook targeting)
-  emotional  → Artist interior. What this track cost. Why it exists.
-  signal     → Who this track is for. The specific person/moment.
-  energy     → What happens to a body in that room.
+Call 1 (generate_hooks):   Hook-only, temperature 1.0.
+                            Produces 5 ranked candidates per clip with mechanism labels.
+                            Returns A/B/C variants:
+                              A = scroll-stopper (tension/rupture preferred)
+                              B = identity or scene mechanism
+                              C = claim or contrarian mechanism
 
-All captions drive to Spotify — link in bio is the artist page.
+Call 2 (generate_content): Platform captions + structured JSON, temperature 0.4.
+                            Uses A/B/C hooks from Call 1 for context.
+                            Captions are written to work with the angle — any of the 3 variants.
+
+Filename convention: trackname_angle_description.mp4
+  renamed_emotional_3am-in-studio.mp4   → track=Renamed, angle=emotional, seed="3am in studio"
+  renamed_signal_for-the-rebuilding.mp4 → track=Renamed, angle=signal,   seed="for the rebuilding"
+  renamed_energy_hamburg-set.mp4        → track=Renamed, angle=energy,   seed="hamburg set"
 """
 
 import glob as _glob
 import os
+import re
 import json
 import logging
-import re
 import subprocess
 
 logger = logging.getLogger(__name__)
@@ -22,6 +30,7 @@ logger = logging.getLogger(__name__)
 # ── Claude CLI ─────────────────────────────────────────────────────────────────
 
 def _find_claude() -> str:
+    """Return path to the claude CLI binary (uses Max plan OAuth — no API key needed)."""
     for path in ["/usr/local/bin/claude", "/opt/homebrew/bin/claude"]:
         if os.path.isfile(path) and os.access(path, os.X_OK):
             return path
@@ -31,12 +40,13 @@ def _find_claude() -> str:
     matches = sorted(_glob.glob(pattern), reverse=True)
     if matches:
         return matches[0]
-    raise RuntimeError("claude CLI not found — make sure Claude Code is installed.")
+    raise RuntimeError("claude CLI not found. Make sure Claude Code is installed.")
 
 CLAUDE_BIN = _find_claude()
 
 
 def _call_claude(system_prompt: str, user_prompt: str, timeout: int = 120) -> str:
+    """Call claude CLI and return the text response. Uses Max plan — no API key."""
     result = subprocess.run(
         [CLAUDE_BIN, "--print", "--no-session-persistence",
          "--system-prompt", system_prompt, user_prompt],
@@ -48,68 +58,115 @@ def _call_claude(system_prompt: str, user_prompt: str, timeout: int = 120) -> st
 
 
 # ── Artist context ─────────────────────────────────────────────────────────────
-
 ARTIST_CONTEXT = """
-You are writing short-form social media content for Robert-Jan Mastenbroek (RJM).
-
-WHO HE IS:
-Robert-Jan Mastenbroek is a Dutch producer who moved to the Atlantic edge of Tenerife. He plays
-abandoned lots, cliff edges, rooftops, beach bars — anywhere a speaker fits and a crowd finds its
-way. Every week he runs Sunset Sessions: free gatherings in unexpected outdoor locations, no ticket,
-no stage. He makes Hebrew psytrance, melodic techno, tribal psytrance — all rooted in Scripture,
-none of it sounds like it should be.
+WHO HE IS (feel this, don't just read it):
+Robert-Jan Mastenbroek is a Dutch producer who moved to the Atlantic edge of Tenerife and never
+left. He plays abandoned lots, cliff edges, rooftops, beach bars — anywhere a speaker fits and a
+crowd finds its way. Every week he runs Sunset Sessions: free gatherings in unexpected outdoor
+locations, no ticket, no stage, no church bulletin. He makes Hebrew psytrance, melodic techno,
+tribal psytrance — all of it rooted in Scripture, none of it sounds like it should be.
 
 THE TENSION THAT MAKES THIS INTERESTING:
 He is not trying to bring you to God. He is making music from inside his relationship with God,
 in rooms where that relationship has no official standing. The rave floor and the sanctuary use
-the same neural hardware — both suppress ego, both produce communal states people call transcendent.
+the same neural hardware — both suppress ego, both produce communal states people call
+transcendent. He knows this. Most of his audience feels it without knowing why.
+
+HIS WORLD:
+Atlantic light. Volcanic rock. A Dutchman who chose an island at the edge of Europe. The ocean
+fifty meters from where he works. Crowds that don't know they're in a congregation until the drop
+hits and something shifts in the room. Tenerife is not a backdrop — it is the specific place this
+music comes from.
 
 BRAND VOICE:
 Raw. Specific. Unhurried. Never argues for itself. Never explains the faith. Shows up somewhere
-specific, makes something real, lets people find their own way in. The spiritual content arrives
-late or by implication — never as the opening move. The secular listener should feel the hook
-fully. The believer sees a second layer.
-
-Spotify goal: 1 million monthly listeners.
+specific, makes something real, lets people find their own way in. No performance of belief.
+No apology for it either. The spiritual content arrives late or by implication — never as the
+opening move. The secular listener should feel the hook fully. The believer sees a second layer.
 """
 
-# ── Hook failure modes (what NOT to write) ────────────────────────────────────
+# ── Subtle Salt principle ──────────────────────────────────────────────────────
+SUBTLE_SALT_LAYER = """
+SUBTLE SALT (Matthew 5:13) — the faith principle for all content:
+Faith is woven in as undertone. Never as pitch. Never as the opening move.
 
+- "The room went quiet for the wrong reasons" → better than "God moved tonight"
+- "Made this at 3am when the only honest thing left was the track" → the faith is in the specificity
+- A hook about unresolved tension at 3am is more spiritual than a hook about transcendence
+- The sacred/secular collision lives in the specific detail, not in the claim about it
+- If the hook could appear on any Christian music page, it has failed this filter
+- The secular listener should feel the hook fully. The believer sees a second layer.
+"""
+
+# ── Hook mechanism library ─────────────────────────────────────────────────────
+HOOK_MECHANISM_LIBRARY = """
+HOOK MECHANISM LIBRARY — study why each works, not the words themselves:
+
+[TENSION] "Made this the night everything fell apart."
+WHY: Specific time + physical reaction + unresolved cause. Brain needs to know what happened.
+AVOID: "This song makes me feel things" — same intent, zero specificity, no gap to close.
+
+[IDENTITY] "This one's for the believers nobody sees."
+WHY: Names a real tribe without naming the religion. The right person feels found.
+AVOID: "For all the Christians who love music" — labels instead of resonates.
+
+[SCENE] "400 people, one sunset, no stage."
+WHY: Three concrete specifics, one spatial subversion. Brain builds the image before deciding.
+AVOID: "Live at Sunset Sessions" — event name means nothing to a stranger.
+
+[CLAIM] "Nobody is making music like this right now."
+WHY: Dares the viewer to fact-check it. Resistance is engagement.
+AVOID: "Check out this unique track" — describes rather than challenges.
+
+[RUPTURE] "I used to hate this kind of music."
+WHY: The creator betrays the expected identity. Brain recalibrates and wants the explanation.
+AVOID: "Music that transcends genre" — genre commentary, not human truth.
+
+Hook assignment when writing A/B/C variants:
+  hook_a = most scroll-stopping (tension or rupture preferred)
+  hook_b = identity or scene mechanism
+  hook_c = contrarian or claim mechanism
+"""
+
+# ── Named failure modes ────────────────────────────────────────────────────────
 HOOK_FAILURE_MODES = """
-HOOK FAILURE MODES — never write these:
+FAILURE MODES — these are exactly what you are NOT writing:
+
+Generic failures:
 - "Follow for more sacred techno" — genre label + CTA, no reason to stop
-- "You won't want to miss this" — empty urgency
+- "You won't want to miss this" — empty urgency the brain has learned to ignore
 - "This music will move your spirit" — vague promise, nothing to simulate
 - "Bringing the gospel to the dancefloor" — mission statement, not a hook
+
+Spiritual failures (manipulative even when unintentional):
 - CROSS-CONTAMINATION: "this drop hits different when you know who made the universe"
+  — sacred and secular stapled together without integration, the seam is visible
+- TESTIMONY PIVOT: starts secular, pivots to religious payoff as the punchline
+  — instrumentalises a dark period as contrast material
+- CREDENTIAL HOOK: using faith to claim superior access to something
+  — positions RJM between the audience and God
 - BUZZWORD STACK: "Sacred. Soul. Spirit. Transcendence."
-- APOLOGY HOOK: "I know this might sound weird but it's kind of spiritual..."
+  — spiritually loaded, functionally empty in aggregation
+- APOLOGY HOOK: "I know this might sound weird, but it's kind of spiritual..."
+  — pre-managing the audience's discomfort
+- CONVERSION INVERSION: implying the music will do something spiritual to you
+  — turns a transcendent experience into a product feature
 """
 
-# ── Per-angle hook instructions ────────────────────────────────────────────────
+# ── Spotify growth model (Nic D method) ───────────────────────────────────────
+NIC_D_SPOTIFY_LAYER = """
+SPOTIFY GROWTH MODEL — every caption drives search + save:
+The goal is not passive streams. It is active saves. Spotify's algorithm rewards tracks with
+>5% save rate — that triggers Discover Weekly, Radio, Release Radar.
 
-ANGLE_HOOKS = {
-    'emotional': """ANGLE: EMOTIONAL — Artist interior. What this track cost. Why it exists.
-- Start with a SPECIFIC MOMENT: a time, place, physical detail. Not "when I was struggling".
-- NEVER open with "I". Start with the situation.
-- END on unresolved tension — never the resolution.
-- Must contain one concrete anchor: time, number, location, physical sensation.
-- The spiritual dimension arrives as subtext — an unexplained weight in the specific moment.""",
+CTA rules:
+- Always name the track: "Search [track name] on Spotify" or "Find [track name] — link in bio"
+- Never include a URL. Text CTAs only.
+- "Link in bio" alone is not enough — the track name must be in the CTA.
+- The CTA belongs in the caption body, never in the hook.
+"""
 
-    'signal': """ANGLE: SIGNAL — Who this track is for. The specific person/moment it reaches.
-- Name the EXACT situation or person this track is FOR. Not for everyone — for one person.
-- "For the version of you that..." followed by something hyper-specific.
-- Creates the felt need to save for later — "I will need this."
-- NEVER open with "I". Start with "For", a person, or drop into the specific situation.""",
-
-    'energy': """ANGLE: ENERGY — What happens to a body in that room. The collective moment.
-- Describe what happens to a SPECIFIC BODY PART. Sternum. Spine. Feet. Not "the crowd".
-- Present tense, declarative. No questions.
-- NEVER open with "I". Start with a body part, a number, a room, or a moment.""",
-}
-
-# ── Content types ──────────────────────────────────────────────────────────────
-
+# ── Content type descriptions ──────────────────────────────────────────────────
 CONTENT_TYPES = {
     'event':        'Crowd footage from Sunset Sessions — people, energy, atmosphere',
     'studio':       'Behind-the-scenes music production / studio content',
@@ -117,8 +174,74 @@ CONTENT_TYPES = {
     'music_video':  'Finished music video or performance footage',
 }
 
+# ── Angle detection keywords ───────────────────────────────────────────────────
+ANGLE_KEYWORDS = {
+    'emotional': ['emotional', 'story', 'personal', 'heart', 'soul', 'why', 'meaning', 'wrote'],
+    'signal':    ['signal', 'stakes', 'person', 'for-the', 'forthe', 'need', 'when'],
+    'energy':    ['energy', 'live', 'crowd', 'rave', 'set', 'dance', 'floor', 'sunset', 'session'],
+}
+
+# ── Per-angle hook instructions (mechanism-based, not outcome-based) ───────────
+ANGLE_INSTRUCTIONS = {
+
+    'emotional': """ANGLE: EMOTIONAL — The artist's interior. What this track cost. Why it exists.
+
+Psychological target: Self-referential processing + Zeigarnik effect (unresolved tension).
+The viewer's brain must involuntarily map this onto their own experience — then stay because
+the tension is not resolved.
+
+Hook rules:
+- Start with a SPECIFIC MOMENT: a time of day, a number, a place, a physical detail.
+  Not "when I was struggling" — name the actual situation.
+- NEVER open with "I". Start with the time, place, or situation. "I" can appear later.
+- END on unresolved tension — never the resolution. Leave the loop open.
+- Avoid all category words: sacred, techno, rave, worship, feel, soul, journey, emotion, music.
+- Must contain one concrete anchor: a time, a number, a location, a physical sensation.
+- Specificity test: could this only have been written by someone who lived this exact thing?
+- The spiritual dimension arrives as subtext — an unexplained weight in the specific moment.""",
+
+    'signal': """ANGLE: SIGNAL — Where this track finds you. The specific person or moment it was made for.
+
+Psychological target: Personal relevance trigger + anticipatory ownership.
+The viewer must feel this track was sent specifically to them, for a situation they already know.
+The save becomes an act of keeping something they don't want to lose access to.
+
+Hook rules:
+- Name the EXACT situation, state, or moment this track is FOR. Not for everyone — for one person.
+- Think: "this track is for the person who..." then name something hyper-specific.
+  NOT "for anyone going through hard times" — worthless.
+  YES "for the version of you that stopped telling people how you actually are" — that's the target.
+- Can address directly ("you") or describe a specific third-party situation.
+- Stakes must be present: what does this person need that this track provides?
+- Creates the felt need to save for later — "I will need this."
+- NEVER open with "I". Start with "For", a person, or drop straight into the specific situation.""",
+
+    'energy': """ANGLE: ENERGY — What happens to a room. The collective moment.
+
+Psychological target: Embodied simulation + interoceptive cue triggering + motor cortex priming.
+The viewer must simulate being inside a body on that floor — not watching from outside.
+
+Hook rules:
+- Describe what happens to a SPECIFIC BODY PART, not "the crowd" or "the room" generically.
+  Sternum. Spine. Feet. Chest cavity. The body's anticipation before the beat lands.
+- Techno at 130-145 BPM entrains motor neurons involuntarily — reference this physical pull.
+- The sacred/rave collision can be asserted with confidence — assert it, don't explain it.
+- Present tense, declarative. No questions.
+- Reference ego dissolution if the footage supports it (the moment individual identity dissolves).
+- Avoid all rave/genre clichés: dark, pounding, euphoric, underground, transcendent.
+  These words are processed as noise by the exact audience you're reaching.
+- NEVER open with "I". Start with a body part, a number, a room, or a moment.""",
+}
+
+ANGLE_DEFAULT_INSTRUCTION = """ANGLE: Undetected — default to Signal.
+Where does this track find its listener? What specific moment is it for?
+All other hook rules apply: specific, located, never open with "I", no category language."""
+
+
+# ── Content type detection ─────────────────────────────────────────────────────
 
 def detect_content_type(filename: str) -> str:
+    """Guess content type from filename keywords."""
     name = filename.lower()
     if any(k in name for k in ['crowd', 'event', 'session', 'rave', 'dance', 'sunset']):
         return 'event'
@@ -131,24 +254,241 @@ def detect_content_type(filename: str) -> str:
     return 'event'
 
 
-# ── Main generation call ───────────────────────────────────────────────────────
+def parse_filename_metadata(filename: str) -> dict:
+    """
+    Extract track name, angle, and seed hint from filename.
+    Naming convention: trackname_angle_description.mp4
+    """
+    name = os.path.splitext(filename)[0].lower()
+
+    angle = None
+    for angle_key, keywords in ANGLE_KEYWORDS.items():
+        if any(kw in name for kw in keywords):
+            angle = angle_key
+            break
+
+    for sep in ['--', '_']:
+        if sep in name:
+            segments = name.split(sep)
+            track_name = segments[0].strip().title() if segments[0].strip() else None
+            seed_hint = None
+            if len(segments) >= 3:
+                seed_hint = ' '.join(segments[2:]).replace('-', ' ').strip()
+            return {
+                'track_name': track_name,
+                'angle':      angle,
+                'seed_hint':  seed_hint,
+            }
+
+    return {'track_name': None, 'angle': angle, 'seed_hint': None}
+
+
+# ── Call 1: Hook generation ────────────────────────────────────────────────────
+
+def generate_hooks(filename: str, clip_lengths: list,
+                   strategy_notes: str = None, angle_override: str = None) -> dict:
+    """
+    Call 1 — Hook-only generation. Temperature 1.0. No JSON.
+    Produces 5 ranked candidates per clip length with mechanism labels.
+    Assigns A/B/C variants from those 5 candidates.
+
+    angle_override: bypasses filename detection (used when main assigns fixed angle per clip).
+
+    Returns:
+    {
+        'track_name': str | None,
+        'angle':      str | None,
+        'seed_hint':  str | None,
+        'hooks':      {
+            5:  {'a': str, 'b': str, 'c': str},
+            9:  {'a': str, 'b': str, 'c': str},
+            15: {'a': str, 'b': str, 'c': str},
+        },
+    }
+    """
+    meta = parse_filename_metadata(filename)
+    track_name = meta['track_name']
+    angle      = angle_override or meta['angle']
+    seed_hint  = meta['seed_hint']
+
+    angle_instruction = ANGLE_INSTRUCTIONS.get(angle, ANGLE_DEFAULT_INSTRUCTION)
+
+    track_block    = f"TRACK: {track_name}" if track_name else "TRACK: Unknown"
+    seed_block     = f"SEED CONTEXT (build from this specific moment): {seed_hint}" if seed_hint else ""
+    strategy_block = f"\nPERFORMANCE LEARNINGS (apply to improve results):\n{strategy_notes}" if strategy_notes else ""
+
+    lengths_example = clip_lengths[0] if clip_lengths else 5
+
+    system_prompt = f"""You write hooks for short-form video. Your only job right now is hooks —
+not captions, not hashtags. Just the 5-8 words burned into the first frame that make someone
+stop scrolling on a rave-adjacent social feed.
+
+{ARTIST_CONTEXT}
+{SUBTLE_SALT_LAYER}
+{HOOK_MECHANISM_LIBRARY}
+{HOOK_FAILURE_MODES}
+
+UNIVERSAL HOOK RULES:
+- 5-8 words. Must be readable in under 2 seconds.
+- NEVER open with "I". Start with situation, time, place, number, or body.
+- No exclamation marks. The energy is internal, not performative.
+- The hook that feels too much is usually the right one. Do not self-censor toward safe.
+- Every hook must be LOCATED: a specific time, place, physical sensation, or concrete detail.
+  Generic hooks are about music. Holy Rave hooks are about a specific moment music made real.
+- Never describe what the music sounds like. Describe what it does to a body or a moment.
+- No Spotify CTAs in the hook. That belongs in the caption."""
+
+    user_prompt = f"""{track_block}
+{seed_block}
+{strategy_block}
+
+CLIP LENGTHS NEEDED: {', '.join(str(l) + 's' for l in clip_lengths)}
+
+{angle_instruction}
+
+For EACH clip length, generate 5 hook candidates.
+Rank them 1 (most scroll-stopping) to 5.
+After each hook, add: | mechanism: [tension/identity/scene/claim/rupture]
+
+Format exactly as shown below — no preamble, no explanation, nothing else:
+
+--- {lengths_example}s ---
+1. Hook text here | mechanism: tension
+2. Hook text here | mechanism: identity
+3. Hook text here | mechanism: scene
+4. Hook text here | mechanism: claim
+5. Hook text here | mechanism: rupture
+
+(repeat block for each clip length)
+
+Do not explain your choices. Do not apologise for bold hooks. Bold is correct."""
+
+    try:
+        raw        = _call_claude(system_prompt, user_prompt, timeout=120)
+        candidates = _parse_hook_candidates(raw, clip_lengths)
+        hooks      = _assign_abc_hooks(candidates)
+        logger.info(f"Hooks generated: {filename} | angle={angle}")
+        for l, abc in hooks.items():
+            logger.info(f"  {l}s A→ \"{abc['a']}\"")
+
+    except Exception as e:
+        logger.error(f"Hook generation failed for {filename}: {e}")
+        fb = _fallback_hook(angle)
+        hooks = {l: {'a': fb, 'b': fb, 'c': fb} for l in clip_lengths}
+
+    return {
+        'track_name': track_name,
+        'angle':      angle,
+        'seed_hint':  seed_hint,
+        'hooks':      hooks,
+    }
+
+
+def _parse_hook_candidates(raw: str, clip_lengths: list) -> dict:
+    """
+    Parse ranked hook output from Call 1.
+    Returns all candidates per length with mechanisms.
+    Returns: {length: [{'text': str, 'mechanism': str}, ...]}
+    """
+    all_candidates = {}
+    sections = re.split(r'---\s*(\d+)s\s*---', raw)
+    # sections: [preamble?, length, content, length, content, ...]
+    for i in range(1, len(sections) - 1, 2):
+        try:
+            length  = int(sections[i].strip())
+            content = sections[i + 1].strip()
+            candidates = []
+            for line in content.split('\n'):
+                line = line.strip()
+                match = re.search(r'^\d+\.\s*(.+?)(?:\s*\|\s*mechanism:\s*(\w+))?$', line)
+                if match:
+                    candidates.append({
+                        'text':      match.group(1).strip(),
+                        'mechanism': (match.group(2) or 'other').lower(),
+                    })
+            if candidates:
+                all_candidates[length] = candidates
+        except (ValueError, IndexError):
+            continue
+
+    # Fill any missing lengths with a single fallback candidate
+    for l in clip_lengths:
+        if l not in all_candidates:
+            all_candidates[l] = [{'text': _fallback_hook(None), 'mechanism': 'tension'}]
+
+    return all_candidates
+
+
+def _assign_abc_hooks(candidates_by_length: dict) -> dict:
+    """
+    Assign A/B/C variants from 5 ranked candidates:
+    - A = rank 1 overall (tension/rupture preferred — most scroll-stopping)
+    - B = best identity or scene mechanism from remaining
+    - C = best claim or rupture mechanism not already used
+    """
+    hooks = {}
+    for length, candidates in candidates_by_length.items():
+        if not candidates:
+            fb = _fallback_hook(None)
+            hooks[length] = {'a': fb, 'b': fb, 'c': fb}
+            continue
+
+        # A = rank 1
+        hook_a = candidates[0]['text']
+
+        # B = first identity or scene not equal to A
+        hook_b = next(
+            (c['text'] for c in candidates
+             if c['mechanism'] in ('identity', 'scene') and c['text'] != hook_a),
+            candidates[1]['text'] if len(candidates) > 1 else hook_a,
+        )
+
+        # C = first claim or rupture not already used
+        used = {hook_a, hook_b}
+        hook_c = next(
+            (c['text'] for c in candidates
+             if c['mechanism'] in ('claim', 'rupture') and c['text'] not in used),
+            next((c['text'] for c in candidates if c['text'] not in used), hook_a),
+        )
+
+        hooks[length] = {'a': hook_a, 'b': hook_b, 'c': hook_c}
+
+    return hooks
+
+
+def _fallback_hook(angle: str) -> str:
+    """Minimal fallback hooks — specific and located, never generic."""
+    fallbacks = {
+        'emotional': 'Made this the night I almost stopped.',
+        'signal':    'For the version of you still figuring it out.',
+        'energy':    'The room stopped. Then everything moved.',
+    }
+    return fallbacks.get(angle, 'Something shifted here. Atlantic coast. 4am.')
+
+
+# ── Call 2: Caption generation ─────────────────────────────────────────────────
 
 def generate_content(filename: str, clip_lengths: list,
-                     angle: str = None, strategy_notes: str = None) -> dict:
+                     hooks_meta: dict, strategy_notes: str = None) -> dict:
     """
-    Generate hooks (A/B/C) + platform captions for a single clip.
+    Call 2 — Platform captions + structured JSON. Temperature 0.4.
+    Uses A/B/C hooks from generate_hooks() as angle context.
+    Captions work with any of the 3 hook variants — they serve the angle, not one specific hook.
 
-    angle: 'emotional' | 'signal' | 'energy' | None
-           Controls which hook targeting system is used.
+    hooks_meta: return value from generate_hooks()
 
     Returns:
     {
         'content_type': str,
-        'angle': str | None,
+        'track_name':   str | None,
+        'angle':        str | None,
         'clips': {
-            '5':  {'hook_a': str, 'hook_b': str, 'hook_c': str,
-                   'tiktok': {...}, 'instagram': {...}, 'youtube': {...},
-                   'best_posting_time': str},
+            '5':  {
+                'hook_a': str, 'hook_b': str, 'hook_c': str,
+                'tiktok':    {'caption': str, 'hashtags': str},
+                'instagram': {'caption': str, 'hashtags': str},
+                'youtube':   {'title': str, 'description': str},
+            },
             '9':  {...},
             '15': {...},
         }
@@ -156,59 +496,72 @@ def generate_content(filename: str, clip_lengths: list,
     """
     content_type = detect_content_type(filename)
     content_desc = CONTENT_TYPES.get(content_type, CONTENT_TYPES['event'])
+    track_name   = hooks_meta.get('track_name')
+    angle        = hooks_meta.get('angle')
+    hooks        = hooks_meta.get('hooks', {})
 
-    angle_instruction = ANGLE_HOOKS.get(angle, "")
+    track_block       = f"TRACK: {track_name}" if track_name else "TRACK: Unknown"
+    spotify_cta       = f"Search {track_name} on Spotify" if track_name else "Search this track on Spotify"
+    angle_instruction = ANGLE_INSTRUCTIONS.get(angle, ANGLE_DEFAULT_INSTRUCTION)
     strategy_block    = f"\nPERFORMANCE LEARNINGS:\n{strategy_notes}" if strategy_notes else ""
 
+    # Show all 3 hook variants for context — captions work with the angle, not one specific hook
+    hooks_block = "HOOK VARIANTS (A/B/C) — captions must work with the angle, not tied to one specific hook:\n"
+    for length in clip_lengths:
+        abc = hooks.get(length, {})
+        hooks_block += f'  {length}s  A: "{abc.get("a", "")}"\n'
+        hooks_block += f'         B: "{abc.get("b", "")}"\n'
+        hooks_block += f'         C: "{abc.get("c", "")}"\n'
+
     json_template = ', '.join(
-        f'"{l}": {{"hook_a": "", "hook_b": "", "hook_c": "", '
-        f'"tiktok": {{"caption": "", "hashtags": ""}}, '
+        f'"{l}": {{"tiktok": {{"caption": "", "hashtags": ""}}, '
         f'"instagram": {{"caption": "", "hashtags": ""}}, '
-        f'"youtube": {{"title": "", "description": ""}}, '
-        f'"best_posting_time": ""}}'
+        f'"youtube": {{"title": "", "description": ""}}}}'
         for l in clip_lengths
     )
 
-    system_prompt = f"""You are a social media content specialist for underground electronic music.
-You write for Holy Rave / Robert-Jan Mastenbroek.
-Your output must sit credibly alongside Anyma, Rüfüs Du Sol, and Argy in terms of content quality.
-Return only valid JSON — no explanation, no markdown fences."""
+    prompt = f"""{ARTIST_CONTEXT}
+{NIC_D_SPOTIFY_LAYER}
 
-    user_prompt = f"""{ARTIST_CONTEXT}
-{HOOK_FAILURE_MODES}
+TASK: Generate platform-specific captions for a short-form video.
 
-VIDEO: {filename}
-CONTENT TYPE: {content_desc}
+{track_block}
+VIDEO TYPE: {content_desc}
 CLIP LENGTHS: {', '.join(str(l) + 's' for l in clip_lengths)}
-CTA DIRECTION: Every caption drives to Spotify — "Full track on Spotify — link in bio" or equivalent.
+ANGLE: {angle or 'general'}
+
 {angle_instruction}
+
+{hooks_block}
 {strategy_block}
 
-HOOK RULES (all three variants must use DIFFERENT mechanisms):
-Mechanisms: [tension] specific moment + unresolved cause | [identity] names a tribe without naming the religion |
-[scene] 3 concrete specifics + 1 spatial subversion | [claim] dares the viewer to fact-check |
-[rupture] creator betrays expected identity
-- 5-8 words each. Never open with "I".
-- No exclamation marks. Energy is internal.
-- Every hook must be LOCATED: time, place, physical sensation, or concrete detail.
-- hook_a = most scroll-stopping (tension/rupture preferred)
-- hook_b = identity or scene mechanism
-- hook_c = contrarian or claim mechanism
+For EACH clip length, write platform captions:
 
-HASHTAG STRATEGY — always mix 3 tiers:
-- Tier 1 (1-2 tags): 10M+ posts — #techno #electronicmusic
-- Tier 2 (3-4 tags): 100k-1M — #melodictechno #psytrance #undergroundtechno
-- Tier 3 (3-4 tags): under 100k — #holyrave #sunsetsessions #sacredtechno
+1. TIKTOK caption (max 150 chars) + 5-8 hashtags
+   - Voice: raw, first person, direct — like a text, not a press release
+   - Opens where the hook left off (Act 2) — never repeats the hook
+   - End with: "{spotify_cta}"
+   - Hashtag tiers: 1-2 mega (#techno #electronicmusic) + 3-4 mid-tier (100K-1M posts)
+     + 3-4 niche under 100K (#holyrave #sunsetsessions #sacredtechno)
 
-YOUTUBE TITLES: Hook-first, 50-60 chars. Patterns:
-  "[Bible ref] at [BPM] BPM — [location]" | "Holy Rave Tenerife — [what's unique]"
-  "[Song title] — Sacred Melodic Techno"
+2. INSTAGRAM REELS caption (max 200 chars) + hashtags block (8-12 tags, paste in first comment)
+   - Slightly more considered than TikTok, same Act 2 logic
+   - End with: "{spotify_cta} — link in bio"
 
-POSTING TIME: based on platform peaks — TikTok Tue/Thu/Fri evenings, IG Mon/Wed/Fri 6-9pm CET.
+3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences)
+   - Title patterns: "[Bible ref] at [BPM] BPM — Tenerife" | "Holy Rave Tenerife — [what's unique]"
+     | "[Song title] — Sacred Melodic Techno"
+   - Description: name the track, mention Sunset Sessions / free events / Tenerife
 
-For EACH clip length, generate hooks + captions + best posting time.
+CAPTION RULES:
+- Never include a URL. CTAs are text only.
+- Never open caption with the track name or artist name — earn the mention.
+- Tenerife, Atlantic coast, or Sunset Sessions should surface naturally where relevant.
+- Content quality benchmark: must sit alongside Anyma, Rüfüs Du Sol, Argy.
+- Biblical references woven in naturally — never forced. Subtle Salt principle.
 
-Return ONLY valid JSON:
+Return ONLY valid JSON, no explanation, no markdown fences:
+
 {{
   "content_type": "{content_type}",
   "clips": {{
@@ -217,40 +570,70 @@ Return ONLY valid JSON:
 }}"""
 
     try:
-        raw = _call_claude(system_prompt, user_prompt, timeout=120)
+        raw = _call_claude(
+            "You are a social media caption writer for underground electronic music. Return only valid JSON.",
+            prompt, timeout=120,
+        )
 
         if raw.startswith('```'):
             raw = raw.split('\n', 1)[1]
             raw = raw.rsplit('```', 1)[0]
 
         result = json.loads(raw)
-        result['angle'] = angle
-        logger.info(f"Content generated: {filename} | angle={angle}")
+
+        # Embed A/B/C hooks into result (from Call 1 — do not re-generate)
+        for length in clip_lengths:
+            key = str(length)
+            if key in result.get('clips', {}):
+                abc = hooks.get(length, {})
+                result['clips'][key]['hook_a'] = abc.get('a', '')
+                result['clips'][key]['hook_b'] = abc.get('b', '')
+                result['clips'][key]['hook_c'] = abc.get('c', '')
+
+        result['track_name'] = track_name
+        result['angle']      = angle
+        logger.info(f"Captions generated: {filename}")
         return result
 
     except json.JSONDecodeError as e:
         logger.error(f"JSON parse error: {e}\nRaw: {raw[:300] if 'raw' in dir() else 'no output'}")
-        return _fallback_content(filename, clip_lengths, content_type, angle)
+        return _fallback_content(filename, clip_lengths, content_type, hooks_meta)
     except Exception as e:
-        logger.error(f"Content generation failed: {e}")
-        return _fallback_content(filename, clip_lengths, content_type, angle)
+        logger.error(f"Caption generation failed: {e}")
+        return _fallback_content(filename, clip_lengths, content_type, hooks_meta)
 
 
 def _fallback_content(filename: str, clip_lengths: list,
-                      content_type: str, angle: str = None) -> dict:
+                      content_type: str, hooks_meta: dict = None) -> dict:
+    """Minimal fallback if Call 2 fails."""
+    hooks      = (hooks_meta or {}).get('hooks', {})
+    track_name = (hooks_meta or {}).get('track_name', '')
+    angle      = (hooks_meta or {}).get('angle')
+    cta        = f"Search {track_name} on Spotify" if track_name else "Search this track on Spotify"
+
     clips = {}
     for length in clip_lengths:
+        abc = hooks.get(length, {})
         clips[str(length)] = {
-            "hook_a": "Made this the night everything fell apart.",
-            "hook_b": "For the version of you that stopped.",
-            "hook_c": "Spine knows before the mind does.",
-            "best_posting_time": "Friday 7pm CET",
-            "tiktok":    {"caption": "Free events. Atlantic coast. Tenerife. Full track on Spotify — link in bio.", "hashtags": "#holyrave #sunsetsessions #melodictechno #tenerife"},
-            "instagram": {"caption": "Free. Every week. Atlantic coast. Full track on Spotify — link in bio.", "hashtags": "#holyrave #sunsetsessions #melodictechno #tenerife #sacredtechno #robertjanmastenbroek"},
-            "youtube":   {"title": "Holy Rave — Sacred Melodic Techno | Tenerife", "description": "Weekly Sunset Sessions in Tenerife. Free entry. Music rooted in Scripture. Full track on Spotify."},
+            "hook_a": abc.get('a', 'Made this the night everything fell apart.'),
+            "hook_b": abc.get('b', 'For the version of you that stopped.'),
+            "hook_c": abc.get('c', 'Spine knows before the mind does.'),
+            "tiktok": {
+                "caption": f"Free events. Atlantic coast. In the name of Jesus. {cta}",
+                "hashtags": "#holyrave #sunsetsessions #sacredmusic #melodictechno #tenerife",
+            },
+            "instagram": {
+                "caption": f"Every week. Free. Tenerife. {cta} — link in bio",
+                "hashtags": "#holyrave #sunsetsessions #sacredmusic #melodictechno #tenerife #psytrance #electronicmusic #dancefloor #atlantic #robertjanmastenbroek",
+            },
+            "youtube": {
+                "title": f"Holy Rave — {track_name or 'Sacred Music'} | Robert-Jan Mastenbroek",
+                "description": "Weekly Sunset Sessions in Tenerife. Free entry, always. Music rooted in Scripture.",
+            },
         }
     return {
         "content_type": content_type,
+        "track_name":   track_name,
         "angle":        angle,
         "clips":        clips,
     }
@@ -259,56 +642,43 @@ def _fallback_content(filename: str, clip_lengths: list,
 # ── Caption file formatter ─────────────────────────────────────────────────────
 
 def format_caption_file(filename: str, generated: dict) -> str:
-    """Format generated content into a clean readable .txt file."""
+    """Format generated content into a clean .txt file for Google Drive."""
     base         = os.path.splitext(os.path.basename(filename))[0]
     content_type = generated.get('content_type', 'unknown')
-    angle        = generated.get('angle')
+    track_name   = generated.get('track_name') or '—'
+    angle        = generated.get('angle') or '—'
     clips        = generated.get('clips', {})
-
-    angle_line = f"  Angle:  {angle.upper()}" if angle else ""
 
     lines = [
         "═══════════════════════════════════════════════",
         "  HOLY RAVE CONTENT ENGINE",
         f"  Source: {base}",
         f"  Type:   {content_type.replace('_', ' ').title()}",
-    ]
-    if angle_line:
-        lines.append(angle_line)
-    lines += [
-        "═══════════════════════════════════════════════",
-        "",
-        "  POSTING CHECKLIST:",
-        "  ✅ POST ON: TIKTOK",
-        "  ✅ POST ON: INSTAGRAM REELS",
-        "  ✅ POST ON: YOUTUBE SHORTS",
-        "  ✅ POST ON: INSTAGRAM STORIES (add Spotify sticker → link in bio)",
-        "",
+        f"  Track:  {track_name}",
+        f"  Angle:  {angle.upper() if angle != '—' else angle}",
         "═══════════════════════════════════════════════",
         "",
     ]
 
     for length_str, data in sorted(clips.items(), key=lambda x: int(x[0])):
-        length   = int(length_str)
-        tiktok   = data.get('tiktok', {})
+        length    = int(length_str)
+        hook_a    = data.get('hook_a', data.get('hook', ''))
+        hook_b    = data.get('hook_b', '')
+        hook_c    = data.get('hook_c', '')
+        tiktok    = data.get('tiktok', {})
         instagram = data.get('instagram', {})
-        youtube  = data.get('youtube', {})
-        hook_a   = data.get('hook_a', data.get('hook', ''))
-        hook_b   = data.get('hook_b', '')
-        hook_c   = data.get('hook_c', '')
-        posting_time = data.get('best_posting_time', '')
+        youtube   = data.get('youtube', {})
 
         lines += [
             f"┌─────────────────────────────────────────────",
-            f"│  {length}-SECOND CLIP — File: {base}_{length}s.mp4",
+            f"│  {length}-SECOND CLIP",
+            f"│  File: {base}_{length}s.mp4",
             f"└─────────────────────────────────────────────",
             "",
-            "HOOK VARIANTS (A/B/C test — post same clip with different hooks on different days):",
-            f'   A: "{hook_a}"',
-            f'   B: "{hook_b}"',
-            f'   C: "{hook_c}"',
-            "",
-            f"BEST POSTING TIME: {posting_time}",
+            "HOOKS (A/B/C — post same clean clip on different days with each hook):",
+            f'   A [scroll-stopper]:  "{hook_a}"',
+            f'   B [identity/scene]:  "{hook_b}"',
+            f'   C [claim/contrast]:  "{hook_c}"',
             "",
             "━━━ TIKTOK ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             "Caption:",
