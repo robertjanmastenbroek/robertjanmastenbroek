@@ -191,3 +191,38 @@ class SendWindow:
         """Call after a successful send to update internal state."""
         self.quota_left = max(0, self.quota_left - 1)
         self.can_send   = self.quota_left > 0 and self.in_window
+
+
+def best_send_time(email: str) -> int:
+    """
+    Return the best hour (0-23 local) to send to this contact,
+    based on when they have historically replied.
+
+    Falls back to ACTIVE_HOUR_START + 2 (default: 10) if no reply history.
+    """
+    from datetime import datetime as _dt
+    from collections import Counter
+    from db import get_conn
+    try:
+        with get_conn() as conn:
+            rows = conn.execute("""
+                SELECT timestamp FROM email_log
+                WHERE contact_email = ?
+                  AND direction = 'received'
+                ORDER BY timestamp DESC
+                LIMIT 10
+            """, (email,)).fetchall()
+        if not rows:
+            return ACTIVE_HOUR_START + 2
+        hours = []
+        for row in rows:
+            try:
+                hours.append(_dt.fromisoformat(row["timestamp"]).hour)
+            except (ValueError, TypeError):
+                continue
+        if not hours:
+            return ACTIVE_HOUR_START + 2
+        best = Counter(hours).most_common(1)[0][0]
+        return max(ACTIVE_HOUR_START, min(ACTIVE_HOUR_END - 1, best))
+    except Exception:
+        return ACTIVE_HOUR_START + 2

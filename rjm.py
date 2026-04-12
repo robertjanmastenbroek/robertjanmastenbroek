@@ -20,6 +20,7 @@ Usage:
   python3 rjm.py release list             # Pending track releases
   python3 rjm.py release add Jericho 2026-05-01  # Schedule a release
   python3 rjm.py release check            # Fire campaigns for releases due this week
+  python3 rjm.py signals                  # Full hive-mind signal dashboard
   python3 rjm.py sync                     # Sync contacts.csv → outreach.db
   python3 rjm.py swarm init               # Initialise RuFlo agent swarm
   python3 rjm.py swarm status             # Show swarm agent status
@@ -480,6 +481,8 @@ def main():
         sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "fleet"], cwd=str(OUTREACH_DIR)))
     elif cmd == "release":
         sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "release"] + sys.argv[2:], cwd=str(OUTREACH_DIR)))
+    elif cmd == "signals":
+        sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "signals"], cwd=str(OUTREACH_DIR)))
     elif cmd == "contacts":
         cmd_contacts(rest)
     elif cmd in ("content", "post"):

@@ -241,6 +241,18 @@ def cmd_plan():
             "quota_remaining": plan.get("quota_remaining", 0)
         })
 
+    # Sort send/followup actions by proximity to each contact's optimal send hour
+    try:
+        from scheduler import best_send_time as _best_send_time
+        _current_hour = datetime.now().hour
+        def _send_score(action: dict) -> int:
+            if action.get("action") not in ("send", "followup", "followup2"):
+                return -1  # non-send actions go first
+            return abs(_best_send_time(action.get("email", "")) - _current_hour)
+        plan["actions"].sort(key=_send_score)
+    except Exception:
+        pass  # never break the plan on sorting failure
+
     print(json.dumps(plan, indent=2))
 
 

@@ -1400,6 +1400,121 @@ def cmd_release(args: list[str]):
         print("Usage: release list | release add <track> <date> [notes] | release check")
 
 
+def cmd_signals():
+    """
+    Unified hive-mind signal dashboard.
+    Shows: Spotify trend, content state, template performance,
+           recent events, fleet health, release calendar.
+    """
+    db.init_db()
+    print(f"\n{'═'*60}")
+    print("HIVE-MIND SIGNALS DASHBOARD")
+    print(f"{'═'*60}")
+
+    # ── Spotify trend ────────────────────────────────────────────
+    print("\n📊 SPOTIFY LISTENERS")
+    try:
+        with db.get_conn() as conn:
+            rows = conn.execute(
+                "SELECT date, monthly_listeners FROM spotify_stats ORDER BY date DESC LIMIT 3"
+            ).fetchall()
+        if rows:
+            for r in rows:
+                print(f"  {r['date']}  {r['monthly_listeners']:,}")
+            if len(rows) >= 2:
+                delta = rows[0]["monthly_listeners"] - rows[-1]["monthly_listeners"]
+                arrow = "▲" if delta >= 0 else "▼"
+                print(f"  Trend: {arrow} {abs(delta):,} over {len(rows)} readings")
+        else:
+            print("  No data yet. Run: python3 rjm.py spotify log <count>")
+    except Exception as e:
+        print(f"  [error: {e}]")
+
+    # ── Content state ────────────────────────────────────────────
+    print("\n📹 CONTENT THIS WEEK")
+    try:
+        import content_signal
+        summary = content_signal.get_weekly_summary()
+        print(f"  Total posts: {summary['total_posts']}")
+        for platform, count in summary["by_platform"].items():
+            print(f"    {platform}: {count}")
+        if summary["latest_post_at"]:
+            print(f"  Last post: {summary['latest_post_at'][:16]}")
+        else:
+            print("  No posts recorded this week.")
+    except ImportError:
+        print("  [content_signal not available]")
+    except Exception as e:
+        print(f"  [error: {e}]")
+
+    # ── Template performance ─────────────────────────────────────
+    print("\n✉  TEMPLATE PERFORMANCE")
+    try:
+        stats = db.get_template_stats()
+        if stats:
+            for s in stats[:5]:
+                rr = s.get("reply_rate") or s.get("total_replies", 0)
+                print(
+                    f"  {str(s['template_type']):<20} {str(s['contact_type']):<12} "
+                    f"reply_rate={rr}%  "
+                    f"({s['total_replies']}/{s['total_sent']})"
+                )
+        else:
+            print("  No template data yet.")
+    except Exception as e:
+        print(f"  [error: {e}]")
+
+    # ── Recent events ────────────────────────────────────────────
+    print("\n⚡ RECENT EVENTS (last 8)")
+    try:
+        if _EVENTS_AVAILABLE:
+            recent_evts = _events.recent(limit=8)
+            if recent_evts:
+                for e in recent_evts:
+                    print(f"  [{e['created_at'][:16]}] {e['event_type']:<30} ← {e['source']}")
+            else:
+                print("  No events yet.")
+        else:
+            print("  [events module not available]")
+    except Exception as e:
+        print(f"  [error: {e}]")
+
+    # ── Fleet health ─────────────────────────────────────────────
+    print("\n🤖 FLEET HEALTH")
+    try:
+        if _FLEET_AVAILABLE:
+            stale = _fleet_state.get_stale()
+            all_agents = _fleet_state.get_all()
+            if all_agents:
+                stale_names = {a["agent_name"] for a in stale}
+                for agent in all_agents:
+                    marker = " ⚠ STALE" if agent["agent_name"] in stale_names else ""
+                    print(_fleet_state.summary_line(agent) + marker)
+            else:
+                print("  No agents have reported yet.")
+        else:
+            print("  [fleet_state not available]")
+    except Exception as e:
+        print(f"  [error: {e}]")
+
+    # ── Release calendar ─────────────────────────────────────────
+    print("\n🚀 RELEASE CALENDAR")
+    try:
+        import release_trigger
+        pending = release_trigger.get_pending_releases()
+        if pending:
+            for r in pending:
+                print(f"  [{r['release_date']}] {r['track_name']} — {r['notes'] or ''}")
+        else:
+            print("  No upcoming releases scheduled.")
+    except ImportError:
+        print("  [release_trigger not available]")
+    except Exception as e:
+        print(f"  [error: {e}]")
+
+    print(f"\n{'═'*60}\n")
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1420,6 +1535,8 @@ def main():
         cmd_fleet()
     elif args[0] == "release":
         cmd_release(args[1:])
+    elif args[0] == "signals":
+        cmd_signals()
     elif args[0] == "podcast_targets":
         cmd_podcast_targets()
     elif args[0] == "adjust":
