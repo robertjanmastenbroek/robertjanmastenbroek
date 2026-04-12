@@ -38,6 +38,12 @@ import followup_engine
 import template_engine
 import learning
 
+try:
+    import contact_scorer as _contact_scorer
+    _SCORER_AVAILABLE = True
+except ImportError:
+    _SCORER_AVAILABLE = False
+
 from config import MAX_EMAILS_PER_DAY, FOLLOWUP_DAYS, FOLLOWUP2_DAYS, CONTACT_TYPE_WEIGHTS, SMALL_PLAYLIST_PER_CYCLE
 
 
@@ -184,6 +190,25 @@ def cmd_plan():
 
         # Collect contacts for this batch (capped at batch_size)
         batch_contacts = ordered[:batch_size]
+
+        # Re-rank batch by ROI score (learning + reply rates + Spotify momentum + schedule fit).
+        # contact_scorer expects 'contact_type' but DB rows use 'type' — adapt in a shallow copy,
+        # then map ranked order back to the original dicts so downstream keys stay intact.
+        if _SCORER_AVAILABLE and batch_contacts:
+            try:
+                adapted = [
+                    {**c, "contact_type": c.get("type", ""),
+                     "research_notes": c.get("research_notes", "") or ""}
+                    for c in batch_contacts
+                ]
+                ranked_adapted = _contact_scorer.rank(adapted)
+                order_index = {c["email"]: i for i, c in enumerate(ranked_adapted)}
+                batch_contacts = sorted(
+                    batch_contacts,
+                    key=lambda c: order_index.get(c["email"], len(order_index))
+                )
+            except Exception:
+                pass  # scoring is advisory — never break the cycle
 
         # Build learning context per type (one lookup per type, not per contact)
         _learn_cache = {}
