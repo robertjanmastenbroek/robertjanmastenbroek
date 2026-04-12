@@ -77,14 +77,28 @@ CONTACT_TYPES = {
 # Controls how the batch planner picks contact types each cycle.
 # Goal: build streams + live bookings + press first. Labels come later.
 CONTACT_TYPE_WEIGHTS = {
-    "curator":        40,   # Spotify streams — direct path to algorithmic growth
-    "podcast":        60,   # Story-driven, pre-sold audiences — highest reply rate
-    # festival: removed — 18.9% bounce rate, cold email doesn't reach bookers
-    # label: removed — not pursuing label deals
+    "curator":        40,   # auto-adjusted by auto_weights (neutral growth state)
+    "podcast":        60,   # auto-adjusted by auto_weights (neutral growth state)
     "youtube":        0,    # Paused
     "sync":           0,    # Paused
     "booking_agent":  0,    # Paused
     "wellness":       0,    # Paused
+}
+
+# ─── Spotify Growth Velocity → Weight Adjustment ──────────────────────────────
+# auto_weights command reads listener velocity and rewrites CONTACT_TYPE_WEIGHTS.
+# Thresholds: listeners gained per 7-day window.
+GROWTH_VELOCITY_THRESHOLDS = {
+    "fast":   500,   # >500/week → scale up curators (algo momentum)
+    "slow":  -100,   # <-100/week → scale up podcasts (story-driven recovery)
+    # between slow and fast: keep current weights
+}
+
+# Weight profiles per growth state
+GROWTH_WEIGHT_PROFILES = {
+    "fast":    {"curator": 70, "podcast": 30},   # ride the algo wave
+    "neutral": {"curator": 40, "podcast": 60},   # current default
+    "slow":    {"curator": 20, "podcast": 80},   # podcasts for story-driven recovery
 }
 
 # Faith/Christian contacts are welcomed across all types but not quota-targeted.

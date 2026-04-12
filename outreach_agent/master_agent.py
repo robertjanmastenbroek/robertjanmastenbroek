@@ -1265,6 +1265,88 @@ def cmd_run(agent_name: str, extra_args: list[str]):
     sys.exit(result.returncode)
 
 
+# ─── Auto Weights (Spotify velocity → CONTACT_TYPE_WEIGHTS) ──────────────────
+
+def cmd_auto_weights():
+    """
+    Read Spotify listener velocity (last 7 days) and rewrite CONTACT_TYPE_WEIGHTS
+    in config.py to match the growth state profile.
+    """
+    import re as _re
+
+    try:
+        from config import GROWTH_VELOCITY_THRESHOLDS, GROWTH_WEIGHT_PROFILES
+    except ImportError:
+        print("ERROR: GROWTH_VELOCITY_THRESHOLDS not found in config.py")
+        return
+
+    # ── Read velocity ──────────────────────────────────────────────────────────
+    velocity = 0
+    try:
+        with db.get_conn() as conn:
+            rows = conn.execute("""
+                SELECT listeners FROM listener_log ORDER BY logged_at DESC LIMIT 8
+            """).fetchall()
+        if len(rows) >= 2:
+            velocity = rows[0]["listeners"] - rows[-1]["listeners"]
+    except Exception as e:
+        print(f"WARN: could not read listener velocity: {e}")
+
+    # ── Determine growth state ─────────────────────────────────────────────────
+    fast_thresh = GROWTH_VELOCITY_THRESHOLDS.get("fast", 500)
+    slow_thresh = GROWTH_VELOCITY_THRESHOLDS.get("slow", -100)
+
+    if velocity >= fast_thresh:
+        state = "fast"
+    elif velocity <= slow_thresh:
+        state = "slow"
+    else:
+        state = "neutral"
+
+    new_weights = GROWTH_WEIGHT_PROFILES.get(state, GROWTH_WEIGHT_PROFILES["neutral"])
+
+    print(f"Spotify velocity (7d): {velocity:+d} listeners")
+    print(f"Growth state: {state}")
+    print(f"New weights: {new_weights}")
+
+    # ── Rewrite config.py ─────────────────────────────────────────────────────
+    config_path = BASE_DIR / "config.py"
+    config_text = config_path.read_text()
+
+    # Build the replacement CONTACT_TYPE_WEIGHTS block
+    lines = []
+    lines.append("CONTACT_TYPE_WEIGHTS = {")
+    lines.append(f'    "curator":        {new_weights.get("curator", 0)},   # auto-adjusted by auto_weights ({state} growth state)')
+    lines.append(f'    "podcast":        {new_weights.get("podcast", 0)},   # auto-adjusted by auto_weights ({state} growth state)')
+    lines.append('    "youtube":        0,    # Paused')
+    lines.append('    "sync":           0,    # Paused')
+    lines.append('    "booking_agent":  0,    # Paused')
+    lines.append('    "wellness":       0,    # Paused')
+    lines.append("}")
+    replacement = "\n".join(lines)
+
+    new_text = _re.sub(
+        r"CONTACT_TYPE_WEIGHTS\s*=\s*\{[^}]+\}",
+        replacement,
+        config_text,
+        flags=_re.DOTALL,
+    )
+
+    if new_text == config_text:
+        print("WARN: regex did not match CONTACT_TYPE_WEIGHTS block — no change written.")
+        return
+
+    config_path.write_text(new_text)
+    print(f"config.py updated with {state} weight profile.")
+
+    # Publish event
+    try:
+        import events as _ev
+        _ev.publish("strategy.weights_adjusted", "master_agent", {"state": state, "weights": new_weights, "velocity": velocity})
+    except Exception:
+        pass
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1312,6 +1394,8 @@ def main():
             print("Agents: outreach, discover, research, verify")
         else:
             cmd_run(agent, args[2:])
+    elif args[0] == "auto_weights":
+        cmd_auto_weights()
     else:
         print(__doc__)
 
