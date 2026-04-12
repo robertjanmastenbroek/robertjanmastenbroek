@@ -3,14 +3,18 @@ import sys, os, tempfile, shutil
 from pathlib import Path
 import pytest
 
+# Must happen before ANY import of db or fleet_state
 tmpdir = tempfile.mkdtemp()
-os.environ["RJM_DB_PATH"] = str(Path(tmpdir) / "test.db")
+_test_db_path = Path(tmpdir) / "test.db"
+os.environ["RJM_DB_PATH"] = str(_test_db_path)
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "outreach_agent"))
+
 import config
-config.DB_PATH = Path(os.environ["RJM_DB_PATH"])
+config.DB_PATH = _test_db_path
 
 import db
+db.DB_PATH = _test_db_path  # ensure db module sees it regardless of import order
 db.init_db()
 
 import fleet_state
@@ -61,3 +65,12 @@ def test_heartbeat_error_increments_error_count():
     state = fleet_state.get_all()
     bad = next(s for s in state if s["agent_name"] == "bad_agent")
     assert bad["error_count"] >= 2
+
+
+def test_heartbeat_ok_does_not_increment_error_count():
+    fleet_state.heartbeat("run_cycle", status="error")
+    fleet_state.heartbeat("run_cycle", status="ok")
+    fleet_state.heartbeat("run_cycle", status="ok")
+    row = next(s for s in fleet_state.get_all() if s["agent_name"] == "run_cycle")
+    assert row["error_count"] == 1
+    assert row["run_count"] == 3

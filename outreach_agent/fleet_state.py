@@ -84,14 +84,14 @@ def get_stale(threshold_minutes: int | None = None) -> list[dict]:
     now = datetime.utcnow()
     stale = []
     for agent in all_agents:
-        cadence = threshold_minutes or EXPECTED_CADENCE.get(agent["agent_name"], DEFAULT_CADENCE)
+        cadence = EXPECTED_CADENCE.get(agent["agent_name"]) or threshold_minutes or DEFAULT_CADENCE
         cutoff = now - timedelta(minutes=cadence * 2)
         try:
             last = datetime.fromisoformat(agent["last_heartbeat"])
         except (TypeError, ValueError):
             stale.append(agent)
             continue
-        if last < cutoff:
+        if last > now or last < cutoff:
             stale.append(agent)
     return stale
 
