@@ -59,6 +59,7 @@ def _call_claude(system_prompt: str, user_prompt: str, timeout: int = 120) -> st
          "--print", "--no-session-persistence",
          "--system-prompt", system_prompt, user_prompt],
         capture_output=True, text=True, timeout=timeout,
+        cwd="/tmp",  # avoid loading project CLAUDE.md
     )
     if result.returncode != 0:
         raise RuntimeError(f"Claude CLI error: {result.stderr[:300]}")

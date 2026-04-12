@@ -49,6 +49,7 @@ def _call_claude(prompt: str) -> str:
          "--system-prompt", "You are a music trend analyst. Output only valid JSON, no commentary.",
          prompt],
         capture_output=True, text=True, timeout=120,
+        cwd="/tmp",  # avoid loading project CLAUDE.md
     )
     if result.returncode != 0:
         raise RuntimeError(f"Claude CLI error: {result.stderr[:200]}")

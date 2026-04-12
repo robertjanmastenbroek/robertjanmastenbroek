@@ -231,6 +231,7 @@ def _write_breakthrough(outlier, date_str: str):
              "--system-prompt", "You are a music marketing analyst. Be specific and concise.",
              prompt],
             capture_output=True, text=True, timeout=60,
+            cwd="/tmp",  # avoid loading project CLAUDE.md
         )
         analysis = result.stdout.strip()
     except Exception as e:
