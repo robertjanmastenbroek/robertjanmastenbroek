@@ -661,6 +661,14 @@ def cmd_health():
     except Exception:
         pass  # playlist_db not critical for health
 
+    # Auth credential health check
+    try:
+        import auth_monitor as _auth_monitor
+        auth_checks = _auth_monitor.run_check()
+        print(_auth_monitor.format_summary(auth_checks))
+    except ImportError:
+        pass
+
     if issues:
         print(f"\nISSUES FOUND ({len(issues)}):")
         for i in issues:
