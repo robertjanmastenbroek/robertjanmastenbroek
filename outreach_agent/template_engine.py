@@ -358,6 +358,17 @@ def generate_email(contact: dict, learning_context: str = "") -> tuple[str, str]
     Generate a personalised email for a contact using Claude CLI.
     Returns (subject, body). Raises on failure.
     """
+    # Use best-performing template type if enough data exists
+    contact_type = contact.get("type", "curator")
+    from db import get_best_template_type
+    best_template = get_best_template_type(contact_type)
+    if best_template and best_template != contact.get("template_type"):
+        log.info(
+            "Template override: %s → %s (best reply rate for %s)",
+            contact.get("template_type", "default"), best_template, contact_type
+        )
+        contact = {**contact, "template_type": best_template}
+
     prompt = _build_prompt(contact, learning_context)
 
     log.info("Generating email for %s (%s)...",

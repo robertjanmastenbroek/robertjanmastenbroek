@@ -594,6 +594,24 @@ def get_template_stats():
         return [dict(r) for r in rows]
 
 
+def get_best_template_type(contact_type: str, min_sends: int = 5) -> str | None:
+    """
+    Return the template_type with the highest reply rate for a given contact_type,
+    provided it has at least min_sends sends. Returns None if no qualifying data.
+    """
+    with get_conn() as conn:
+        row = conn.execute("""
+            SELECT template_type,
+                   ROUND(total_replies * 1.0 / NULLIF(total_sent, 0) * 100, 1) as reply_rate
+            FROM template_performance
+            WHERE contact_type = ?
+              AND total_sent >= ?
+            ORDER BY reply_rate DESC
+            LIMIT 1
+        """, (contact_type, min_sends)).fetchone()
+    return row["template_type"] if row else None
+
+
 # ─── Learning ─────────────────────────────────────────────────────────────────
 
 def save_insight(insight_type, content, based_on_n):
