@@ -13,6 +13,7 @@ Usage:
   python3 rjm.py contacts [cmd]           # Contact manager (status, queue, sync, add, ...)
   python3 rjm.py run <agent>              # Trigger a sub-agent directly
   python3 rjm.py sync                     # Sync contacts.csv → outreach.db
+  python3 rjm.py schedule [install|uninstall|status]  # Manage launchd fleet schedules
 
 Examples:
   python3 rjm.py status                   # Is everything running?
@@ -28,6 +29,8 @@ Examples:
   python3 rjm.py contacts search tribal   # Search contacts
   python3 rjm.py run outreach             # Same as 'outreach run'
   python3 rjm.py run discover             # Trigger discovery agent
+  python3 rjm.py schedule install         # Load all launchd fleet schedules
+  python3 rjm.py schedule status          # Show schedule state
 """
 
 import subprocess
@@ -133,6 +136,16 @@ GSTACK                        /gstack
 """)
 
 
+def cmd_schedule(args: list[str]):
+    """Manage macOS launchd fleet schedules via scripts/setup_schedule.sh"""
+    setup_sh = PROJECT_ROOT / "scripts" / "setup_schedule.sh"
+    if not setup_sh.exists():
+        print(f"✗ {setup_sh} not found — check that scripts/ is present")
+        sys.exit(1)
+    sub = args[0] if args else "status"
+    sys.exit(_run(["/bin/bash", str(setup_sh), sub], cwd=str(PROJECT_ROOT)))
+
+
 def cmd_status():
     """
     Full system status — runs master health + outreach status in sequence.
@@ -185,6 +198,8 @@ def main():
             cmd_run(agent, rest[1:])
     elif cmd == "sync":
         cmd_sync()
+    elif cmd == "schedule":
+        cmd_schedule(rest)
     elif cmd in ("skills", "skill"):
         cmd_skills()
     elif cmd in ("help", "--help", "-h"):
