@@ -28,8 +28,9 @@ POST_SCHEDULE = {
 }
 
 
-def _upload_to_cloudinary(video_path: str) -> str:
-    """Upload video, return public URL. Tries Cloudinary then Catbox.moe."""
+def _upload_video_for_instagram(video_path: str) -> str:
+    """Upload video to get a public URL for Instagram Graph API. Tries multiple hosts."""
+    # 1. Cloudinary (preferred)
     cloudinary_url = os.environ.get("CLOUDINARY_URL", "")
     if cloudinary_url:
         try:
@@ -38,7 +39,24 @@ def _upload_to_cloudinary(video_path: str) -> str:
         except Exception as e:
             logger.warning(f"[distributor] Cloudinary failed: {e}")
 
-    # Catbox.moe fallback (free, permanent, 200MB)
+    # 2. uguu.se (free, 48h — enough for IG to fetch)
+    try:
+        with open(video_path, "rb") as f:
+            resp = requests.post(
+                "https://uguu.se/upload",
+                files={"files[]": (Path(video_path).name, f, "video/mp4")},
+                timeout=120,
+            )
+        if resp.status_code == 200:
+            data = resp.json()
+            url = data.get("files", [{}])[0].get("url", "")
+            if url:
+                logger.info(f"[distributor] Uploaded to uguu.se: {url}")
+                return url
+    except Exception as e:
+        logger.warning(f"[distributor] uguu.se failed: {e}")
+
+    # 3. Catbox.moe
     try:
         with open(video_path, "rb") as f:
             resp = requests.post(
@@ -49,9 +67,40 @@ def _upload_to_cloudinary(video_path: str) -> str:
             )
         if resp.status_code == 200 and resp.text.startswith("https://"):
             return resp.text.strip()
-        raise RuntimeError(f"Catbox returned {resp.status_code}: {resp.text[:100]}")
     except Exception as e:
-        raise RuntimeError(f"All video upload methods failed for {video_path}: {e}") from e
+        logger.warning(f"[distributor] Catbox failed: {e}")
+
+    raise RuntimeError(f"All video upload methods failed for {video_path}")
+
+
+def _refresh_youtube_token() -> str:
+    """Refresh YouTube OAuth token using client_secret.json + YOUTUBE_REFRESH_TOKEN."""
+    import json
+    refresh_token = os.environ.get("YOUTUBE_REFRESH_TOKEN", "")
+    if not refresh_token:
+        return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
+
+    secret_path = PROJECT_DIR / "client_secret.json"
+    if not secret_path.exists():
+        return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
+
+    try:
+        data = json.loads(secret_path.read_text())
+        creds = data.get("installed") or data.get("web") or {}
+        resp = requests.post("https://oauth2.googleapis.com/token", data={
+            "client_id":     creds.get("client_id", ""),
+            "client_secret": creds.get("client_secret", ""),
+            "refresh_token": refresh_token,
+            "grant_type":    "refresh_token",
+        }, timeout=15)
+        token = resp.json().get("access_token", "")
+        if token:
+            logger.info("[distributor] YouTube token refreshed")
+            return token
+    except Exception as e:
+        logger.warning(f"[distributor] YouTube token refresh failed: {e}")
+
+    return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
 
 
 def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_token: str) -> dict:
@@ -60,7 +109,7 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
     Returns {success: bool, post_id: str|None, platform: 'instagram', error: str|None}
     """
     try:
-        video_url = _upload_to_cloudinary(video_path)
+        video_url = _upload_video_for_instagram(video_path)
 
         # 1. Create media container
         resp = requests.post(
@@ -164,6 +213,9 @@ def post_youtube_short(video_path: str, title: str, description: str,
                        api_key: str, oauth_token: str) -> dict:
     """Upload YouTube Short via YouTube Data API v3 resumable upload."""
     try:
+        # Always refresh token to avoid 401
+        oauth_token = _refresh_youtube_token() or oauth_token
+
         video_size = Path(video_path).stat().st_size
 
         init_resp = requests.post(
