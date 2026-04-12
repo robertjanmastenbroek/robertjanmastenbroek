@@ -27,6 +27,14 @@ from pathlib import Path
 import requests
 from video_host import upload_video
 
+# ─── Hive connectivity (defensive import) ────────────────────────────────────
+try:
+    import events as _events
+    import fleet_state as _fleet_state
+    _HIVE_AVAILABLE = True
+except ImportError:
+    _HIVE_AVAILABLE = False
+
 # ─── Config ───────────────────────────────────────────────────────────────────
 
 BUFFER_API_KEY = os.environ.get("BUFFER_API_KEY", "131Alg-sjqKP6XuUZj3KOvMvoI8UmWGV8v2th47JQRf")
@@ -137,50 +145,67 @@ def _create_post(channel: str, post_type: str, image_urls: list[str], caption: s
         print(f"  Caption: {caption[:80]}{'…' if len(caption) > 80 else ''}")
         return "[dry-run]"
 
-    # Build metadata per channel
-    if channel == "instagram":
-        metadata = {
-            "instagram": {
-                "type": post_type,
-                "shouldShareToFeed": True,
+    try:
+        # Build metadata per channel
+        if channel == "instagram":
+            metadata = {
+                "instagram": {
+                    "type": post_type,
+                    "shouldShareToFeed": True,
+                }
+            }
+        elif channel == "tiktok":
+            metadata = {}  # TikTok uses video assets, handled separately
+        else:
+            metadata = {}
+
+        mutation = """
+        mutation CreatePost($input: CreatePostInput!) {
+          createPost(input: $input) {
+            ... on PostActionSuccess { post { id status } }
+            ... on MutationError { message }
+          }
+        }
+        """
+
+        variables = {
+            "input": {
+                "channelId": channel_id,
+                "text": caption,
+                "schedulingType": "automatic",
+                "mode": "addToQueue",
+                "metadata": metadata,
+                "assets": {
+                    "images": [{"url": u} for u in image_urls]
+                },
             }
         }
-    elif channel == "tiktok":
-        metadata = {}  # TikTok uses video assets, handled separately
-    else:
-        metadata = {}
 
-    mutation = """
-    mutation CreatePost($input: CreatePostInput!) {
-      createPost(input: $input) {
-        ... on PostActionSuccess { post { id status } }
-        ... on MutationError { message }
-      }
-    }
-    """
+        result = _gql(mutation, variables)
+        payload = result["createPost"]
 
-    variables = {
-        "input": {
-            "channelId": channel_id,
-            "text": caption,
-            "schedulingType": "automatic",
-            "mode": "addToQueue",
-            "metadata": metadata,
-            "assets": {
-                "images": [{"url": u} for u in image_urls]
+        if "message" in payload:
+            sys.exit(f"ERROR: Buffer rejected post: {payload['message']}")
+
+        post_id = payload["post"]["id"]
+        status = payload["post"]["status"]
+        print(f"  → Post queued: {post_id} ({status})")
+    except Exception as e:
+        if _HIVE_AVAILABLE:
+            _fleet_state.heartbeat("buffer_poster", status="error", result=str(e))
+        raise
+
+    if _HIVE_AVAILABLE:
+        platform = channel
+        _events.publish(
+            "content.scheduled",
+            "buffer_poster",
+            {
+                "platform": platform,
+                "post_type": post_type,
             },
-        }
-    }
-
-    result = _gql(mutation, variables)
-    payload = result["createPost"]
-
-    if "message" in payload:
-        sys.exit(f"ERROR: Buffer rejected post: {payload['message']}")
-
-    post_id = payload["post"]["id"]
-    status = payload["post"]["status"]
-    print(f"  → Post queued: {post_id} ({status})")
+        )
+        _fleet_state.heartbeat("buffer_poster", status="ok", result=f"scheduled:{platform}")
     return post_id
 
 
@@ -214,38 +239,55 @@ def _create_video_post(
     if not channel_id:
         raise ValueError(f"Unknown channel '{channel}'. Valid: {list(CHANNELS.keys())}")
 
-    if channel == "instagram":
-        metadata = {"instagram": {"type": "reel", "shouldShareToFeed": True}}
-    elif channel == "youtube":
-        metadata = {
-            "youtube": {
-                "title": (title or caption)[:100],
-                "privacy": "public",
-                "categoryId": "10",  # Music
+    try:
+        if channel == "instagram":
+            metadata = {"instagram": {"type": "reel", "shouldShareToFeed": True}}
+        elif channel == "youtube":
+            metadata = {
+                "youtube": {
+                    "title": (title or caption)[:100],
+                    "privacy": "public",
+                    "categoryId": "10",  # Music
+                }
             }
+        else:
+            metadata = {}
+
+        inp = {
+            "channelId": channel_id,
+            "text": caption,
+            "schedulingType": "scheduled" if scheduled_at else "automatic",
+            "mode": "addToQueue",
+            "metadata": metadata,
+            "assets": {"videos": [{"url": video_url}]},
         }
-    else:
-        metadata = {}
+        if scheduled_at:
+            inp["scheduledAt"] = scheduled_at
 
-    inp = {
-        "channelId": channel_id,
-        "text": caption,
-        "schedulingType": "scheduled" if scheduled_at else "automatic",
-        "mode": "addToQueue",
-        "metadata": metadata,
-        "assets": {"videos": [{"url": video_url}]},
-    }
-    if scheduled_at:
-        inp["scheduledAt"] = scheduled_at
+        result = _gql(_VIDEO_POST_MUTATION, {"input": inp})
+        payload = result["createPost"]
+        if "message" in payload:
+            raise RuntimeError(f"Buffer rejected {channel} post: {payload['message']}")
 
-    result = _gql(_VIDEO_POST_MUTATION, {"input": inp})
-    payload = result["createPost"]
-    if "message" in payload:
-        raise RuntimeError(f"Buffer rejected {channel} post: {payload['message']}")
+        post_id = payload["post"]["id"]
+        status  = payload["post"]["status"]
+        print(f"    → {channel} queued: {post_id} ({status})")
+    except Exception as e:
+        if _HIVE_AVAILABLE:
+            _fleet_state.heartbeat("buffer_poster", status="error", result=str(e))
+        raise
 
-    post_id = payload["post"]["id"]
-    status  = payload["post"]["status"]
-    print(f"    → {channel} queued: {post_id} ({status})")
+    if _HIVE_AVAILABLE:
+        platform = channel
+        _events.publish(
+            "content.scheduled",
+            "buffer_poster",
+            {
+                "platform": platform,
+                "media_kind": "video",
+            },
+        )
+        _fleet_state.heartbeat("buffer_poster", status="ok", result=f"scheduled:{platform}")
     return post_id
 
 
@@ -255,25 +297,42 @@ def _create_video_story_post(channel: str, video_url: str, scheduled_at: str = N
     if not channel_id:
         raise ValueError(f"Unknown channel '{channel}'. Valid: {list(CHANNELS.keys())}")
 
-    inp = {
-        "channelId": channel_id,
-        "text": "",
-        "schedulingType": "scheduled" if scheduled_at else "automatic",
-        "mode": "addToQueue",
-        "metadata": {"instagram": {"type": "story"}},
-        "assets": {"videos": [{"url": video_url}]},
-    }
-    if scheduled_at:
-        inp["scheduledAt"] = scheduled_at
+    try:
+        inp = {
+            "channelId": channel_id,
+            "text": "",
+            "schedulingType": "scheduled" if scheduled_at else "automatic",
+            "mode": "addToQueue",
+            "metadata": {"instagram": {"type": "story"}},
+            "assets": {"videos": [{"url": video_url}]},
+        }
+        if scheduled_at:
+            inp["scheduledAt"] = scheduled_at
 
-    result = _gql(_VIDEO_POST_MUTATION, {"input": inp})
-    payload = result["createPost"]
-    if "message" in payload:
-        raise RuntimeError(f"Buffer rejected {channel} story: {payload['message']}")
+        result = _gql(_VIDEO_POST_MUTATION, {"input": inp})
+        payload = result["createPost"]
+        if "message" in payload:
+            raise RuntimeError(f"Buffer rejected {channel} story: {payload['message']}")
 
-    post_id = payload["post"]["id"]
-    status  = payload["post"]["status"]
-    print(f"    → {channel} story queued: {post_id} ({status})")
+        post_id = payload["post"]["id"]
+        status  = payload["post"]["status"]
+        print(f"    → {channel} story queued: {post_id} ({status})")
+    except Exception as e:
+        if _HIVE_AVAILABLE:
+            _fleet_state.heartbeat("buffer_poster", status="error", result=str(e))
+        raise
+
+    if _HIVE_AVAILABLE:
+        platform = channel
+        _events.publish(
+            "content.scheduled",
+            "buffer_poster",
+            {
+                "platform": platform,
+                "media_kind": "video_story",
+            },
+        )
+        _fleet_state.heartbeat("buffer_poster", status="ok", result=f"scheduled:{platform}_story")
     return post_id
 
 
