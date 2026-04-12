@@ -112,6 +112,13 @@ GROWTH_WEIGHT_PROFILES = {
 BOUNCE_RATE_LIMIT       = 0.15   # 15% — pause sends if bounce rate exceeds this
 BOUNCE_RATE_WINDOW_DAYS = 7      # 7-day rolling window — larger sample = more stable rate
 
+# ─── Warm-up Buffer ───────────────────────────────────────────────────────────
+# agent_discovered contacts go to 'warm_up' status after verification.
+# They are sent to at a lower daily cap to protect Gmail sender reputation
+# while the discovery pipeline's address quality is unproven.
+# csv_legacy / manual contacts bypass the warm-up and go straight to 'verified'.
+WARM_UP_DAILY_CAP = 10   # max agent_discovered sends per day
+
 # ─── Reply Check ──────────────────────────────────────────────────────────────
 REPLY_CHECK_INBOX_DAYS = 30   # Look back this many days when scanning for replies
 

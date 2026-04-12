@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS contacts (
     genre                   TEXT,
     notes                   TEXT,
     status                  TEXT    DEFAULT 'new',
-    -- new | verified | queued | sent | followup_sent | responded | bounced | skip | invalid
+    -- new | verified | warm_up | queued | sent | followup_sent | responded | bounced | skip | invalid
+    -- warm_up: agent_discovered contacts that passed MX check but are throttled to WARM_UP_DAILY_CAP/day
     bounce                  TEXT    DEFAULT 'no',  -- no | pre-check | actual
     date_added              TEXT,
     date_verified           TEXT,
@@ -325,6 +326,37 @@ def update_contact(email, **fields):
 
 def mark_verified(email):
     update_contact(email, status="verified", date_verified=str(date.today()))
+
+
+def mark_warm_up(email):
+    """Mark as warm_up — agent_discovered contacts that passed verification but
+    are throttled to WARM_UP_DAILY_CAP sends/day to protect sender reputation."""
+    update_contact(email, status="warm_up", date_verified=str(date.today()))
+
+
+def get_warm_up_contacts(limit: int) -> list[dict]:
+    """Return warm_up contacts prioritised by research_done, FIFO within tier."""
+    with get_conn() as conn:
+        rows = conn.execute("""
+            SELECT * FROM contacts
+            WHERE status = 'warm_up'
+            ORDER BY COALESCE(research_done, 0) DESC, date_added ASC
+            LIMIT ?
+        """, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_warm_up_sent_today() -> int:
+    """Count of agent_discovered contacts already sent to today (for cap enforcement)."""
+    today = str(date.today())
+    with get_conn() as conn:
+        row = conn.execute("""
+            SELECT COUNT(*) as cnt FROM contacts
+            WHERE source = 'agent_discovered'
+              AND status IN ('sent', 'followup_sent', 'responded', 'bounced', 'skip')
+              AND date_sent = ?
+        """, (today,)).fetchone()
+        return row["cnt"] if row else 0
 
 
 def mark_bounced_full(email, reason="", bounce_type="pre-check"):

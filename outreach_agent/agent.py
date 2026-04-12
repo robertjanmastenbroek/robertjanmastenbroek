@@ -28,7 +28,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ─── Logging setup (file + console) ──────────────────────────────────────────
-from config import LOG_PATH, DRAFT_MODE, BATCH_SIZE
+from config import LOG_PATH, DRAFT_MODE, BATCH_SIZE, WARM_UP_DAILY_CAP
 
 logging.basicConfig(
     level=logging.INFO,
@@ -73,7 +73,13 @@ def _verify_pending_contacts():
             db.mark_bounced_full(email, reason, bounce_type="pre-check")
             rejected += 1
         else:
-            db.mark_verified(email)
+            # agent_discovered contacts go to warm_up (throttled queue).
+            # Trusted sources (csv_legacy, manual, podcast_legacy) go straight to verified.
+            source = c.get("source", "manual")
+            if source == "agent_discovered":
+                db.mark_warm_up(email)
+            else:
+                db.mark_verified(email)
             verified += 1
         time.sleep(0.3)   # Be gentle on DNS
 
@@ -91,6 +97,19 @@ def _send_batch(batch_size: int) -> dict:
     if not contacts:
         # Fall back to 'queued' (shouldn't normally happen but safe)
         contacts = db.get_contacts_by_status("queued", limit=batch_size * 3)
+
+    # Append warm_up contacts up to the daily cap.
+    # They go after verified contacts so trusted sources are always prioritised.
+    warm_up_sent_today = db.get_warm_up_sent_today()
+    warm_up_budget = max(0, WARM_UP_DAILY_CAP - warm_up_sent_today)
+    if warm_up_budget > 0:
+        warm_up_contacts = db.get_warm_up_contacts(limit=warm_up_budget)
+        contacts = contacts + warm_up_contacts
+        if warm_up_contacts:
+            log.info(
+                "Warm-up queue: %d eligible, budget %d/day (used %d today)",
+                len(warm_up_contacts), WARM_UP_DAILY_CAP, warm_up_sent_today,
+            )
 
     if not contacts:
         log.info("No verified contacts in queue to send")
