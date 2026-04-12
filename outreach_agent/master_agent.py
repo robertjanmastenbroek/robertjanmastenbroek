@@ -46,6 +46,18 @@ try:
 except ImportError:
     _LEARNING_AVAILABLE = False
 
+try:
+    import fleet_state as _fleet_state
+    _FLEET_AVAILABLE = True
+except ImportError:
+    _FLEET_AVAILABLE = False
+
+try:
+    import events as _events
+    _EVENTS_AVAILABLE = True
+except ImportError:
+    _EVENTS_AVAILABLE = False
+
 STRATEGY_REGISTRY_PATH = Path(__file__).parent / "strategy_registry.json"
 SPOTIFY_TRACKER_PATH   = Path(__file__).parent / "spotify_tracker.py"
 
@@ -1313,6 +1325,42 @@ def cmd_run(agent_name: str, extra_args: list[str]):
     sys.exit(result.returncode)
 
 
+def cmd_fleet():
+    """Show live fleet health — all agents, staleness, error counts, recent events."""
+    db.init_db()
+    if not _FLEET_AVAILABLE:
+        print("fleet_state module not available")
+        return
+    all_agents = _fleet_state.get_all()
+    stale = _fleet_state.get_stale()
+    stale_names = {a["agent_name"] for a in stale}
+
+    print(f"\n{'─'*50}")
+    print("FLEET STATUS")
+    print(f"{'─'*50}")
+    if not all_agents:
+        print("  No agents have reported yet.")
+    for agent in all_agents:
+        marker = " \u26a0 STALE" if agent["agent_name"] in stale_names else ""
+        print(_fleet_state.summary_line(agent) + marker)
+
+    if stale:
+        print(f"\n\u26a0  {len(stale)} agent(s) are stale and may need attention.")
+    else:
+        print("\n\u2713 All agents reporting on schedule.")
+
+    if _EVENTS_AVAILABLE:
+        print(f"\n{'─'*50}")
+        print("RECENT EVENTS (last 10)")
+        print(f"{'─'*50}")
+        recent = _events.recent(limit=10)
+        if recent:
+            for e in recent:
+                print(f"  [{e['created_at'][:16]}] {e['event_type']:<30} \u2190 {e['source']}")
+        else:
+            print("  No events yet.")
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1329,6 +1377,8 @@ def main():
         cmd_weekly()
     elif args[0] == "health":
         cmd_health()
+    elif args[0] == "fleet":
+        cmd_fleet()
     elif args[0] == "podcast_targets":
         cmd_podcast_targets()
     elif args[0] == "adjust":

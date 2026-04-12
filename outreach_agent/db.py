@@ -137,6 +137,15 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
 CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at);
 
+CREATE TABLE IF NOT EXISTS fleet_state (
+    agent_name      TEXT    PRIMARY KEY,
+    last_heartbeat  TEXT    NOT NULL,
+    status          TEXT    DEFAULT 'ok',
+    last_result     TEXT    DEFAULT NULL,
+    run_count       INTEGER DEFAULT 0,
+    error_count     INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS form_submissions (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     playlist_id     TEXT    NOT NULL,

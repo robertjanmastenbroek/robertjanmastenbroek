@@ -16,6 +16,7 @@ Usage:
   python3 rjm.py playlist [cmd]           # Playlist DB (status, add, pending_contact, list)
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
   python3 rjm.py run <agent>              # Trigger a sub-agent directly
+  python3 rjm.py fleet                    # Live fleet health — all agents + recent events
   python3 rjm.py sync                     # Sync contacts.csv → outreach.db
   python3 rjm.py swarm init               # Initialise RuFlo agent swarm
   python3 rjm.py swarm status             # Show swarm agent status
@@ -459,6 +460,8 @@ def main():
         cmd_outreach(rest)
     elif cmd == "master":
         cmd_master(rest)
+    elif cmd == "fleet":
+        sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "fleet"], cwd=str(OUTREACH_DIR)))
     elif cmd == "contacts":
         cmd_contacts(rest)
     elif cmd in ("content", "post"):
