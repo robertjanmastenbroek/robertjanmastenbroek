@@ -40,6 +40,13 @@ import learning
 
 from config import MAX_EMAILS_PER_DAY, FOLLOWUP_DAYS, FOLLOWUP2_DAYS, CONTACT_TYPE_WEIGHTS, SMALL_PLAYLIST_PER_CYCLE
 
+try:
+    import events as _events
+    import fleet_state as _fleet_state
+    _HIVE_AVAILABLE = True
+except ImportError:
+    _HIVE_AVAILABLE = False
+
 
 def _rescue_stale_queued():
     """
@@ -228,6 +235,12 @@ def cmd_plan():
 
     plan["threads_to_check"] = [dict(r) for r in open_threads]
 
+    if _HIVE_AVAILABLE:
+        _fleet_state.heartbeat("run_cycle", status="ok", result={
+            "actions": len(plan.get("actions", [])),
+            "quota_remaining": plan.get("quota_remaining", 0)
+        })
+
     print(json.dumps(plan, indent=2))
 
 
@@ -268,6 +281,11 @@ def cmd_mark_sent(email, subject, thread_url=""):
     db.increment_today_count()
     ctype = (db.get_contact(email) or {}).get("type", "unknown")
     db.record_send_for_template(ctype, ctype)
+    if _HIVE_AVAILABLE:
+        _events.publish("email.sent", "run_cycle", {
+            "email": email,
+            "subject": subject,
+        })
     print(f"✅ Marked sent: {email}")
 
 
@@ -278,12 +296,19 @@ def cmd_mark_responded(email, snippet=""):
     c = db.get_contact(email)
     if c:
         db.record_reply_for_template(c.get("template_type","unknown"), c.get("type","unknown"))
+    if _HIVE_AVAILABLE:
+        _events.publish("reply.detected", "run_cycle", {
+            "email": email,
+            "snippet": snippet[:200] if snippet else "",
+        })
     print(f"✅ Marked responded: {email}")
 
 
 def cmd_mark_bounced(email):
     db.init_db()
     db.mark_bounced_full(email, reason="Actual delivery failure seen in browser", bounce_type="actual")
+    if _HIVE_AVAILABLE:
+        _events.publish("bounce.detected", "run_cycle", {"email": email})
     print(f"✅ Marked bounced: {email}")
 
 

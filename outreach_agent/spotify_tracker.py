@@ -19,6 +19,13 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 import db
 
+try:
+    import events as _events
+    import fleet_state as _fleet_state
+    _HIVE_AVAILABLE = True
+except ImportError:
+    _HIVE_AVAILABLE = False
+
 GOAL = 1_000_000
 SPOTIFY_ARTIST_ID = "2Seaafm5k1hAuCkpdq7yds"
 
@@ -79,6 +86,15 @@ def cmd_log(monthly_listeners: int, followers: int = 0, notes: str = "", source:
                 "INSERT INTO spotify_stats (date, monthly_listeners, followers, source, notes) VALUES (?, ?, ?, ?, ?)",
                 (today, monthly_listeners, followers, source, notes)
             )
+
+    if _HIVE_AVAILABLE:
+        _events.publish("spotify.listeners_logged", "spotify_tracker", {
+            "monthly_listeners": monthly_listeners,
+            "followers": followers,
+        })
+        _fleet_state.heartbeat("spotify_tracker", status="ok", result={
+            "monthly_listeners": monthly_listeners
+        })
 
     print(f"\n  Logged: {monthly_listeners:,} monthly listeners on {today}")
     print(f"  Progress to 1M: {monthly_listeners / GOAL * 100:.2f}%")
