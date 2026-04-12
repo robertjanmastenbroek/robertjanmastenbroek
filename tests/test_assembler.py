@@ -34,15 +34,13 @@ def test_variant_map_has_all_platforms():
 
 
 def test_variant_assignment_alternates_clip_0():
-    assert VARIANT_MAP[0]["tiktok"]    == "a"
-    assert VARIANT_MAP[0]["instagram"] == "b"
-    assert VARIANT_MAP[0]["youtube"]   == "a"
+    assert VARIANT_MAP[0]["instagram"] == "a"
+    assert VARIANT_MAP[0]["youtube"]   == "b"
 
 
 def test_variant_assignment_alternates_clip_1():
-    assert VARIANT_MAP[1]["tiktok"]    == "b"
-    assert VARIANT_MAP[1]["instagram"] == "a"
-    assert VARIANT_MAP[1]["youtube"]   == "b"
+    assert VARIANT_MAP[1]["instagram"] == "b"
+    assert VARIANT_MAP[1]["youtube"]   == "a"
 
 
 def test_find_best_audio_segment_fallback_on_missing_file():
@@ -61,7 +59,7 @@ def test_extract_caption_missing_returns_empty():
     assert result == ""
 
 
-def test_run_assembly_produces_nine_clips(tmp_path):
+def test_run_assembly_produces_six_clips(tmp_path):
     mock_frame = OpeningFrame(
         clip_index=0, source="footage", source_file=str(tmp_path / "v.mp4"),
         emotion_tag="euphoric", visual_category="performance", footage_score=8.0,
@@ -73,9 +71,9 @@ def test_run_assembly_produces_nine_clips(tmp_path):
                 15: {"a": "hook a", "b": "hook b", "c": "hook c"}}
 
     def mock_captions(title, hooks_by_length, brief):
-        return {5:  {"tiktok": {"caption": "cap"}, "instagram": {"caption": "cap"}, "youtube": {"title": "t", "caption": "cap"}},
-                9:  {"tiktok": {"caption": "cap"}, "instagram": {"caption": "cap"}, "youtube": {"title": "t", "caption": "cap"}},
-                15: {"tiktok": {"caption": "cap"}, "instagram": {"caption": "cap"}, "youtube": {"title": "t", "caption": "cap"}}}
+        return {5:  {"instagram": {"caption": "cap"}, "youtube": {"title": "t", "caption": "cap"}},
+                9:  {"instagram": {"caption": "cap"}, "youtube": {"title": "t", "caption": "cap"}},
+                15: {"instagram": {"caption": "cap"}, "youtube": {"title": "t", "caption": "cap"}}}
 
     with patch("content_engine.assembler._pick_audio",            return_value=("track.wav", "Jericho")), \
          patch("content_engine.assembler._generate_hooks",        side_effect=mock_hooks), \
@@ -84,7 +82,7 @@ def test_run_assembly_produces_nine_clips(tmp_path):
          patch("content_engine.assembler.build_clip",             return_value=str(tmp_path / "out.mp4")):
         clips = run_assembly(brief=BRIEF, weights=WEIGHTS, video_dirs=[str(tmp_path)], output_dir=str(tmp_path))
 
-    assert len(clips) == 9
+    assert len(clips) == 6
 
     platforms_seen = [c["platform"] for c in clips]
     for p in PLATFORMS:
@@ -92,7 +90,7 @@ def test_run_assembly_produces_nine_clips(tmp_path):
 
     clip_indices = [c["clip_index"] for c in clips]
     for i in range(3):
-        assert clip_indices.count(i) == 3
+        assert clip_indices.count(i) == 2
 
 
 def test_run_assembly_result_has_required_keys(tmp_path):

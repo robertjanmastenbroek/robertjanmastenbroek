@@ -24,15 +24,15 @@ sys.path.insert(0, str(PROJECT_DIR / "outreach_agent"))
 logger = logging.getLogger(__name__)
 
 CLIP_LENGTHS = [5, 9, 15]
-PLATFORMS    = ["tiktok", "instagram", "youtube"]
+PLATFORMS    = ["instagram", "youtube"]
 ANGLES       = ["emotional", "signal", "energy"]
 
 # Variant A/B per clip per platform — alternates across the week so each platform
 # sees both variants. Balances A/B signal collection without double-posting.
 VARIANT_MAP = {
-    0: {"tiktok": "a", "instagram": "b", "youtube": "a"},
-    1: {"tiktok": "b", "instagram": "a", "youtube": "b"},
-    2: {"tiktok": "a", "instagram": "b", "youtube": "a"},
+    0: {"instagram": "a", "youtube": "b"},
+    1: {"instagram": "b", "youtube": "a"},
+    2: {"instagram": "a", "youtube": "b"},
 }
 
 # Platform-specific rendering settings

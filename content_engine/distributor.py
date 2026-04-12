@@ -1,8 +1,8 @@
 """
 Module 4: Distributor
-Native API uploads: Instagram Graph API → TikTok Content Posting API v2 → YouTube Data API v3.
+Native API uploads: Instagram Graph API + YouTube Data API v3.
 Falls back to existing buffer_poster.py if native API unavailable or credentials missing.
-Posts 3 clips × 3 platforms = 9 posts/day on staggered schedule.
+Posts 3 clips × 2 platforms = 6 posts/day on staggered schedule.
 """
 import logging
 import os
@@ -23,7 +23,6 @@ YOUTUBE_UPLOAD_BASE  = "https://www.googleapis.com/upload/youtube/v3"
 
 # Peak posting times CET (clip_index → UTC offset applied externally by cron)
 POST_SCHEDULE = {
-    "tiktok":    ["09:00", "12:00", "19:00"],
     "instagram": ["09:00", "11:00", "19:00"],
     "youtube":   ["10:00", "13:00", "20:00"],
 }
@@ -248,14 +247,6 @@ def distribute_clip(clip: dict) -> dict:
             result = post_instagram_reel(path, caption, ig_user_id, access_token)
         else:
             logger.info("[distributor] Instagram credentials missing — using Buffer")
-            result = _buffer_fallback(clip)
-
-    elif platform == "tiktok":
-        access_token = os.environ.get("TIKTOK_ACCESS_TOKEN", "")
-        if access_token:
-            result = post_tiktok(path, caption, access_token)
-        else:
-            logger.info("[distributor] TikTok token missing — using Buffer")
             result = _buffer_fallback(clip)
 
     elif platform == "youtube":
