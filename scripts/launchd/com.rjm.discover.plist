@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.rjm.discover</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/scripts/run_agent.sh</string>
+    <string>discover</string>
+  </array>
+
+  <!-- Every 4 hours = 6×/day -->
+  <key>StartInterval</key>
+  <integer>14400</integer>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_discover.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_discover.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/motomoto</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>
