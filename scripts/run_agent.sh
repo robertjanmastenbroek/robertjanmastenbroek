@@ -102,6 +102,24 @@ case "$AGENT" in
   weekly)
     run_claude_agent "$PROJECT_ROOT/agents/holy-rave-weekly-report.md" "holy-rave-weekly-report"
     ;;
+  viral-trend)
+    log "Starting viral trend scanner"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 rjm.py content trend-scan 2>&1 | tee -a "$LOG"
+    log "Viral trend scanner finished (exit $?)"
+    ;;
+  viral-daily)
+    log "Starting viral daily pipeline (assembly + distribution)"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 rjm.py content viral 2>&1 | tee -a "$LOG"
+    log "Viral daily pipeline finished (exit $?)"
+    ;;
+  viral-learning)
+    log "Starting viral learning loop"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 rjm.py content learning 2>&1 | tee -a "$LOG"
+    log "Viral learning loop finished (exit $?)"
+    ;;
   *)
     log "ERROR: unknown agent '$AGENT'"
     exit 1

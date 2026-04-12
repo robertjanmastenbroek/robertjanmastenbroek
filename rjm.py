@@ -11,7 +11,11 @@ Usage:
   python3 rjm.py outreach [cmd]           # Outreach agent (run, status, verify, add, ...)
   python3 rjm.py master [cmd]             # Master agent (dashboard, gaps, weekly, run, ...)
   python3 rjm.py contacts [cmd]           # Contact manager (status, queue, sync, add, ...)
-  python3 rjm.py content [--dry-run]      # Holy Rave daily content run (3 clips → Buffer)
+  python3 rjm.py content [--dry-run]      # Holy Rave daily content run (legacy, 3 clips → Buffer)
+  python3 rjm.py content viral            # Viral pipeline: trend→visual→assemble→distribute
+  python3 rjm.py content viral --dry-run  # Viral pipeline dry-run (no posting)
+  python3 rjm.py content trend-scan       # Run trend scanner (06:00 CET)
+  python3 rjm.py content learning         # Run learning loop (18:00 CET)
   python3 rjm.py content retry            # Retry all failed posts in queue
   python3 rjm.py playlist [cmd]           # Playlist DB (status, add, pending_contact, list)
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
@@ -130,11 +134,47 @@ def cmd_briefing():
 
 
 def cmd_content(args: list[str]):
-    """Run the Holy Rave daily content engine (post_today.py)."""
-    if not POST_TODAY_PY.exists():
-        print(f"✗ {POST_TODAY_PY} not found")
-        sys.exit(1)
-    sys.exit(_run([_OUTREACH_PYTHON, str(POST_TODAY_PY)] + args, cwd=str(PROJECT_ROOT)))
+    """Run the Holy Rave daily content engine."""
+    subcommand = args[0].lower() if args else ""
+
+    if subcommand == "viral":
+        # New 5-module viral pipeline: trend→visual→assemble→distribute→learn
+        dry_run = "--dry-run" in args
+        sys.path.insert(0, str(PROJECT_ROOT))
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        import json
+        from content_engine.pipeline import run_full_day
+        result = run_full_day(dry_run=dry_run)
+        print(json.dumps(result, indent=2))
+        sys.exit(0)
+
+    elif subcommand == "trend-scan":
+        # Run trend scanner standalone (scheduled at 06:00 CET)
+        sys.path.insert(0, str(PROJECT_ROOT))
+        import logging, json
+        logging.basicConfig(level=logging.INFO)
+        from content_engine.trend_scanner import run as trend_run
+        brief = trend_run()
+        print(json.dumps(brief.__dict__, indent=2))
+        sys.exit(0)
+
+    elif subcommand == "learning":
+        # Run learning loop standalone (scheduled at 18:00 CET)
+        sys.path.insert(0, str(PROJECT_ROOT))
+        import logging, json
+        logging.basicConfig(level=logging.INFO)
+        from content_engine.learning_loop import run as learning_run
+        weights = learning_run()
+        print(json.dumps(weights.__dict__, indent=2))
+        sys.exit(0)
+
+    else:
+        # Legacy pipeline (post_today.py)
+        if not POST_TODAY_PY.exists():
+            print(f"✗ {POST_TODAY_PY} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(POST_TODAY_PY)] + args, cwd=str(PROJECT_ROOT)))
 
 
 def cmd_playlist(args: list[str]):

@@ -18,6 +18,9 @@ PLISTS=(
   com.rjm.research
   com.rjm.daily
   com.rjm.weekly
+  com.rjm.viral-trend
+  com.rjm.viral-daily
+  com.rjm.viral-learning
 )
 
 cmd="${1:-status}"
