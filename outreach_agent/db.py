@@ -146,6 +146,19 @@ CREATE TABLE IF NOT EXISTS fleet_state (
     error_count     INTEGER DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS content_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    posted_at   TEXT    NOT NULL,
+    platform    TEXT    NOT NULL,
+    format      TEXT    NOT NULL,
+    track       TEXT,
+    angle       TEXT,
+    hook        TEXT,
+    buffer_id   TEXT,
+    filename    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_content_log_date ON content_log(posted_at);
+
 CREATE TABLE IF NOT EXISTS form_submissions (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     playlist_id     TEXT    NOT NULL,

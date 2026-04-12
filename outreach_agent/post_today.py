@@ -728,6 +728,28 @@ def main():
                 print(f"    ✓ Queued: {', '.join(succeeded)}")
                 if failed_platforms:
                     print(f"    ⚠ Failed platforms (will retry next run): {', '.join(failed_platforms)}")
+
+                # ── Cross-platform content state log ─────────────────────────
+                try:
+                    from content_signal import log_content_post as _log_content_post
+                    hook_text = run_hooks.get(clip_len, "")
+                    for _platform, _result in results.items():
+                        if not _result.get("success"):
+                            continue
+                        _fmt = "short" if _platform == "youtube" else "reels"
+                        _log_content_post(
+                            platform=_platform,
+                            format=_fmt,
+                            track=track_title,
+                            angle=angle,
+                            hook=hook_text,
+                            buffer_id=_result.get("id"),
+                            filename=str(clip_path),
+                        )
+                except ImportError:
+                    pass
+                except Exception as _log_exc:
+                    print(f"    ⚠ content_signal log failed (non-fatal): {_log_exc}")
             except Exception as e:
                 # Total failure (video upload failed on all hosts) — save for retry
                 print(f"    ✗ Total posting failure — saving to retry queue: {e}")
@@ -793,6 +815,15 @@ def main():
         )
     except Exception:
         pass  # logging is non-fatal — never crash the content run
+
+    # ── Fleet heartbeat (hive-mind state) ────────────────────────────────────
+    try:
+        from fleet_state import heartbeat as _heartbeat
+        _heartbeat("post_today", status="ok", result={"clips": len(output_files)})
+    except ImportError:
+        pass
+    except Exception:
+        pass  # non-fatal
 
 
 if __name__ == "__main__":
