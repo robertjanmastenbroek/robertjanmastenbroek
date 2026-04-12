@@ -226,8 +226,8 @@ def _write_breakthrough(outlier, date_str: str):
     )
     try:
         result = subprocess.run(
-            [claude, "--print", "--model", "claude-haiku-4-5-20251001"],
-            input=prompt,
+            [claude, "--print", "--model", "claude-haiku-4-5-20251001",
+             "--no-session-persistence", prompt],
             capture_output=True, text=True, timeout=60,
         )
         analysis = result.stdout.strip()
