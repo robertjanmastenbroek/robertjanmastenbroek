@@ -39,6 +39,8 @@ Examples:
   python3 rjm.py master weekly            # Weekly report
   python3 rjm.py master spotify           # Spotify listener stats + trend
   python3 rjm.py master log_listeners 333 # Log current Spotify monthly listeners
+  python3 rjm.py master auto_weights      # Auto-adjust CONTACT_TYPE_WEIGHTS from Spotify velocity
+  python3 rjm.py auto-weights             # Shortcut for master auto_weights
   python3 rjm.py contacts status          # Contact DB overview
   python3 rjm.py contacts sync            # Import contacts.csv → SQLite
   python3 rjm.py contacts search tribal   # Search contacts
@@ -483,6 +485,8 @@ def main():
         sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "release"] + sys.argv[2:], cwd=str(OUTREACH_DIR)))
     elif cmd == "signals":
         sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "signals"], cwd=str(OUTREACH_DIR)))
+    elif cmd in ("auto-weights", "auto_weights"):
+        cmd_master(["auto_weights"])
     elif cmd == "contacts":
         cmd_contacts(rest)
     elif cmd in ("content", "post"):

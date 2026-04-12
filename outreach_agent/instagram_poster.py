@@ -20,6 +20,14 @@ from typing import List, Optional
 
 import requests
 
+# ─── Hive connectivity (defensive import) ────────────────────────────────────
+try:
+    import events as _events
+    import fleet_state as _fleet_state
+    _HIVE_AVAILABLE = True
+except ImportError:
+    _HIVE_AVAILABLE = False
+
 # ─── Configuration ────────────────────────────────────────────────────────────
 
 BASE_URL = "https://graph.instagram.com/v21.0"
@@ -158,48 +166,80 @@ def create_media_container(
 def post_story(image_path: str) -> str:
     """Upload image, post as a Story, and return the media ID."""
     print(f"\n[story] Posting story: {os.path.basename(image_path)} …")
-    url = upload_image_to_host(image_path)
+    try:
+        url = upload_image_to_host(image_path)
 
-    print("  Creating story container …")
-    container_id = create_media_container(url, is_story=True)
-    _poll_container(container_id)
+        print("  Creating story container …")
+        container_id = create_media_container(url, is_story=True)
+        _poll_container(container_id)
 
-    token = _access_token()
-    uid = _user_id()
-    print("  Publishing story …")
-    resp = requests.post(
-        f"{BASE_URL}/{uid}/media_publish",
-        data={"creation_id": container_id, "access_token": token},
-        timeout=30,
-    )
-    _raise_for_status(resp, "publish story")
-    media_id = resp.json()["id"]
-    print(f"[story] Published — media ID: {media_id}")
+        token = _access_token()
+        uid = _user_id()
+        print("  Publishing story …")
+        resp = requests.post(
+            f"{BASE_URL}/{uid}/media_publish",
+            data={"creation_id": container_id, "access_token": token},
+            timeout=30,
+        )
+        _raise_for_status(resp, "publish story")
+        media_id = resp.json()["id"]
+        print(f"[story] Published — media ID: {media_id}")
+    except Exception as e:
+        if _HIVE_AVAILABLE:
+            _fleet_state.heartbeat("instagram_poster", status="error", result=str(e))
+        raise
+
+    if _HIVE_AVAILABLE:
+        _events.publish(
+            "content.posted",
+            "instagram_poster",
+            {
+                "platform": "instagram",
+                "media_type": "story",
+            },
+        )
+        _fleet_state.heartbeat("instagram_poster", status="ok", result="posted")
     return media_id
 
 
 def post_single(image_path: str, caption: str) -> str:
     """Upload image, post as a single feed post, and return the permalink."""
     print(f"\n[single] Posting: {os.path.basename(image_path)} …")
-    url = upload_image_to_host(image_path)
+    try:
+        url = upload_image_to_host(image_path)
 
-    print("  Creating media container …")
-    container_id = create_media_container(url, caption=caption)
-    _poll_container(container_id)
+        print("  Creating media container …")
+        container_id = create_media_container(url, caption=caption)
+        _poll_container(container_id)
 
-    token = _access_token()
-    uid = _user_id()
-    print("  Publishing …")
-    resp = requests.post(
-        f"{BASE_URL}/{uid}/media_publish",
-        data={"creation_id": container_id, "access_token": token},
-        timeout=30,
-    )
-    _raise_for_status(resp, "publish single post")
-    media_id = resp.json()["id"]
+        token = _access_token()
+        uid = _user_id()
+        print("  Publishing …")
+        resp = requests.post(
+            f"{BASE_URL}/{uid}/media_publish",
+            data={"creation_id": container_id, "access_token": token},
+            timeout=30,
+        )
+        _raise_for_status(resp, "publish single post")
+        media_id = resp.json()["id"]
 
-    permalink = _fetch_permalink(media_id)
-    print(f"[single] Published: {permalink}")
+        permalink = _fetch_permalink(media_id)
+        print(f"[single] Published: {permalink}")
+    except Exception as e:
+        if _HIVE_AVAILABLE:
+            _fleet_state.heartbeat("instagram_poster", status="error", result=str(e))
+        raise
+
+    if _HIVE_AVAILABLE:
+        _events.publish(
+            "content.posted",
+            "instagram_poster",
+            {
+                "platform": "instagram",
+                "media_type": "single",
+            },
+        )
+        _fleet_state.heartbeat("instagram_poster", status="ok", result="posted")
     return permalink
 
 
