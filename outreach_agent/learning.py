@@ -13,6 +13,12 @@ import db
 from config import LEARNING_REPORT_AFTER_N_REPLIES, MIN_SENDS_FOR_STATS, CLAUDE_MODEL_FAST
 from template_engine import _call_claude
 
+try:
+    import events as _events
+    _HIVE_AVAILABLE = True
+except ImportError:
+    _HIVE_AVAILABLE = False
+
 log = logging.getLogger("outreach.learning")
 
 
@@ -110,6 +116,10 @@ Return ONLY a JSON array of strings. No markdown."""
                 based_on_n=len(responses),
             )
             log.info("Saved insight: %s", insight[:80])
+            if _HIVE_AVAILABLE:
+                _events.publish("template.insight_generated", "learning", {
+                    "based_on_n": len(responses),
+                })
 
     except Exception as exc:
         log.error("Insight generation failed: %s", exc)
