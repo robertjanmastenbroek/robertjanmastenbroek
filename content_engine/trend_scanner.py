@@ -45,7 +45,9 @@ def _call_claude(prompt: str) -> str:
     claude = os.environ.get("CLAUDE_CLI_PATH", "") or _find_claude()
     result = subprocess.run(
         [claude, "--print", "--model", "claude-haiku-4-5-20251001",
-         "--no-session-persistence", prompt],
+         "--no-session-persistence",
+         "--system-prompt", "You are a music trend analyst. Output only valid JSON, no commentary.",
+         prompt],
         capture_output=True, text=True, timeout=120,
     )
     if result.returncode != 0:
