@@ -22,6 +22,13 @@ from pathlib import Path
 from story import ARTIST, TRACKS
 from brand_context import COMPACT_STORY, SMYKM_FRAMEWORK
 
+# Brand voice gate (optional, non-blocking)
+try:
+    import brand_gate as _brand_gate
+    _BRAND_GATE_AVAILABLE = True
+except ImportError:
+    _BRAND_GATE_AVAILABLE = False
+
 # ─── Track URL lookup (built once at import) ──────────────────────────────────
 # Maps lowercase track title → {title, spotify, bpm} for safety-net injection
 _TRACK_MAP: dict[str, dict] = {}
@@ -367,6 +374,8 @@ def generate_email(contact: dict, learning_context: str = "") -> tuple[str, str]
     subject, body = _parse_response(raw)
 
     log.info("Generated — subject: %r", subject)
+    if _BRAND_GATE_AVAILABLE:
+        _brand_gate.gate_or_warn(body, context="template_engine.generate_email")
     return subject, body
 
 
@@ -449,6 +458,8 @@ def generate_emails_batch(contacts, learning_contexts=None):
             body += "\n\nRobert-Jan\nrobertjanmastenbroek.com | https://instagram.com/robertjanmastenbroek"
         result[email] = (subject, body)
         log.info("Batch generated — %s subject: %r", email, subject)
+        if _BRAND_GATE_AVAILABLE:
+            _brand_gate.gate_or_warn(body, context="template_engine.batch")
 
     log.info("Batch complete: %d/%d emails generated", len(result), n)
     return result
@@ -472,4 +483,6 @@ def generate_followup_email(contact: dict) -> tuple[str, str]:
         subject = f"Re: {orig_subject}"
 
     log.info("Generated follow-up — subject: %r", subject)
+    if _BRAND_GATE_AVAILABLE:
+        _brand_gate.gate_or_warn(body, context="template_engine.followup")
     return subject, body

@@ -27,6 +27,13 @@ import subprocess
 
 logger = logging.getLogger(__name__)
 
+# Brand voice gate (optional, non-blocking)
+try:
+    import brand_gate as _brand_gate
+    _BRAND_GATE_AVAILABLE = True
+except ImportError:
+    _BRAND_GATE_AVAILABLE = False
+
 # ── Claude CLI ─────────────────────────────────────────────────────────────────
 
 def _find_claude() -> str:
@@ -520,6 +527,12 @@ Do not explain your choices. Do not apologise for bold hooks. Bold is correct.""
         fb = _fallback_hook(angle)
         hooks = {l: {'a': fb, 'b': fb, 'c': fb} for l in clip_lengths}
 
+    if _BRAND_GATE_AVAILABLE:
+        for length, abc in hooks.items():
+            for variant in ('a', 'b', 'c'):
+                if abc.get(variant):
+                    abc[variant] = _brand_gate.gate_or_warn(abc[variant], context=f"generator.hooks.{variant}")
+
     return {
         'track_name': track_name,
         'angle':      angle,
@@ -683,6 +696,8 @@ Bold is correct. Do not self-censor."""
         logger.info(f"Run hooks generated: {track_title}")
         for length, hook in hooks.items():
             logger.info(f"  {length}s [{clips_by_length.get(length,'?')}] → \"{hook}\"")
+        if _BRAND_GATE_AVAILABLE:
+            hooks = {l: _brand_gate.gate_or_warn(h, context="generator.run_hooks") for l, h in hooks.items()}
         return hooks
 
     except Exception as e:
@@ -904,6 +919,12 @@ Return ONLY valid JSON, no explanation, no markdown fences:
         result['track_name'] = track_name
         result['angle']      = angle
         logger.info(f"Captions generated: {filename}")
+        if _BRAND_GATE_AVAILABLE:
+            for _clip in result.get('clips', {}).values():
+                for platform in ('tiktok', 'instagram'):
+                    cap = _clip.get(platform, {}).get('caption')
+                    if cap:
+                        _brand_gate.gate_or_warn(cap, context=f"generator.captions.{platform}")
         return result
 
     except json.JSONDecodeError as e:
@@ -1074,6 +1095,12 @@ Return ONLY valid JSON, no explanation, no markdown:
             }
 
         logger.info(f"Run captions generated for track: {track_title}")
+        if _BRAND_GATE_AVAILABLE:
+            for _length, _platforms in captions.items():
+                for platform in ('tiktok', 'instagram'):
+                    cap = _platforms.get(platform, {}).get('caption')
+                    if cap:
+                        _brand_gate.gate_or_warn(cap, context=f"generator.run_captions.{platform}")
         return captions
 
     except json.JSONDecodeError as e:
