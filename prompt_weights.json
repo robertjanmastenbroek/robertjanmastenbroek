@@ -1,0 +1,18 @@
+{
+  "hook_weights": {
+    "tension": 1.0,
+    "identity": 1.0,
+    "scene": 1.0,
+    "claim": 1.0,
+    "rupture": 1.0
+  },
+  "visual_weights": {
+    "ai_generated": 1.0,
+    "performance": 1.0,
+    "b_roll": 1.0,
+    "phone": 1.0
+  },
+  "best_clip_length": 15,
+  "best_platform": "instagram",
+  "updated": ""
+}
