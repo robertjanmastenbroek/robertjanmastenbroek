@@ -1361,6 +1361,45 @@ def cmd_fleet():
             print("  No events yet.")
 
 
+def cmd_release(args: list[str]):
+    """
+    Manage release calendar.
+    Usage:
+      master_agent.py release list           — show all pending releases
+      master_agent.py release add <track> <YYYY-MM-DD> [notes...]
+      master_agent.py release check          — fire any campaigns due within 7 days
+    """
+    db.init_db()
+    try:
+        import release_trigger
+    except ImportError:
+        print("release_trigger module not available")
+        return
+
+    sub = args[0] if args else "list"
+
+    if sub == "list":
+        pending = release_trigger.get_pending_releases()
+        if not pending:
+            print("No pending releases.")
+        for r in pending:
+            print(f"  [{r['release_date']}] {r['track_name']}  — {r['notes'] or '(no notes)'}")
+
+    elif sub == "add" and len(args) >= 3:
+        track, rel_date = args[1], args[2]
+        notes = " ".join(args[3:]) if len(args) > 3 else ""
+        release_trigger.add_release(track, rel_date, notes=notes)
+        print(f"Added release: {track} on {rel_date}")
+
+    elif sub == "check":
+        fired = release_trigger.fire_due_campaigns(days_window=7)
+        if not fired:
+            print("No releases due within 7 days.")
+
+    else:
+        print("Usage: release list | release add <track> <date> [notes] | release check")
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1379,6 +1418,8 @@ def main():
         cmd_health()
     elif args[0] == "fleet":
         cmd_fleet()
+    elif args[0] == "release":
+        cmd_release(args[1:])
     elif args[0] == "podcast_targets":
         cmd_podcast_targets()
     elif args[0] == "adjust":

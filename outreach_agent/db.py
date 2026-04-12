@@ -159,6 +159,16 @@ CREATE TABLE IF NOT EXISTS content_log (
 );
 CREATE INDEX IF NOT EXISTS idx_content_log_date ON content_log(posted_at);
 
+CREATE TABLE IF NOT EXISTS release_calendar (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    track_name      TEXT    NOT NULL,
+    release_date    TEXT    NOT NULL,
+    platforms       TEXT    DEFAULT 'spotify,tiktok,instagram',
+    campaign_fired  INTEGER DEFAULT 0,
+    fired_at        TEXT    DEFAULT NULL,
+    notes           TEXT
+);
+
 CREATE TABLE IF NOT EXISTS form_submissions (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     playlist_id     TEXT    NOT NULL,
