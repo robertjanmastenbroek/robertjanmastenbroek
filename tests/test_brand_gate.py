@@ -43,3 +43,12 @@ def test_score_range():
     """Score is always 0–5."""
     r = brand_gate.validate_content("test")
     assert 0 <= r["score"] <= 5
+
+
+def test_gate_or_warn_never_raises_and_returns_text_unchanged(capsys):
+    text = "Amazing music with incredible spiritual vibes for everyone."
+    result = brand_gate.gate_or_warn(text, context="test")
+    assert result == text           # text is never modified
+    captured = capsys.readouterr()
+    assert captured.out == ""       # nothing on stdout
+    assert "WARN" in captured.err   # warning goes to stderr

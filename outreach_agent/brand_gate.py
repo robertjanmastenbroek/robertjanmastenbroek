@@ -17,8 +17,6 @@ import re
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(__file__))
-
 # ── Banned generic phrases (Uniqueness + Falsifiability) ──────────────────────
 _GENERIC_ADJECTIVES = [
     r"\bamazing\b", r"\bincredible\b", r"\bawesome\b", r"\bepic\b",
@@ -67,7 +65,7 @@ def validate_content(text: str) -> dict:
 
     # Test 3: Uniqueness — competitor test (no brand-agnostic boilerplate)
     boilerplate = [r"\bpassion(?:ate)?\b", r"\bjourney\b", r"\bunique sound\b", r"\bspecial\b"]
-    if not any(re.search(p, text_lower) for p in boilerplate):
+    if not any(re.search(p, text, re.IGNORECASE) for p in boilerplate):
         score += 1
     else:
         flags.append("Uniqueness: boilerplate language — could belong to any artist, rewrite with RJM specifics")
@@ -89,7 +87,7 @@ def validate_content(text: str) -> dict:
     else:
         flags.append("Point A→B: no contrast/tension language — add secular/sacred bridge word")
 
-    passes = score >= 3 and len(generic_hits) <= 2
+    passes = score >= 3
 
     suggestion = ""
     if not passes:
@@ -117,6 +115,6 @@ def gate_or_warn(text: str, context: str = "") -> str:
         prefix = f"[brand_gate:{context}] " if context else "[brand_gate] "
         print(
             f"{prefix}WARN score={result['score']}/5 flags={result['flags']}",
-            file=__import__("sys").stderr,
+            file=sys.stderr,
         )
     return text

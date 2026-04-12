@@ -921,6 +921,7 @@ Return ONLY valid JSON, no explanation, no markdown fences:
         logger.info(f"Captions generated: {filename}")
         if _BRAND_GATE_AVAILABLE:
             for _clip in result.get('clips', {}).values():
+                # YouTube excluded: descriptions exceed 280-char proxy; gate not calibrated for long-form copy
                 for platform in ('tiktok', 'instagram'):
                     cap = _clip.get(platform, {}).get('caption')
                     if cap:
@@ -1097,6 +1098,7 @@ Return ONLY valid JSON, no explanation, no markdown:
         logger.info(f"Run captions generated for track: {track_title}")
         if _BRAND_GATE_AVAILABLE:
             for _length, _platforms in captions.items():
+                # YouTube excluded: descriptions exceed 280-char proxy; gate not calibrated for long-form copy
                 for platform in ('tiktok', 'instagram'):
                     cap = _platforms.get(platform, {}).get('caption')
                     if cap:
