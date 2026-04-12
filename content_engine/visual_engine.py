@@ -136,7 +136,11 @@ def pick_opening_frame(brief: TrendBrief, clip_index: int, video_dirs: list) -> 
 
     # Generate with Runway
     prompt = build_prompt(brief, clip_index)
-    generated_path = generate_clip(prompt, brief.date, clip_index)
+    try:
+        generated_path = generate_clip(prompt, brief.date, clip_index)
+    except RuntimeError as exc:
+        logger.warning(f"[visual_engine] clip {clip_index}: Runway unavailable ({exc}) — using placeholder")
+        generated_path = ""  # assembler build_clip will skip ffmpeg and write a stub
     return OpeningFrame(
         clip_index=clip_index,
         source="ai_generated",

@@ -208,7 +208,8 @@ def detect_outliers(records: list) -> list:
 
 def _write_breakthrough(outlier, date_str: str):
     """Claude CLI analysis of a viral breakthrough. Saves to learning/breakthroughs/."""
-    claude = os.environ.get("CLAUDE_CLI_PATH", "") or "claude"
+    from content_engine.trend_scanner import _find_claude
+    claude = os.environ.get("CLAUDE_CLI_PATH", "") or _find_claude()
     prompt = (
         f"A short-form video went viral today (2x+ average views):\n"
         f"Platform: {outlier.platform}\n"
@@ -225,7 +226,8 @@ def _write_breakthrough(outlier, date_str: str):
     )
     try:
         result = subprocess.run(
-            [claude, "--print", "--model", "claude-haiku-4-5-20251001", prompt],
+            [claude, "--print", "--model", "claude-haiku-4-5-20251001"],
+            input=prompt,
             capture_output=True, text=True, timeout=60,
         )
         analysis = result.stdout.strip()

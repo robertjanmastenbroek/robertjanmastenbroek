@@ -37,8 +37,20 @@ def run_full_day(dry_run: bool = False) -> dict:
         logger.info(f"[pipeline] Trend brief loaded: {brief.dominant_emotion}")
     except FileNotFoundError:
         logger.warning("[pipeline] Trend brief missing — running trend_scanner now")
-        from content_engine import trend_scanner
-        brief = trend_scanner.run(date_str)
+        try:
+            from content_engine import trend_scanner
+            brief = trend_scanner.run(date_str)
+        except Exception as exc:
+            logger.warning(f"[pipeline] Trend scanner failed ({exc}) — using default brief")
+            brief = TrendBrief(
+                date=date_str,
+                top_visual_formats=["performance", "b_roll"],
+                dominant_emotion="euphoric",
+                oversaturated=["generic_dance"],
+                hook_pattern_of_day="tension",
+                contrarian_gap="raw authentic moments",
+                trend_confidence=0.5,
+            )
 
     weights = PromptWeights.load()
     logger.info(f"[pipeline] Weights loaded — best platform: {weights.best_platform}")

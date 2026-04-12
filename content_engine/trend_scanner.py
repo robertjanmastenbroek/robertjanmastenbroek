@@ -20,6 +20,7 @@ SPOTIFY_FEATURED_URL = "https://api.spotify.com/v1/browse/featured-playlists"
 
 
 def _find_claude() -> str:
+    import glob
     candidates = [
         "/usr/local/bin/claude",
         "/opt/homebrew/bin/claude",
@@ -29,14 +30,22 @@ def _find_claude() -> str:
     for p in candidates:
         if os.path.isfile(p):
             return p
+    # Claude Code desktop app — find latest installed version
+    pattern = os.path.expanduser(
+        "~/Library/Application Support/Claude/claude-code/*/claude.app/Contents/MacOS/claude"
+    )
+    hits = sorted(glob.glob(pattern))
+    if hits:
+        return hits[-1]
     return "claude"
 
 
 def _call_claude(prompt: str) -> str:
-    """Call Claude CLI. Returns stdout text."""
+    """Call Claude CLI via stdin. Returns stdout text."""
     claude = os.environ.get("CLAUDE_CLI_PATH", "") or _find_claude()
     result = subprocess.run(
-        [claude, "--print", "--model", "claude-haiku-4-5-20251001", prompt],
+        [claude, "--print", "--model", "claude-haiku-4-5-20251001"],
+        input=prompt,
         capture_output=True, text=True, timeout=120,
     )
     if result.returncode != 0:

@@ -118,6 +118,13 @@ def build_clip(
     """
     from processor import format_to_vertical_multiclip
 
+    # Stub path — no source footage or API key; write empty file for dry-run validation
+    if not opening_frame.source_file:
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_path).touch()
+        logger.warning(f"[assembler] No source file for {platform} clip — writing stub: {output_path}")
+        return output_path
+
     audio_start = _find_best_audio_segment(audio_path, clip_length)
     settings    = PLATFORM_SETTINGS[platform]
 
@@ -189,10 +196,15 @@ def _generate_hooks(track_title: str) -> dict:
 def _generate_captions(track_title: str, hooks_by_length: dict, brief: TrendBrief) -> dict:
     """Generate platform captions for all 3 clips via existing generator."""
     import generator as gen
+    def _hook_str(val) -> str:
+        if isinstance(val, dict):
+            return val.get("a", val.get("text", ""))
+        return val or ""
+
     clips_data = [
-        {"length": 5,  "angle": "emotional", "hook": hooks_by_length.get(5,  {}).get("a", "")},
-        {"length": 9,  "angle": "signal",    "hook": hooks_by_length.get(9,  {}).get("a", "")},
-        {"length": 15, "angle": "energy",    "hook": hooks_by_length.get(15, {}).get("a", "")},
+        {"length": 5,  "angle": "emotional", "hook": _hook_str(hooks_by_length.get(5))},
+        {"length": 9,  "angle": "signal",    "hook": _hook_str(hooks_by_length.get(9))},
+        {"length": 15, "angle": "energy",    "hook": _hook_str(hooks_by_length.get(15))},
     ]
     return gen.generate_run_captions(track_title, clips_data)
 
@@ -235,7 +247,12 @@ def run_assembly(
         logger.info(f"[assembler] Clip {clip_idx} ({clip_length}s): "
                     f"{opening_frame.source} — {opening_frame.source_file}")
 
-        clip_hooks = hooks_by_length.get(clip_length, {})
+        _raw_hooks = hooks_by_length.get(clip_length, {})
+        # generate_run_hooks returns plain strings; normalise to dict for variant lookup
+        if isinstance(_raw_hooks, str):
+            clip_hooks = {"a": _raw_hooks, "b": _raw_hooks}
+        else:
+            clip_hooks = _raw_hooks
 
         for platform in PLATFORMS:
             variant   = VARIANT_MAP[clip_idx][platform]
