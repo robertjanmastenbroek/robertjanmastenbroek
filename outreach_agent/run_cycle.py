@@ -44,6 +44,12 @@ try:
 except ImportError:
     _SCORER_AVAILABLE = False
 
+try:
+    import playlist_enricher as _playlist_enricher
+    _ENRICHER_AVAILABLE = True
+except ImportError:
+    _ENRICHER_AVAILABLE = False
+
 from config import MAX_EMAILS_PER_DAY, FOLLOWUP_DAYS, FOLLOWUP2_DAYS, CONTACT_TYPE_WEIGHTS, SMALL_PLAYLIST_PER_CYCLE
 
 
@@ -209,6 +215,14 @@ def cmd_plan():
                 )
             except Exception:
                 pass  # scoring is advisory — never break the cycle
+
+        # Enrich with playlist DB context (best track, matching playlist row).
+        # Advisory — never block the cycle if enrichment fails.
+        if _ENRICHER_AVAILABLE and batch_contacts:
+            try:
+                batch_contacts = _playlist_enricher.enrich_batch(batch_contacts)
+            except Exception:
+                pass
 
         # Build learning context per type (one lookup per type, not per contact)
         _learn_cache = {}
