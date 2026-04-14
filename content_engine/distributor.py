@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 import time
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import requests
@@ -21,11 +22,35 @@ INSTAGRAM_GRAPH_BASE = "https://graph.instagram.com/v21.0"
 TIKTOK_API_BASE      = "https://open.tiktokapis.com/v2"
 YOUTUBE_UPLOAD_BASE  = "https://www.googleapis.com/upload/youtube/v3"
 
-# Peak posting times CET (clip_index → UTC offset applied externally by cron)
+# Peak posting times in CET/CEST (Europe/Madrid = Tenerife)
+# clip_index 0 → first slot, 1 → second, 2 → third
 POST_SCHEDULE = {
-    "instagram": ["09:00", "11:00", "19:00"],
-    "youtube":   ["10:00", "13:00", "20:00"],
+    "instagram": ["09:00", "13:00", "19:00"],
+    "youtube":   ["10:00", "14:00", "20:00"],
 }
+# CET offset: UTC+1 winter, UTC+2 summer (CEST). Use fixed +1 as conservative default;
+# zoneinfo adjusts automatically when available.
+_CET_OFFSET = timedelta(hours=1)
+
+
+def _scheduled_at_utc(platform: str, clip_index: int) -> str:
+    """
+    Return ISO-8601 UTC datetime string for when clip_index should go live.
+    Uses POST_SCHEDULE times in CET. If the slot is already past for today,
+    still returns today's time (Buffer/YouTube will publish immediately).
+    """
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Madrid")  # Tenerife (same as CET/CEST)
+    except Exception:
+        tz = timezone(_CET_OFFSET)
+
+    slots  = POST_SCHEDULE.get(platform, POST_SCHEDULE["instagram"])
+    slot   = slots[clip_index % len(slots)]
+    h, m   = int(slot.split(":")[0]), int(slot.split(":")[1])
+    today  = datetime.now(tz).replace(hour=h, minute=m, second=0, microsecond=0)
+    utc_dt = today.astimezone(timezone.utc)
+    return utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _upload_video_for_instagram(video_path: str) -> str:
@@ -257,13 +282,27 @@ def post_tiktok(video_path: str, caption: str, access_token: str) -> dict:
 
 
 def post_youtube_short(video_path: str, title: str, description: str,
-                       api_key: str, oauth_token: str) -> dict:
-    """Upload YouTube Short via YouTube Data API v3 resumable upload."""
+                       api_key: str, oauth_token: str,
+                       publish_at: str = "") -> dict:
+    """
+    Upload YouTube Short via YouTube Data API v3 resumable upload.
+    publish_at: ISO-8601 UTC string (e.g. "2026-04-14T13:00:00Z"). When set,
+    the video is uploaded as private and scheduled to go public at that time.
+    """
     try:
         # Always refresh token to avoid 401
         oauth_token = _refresh_youtube_token() or oauth_token
 
         video_size = Path(video_path).stat().st_size
+
+        status_obj: dict = {"selfDeclaredMadeForKids": False}
+        if publish_at:
+            # YouTube requires privacyStatus=private to use publishAt
+            status_obj["privacyStatus"] = "private"
+            status_obj["publishAt"]     = publish_at
+            logger.info(f"[distributor] YouTube scheduled for {publish_at}")
+        else:
+            status_obj["privacyStatus"] = "public"
 
         init_resp = requests.post(
             f"{YOUTUBE_UPLOAD_BASE}/videos",
@@ -281,7 +320,7 @@ def post_youtube_short(video_path: str, title: str, description: str,
                     "tags": ["techno", "psytrance", "holyrave", "RJM", "#shorts"],
                     "categoryId": "10",
                 },
-                "status": {"privacyStatus": "public", "selfDeclaredMadeForKids": False},
+                "status": status_obj,
             },
             timeout=30,
         )
@@ -310,7 +349,7 @@ def post_youtube_short(video_path: str, title: str, description: str,
         return {"success": False, "platform": "youtube", "error": str(e)}
 
 
-def _buffer_fallback(clip: dict) -> dict:
+def _buffer_fallback(clip: dict, scheduled_at: str = "") -> dict:
     """Fall back to existing buffer_poster.py if native API unavailable."""
     try:
         import buffer_poster
@@ -320,6 +359,7 @@ def _buffer_fallback(clip: dict) -> dict:
             instagram_caption=clip.get("caption", ""),
             youtube_title=clip.get("track_title", "RJM") + " | Holy Rave #shorts",
             youtube_desc=clip.get("caption", ""),
+            scheduled_at=scheduled_at or None,
         )
         success = any(v.get("success") for v in (result or {}).values())
         return {"success": success, "post_id": "buffer", "platform": clip["platform"],
@@ -331,40 +371,47 @@ def _buffer_fallback(clip: dict) -> dict:
 
 def distribute_clip(clip: dict) -> dict:
     """
-    Distribute a single clip to its target platform.
+    Distribute a single clip to its target platform on its scheduled time slot.
     Tries native API first, falls back to Buffer on failure or missing credentials.
     clip dict keys: {platform, path, caption, hook_text, track_title, clip_index, variant, ...}
     """
-    platform = clip["platform"]
-    path     = clip["path"]
-    caption  = clip.get("caption", "")
+    platform    = clip["platform"]
+    path        = clip["path"]
+    caption     = clip.get("caption", "")
+    clip_index  = clip.get("clip_index", 0)
+    scheduled_at = _scheduled_at_utc(platform, clip_index)
+
+    logger.info(f"[distributor] {platform} clip {clip_index} → scheduled {scheduled_at}")
 
     if platform == "instagram":
         ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "")
         access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
         if ig_user_id and access_token:
-            result = post_instagram_reel(path, caption, ig_user_id, access_token)
+            # Instagram Graph API doesn't support scheduling — post immediately via native,
+            # use Buffer for scheduled delivery
+            result = _buffer_fallback(clip, scheduled_at)
         else:
             logger.info("[distributor] Instagram credentials missing — using Buffer")
-            result = _buffer_fallback(clip)
+            result = _buffer_fallback(clip, scheduled_at)
 
     elif platform == "youtube":
         api_key     = os.environ.get("YOUTUBE_API_KEY", "")
         oauth_token = os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
         title       = f"{clip.get('track_title', 'RJM')} | Holy Rave #shorts"
         if api_key and oauth_token:
-            result = post_youtube_short(path, title, caption, api_key, oauth_token)
+            result = post_youtube_short(path, title, caption, api_key, oauth_token,
+                                        publish_at=scheduled_at)
         else:
             logger.info("[distributor] YouTube credentials missing — using Buffer")
-            result = _buffer_fallback(clip)
+            result = _buffer_fallback(clip, scheduled_at)
 
     else:
         result = {"success": False, "platform": platform, "error": f"Unknown platform: {platform}"}
 
-    # If native API failed, try Buffer fallback
+    # If native API failed, try Buffer fallback with schedule preserved
     if not result.get("success") and result.get("via") != "buffer_fallback":
         logger.warning(f"[distributor] {platform} native failed: {result.get('error')} — Buffer fallback")
-        result = _buffer_fallback(clip)
+        result = _buffer_fallback(clip, scheduled_at)
 
     result["clip_index"] = clip.get("clip_index")
     result["variant"]    = clip.get("variant")
