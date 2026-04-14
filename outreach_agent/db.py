@@ -107,6 +107,14 @@ CREATE TABLE IF NOT EXISTS dead_addresses (
     reason      TEXT
 );
 
+-- YouTube Data API v3 quota tracking — resets at midnight Pacific time
+CREATE TABLE IF NOT EXISTS api_budget (
+    date        TEXT    NOT NULL,       -- YYYY-MM-DD (Pacific) for YouTube
+    service     TEXT    NOT NULL,       -- 'youtube' | 'spotify' | ...
+    units_used  INTEGER DEFAULT 0,
+    PRIMARY KEY (date, service)
+);
+
 CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts(status);
 CREATE INDEX IF NOT EXISTS idx_contacts_type   ON contacts(type);
 CREATE INDEX IF NOT EXISTS idx_contacts_date_sent ON contacts(date_sent);
@@ -225,13 +233,127 @@ def init_db():
             ("reply_intent",           "TEXT DEFAULT NULL"),  # classified intent
             ("reply_action",           "TEXT DEFAULT NULL"),  # suggested action from classifier
             ("reply_classified_at",    "TEXT DEFAULT NULL"),  # when classification ran
+            # YouTube outreach branch — per-channel metadata used by youtube_discover.py
+            ("youtube_channel_id",          "TEXT DEFAULT NULL"),  # UC... unique channel ID
+            ("youtube_channel_url",         "TEXT DEFAULT NULL"),  # public channel URL
+            ("youtube_subs",                "INTEGER DEFAULT NULL"),# subscribers at discovery time
+            ("youtube_video_count",         "INTEGER DEFAULT NULL"),# total uploads at discovery
+            ("youtube_last_upload_at",      "TEXT DEFAULT NULL"),   # ISO date of latest upload
+            ("youtube_genre_match_score",   "REAL DEFAULT NULL"),   # 0.0–1.0 keyword density
+            ("youtube_recent_upload_title", "TEXT DEFAULT NULL"),   # latest title for personalization
         ]:
             try:
                 conn.execute(f"ALTER TABLE contacts ADD COLUMN {col} {definition}")
                 log.info("Migrated: added %s column", col)
             except Exception:
                 pass  # column already exists
+
+        # Unique index on youtube_channel_id (NULL-safe: NULL values don't collide in SQLite)
+        try:
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_yt_channel_id "
+                "ON contacts(youtube_channel_id) WHERE youtube_channel_id IS NOT NULL"
+            )
+        except Exception:
+            pass
     log.info("Database initialised at %s", DB_PATH)
+
+
+# ─── YouTube Data API v3 quota tracking ───────────────────────────────────────
+
+def record_api_units(service: str, units: int, today: str | None = None) -> None:
+    """Increment today's API unit counter for a service."""
+    if today is None:
+        today = date.today().isoformat()
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO api_budget (date, service, units_used) VALUES (?, ?, ?) "
+            "ON CONFLICT(date, service) DO UPDATE SET units_used = units_used + excluded.units_used",
+            (today, service, units),
+        )
+
+
+def get_api_units_today(service: str, today: str | None = None) -> int:
+    """Return units used today for a service (0 if no row)."""
+    if today is None:
+        today = date.today().isoformat()
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT units_used FROM api_budget WHERE date = ? AND service = ?",
+            (today, service),
+        ).fetchone()
+        return int(row["units_used"]) if row else 0
+
+
+def add_youtube_contact(
+    email: str,
+    name: str,
+    channel_id: str,
+    channel_url: str = "",
+    subs: int | None = None,
+    video_count: int | None = None,
+    last_upload_at: str | None = None,
+    genre_match_score: float | None = None,
+    recent_upload_title: str = "",
+    genre: str = "",
+    notes: str = "",
+    source: str = "agent_discovered",
+) -> tuple[bool, str]:
+    """
+    Insert a YouTube channel as a contact with all youtube_* metadata populated.
+    Returns (success, reason). Idempotent on youtube_channel_id — refreshes
+    subs/recent_upload if the channel already exists.
+    """
+    email = email.strip().lower()
+    with get_conn() as conn:
+        # Dedup first on channel_id (authoritative for YouTube)
+        existing = conn.execute(
+            "SELECT id, email, status FROM contacts WHERE youtube_channel_id = ?",
+            (channel_id,),
+        ).fetchone()
+        if existing:
+            # Refresh volatile fields (subs, last upload, recent title)
+            conn.execute(
+                "UPDATE contacts SET youtube_subs = COALESCE(?, youtube_subs),"
+                " youtube_video_count = COALESCE(?, youtube_video_count),"
+                " youtube_last_upload_at = COALESCE(?, youtube_last_upload_at),"
+                " youtube_recent_upload_title = COALESCE(?, youtube_recent_upload_title)"
+                " WHERE id = ?",
+                (subs, video_count, last_upload_at, recent_upload_title, existing["id"]),
+            )
+            return False, f"duplicate — channel already in DB as status={existing['status']}"
+
+        # Fall through to email-level dedup (channel's email might be reused across channels)
+        if email:
+            email_existing = conn.execute(
+                "SELECT id, status FROM contacts WHERE email = ?", (email,)
+            ).fetchone()
+            if email_existing:
+                # Attach youtube metadata to the existing contact without flipping type
+                conn.execute(
+                    "UPDATE contacts SET youtube_channel_id = ?, youtube_channel_url = ?,"
+                    " youtube_subs = ?, youtube_video_count = ?, youtube_last_upload_at = ?,"
+                    " youtube_genre_match_score = ?, youtube_recent_upload_title = ?"
+                    " WHERE id = ?",
+                    (channel_id, channel_url, subs, video_count, last_upload_at,
+                     genre_match_score, recent_upload_title, email_existing["id"]),
+                )
+                return False, f"email already in DB as status={email_existing['status']} — yt metadata attached"
+
+        # New row
+        now = datetime.now().isoformat()
+        status = "new" if email else "skip"  # no email = tracked-but-not-sendable
+        conn.execute(
+            "INSERT INTO contacts ("
+            "  email, name, type, genre, notes, status, date_added, source,"
+            "  youtube_channel_id, youtube_channel_url, youtube_subs, youtube_video_count,"
+            "  youtube_last_upload_at, youtube_genre_match_score, youtube_recent_upload_title"
+            ") VALUES (?, ?, 'youtube', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (email or f"no-email-{channel_id}@placeholder.invalid", name, genre, notes,
+             status, now, source, channel_id, channel_url, subs, video_count,
+             last_upload_at, genre_match_score, recent_upload_title),
+        )
+        return True, "inserted"
 
 
 def get_verified_by_playlist_size(size: str, limit: int = 10) -> list[dict]:

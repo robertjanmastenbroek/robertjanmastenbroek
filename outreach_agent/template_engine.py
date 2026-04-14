@@ -30,11 +30,15 @@ except ImportError:
     _BRAND_GATE_AVAILABLE = False
 
 # ─── Track URL lookup (built once at import) ──────────────────────────────────
-# Maps lowercase track title → {title, spotify, bpm} for safety-net injection
+# Maps lowercase track title → {title, spotify, bpm} for safety-net injection.
+# Tracks with empty "spotify" URLs are excluded — they're placeholders (e.g. Kavod
+# before its Spotify URL is pasted into story.py). The email templates refuse to
+# mention a track without its URL, so empty-URL tracks cannot be recommended.
 _TRACK_MAP: dict[str, dict] = {}
 for _cat in TRACKS.values():
     for _t in _cat:
-        _TRACK_MAP[_t["title"].lower()] = _t
+        if _t.get("spotify"):  # skip empty/missing URLs
+            _TRACK_MAP[_t["title"].lower()] = _t
 from config import CLAUDE_MODEL_EMAIL, CLAUDE_MODEL_FAST
 
 log = logging.getLogger("outreach.templates")
@@ -128,6 +132,16 @@ def _call_claude(prompt: str, model: str = CLAUDE_MODEL_EMAIL, timeout: int = 12
     return result.stdout.strip()
 
 
+# ─── Signature ────────────────────────────────────────────────────────────────
+# Minimal artist sign-off — matches the original email tone (personal, direct,
+# no corporate legal footer). reply_classifier.py already handles natural-language
+# unsubscribe replies (intent='unsubscribe' → add to dead_addresses + status='closed'),
+# so the opt-out path exists behaviorally even though we don't advertise it.
+_SIGNATURE_BLOCK = (
+    "\n\nRobert-Jan\n"
+    "robertjanmastenbroek.com | https://instagram.com/robertjanmastenbroek"
+)
+
 # ─── System prompts per contact type ─────────────────────────────────────────
 # COMPACT_STORY and SMYKM_FRAMEWORK are imported from brand_context.py.
 # Edit brand identity there — it propagates here automatically.
@@ -161,11 +175,26 @@ _TYPE_ADDONS = {
 - Hidden Objection: "sounds like everything else" → name one concrete differentiator
 - DO NOT use this template for press/editorial contacts — they need a different ask""",
 
-    "youtube": """CONTEXT: YouTube channel / mix series pitch.
-- Trigger: a specific video, mix, or visual aesthetic
-- Challenge: finding tracks that fit their visual/sonic world without sounding generic
-- Value Prop: describe the visual atmosphere of the track — what the listener sees, not abstract music terms
-- One context sentence: Dutch producer, Tenerife, 290K IG, fully independent""",
+    "youtube": """CONTEXT: YouTube music-promo channel — ask them to upload our track to their channel.
+The pitch is MONEY: they keep 100% of the ad revenue from the upload.
+Content ID has been DISABLED at the distributor for these tracks, so the promise is real.
+
+- Subject formula: "[Track] ([BPM] BPM [genre]) — free track, you keep 100% ad rev"
+  Example: "Kavod (140 BPM Hebrew psytrance) — free track, you keep 100% ad rev"
+- Opening (2 sentences): name ONE specific recent upload of theirs (genre, vibe).
+  Show you actually watched it — don't flatter generically.
+- Offer (3 sentences): ONE track (WAV + artwork). Name BPM, genre, one-word visual.
+  Spotify link inline directly after the track title.
+- The deal (2 sentences, concrete and clean):
+  "You keep 100% of the ad revenue — Content ID is off on this track. I just ask
+   you to put my Spotify artist link in the description so listeners can go stream."
+- CTA (1 sentence): "Reply 'yes' and I'll send the WAV + artwork within the hour."
+- Email length: 80–110 words.
+- Signature: Robert-Jan | robertjanmastenbroek.com | 290K IG @holyraveofficial
+- NEVER hedge the ad rev promise. NEVER mention BandLab, distributors, or claims.
+- NEVER use 'monetize' as a carrot — 'keep 100% of the ad revenue' is the money phrase.
+- The deal is simple: free track → they run ads → RJM gets Spotify streams from the link.
+- Faith angle: OFF unless the channel description explicitly says christian/worship/spiritual.""",
 
     "festival": """CONTEXT: Festival booking inquiry.
 - Trigger: a specific past edition, headliner decision, or stated ethos
@@ -290,12 +319,33 @@ def _get_track_recs(ctype: str, genre: str, notes: str) -> str:
     Track priority: 80% Renamed (130 BPM tribal) + Halleluyah (140 BPM psytrance).
     Melodic techno (Living Water etc.) only for explicitly melodic/house contexts.
     Default fallback always returns Renamed + Halleluyah — never melodic as default.
+
+    Tracks with empty spotify URLs are silently filtered (placeholders like Kavod
+    before its URL is pasted into story.py). The brand rule requires "never name
+    a track without its Spotify link", so empty-URL tracks cannot be recommended.
+
+    For ctype='youtube', the psytrance branch is forced regardless of genre — all
+    channels in the YouTube pipeline are filtered to psytrance/tribal/progressive
+    at discovery time, so melodic techno is never the right pitch here.
     """
     genre_lower = (genre + " " + notes).lower()
     is_psy    = any(w in genre_lower for w in ["psy", "psytrance", "trance", "140"])
     is_tribal = any(w in genre_lower for w in ["tribal", "ethnic", "organic", "130"])
     is_melodic = any(w in genre_lower for w in ["melodic", "house", "minimal", "accessible"])
     is_faith  = any(w in genre_lower for w in ["christian", "faith", "worship", "gospel"])
+
+    # YouTube pipeline = psytrance/tribal by definition (filtered at discovery)
+    if ctype == "youtube":
+        is_psy    = True
+        is_tribal = True
+        is_melodic = False
+        is_faith   = False
+
+    def _fmt(t):
+        return f"• {t['title']} — {t['bpm']} BPM — {t['notes']} — {t['spotify']}"
+
+    def _has_url(t):
+        return bool(t.get("spotify"))
 
     lines = []
 
@@ -304,31 +354,52 @@ def _get_track_recs(ctype: str, genre: str, notes: str) -> str:
         primary   = TRACKS["psytrance"]    if is_psy    else TRACKS["tribal_techno"]
         secondary = TRACKS["tribal_techno"] if is_psy    else TRACKS["psytrance"]
         for t in primary + secondary:
-            entry = f"• {t['title']} — {t['bpm']} BPM — {t['notes']} — {t['spotify']}"
+            if not _has_url(t):
+                continue
+            entry = _fmt(t)
             if entry not in lines:
                 lines.append(entry)
 
     if is_faith:
-        # Faith contacts: melodic tracks carry the most overt spiritual content
         for t in TRACKS["melodic_techno"]:
-            entry = f"• {t['title']} — {t['bpm']} BPM — {t['notes']} — {t['spotify']}"
+            if not _has_url(t):
+                continue
+            entry = _fmt(t)
             if entry not in lines:
                 lines.append(entry)
 
     if is_melodic and not is_psy and not is_tribal:
-        # Pure melodic/house context only — use melodic techno tracks
         for t in TRACKS["melodic_techno"]:
-            entry = f"• {t['title']} — {t['bpm']} BPM — {t['notes']} — {t['spotify']}"
+            if not _has_url(t):
+                continue
+            entry = _fmt(t)
             if entry not in lines:
                 lines.append(entry)
 
     # Default: Renamed + Halleluyah — never fall back to melodic techno by default
     if not lines:
         for t in TRACKS["tribal_techno"] + TRACKS["psytrance"]:
-            lines.append(f"• {t['title']} — {t['bpm']} BPM — {t['notes']} — {t['spotify']}")
+            if not _has_url(t):
+                continue
+            lines.append(_fmt(t))
 
     return "\n".join(lines[:3])  # max 3 tracks — enough context, fewer tokens
 
+
+
+def _ensure_signature(body: str) -> str:
+    """
+    Guarantee every outbound email ends with the canonical sign-off.
+
+    Idempotent: if the body already contains the website URL (strong signal
+    the model wrote the sign-off), return unchanged. Otherwise append the
+    canonical block. This replaces the old direct-append pattern which could
+    leave a duplicate "Robert-Jan\\nrobertjanmastenbroek.com" when the model
+    already wrote one.
+    """
+    if "robertjanmastenbroek.com" in body:
+        return body
+    return body.rstrip() + _SIGNATURE_BLOCK
 
 
 def _inject_spotify_links(body: str) -> str:
@@ -383,9 +454,8 @@ def _parse_response(raw: str) -> tuple[str, str]:
     # Ensure every mentioned track has its Spotify link
     body = _inject_spotify_links(body)
 
-    # Ensure sign-off is present
-    if "robertjanmastenbroek.com" not in body:
-        body += "\n\nRobert-Jan\nrobertjanmastenbroek.com | https://instagram.com/robertjanmastenbroek"
+    # Ensure sign-off + CAN-SPAM compliance footer is present
+    body = _ensure_signature(body)
 
     return subject, body
 
@@ -497,8 +567,7 @@ def generate_emails_batch(contacts, learning_contexts=None):
         if not email or not subject or not body:
             continue
         body = _inject_spotify_links(body)
-        if "robertjanmastenbroek.com" not in body:
-            body += "\n\nRobert-Jan\nrobertjanmastenbroek.com | https://instagram.com/robertjanmastenbroek"
+        body = _ensure_signature(body)
         result[email] = (subject, body)
         log.info("Batch generated — %s subject: %r", email, subject)
         if _BRAND_GATE_AVAILABLE:

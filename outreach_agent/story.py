@@ -35,9 +35,13 @@ MUSIC = {
 }
 
 # ─── Catalogue (Spotify links) ────────────────────────────────────────────────
+# Tracks with empty "spotify" fields are filtered out of email recommendations
+# by _get_track_recs() in template_engine.py — so Kavod (below) will activate
+# automatically the moment its Spotify URL is pasted here. No code changes needed.
 TRACKS = {
     "psytrance": [
         {"title": "Halleluyah",     "bpm": 140, "spotify": "https://open.spotify.com/track/4ysTzCDCezKhxIDOKIV4gG", "notes": "Hebrew lyrics, tribal percussion"},
+        {"title": "Kavod",          "bpm": 140, "spotify": "", "notes": "Hebrew 'glory', driving psytrance — PASTE SPOTIFY URL HERE TO ACTIVATE"},
         {"title": "Jericho",        "bpm": 140, "spotify": "https://open.spotify.com/track/2M7cL3KynPGzE1DonuldrN", "notes": "Hebrew lyrics, heavy psytrance energy"},
     ],
     "tribal_techno": [

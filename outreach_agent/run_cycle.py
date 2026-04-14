@@ -50,7 +50,13 @@ try:
 except ImportError:
     _ENRICHER_AVAILABLE = False
 
-from config import MAX_EMAILS_PER_DAY, FOLLOWUP_DAYS, FOLLOWUP2_DAYS, CONTACT_TYPE_WEIGHTS, SMALL_PLAYLIST_PER_CYCLE
+from config import (
+    MAX_EMAILS_PER_DAY, FOLLOWUP_DAYS, FOLLOWUP2_DAYS,
+    CONTACT_TYPE_WEIGHTS, SMALL_PLAYLIST_PER_CYCLE,
+    YOUTUBE_SHARE_FLOOR,
+)
+
+import random as _random
 
 try:
     import events as _events
@@ -58,6 +64,64 @@ try:
     _HIVE_AVAILABLE = True
 except ImportError:
     _HIVE_AVAILABLE = False
+
+
+def _weighted_order_with_youtube_floor(contacts, youtube_share: float = YOUTUBE_SHARE_FLOOR):
+    """
+    Weighted-order a batch of contacts, with a guaranteed floor for type='youtube'.
+
+    Semantics:
+      - Sort non-YouTube contacts by their type's weight (higher weight first),
+        shuffled within a type.
+      - YouTube contacts are interleaved so they reach `youtube_share` of the
+        output whenever supply allows.
+      - If YouTube supply is short, others fill the slot (overflow DOWN).
+      - If only YouTube supply is present, the whole batch is YouTube (overflow UP).
+
+    The goal is a per-batch floor, not just a per-day floor — even small batches
+    of 7 get ~3–4 YouTube contacts when the queue has supply.
+    """
+    yt = [c for c in contacts if c.get("type") == "youtube"]
+    others = [c for c in contacts if c.get("type") != "youtube"]
+    _random.shuffle(yt)
+
+    # Weighted order for non-YouTube types
+    by_type: dict[str, list] = {}
+    for c in others:
+        by_type.setdefault(c.get("type", ""), []).append(c)
+    types_sorted = sorted(
+        by_type.keys(),
+        key=lambda t: CONTACT_TYPE_WEIGHTS.get(t, 1),
+        reverse=True,
+    )
+    ordered_others: list = []
+    for t in types_sorted:
+        bucket = by_type[t]
+        _random.shuffle(bucket)
+        ordered_others.extend(bucket)
+
+    # Interleave to hit the floor
+    result: list = []
+    total = len(yt) + len(ordered_others)
+    yt_used = other_used = 0
+    for i in range(total):
+        yt_remaining = len(yt) - yt_used
+        other_remaining = len(ordered_others) - other_used
+
+        if yt_remaining == 0:
+            result.append(ordered_others[other_used]); other_used += 1
+            continue
+        if other_remaining == 0:
+            result.append(yt[yt_used]); yt_used += 1
+            continue
+
+        # Are we ahead or behind on the YouTube target after this pick?
+        yt_target_so_far = int((i + 1) * youtube_share + 0.5)
+        if yt_used < yt_target_so_far:
+            result.append(yt[yt_used]); yt_used += 1
+        else:
+            result.append(ordered_others[other_used]); other_used += 1
+    return result
 
 
 def _rescue_stale_queued():
@@ -159,11 +223,9 @@ def cmd_plan():
                 "gmail_url": gmail_url,
             })
 
-    # --- Initial sends (weighted by contact type priority) ---
+    # --- Initial sends (YouTube-floor enforced + type-weighted) ---
     batch_size = scheduler.compute_batch_size()
     if scheduler.is_within_active_window() and batch_size > 0:
-        import random
-
         _active_types = {t for t, w in CONTACT_TYPE_WEIGHTS.items() if w > 0}
         verified_all = db.get_contacts_by_status("verified", limit=100)
         verified_all = [c for c in verified_all if c.get("type") in _active_types]
@@ -172,32 +234,23 @@ def cmd_plan():
         researched   = [c for c in verified_all if c.get("research_done") == 1]
         unresearched = [c for c in verified_all if c.get("research_done") != 1]
 
-        def _weighted_order(contacts):
-            """Sort contacts by type weight (desc), shuffled within same weight."""
-            by_type = {}
-            for c in contacts:
-                by_type.setdefault(c["type"], []).append(c)
-            types_sorted = sorted(by_type.keys(),
-                                  key=lambda t: CONTACT_TYPE_WEIGHTS.get(t, 1),
-                                  reverse=True)
-            ordered = []
-            for t in types_sorted:
-                bucket = by_type[t]
-                random.shuffle(bucket)
-                ordered.extend(bucket)
-            return ordered
-
         # Step 1: Small-tagged contacts (500–10k) — prioritise researched first
         small_researched   = [c for c in researched   if c.get("playlist_size") == "small"]
         small_unresearched = [c for c in unresearched if c.get("playlist_size") == "small"]
-        small_pool = _weighted_order(small_researched) + _weighted_order(small_unresearched)
+        small_pool = (
+            _weighted_order_with_youtube_floor(small_researched)
+            + _weighted_order_with_youtube_floor(small_unresearched)
+        )
         small_contacts = small_pool[:SMALL_PLAYLIST_PER_CYCLE]
         small_emails   = {c["email"] for c in small_contacts}
 
         # Step 2: Fill remaining slots — researched first, then unresearched
         rest_researched   = [c for c in researched   if c["email"] not in small_emails]
         rest_unresearched = [c for c in unresearched if c["email"] not in small_emails]
-        rest_pool = _weighted_order(rest_researched) + _weighted_order(rest_unresearched)
+        rest_pool = (
+            _weighted_order_with_youtube_floor(rest_researched)
+            + _weighted_order_with_youtube_floor(rest_unresearched)
+        )
 
         ordered = small_contacts + rest_pool
 
@@ -489,11 +542,9 @@ def cmd_contacts():
                 "followup_num": 1,
             })
 
-    # --- Initial sends ---
+    # --- Initial sends (YouTube-floor enforced + type-weighted) ---
     batch_size = scheduler.compute_batch_size()
     if batch_size > 0:
-        import random
-
         _active_types = {t for t, w in CONTACT_TYPE_WEIGHTS.items() if w > 0}
         verified_all  = db.get_contacts_by_status("verified", limit=100)
         verified_all  = [c for c in verified_all if c.get("type") in _active_types]
@@ -501,29 +552,21 @@ def cmd_contacts():
         researched   = [c for c in verified_all if c.get("research_done") == 1]
         unresearched = [c for c in verified_all if c.get("research_done") != 1]
 
-        def _weighted_order(contacts):
-            by_type = {}
-            for c in contacts:
-                by_type.setdefault(c["type"], []).append(c)
-            types_sorted = sorted(by_type.keys(),
-                                  key=lambda t: CONTACT_TYPE_WEIGHTS.get(t, 1),
-                                  reverse=True)
-            ordered = []
-            for t in types_sorted:
-                bucket = by_type[t]
-                random.shuffle(bucket)
-                ordered.extend(bucket)
-            return ordered
-
         small_researched   = [c for c in researched   if c.get("playlist_size") == "small"]
         small_unresearched = [c for c in unresearched if c.get("playlist_size") == "small"]
-        small_pool = _weighted_order(small_researched) + _weighted_order(small_unresearched)
+        small_pool = (
+            _weighted_order_with_youtube_floor(small_researched)
+            + _weighted_order_with_youtube_floor(small_unresearched)
+        )
         small_contacts = small_pool[:SMALL_PLAYLIST_PER_CYCLE]
         small_emails   = {c["email"] for c in small_contacts}
 
         rest_researched   = [c for c in researched   if c["email"] not in small_emails]
         rest_unresearched = [c for c in unresearched if c["email"] not in small_emails]
-        rest_pool = _weighted_order(rest_researched) + _weighted_order(rest_unresearched)
+        rest_pool = (
+            _weighted_order_with_youtube_floor(rest_researched)
+            + _weighted_order_with_youtube_floor(rest_unresearched)
+        )
 
         ordered = small_contacts + rest_pool
         batch_contacts = ordered[:batch_size]

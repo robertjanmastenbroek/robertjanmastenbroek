@@ -19,6 +19,9 @@ Usage:
   python3 rjm.py content retry            # Retry all failed posts in queue
   python3 rjm.py playlist [cmd]           # Playlist DB (status, add, pending_contact, list)
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
+  python3 rjm.py youtube discover         # Find YouTube promo channels → contacts DB
+  python3 rjm.py youtube status           # YouTube-type pipeline counts
+  python3 rjm.py youtube budget           # Today's YouTube API unit usage vs cap
   python3 rjm.py run <agent>              # Trigger a sub-agent directly
   python3 rjm.py fleet                    # Live fleet health — all agents + recent events
   python3 rjm.py release list             # Pending track releases
@@ -83,6 +86,7 @@ PROJECT_ROOT    = Path(__file__).parent
 OUTREACH_DIR    = PROJECT_ROOT / "outreach_agent"
 AGENT_PY        = OUTREACH_DIR / "agent.py"
 MASTER_PY       = OUTREACH_DIR / "master_agent.py"
+YT_DISCOVER_PY  = OUTREACH_DIR / "youtube_discover.py"
 CONTACT_MGR_PY  = PROJECT_ROOT / "contact_manager.py"
 POST_TODAY_PY   = OUTREACH_DIR / "post_today.py"
 PLAYLIST_RUN_PY = OUTREACH_DIR / "playlist_run.py"
@@ -140,6 +144,61 @@ def cmd_sync():
 def cmd_briefing():
     """Shorthand for: python3 rjm.py master briefing"""
     sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "briefing"], cwd=str(OUTREACH_DIR)))
+
+
+def cmd_youtube(args: list[str]):
+    """YouTube outreach branch — discover channels, show pipeline status, show API budget."""
+    if not args:
+        print("Usage:")
+        print("  python3 rjm.py youtube discover [--dry-run] [--per-query N]")
+        print("  python3 rjm.py youtube status     # pipeline counts by status")
+        print("  python3 rjm.py youtube budget     # today's YouTube API unit usage vs cap")
+        sys.exit(1)
+
+    action = args[0].lower()
+    rest = args[1:]
+
+    if action == "discover":
+        if not YT_DISCOVER_PY.exists():
+            print(f"✗ {YT_DISCOVER_PY} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif action == "status":
+        # Pipeline counts by status for type='youtube'
+        code = (
+            "import db, sqlite3;"
+            "db.init_db();"
+            "c = sqlite3.connect(str(db.DB_PATH));"
+            "c.row_factory = sqlite3.Row;"
+            "rows = c.execute(\"SELECT status, COUNT(*) AS n FROM contacts WHERE type='youtube' GROUP BY status ORDER BY n DESC\").fetchall();"
+            "total = c.execute(\"SELECT COUNT(*) FROM contacts WHERE type='youtube'\").fetchone()[0];"
+            "print('\\n=== YouTube Pipeline ===');"
+            "[print(f\"  {r['status']:<18} {r['n']}\") for r in rows];"
+            "print(f\"  {'TOTAL':<18} {total}\");"
+            "w = c.execute(\"SELECT COUNT(*) FROM contacts WHERE type='youtube' AND youtube_channel_id IS NOT NULL AND (email IS NULL OR email LIKE 'no-email-%')\").fetchone()[0];"
+            "print(f\"\\n  tracked-without-email: {w}  (phase-2 manual enrichment)\")"
+        )
+        sys.exit(_run([_OUTREACH_PYTHON, "-c", code], cwd=str(OUTREACH_DIR)))
+
+    elif action == "budget":
+        code = (
+            "import db;"
+            "from config import YOUTUBE_API_DAILY_UNITS_CAP;"
+            "used = db.get_api_units_today('youtube');"
+            "remaining = YOUTUBE_API_DAILY_UNITS_CAP - used;"
+            "pct = (used / YOUTUBE_API_DAILY_UNITS_CAP) * 100;"
+            "print('\\n=== YouTube API Budget (today) ===');"
+            "print(f\"  Used      {used} units\");"
+            "print(f\"  Cap       {YOUTUBE_API_DAILY_UNITS_CAP} units\");"
+            "print(f\"  Remaining {remaining} units ({100-pct:.0f}% free)\")"
+        )
+        sys.exit(_run([_OUTREACH_PYTHON, "-c", code], cwd=str(OUTREACH_DIR)))
+
+    else:
+        print(f"Unknown youtube action: {action!r}")
+        print("Valid: discover, status, budget")
+        sys.exit(1)
 
 
 def cmd_content(args: list[str]):
@@ -583,6 +642,8 @@ def main():
         cmd_playlist(rest)
     elif cmd == "spotify":
         cmd_spotify(rest)
+    elif cmd == "youtube":
+        cmd_youtube(rest)
     elif cmd == "run":
         agent = rest[0] if rest else ""
         if not agent:
