@@ -73,6 +73,51 @@ def _upload_video_for_instagram(video_path: str) -> str:
     raise RuntimeError(f"All video upload methods failed for {video_path}")
 
 
+def refresh_instagram_token(access_token: str = "") -> str:
+    """
+    Refresh the Instagram long-lived token (valid 60 days, resets on each refresh).
+    Writes the new token back to .env so it persists across runs.
+    Safe to call weekly — Meta only refreshes if token is still valid.
+    """
+    token = access_token or os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    if not token:
+        return token
+
+    try:
+        resp = requests.get(
+            "https://graph.instagram.com/refresh_access_token",
+            params={"grant_type": "ig_refresh_token", "access_token": token},
+            timeout=15,
+        )
+        data = resp.json()
+        new_token = data.get("access_token", "")
+        expires_in = data.get("expires_in", 0)
+        if new_token:
+            logger.info(f"[distributor] Instagram token refreshed (expires in {expires_in}s / ~{expires_in//86400}d)")
+            # Persist to .env
+            env_path = PROJECT_DIR / ".env"
+            if env_path.exists():
+                text = env_path.read_text()
+                import re
+                if re.search(r"^INSTAGRAM_ACCESS_TOKEN=", text, re.MULTILINE):
+                    text = re.sub(
+                        r"^(INSTAGRAM_ACCESS_TOKEN=).*$",
+                        f"\\g<1>{new_token}",
+                        text, flags=re.MULTILINE,
+                    )
+                else:
+                    text += f"\nINSTAGRAM_ACCESS_TOKEN={new_token}\n"
+                env_path.write_text(text)
+            os.environ["INSTAGRAM_ACCESS_TOKEN"] = new_token
+            return new_token
+        error = data.get("error", {})
+        logger.warning(f"[distributor] Instagram token refresh failed: {error.get('message', resp.text[:200])}")
+    except Exception as e:
+        logger.warning(f"[distributor] Instagram token refresh error: {e}")
+
+    return token
+
+
 def _refresh_youtube_token() -> str:
     """Refresh YouTube OAuth token using client_secret.json + YOUTUBE_REFRESH_TOKEN."""
     import json
@@ -109,6 +154,8 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
     Returns {success: bool, post_id: str|None, platform: 'instagram', error: str|None}
     """
     try:
+        # Refresh token before use — safe to call every time, resets 60-day clock
+        access_token = refresh_instagram_token(access_token)
         video_url = _upload_video_for_instagram(video_path)
 
         # 1. Create media container
@@ -159,7 +206,7 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
 def post_tiktok(video_path: str, caption: str, access_token: str) -> dict:
     """Upload video via TikTok Content Posting API v2 (PULL_FROM_URL method)."""
     try:
-        video_url = _upload_to_cloudinary(video_path)
+        video_url = _upload_video_for_instagram(video_path)
         headers   = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json; charset=UTF-8",

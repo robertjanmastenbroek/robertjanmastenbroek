@@ -418,6 +418,33 @@ def cmd_memory(args: list[str]):
         sys.exit(1)
 
 
+def cmd_token(args: list[str]):
+    """Refresh platform OAuth tokens. Usage: python3 rjm.py token refresh [instagram|youtube|all]"""
+    from content_engine import distributor
+
+    target = args[0].lower() if args else "all"
+
+    if target in ("instagram", "all"):
+        token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+        if not token:
+            print("✗ INSTAGRAM_ACCESS_TOKEN not set in .env")
+        else:
+            new = distributor.refresh_instagram_token(token)
+            if new and new != token:
+                print("✓ Instagram token refreshed and saved to .env")
+            elif new == token:
+                print("⚠ Instagram token unchanged (may already be fresh, or expired — re-auth required if posting fails)")
+            else:
+                print("✗ Instagram token refresh failed")
+
+    if target in ("youtube", "all"):
+        token = distributor._refresh_youtube_token()
+        if token:
+            print("✓ YouTube token refreshed")
+        else:
+            print("✗ YouTube token refresh failed (check YOUTUBE_REFRESH_TOKEN in .env)")
+
+
 def cmd_schedule(args: list[str]):
     """Manage macOS launchd fleet schedules via scripts/setup_schedule.sh"""
     setup_sh = PROJECT_ROOT / "scripts" / "setup_schedule.sh"
@@ -564,6 +591,8 @@ def main():
         cmd_memory(rest)
     elif cmd == "sync":
         cmd_sync()
+    elif cmd == "token":
+        cmd_token(rest)
     elif cmd == "schedule":
         cmd_schedule(rest)
     elif cmd in ("skills", "skill"):
