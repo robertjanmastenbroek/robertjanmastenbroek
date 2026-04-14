@@ -241,11 +241,14 @@ def run_assembly(
 
     results = []
     ts = datetime.now().strftime("%H%M")
+    used_sources: set = set()  # prevents duplicate opening footage across clips
 
     for clip_idx in range(3):
         clip_length   = CLIP_LENGTHS[clip_idx]
-        opening_frame = visual_engine.pick_opening_frame(brief, clip_idx, video_dirs)
+        opening_frame = visual_engine.pick_opening_frame(brief, clip_idx, video_dirs, exclude=used_sources)
         opening_frame.clip_index = clip_idx
+        if opening_frame.source_file:
+            used_sources.add(opening_frame.source_file)
         logger.info(f"[assembler] Clip {clip_idx} ({clip_length}s): "
                     f"{opening_frame.source} — {opening_frame.source_file}")
 

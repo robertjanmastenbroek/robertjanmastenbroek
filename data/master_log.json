@@ -28,5 +28,279 @@
     "summary": "research: 7 personalized, 3 skipped",
     "contacts_added": 0,
     "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-12T01:49:50.392600",
+    "summary": "discover: 2 contacts added (1 curator, 1 podcast) [pair B]",
+    "contacts_added": 2,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-12T02:48:17.503200",
+    "summary": "content: 3 clips produced for JERICHO",
+    "contacts_added": 0,
+    "strategy_worked": "tiktok_reels_content"
+  },
+  {
+    "ts": "2026-04-12T03:12:58.531063",
+    "summary": "Built free_curator_submissions: free_submissions.md with 20+ channels (4 tiers), added 5 new verified contacts: Mindfield Records Berlin, NODE Recordings, Atmodub, Klangspot, Daily Playlists",
+    "contacts_added": 5,
+    "strategy_worked": "free_curator_submissions"
+  },
+  {
+    "ts": "2026-04-12T03:14:13.381831",
+    "summary": "content: 3 clips produced for JERICHO",
+    "contacts_added": 0,
+    "strategy_worked": "tiktok_reels_content"
+  },
+  {
+    "ts": "2026-04-12T08:23:41.768856",
+    "summary": "discover: 2 curators + 5 podcasts added (dark techno, melodic house, progressive trance) [pair A: tribal/world electronic + psytrance/progressive]",
+    "contacts_added": 7,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-12T09:07:07.474058",
+    "summary": "research: 6 personalized, 4 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-12T09:21:02.635452",
+    "summary": "outreach: 0 emails sent, 0 replies detected \u2014 Claude CLI subprocess timeout (nested session conflict)",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-12T09:38:48.811296",
+    "summary": "outreach: 0 emails sent, 0 replies detected \u2014 Claude CLI subprocess timeouts (120s) blocking all generation; inbox scan OK (266 threads, 0 replies, 0 bounces)",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-12T09:49:49.411693",
+    "summary": "Built tiktok_strategy.md (10 video concepts, 10 hooks, 5 caption templates, 4 hashtag sets, posting schedule) + collab_targets.md (20 psytrance artists, 3 tiers, pitch template)",
+    "contacts_added": 2,
+    "strategy_worked": "tiktok_reels_content"
+  },
+  {
+    "ts": "2026-04-12T10:14:58.789584",
+    "summary": "Built reddit_communities: reddit_targets.md with 10 subreddits, pre-written comment starters, 4-week posting schedule. Added 4 new contacts: Ektoplazm, Charybdis Records, Unknown Timeline, Gilles Wasserman (Delayed editor).",
+    "contacts_added": 4,
+    "strategy_worked": "reddit_communities"
+  },
+  {
+    "ts": "2026-04-12T11:13:01.547862",
+    "summary": "outreach: 17 emails sent, 0 replies detected",
+    "contacts_added": 17,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-12T11:43:12.171545",
+    "summary": "outreach: 15 emails sent, 0 replies detected",
+    "contacts_added": 15,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-12T12:09:51.697352",
+    "summary": "discover: 2 contacts added (2 curators, 0 podcasts) [pair B: melodic techno/house + organic house/ethno]",
+    "contacts_added": 2,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-12T12:45:46.655618",
+    "summary": "outreach: 17 emails sent, 2 replies detected",
+    "contacts_added": 17,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-12T13:07:29.783855",
+    "summary": "research: 2 personalized, 8 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-12T13:33:07.175442",
+    "summary": "outreach: 12 emails sent, 0 replies detected",
+    "contacts_added": 12,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-12T14:46:21.476860",
+    "summary": "outreach: 17 emails sent, 0 replies detected",
+    "contacts_added": 17,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-12T15:44:59.520102",
+    "summary": "outreach: 16 emails sent (10 followups + 6 new outreach), 0 replies classified, 1 bounce (obscuresoundsubmission@gmail.com), trancentral.tv domain blacklisted",
+    "contacts_added": 16,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-12T15:47:12.449583",
+    "summary": "outreach: 17 emails sent this cycle (10 followups + 7 new outreach), 0 replies classified, 1 bounce recorded, trancentral.tv domain blacklisted. Today total: 100 sent. Reply rate: 6.2%",
+    "contacts_added": 17,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-13T10:41:11.992060",
+    "summary": "discover: 0 contacts added (0 curators, 0 podcasts) [pair A] \u2014 all psytrance/tribal contacts found already in DB (followup_sent/sent status)",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-13T10:43:49.372677",
+    "summary": "research: 9 personalized, 1 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-13T10:52:55.192313",
+    "summary": "outreach: 12 emails sent, 3 replies detected",
+    "contacts_added": 12,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-13T19:44:20.154947",
+    "summary": "discover: 0+0 contacts added (0 curators, 0 podcasts) [pair A \u2014 tribal/ethnic world electronic + psytrance/progressive trance]",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-13T19:44:46.657748",
+    "agent": "rjm-outreach-agent",
+    "summary": "outreach: 15 emails sent (5 new + 10 follow-ups), 2 replies classified (1 positive: No Dough Music, 1 negative: EMA). 3 Claude CLI timeouts on email generation; 1 send fail (connection reset).",
+    "emails_sent": 15,
+    "replies_classified": 2,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-13T19:46:26.147353",
+    "summary": "research: 3 personalized, 2 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-13T19:47:01.252526",
+    "summary": "outreach: 0 emails sent, 2 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-13T19:47:18.690667",
+    "summary": "outreach: 17 emails sent, 3 replies detected (2 human + 1 bounce)",
+    "contacts_added": 17,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-13T21:05:38.401437",
+    "summary": "outreach: 0 emails sent, 2 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-13T21:07:58.105069",
+    "summary": "outreach: 33 emails sent today (7 new initial sends in final batch, 1 send fail), 2 replies classified (1 positive: No Dough Music, 1 negative: EMA). Reply rate: 6.6%. DB totals: 217 sent, 24 responded, 159 bounced.",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent",
+    "emails_sent": 33,
+    "replies_classified": 2
+  },
+  {
+    "ts": "2026-04-14T12:18:43.283582",
+    "summary": "discover: 1+0 contacts added (0 curators, 1 podcast) [pair B: melodic techno/house + organic house/ethno] \u2014 5 already in DB, 1 uncertain email skipped",
+    "contacts_added": 1,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-14T12:19:23.902194",
+    "summary": "research: 1 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-14T12:22:34.494001",
+    "summary": "Built youtube_dj_mixes strategy (5 mix concepts + SEO framework); added 6 new contacts (darkmonkeymusic, fluidified, farra.world, godsdjs, trippycoderec, allainmusic); created email_subjects.md with 20 subject line variants",
+    "contacts_added": 6,
+    "strategy_worked": "youtube_dj_mixes"
+  },
+  {
+    "ts": "2026-04-14T12:56:03.174470",
+    "summary": "outreach: 17 emails sent, 0 replies detected",
+    "contacts_added": 17,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T13:06:04.506990",
+    "summary": "research: 1 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-14T13:40:47.162466",
+    "summary": "outreach: 19 emails sent, 3 replies detected",
+    "contacts_added": 19,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T14:34:54.822722",
+    "summary": "outreach: 12 emails sent, 0 replies detected",
+    "contacts_added": 12,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T15:26:56.546829",
+    "summary": "outreach: 10 emails sent, 3 replies detected",
+    "contacts_added": 10,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T16:28:18.530350",
+    "summary": "outreach: 10 emails sent, 0 replies detected",
+    "contacts_added": 10,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T19:07:34.622659",
+    "summary": "outreach: 11 emails sent, 1 reply detected",
+    "contacts_added": 11,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T19:23:24.821722",
+    "summary": "discover: 0+0 contacts added [psytrance/progressive psytrance + cafe de anatolia/organic house] \u2014 DB already comprehensive for both genres (809 total contacts), all found contacts already present",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-14T19:28:57.163094",
+    "summary": "outreach: 10 emails sent, 0 replies detected",
+    "contacts_added": 10,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T20:28:02.518513",
+    "summary": "outreach: 10 emails sent, 1 reply detected",
+    "contacts_added": 10,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T21:28:13.262013",
+    "summary": "outreach: 10 emails sent, 0 replies detected",
+    "contacts_added": 10,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T22:01:38.638501",
+    "summary": "--help",
+    "contacts_added": 0,
+    "strategy_worked": ""
+  },
+  {
+    "ts": "2026-04-14T22:05:42.422362",
+    "summary": "discover: 0+1 contacts added (0 curators, 1 podcast) [pair C: ambient/downtempo/chillout + underground/dark techno] \u2014 most contacts already in DB; 1 new: The Underground Fix (mixtape series). 8 contacts checked from snippets.",
+    "contacts_added": 1,
+    "strategy_worked": "rjm-discover"
   }
 ]

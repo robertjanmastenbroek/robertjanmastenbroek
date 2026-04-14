@@ -150,15 +150,18 @@ def build_candidate_list(video_dirs: list) -> list:
     return candidates
 
 
-def pick_best_opening_frame(candidates: list, dominant_emotion: str) -> tuple:
-    """Score all candidates, return (best_path, best_score)."""
+def pick_best_opening_frame(candidates: list, dominant_emotion: str, exclude: set = None) -> tuple:
+    """Score all candidates, return (best_path, best_score). Skips paths in exclude."""
     if not candidates:
         return ("", 0.0)
 
+    exclude = exclude or set()
     best_path  = ""
     best_score = -1.0
 
     for c in candidates:
+        if c["path"] in exclude:
+            continue
         s = score_clip(c["path"], dominant_emotion, last_used_days=float(c.get("last_used_days", 7)))
         if s > best_score:
             best_score = s

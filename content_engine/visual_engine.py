@@ -113,13 +113,14 @@ def _infer_category(path: str) -> str:
     return "b_roll"
 
 
-def pick_opening_frame(brief: TrendBrief, clip_index: int, video_dirs: list) -> OpeningFrame:
+def pick_opening_frame(brief: TrendBrief, clip_index: int, video_dirs: list, exclude: set = None) -> OpeningFrame:
     """
     Decide: use existing footage (score >= threshold) OR generate with Runway.
     Returns OpeningFrame. Never fails silently — raises if both paths fail.
+    exclude: set of source_file paths already used in this run — ensures each clip is unique.
     """
     candidates = footage_scorer.build_candidate_list(video_dirs)
-    best_path, best_score = footage_scorer.pick_best_opening_frame(candidates, brief.dominant_emotion)
+    best_path, best_score = footage_scorer.pick_best_opening_frame(candidates, brief.dominant_emotion, exclude=exclude)
 
     logger.info(f"[visual_engine] clip {clip_index}: footage score={best_score:.2f} "
                 f"(threshold={SCORE_THRESHOLD}) — {'USE FOOTAGE' if best_score >= SCORE_THRESHOLD and best_path else 'GENERATE AI'}")
