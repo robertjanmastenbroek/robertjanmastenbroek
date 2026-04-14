@@ -125,6 +125,18 @@
       background: #c9a632;
     }
 
+    .name-link {
+      text-decoration: none;
+      color: inherit;
+      transition: opacity 200ms ease;
+    }
+
+    .name-link:hover,
+    .name-link:focus-visible {
+      opacity: 0.7;
+      outline: none;
+    }
+
     .footer {
       margin-top: 36px;
       font-size: 10px;
@@ -137,7 +149,7 @@
 </head>
 <body>
   <div class="container">
-    <h1 class="name">Robert-Jan Mastenbroek</h1>
+    <a href="/" class="name-link"><h1 class="name">Robert-Jan Mastenbroek</h1></a>
     <p class="tagline">Ancient Truth. Future Sound.</p>
 
     <div class="divider"></div>
