@@ -681,11 +681,11 @@ def main():
         for src_path, _ in per_clip[cl]["video_sources"]:
             mark_video_used(Path(src_path))
 
-    # ── Cleanup old uploads from robertjanmastenbroek.com (live only) ─────────
+    # ── Cleanup old Cloudinary uploads (live only) ────────────────────────────
     if not args.dry_run:
         try:
-            from video_host import cleanup_old_uploads
-            cleanup_old_uploads(max_age_days=7)
+            from video_host import cleanup_old_cloudinary_uploads
+            cleanup_old_cloudinary_uploads(max_age_days=7)
         except Exception as _clean_exc:
             print(f"  ⚠ Upload cleanup skipped (non-fatal): {_clean_exc}")
 

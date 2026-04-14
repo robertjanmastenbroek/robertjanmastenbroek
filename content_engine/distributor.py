@@ -58,8 +58,8 @@ def _scheduled_at_utc(platform: str, clip_index: int) -> str:
 def _upload_video_for_instagram(video_path: str) -> str:
     """Upload video to get a stable public URL for Instagram/TikTok Graph API.
 
-    Delegates entirely to video_host.upload_video() which handles the full
-    priority chain: RJM website (SFTP, stable) → Cloudinary → uguu.se.
+    Delegates to video_host.upload_video(): Cloudinary (primary) → uguu.se (last resort).
+    Configure Cloudinary by setting CLOUDINARY_URL in Railway environment variables.
     """
     from video_host import upload_video
     return upload_video(video_path)
