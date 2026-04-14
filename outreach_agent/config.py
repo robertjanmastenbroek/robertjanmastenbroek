@@ -98,10 +98,13 @@ CONTACT_TYPE_WEIGHTS = {
 # See docs/superpowers/specs/2026-04-14-youtube-outreach-branch-design.md
 YOUTUBE_SHARE_FLOOR      = 0.5       # 50% of each batch reserved for YouTube (overflow when supply short)
 YOUTUBE_API_DAILY_UNITS_CAP = 8000   # abort discovery if > this many units used today (YT quota = 10K)
-YOUTUBE_MIN_SUBS         = 10_000
+# Lowered from 10K→2K after first discovery run rejected 437/498 channels for subs<10K.
+# Many real promo channels live at 2K–10K subs and post weekly; the original floor
+# was too tight given RJM's aggressive-growth stance on YouTube as a Spotify driver.
+YOUTUBE_MIN_SUBS         = 2_000
 YOUTUBE_MAX_SUBS         = 500_000
-YOUTUBE_MIN_TOTAL_VIEWS  = 100_000
-YOUTUBE_MIN_VIDEO_COUNT  = 20
+YOUTUBE_MIN_TOTAL_VIEWS  = 30_000    # lowered from 100K to match the 2K sub floor
+YOUTUBE_MIN_VIDEO_COUNT  = 20        # still signals active channel, not brand-new
 YOUTUBE_MAX_UPLOAD_AGE_DAYS = 30
 
 # Discovery seed queries — primary focus is (progressive) psytrance, with

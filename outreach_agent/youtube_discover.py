@@ -57,9 +57,23 @@ log = logging.getLogger("outreach.youtube_discover")
 # ─── Constants ────────────────────────────────────────────────────────────────
 _YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3"
 _HTTP_TIMEOUT = 15
-_USER_AGENT = "RJM-Outreach/1.0 (+https://robertjanmastenbroek.com)"
+_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 _URL_RE = re.compile(r"https?://[^\s\)<>\"']+")
+
+# Obfuscation patterns — many channels write emails as "name at gmail dot com"
+# or "name [at] gmail [dot] com" to dodge scrapers. Normalize before regex.
+_OBFUSCATION_PATTERNS = [
+    (re.compile(r"\s*\(\s*at\s*\)\s*", re.IGNORECASE), "@"),
+    (re.compile(r"\s*\[\s*at\s*\]\s*", re.IGNORECASE), "@"),
+    (re.compile(r"\s+at\s+", re.IGNORECASE), "@"),
+    (re.compile(r"\s*\(\s*dot\s*\)\s*", re.IGNORECASE), "."),
+    (re.compile(r"\s*\[\s*dot\s*\]\s*", re.IGNORECASE), "."),
+    (re.compile(r"\s+dot\s+", re.IGNORECASE), "."),
+]
 _PREFERRED_EMAIL_PREFIXES = (
     "business", "promo", "submissions", "submission", "contact",
     "demo", "music", "hello", "info", "booking", "management",
@@ -280,10 +294,49 @@ def _rank_emails(emails: list[str]) -> list[str]:
     return sorted(dict.fromkeys(emails), key=key)  # dedup + sort
 
 
+def _deobfuscate(text: str) -> str:
+    """
+    Replace '(at)', '[at]', ' at ', '(dot)', '[dot]', ' dot ' with @/. so that
+    emails written 'contact at gmail dot com' become 'contact@gmail.com' and
+    can be matched by the regex.
+    """
+    for pattern, replacement in _OBFUSCATION_PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
 def _extract_emails_from_text(text: str) -> list[str]:
     if not text:
         return []
-    return _rank_emails(_EMAIL_RE.findall(text))
+    # First pass: direct match
+    direct = _EMAIL_RE.findall(text)
+    # Second pass: de-obfuscated match (catches 'name at domain dot com')
+    obfuscated = _EMAIL_RE.findall(_deobfuscate(text))
+    return _rank_emails(direct + obfuscated)
+
+
+def _fetch_channel_about_html(channel_id: str) -> str:
+    """
+    Fetch the channel's About page HTML. YouTube's server-side-rendered HTML
+    sometimes contains the business email in the ytInitialData JSON blob even
+    though the UI requires human verification to reveal it. This is a best-effort
+    scrape — if YouTube returns an empty shell or bot-check page, we get nothing.
+    """
+    if not channel_id:
+        return ""
+    url = f"https://www.youtube.com/channel/{channel_id}/about"
+    try:
+        resp = requests.get(
+            url,
+            headers={"User-Agent": _USER_AGENT, "Accept-Language": "en-US,en;q=0.9"},
+            timeout=_HTTP_TIMEOUT,
+            allow_redirects=True,
+        )
+    except Exception:
+        return ""
+    if resp.status_code != 200:
+        return ""
+    return resp.text[:800_000]  # cap at ~800KB to bound memory
 
 
 def _host_of(url: str) -> str:
@@ -326,24 +379,25 @@ def _scrape_email_from_url(url: str) -> str:
     return emails[0] if emails else ""
 
 
-def _extract_channel_email(snippet: dict) -> str:
+def _extract_channel_email(snippet: dict, channel_id: str = "") -> str:
     """
-    Four-pass email extraction for a single channel's snippet.
-      1. Direct email regex on description
-      2. URL regex on description → scrape each surviving URL
-      3. Linktree / Beacons special cases (same scrape path)
+    Multi-pass email extraction for a single channel.
+      1. Direct email regex on description (w/ obfuscation deobfuscator)
+      2. URL regex on description → scrape each surviving non-social URL
+      3. Channel About page HTML scrape (YouTube server-rendered, sometimes
+         has the business email embedded in ytInitialData even though the UI
+         gates it behind a CAPTCHA)
       4. Give up — caller writes channel with empty email and status='skip'
     """
     description = snippet.get("description", "") or ""
 
-    # Pass 1 — direct email in description
+    # Pass 1 — direct email in description (+ obfuscation handling)
     found = _extract_emails_from_text(description)
     if found:
         return found[0]
 
     # Pass 2 — scrape linked sites
     urls = _URL_RE.findall(description)
-    # Dedup by host, keep order
     seen_hosts: set[str] = set()
     candidates: list[str] = []
     for u in urls:
@@ -356,13 +410,101 @@ def _extract_channel_email(snippet: dict) -> str:
         seen_hosts.add(host)
         candidates.append(u)
 
-    # Try at most 3 distinct hosts per channel to bound HTTP cost
-    for u in candidates[:3]:
+    for u in candidates[:3]:  # bound HTTP cost per channel
         email = _scrape_email_from_url(u)
         if email:
             return email
 
+    # Pass 3 — channel About page HTML scrape
+    if channel_id:
+        html = _fetch_channel_about_html(channel_id)
+        if html:
+            found = _extract_emails_from_text(html)
+            if found:
+                # Filter out YouTube's own system addresses (legal@, abuse@, press@)
+                for e in found:
+                    local = e.split("@", 1)[0].lower()
+                    domain = e.split("@", 1)[1].lower()
+                    if domain.endswith("youtube.com") or domain.endswith("google.com"):
+                        continue
+                    if local in ("press", "legal", "abuse", "copyright", "support"):
+                        continue
+                    return e
+
     return ""
+
+
+def retry_email_extraction(limit: int = 1000) -> dict[str, int]:
+    """
+    Re-run email extraction on existing status='skip' YouTube contacts using
+    the current (improved) extractor. No new YouTube Data API calls — the
+    channel description is already in DB (notes field is the first 200 chars,
+    so we re-fetch the full snippet from the channels.list API on demand).
+
+    Returns {retried, recovered, still_none}.
+    """
+    db.init_db()
+
+    # Load skip-status youtube contacts with their channel_id
+    with db.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, email, name, youtube_channel_id, notes "
+            "FROM contacts WHERE type='youtube' AND status='skip' "
+            "  AND youtube_channel_id IS NOT NULL "
+            "  AND email LIKE 'no-email-%' "
+            "ORDER BY youtube_genre_match_score DESC "
+            "LIMIT ?",
+            (limit,),
+        ).fetchall()
+    rows = [dict(r) for r in rows]
+    log.info("retry_email: %d skip-status youtube contacts to reprocess", len(rows))
+
+    if not rows:
+        return {"retried": 0, "recovered": 0, "still_none": 0}
+
+    # Re-fetch full snippets from channels.list in batches of 50
+    channel_ids = [r["youtube_channel_id"] for r in rows]
+    snippets: dict[str, dict] = {}
+    for i in range(0, len(channel_ids), 50):
+        batch = channel_ids[i : i + 50]
+        try:
+            items = _fetch_channels_batch(batch)
+        except RuntimeError as e:
+            log.warning("retry_email aborted: %s", e)
+            break
+        for item in items:
+            snippets[item.get("id", "")] = item.get("snippet", {}) or {}
+
+    recovered = 0
+    still_none = 0
+    with db.get_conn() as conn:
+        for r in rows:
+            snippet = snippets.get(r["youtube_channel_id"])
+            if not snippet:
+                still_none += 1
+                continue
+            email = _extract_channel_email(snippet, r["youtube_channel_id"])
+            if not email:
+                still_none += 1
+                continue
+            # Check email isn't already in DB
+            existing = conn.execute(
+                "SELECT id FROM contacts WHERE email = ? AND id != ?",
+                (email, r["id"]),
+            ).fetchone()
+            if existing:
+                # Email belongs to another contact — don't steal it. Skip.
+                still_none += 1
+                continue
+            # Update the placeholder email to the real one, promote to 'new'
+            conn.execute(
+                "UPDATE contacts SET email = ?, status = 'new' WHERE id = ?",
+                (email, r["id"]),
+            )
+            recovered += 1
+            log.info("recovered: %s → %s", r["name"][:30], email)
+
+    return {"retried": len(rows), "recovered": recovered, "still_none": still_none}
 
 
 # ─── Main discovery flow ──────────────────────────────────────────────────────
@@ -462,7 +604,7 @@ def run_discovery(
             continue
         summary["qualified"] += 1
 
-        email = _extract_channel_email(snippet)
+        email = _extract_channel_email(snippet, ch.get("id", "") or "")
         if email:
             summary["with_email"] += 1
         else:
@@ -517,14 +659,26 @@ def main() -> int:
         "--queries", nargs="*", default=None,
         help="Override YOUTUBE_DISCOVERY_QUERIES with custom terms.",
     )
+    parser.add_argument(
+        "--retry-email", action="store_true",
+        help="Re-run email extraction on existing status='skip' YouTube contacts "
+             "using the current (improved) extractor. No new search.list calls.",
+    )
+    parser.add_argument(
+        "--retry-limit", type=int, default=500,
+        help="Max skip contacts to reprocess in --retry-email mode.",
+    )
     args = parser.parse_args()
 
     try:
-        summary = run_discovery(
-            queries=args.queries,
-            per_query=max(1, min(50, args.per_query)),
-            dry_run=args.dry_run,
-        )
+        if args.retry_email:
+            summary = retry_email_extraction(limit=args.retry_limit)
+        else:
+            summary = run_discovery(
+                queries=args.queries,
+                per_query=max(1, min(50, args.per_query)),
+                dry_run=args.dry_run,
+            )
     except RuntimeError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -533,7 +687,8 @@ def main() -> int:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
 
-    print("\n=== YouTube Discovery Summary ===")
+    header = "YouTube Email Retry Summary" if args.retry_email else "YouTube Discovery Summary"
+    print(f"\n=== {header} ===")
     for k, v in summary.items():
         print(f"  {k:<24} {v}")
     return 0
