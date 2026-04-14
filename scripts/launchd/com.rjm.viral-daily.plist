@@ -8,10 +8,14 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/bash</string>
-    <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/scripts/run_agent.sh</string>
-    <string>viral-daily</string>
+    <string>/opt/homebrew/bin/python3</string>
+    <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/rjm.py</string>
+    <string>content</string>
+    <string>viral</string>
   </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre</string>
 
   <!-- Daily at 08:00 local time (CET) — Assembly + Distribution -->
   <key>StartCalendarInterval</key>
