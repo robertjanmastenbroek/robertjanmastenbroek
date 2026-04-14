@@ -24,21 +24,23 @@ sys.path.insert(0, str(PROJECT_DIR / "outreach_agent"))
 logger = logging.getLogger(__name__)
 
 CLIP_LENGTHS = [5, 9, 15]
-PLATFORMS    = ["instagram", "youtube"]
+PLATFORMS    = ["instagram", "facebook", "youtube"]
 ANGLES       = ["emotional", "signal", "energy"]
 
 # Variant A/B per clip per platform — alternates across the week so each platform
 # sees both variants. Balances A/B signal collection without double-posting.
 VARIANT_MAP = {
-    0: {"instagram": "a", "youtube": "b"},
-    1: {"instagram": "b", "youtube": "a"},
-    2: {"instagram": "a", "youtube": "b"},
+    0: {"instagram": "a", "facebook": "a", "youtube": "b"},
+    1: {"instagram": "b", "facebook": "b", "youtube": "a"},
+    2: {"instagram": "a", "facebook": "a", "youtube": "b"},
 }
 
 # Platform-specific rendering settings
+# Facebook Reels use the same 9:16 format as Instagram — share the same render
 PLATFORM_SETTINGS = {
     "tiktok":    {"font_size": 72, "color_grade": "punchy",  "text_y_pct": 0.22, "safe_bottom_pct": 0.15},
     "instagram": {"font_size": 58, "color_grade": "warm",    "text_y_pct": 0.50, "safe_bottom_pct": 0.20},
+    "facebook":  {"font_size": 58, "color_grade": "warm",    "text_y_pct": 0.50, "safe_bottom_pct": 0.20},
     "youtube":   {"font_size": 64, "color_grade": "neutral", "text_y_pct": 0.22, "safe_bottom_pct": 0.15},
 }
 

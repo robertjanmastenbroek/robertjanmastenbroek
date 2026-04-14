@@ -419,7 +419,7 @@ def cmd_memory(args: list[str]):
 
 
 def cmd_token(args: list[str]):
-    """Refresh platform OAuth tokens. Usage: python3 rjm.py token refresh [instagram|youtube|all]"""
+    """Refresh platform OAuth tokens. Usage: python3 rjm.py token refresh [instagram|facebook|youtube|all]"""
     from content_engine import distributor
 
     target = args[0].lower() if args else "all"
@@ -436,6 +436,18 @@ def cmd_token(args: list[str]):
                 print("⚠ Instagram token unchanged (may already be fresh, or expired — re-auth required if posting fails)")
             else:
                 print("✗ Instagram token refresh failed")
+
+    if target in ("facebook", "all"):
+        user_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+        page_id    = os.environ.get("FACEBOOK_PAGE_ID", "")
+        if not user_token:
+            print("✗ INSTAGRAM_ACCESS_TOKEN not set — needed to fetch Facebook page token")
+        else:
+            page_token = distributor.get_facebook_page_token(user_token, page_id)
+            if page_token:
+                print("✓ Facebook page token obtained and saved to .env")
+            else:
+                print("✗ Facebook page token fetch failed — check FACEBOOK_PAGE_ID in .env and that your token has pages_manage_posts permission")
 
     if target in ("youtube", "all"):
         token = distributor._refresh_youtube_token()

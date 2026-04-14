@@ -1,8 +1,8 @@
 """
 Module 4: Distributor
-Native API uploads: Instagram Graph API + YouTube Data API v3.
+Native API uploads: Instagram Graph API + Facebook Page + YouTube Data API v3.
 Falls back to existing buffer_poster.py if native API unavailable or credentials missing.
-Posts 3 clips × 2 platforms = 6 posts/day on staggered schedule.
+Posts 3 clips × 3 platforms = 9 posts/day on staggered schedule.
 """
 import logging
 import os
@@ -19,6 +19,7 @@ sys.path.insert(0, str(PROJECT_DIR / "outreach_agent"))
 logger = logging.getLogger(__name__)
 
 INSTAGRAM_GRAPH_BASE = "https://graph.instagram.com/v21.0"
+FACEBOOK_GRAPH_BASE  = "https://graph.facebook.com/v21.0"
 TIKTOK_API_BASE      = "https://open.tiktokapis.com/v2"
 YOUTUBE_UPLOAD_BASE  = "https://www.googleapis.com/upload/youtube/v3"
 
@@ -26,6 +27,7 @@ YOUTUBE_UPLOAD_BASE  = "https://www.googleapis.com/upload/youtube/v3"
 # clip_index 0 → first slot, 1 → second, 2 → third
 POST_SCHEDULE = {
     "instagram": ["09:00", "13:00", "19:00"],
+    "facebook":  ["09:30", "13:30", "19:30"],  # 30 min after Instagram
     "youtube":   ["10:00", "14:00", "20:00"],
 }
 # CET offset: UTC+1 winter, UTC+2 summer (CEST). Use fixed +1 as conservative default;
@@ -141,6 +143,118 @@ def refresh_instagram_token(access_token: str = "") -> str:
         logger.warning(f"[distributor] Instagram token refresh error: {e}")
 
     return token
+
+
+def get_facebook_page_token(user_access_token: str, page_id: str) -> str:
+    """
+    Exchange a User Access Token for a Page Access Token.
+    Page tokens never expire (unlike User tokens) when generated from a long-lived User token.
+    Saves to .env as FACEBOOK_PAGE_TOKEN on first call.
+    """
+    try:
+        resp = requests.get(
+            f"{FACEBOOK_GRAPH_BASE}/me/accounts",
+            params={"access_token": user_access_token},
+            timeout=15,
+        )
+        pages = resp.json().get("data", [])
+        for page in pages:
+            if page.get("id") == page_id or page.get("name", "").lower().replace(" ", "") in ("holyraveofficial", "robertjanmastenbroek"):
+                token = page.get("access_token", "")
+                if token:
+                    # Persist so we don't need to re-fetch every run
+                    env_path = PROJECT_DIR / ".env"
+                    if env_path.exists():
+                        import re
+                        text = env_path.read_text()
+                        if re.search(r"^FACEBOOK_PAGE_TOKEN=", text, re.MULTILINE):
+                            text = re.sub(r"^(FACEBOOK_PAGE_TOKEN=).*$", f"\\g<1>{token}", text, flags=re.MULTILINE)
+                        else:
+                            text += f"\nFACEBOOK_PAGE_TOKEN={token}\n"
+                        if re.search(r"^FACEBOOK_PAGE_ID=", text, re.MULTILINE):
+                            text = re.sub(r"^(FACEBOOK_PAGE_ID=).*$", f"\\g<1>{page['id']}", text, flags=re.MULTILINE)
+                        else:
+                            text += f"FACEBOOK_PAGE_ID={page['id']}\n"
+                        env_path.write_text(text)
+                    os.environ["FACEBOOK_PAGE_TOKEN"] = token
+                    os.environ["FACEBOOK_PAGE_ID"]    = page["id"]
+                    logger.info(f"[distributor] Facebook page token obtained for: {page.get('name')}")
+                return token
+        logger.warning(f"[distributor] Facebook page not found among {[p.get('name') for p in pages]}")
+    except Exception as e:
+        logger.warning(f"[distributor] Facebook page token error: {e}")
+    return ""
+
+
+def post_facebook_reel(video_path: str, description: str, page_id: str, page_token: str) -> dict:
+    """
+    Upload a video as a Facebook Reel to a Page via the Graph API resumable upload.
+    Returns {success: bool, post_id: str|None, platform: 'facebook', error: str|None}
+    """
+    try:
+        video_size = Path(video_path).stat().st_size
+
+        # 1. Start resumable upload session
+        start_resp = requests.post(
+            f"{FACEBOOK_GRAPH_BASE}/{page_id}/videos",
+            params={"access_token": page_token},
+            data={
+                "upload_phase": "start",
+                "file_size":    video_size,
+            },
+            timeout=30,
+        )
+        if start_resp.status_code != 200:
+            return {"success": False, "platform": "facebook",
+                    "error": start_resp.json().get("error", {}).get("message", start_resp.text[:200])}
+
+        start_data  = start_resp.json()
+        upload_id   = start_data.get("upload_session_id", "")
+        video_id    = start_data.get("video_id", "")
+        start_offset = int(start_data.get("start_offset", 0))
+        end_offset   = int(start_data.get("end_offset", video_size))
+
+        # 2. Upload the file in one chunk (≤ 1 GB; shorts are well under this)
+        with open(video_path, "rb") as f:
+            f.seek(start_offset)
+            chunk = f.read(end_offset - start_offset)
+
+        transfer_resp = requests.post(
+            f"{FACEBOOK_GRAPH_BASE}/{page_id}/videos",
+            params={"access_token": page_token},
+            data={
+                "upload_phase":   "transfer",
+                "upload_session_id": upload_id,
+                "start_offset":   start_offset,
+            },
+            files={"video_file_chunk": (Path(video_path).name, chunk, "video/mp4")},
+            timeout=300,
+        )
+        if transfer_resp.status_code != 200:
+            return {"success": False, "platform": "facebook",
+                    "error": transfer_resp.json().get("error", {}).get("message", transfer_resp.text[:200])}
+
+        # 3. Finish — set description and publish
+        finish_resp = requests.post(
+            f"{FACEBOOK_GRAPH_BASE}/{page_id}/videos",
+            params={"access_token": page_token},
+            data={
+                "upload_phase":      "finish",
+                "upload_session_id": upload_id,
+                "description":       description,
+                "content_tags":      "",
+            },
+            timeout=30,
+        )
+        if finish_resp.status_code != 200:
+            return {"success": False, "platform": "facebook",
+                    "error": finish_resp.json().get("error", {}).get("message", finish_resp.text[:200])}
+
+        logger.info(f"[distributor] Facebook Reel published: video_id={video_id}")
+        return {"success": True, "post_id": video_id, "platform": "facebook"}
+
+    except Exception as e:
+        return {"success": False, "platform": "facebook", "error": str(e)}
 
 
 def _refresh_youtube_token() -> str:
@@ -387,12 +501,28 @@ def distribute_clip(clip: dict) -> dict:
         ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "")
         access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
         if ig_user_id and access_token:
-            # Instagram Graph API doesn't support scheduling — post immediately via native,
-            # use Buffer for scheduled delivery
-            result = _buffer_fallback(clip, scheduled_at)
+            # Refresh token, then post via native API; Buffer used for scheduling
+            result = post_instagram_reel(path, caption, ig_user_id, access_token)
+            if not result.get("success"):
+                logger.warning(f"[distributor] Instagram native failed: {result.get('error')} — Buffer fallback")
+                result = _buffer_fallback(clip, scheduled_at)
         else:
             logger.info("[distributor] Instagram credentials missing — using Buffer")
             result = _buffer_fallback(clip, scheduled_at)
+
+    elif platform == "facebook":
+        page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "")
+        page_id    = os.environ.get("FACEBOOK_PAGE_ID", "")
+        # Auto-fetch page token from user token if not yet saved
+        if not page_token:
+            user_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+            if user_token:
+                page_token = get_facebook_page_token(user_token, page_id)
+        if page_token and page_id:
+            result = post_facebook_reel(path, caption, page_id, page_token)
+        else:
+            logger.info("[distributor] Facebook credentials missing — skipping Facebook")
+            result = {"success": False, "platform": "facebook", "error": "credentials missing"}
 
     elif platform == "youtube":
         api_key     = os.environ.get("YOUTUBE_API_KEY", "")
