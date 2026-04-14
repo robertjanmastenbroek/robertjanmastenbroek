@@ -16,43 +16,70 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_W     = 1080
 OUTPUT_H     = 1920
-CLIP_LENGTHS = [5, 9, 15]
 
-# Helvetica Neue — clean TikTok-native sans-serif with soft drop shadow.
-# Fall back down the list if not found.
+# Clip lengths optimised for 2026 algorithm behaviour:
+#   7s  = clears TikTok's ~6s watch-event floor; loops cleanly; contrast hook
+#   15s = Reels completion sweet spot (>80% completion rate at this length)
+#   28s = YouTube Shorts loop bonus; enough runtime for build → drop → reaction arc
+CLIP_LENGTHS = [7, 15, 28]
+
+# Font priority: heavy grotesque/condensed for maximum scroll-stop impact.
+# Algorithm-native style: ultra-heavy all-caps, bottom of frame.
 FONT_CANDIDATES = [
+    '/Library/Fonts/BebasNeue-Regular.ttf',     # ideal — heavy grotesque
+    '/Library/Fonts/Bebas Neue.ttf',
     '/System/Library/Fonts/HelveticaNeue.ttc',
     '/Library/Fonts/Helvetica Neue.ttf',
     '/System/Library/Fonts/Helvetica.ttc',
+    '/Library/Fonts/Impact.ttf',                 # reliable fallback
     '/Library/Fonts/Arial.ttf',
-    '/Library/Fonts/Impact.ttf',          # last resort
 ]
 
-# Per-angle hook style — clean sans-serif, uppercase, soft shadow, no stroke.
+# Per-angle hook style — ultra-heavy, bottom 25% of frame (clear of faces/crowd).
+# Agents: contrast / body-drop / identity replace old emotional/signal/energy labels.
 HOOK_STYLES = {
-    'emotional': {
-        'fontsize': 58,
+    'contrast': {
+        'fontsize': 68,
         'uppercase': True,
-        'y_pct':    0.50,
+        'y_pct':    0.78,   # bottom 25% — avoids covering subject faces
+        'wrap_at':  16,
+    },
+    'body-drop': {
+        'fontsize': 68,
+        'uppercase': True,
+        'y_pct':    0.78,
+        'wrap_at':  16,
+    },
+    'identity': {
+        'fontsize': 62,
+        'uppercase': True,
+        'y_pct':    0.78,
         'wrap_at':  18,
+    },
+    # Legacy angle names kept as aliases so old clips still render correctly
+    'emotional': {
+        'fontsize': 68,
+        'uppercase': True,
+        'y_pct':    0.78,
+        'wrap_at':  16,
     },
     'signal': {
-        'fontsize': 58,
+        'fontsize': 68,
         'uppercase': True,
-        'y_pct':    0.50,
-        'wrap_at':  18,
+        'y_pct':    0.78,
+        'wrap_at':  16,
     },
     'energy': {
-        'fontsize': 58,
+        'fontsize': 68,
         'uppercase': True,
-        'y_pct':    0.50,
-        'wrap_at':  18,
+        'y_pct':    0.78,
+        'wrap_at':  16,
     },
     'default': {
-        'fontsize': 58,
+        'fontsize': 68,
         'uppercase': True,
-        'y_pct':    0.50,
-        'wrap_at':  18,
+        'y_pct':    0.78,
+        'wrap_at':  16,
     },
 }
 
@@ -89,11 +116,12 @@ def _render_hook_overlay(hook_text: str, angle: str, source_category: str = None
 
     font = _load_font(style['fontsize'])
 
-    # Subject-aware positioning (Expert 6): performance clips have subject in center/lower half
+    # Subject-aware positioning: performance clips have subject in center/lower half,
+    # so push text to the upper third. All other categories use bottom 25% (style default).
     if source_category == 'performances':
         y_pct = 0.22   # upper quarter — keeps text off the subject
     else:
-        y_pct = style['y_pct']   # default center
+        y_pct = style['y_pct']   # bottom 25% by default
 
     fill_color = (255, 255, 255, 255)
 

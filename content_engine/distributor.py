@@ -25,10 +25,12 @@ YOUTUBE_UPLOAD_BASE  = "https://www.googleapis.com/upload/youtube/v3"
 
 # Peak posting times in CET/CEST (Europe/Madrid = Tenerife)
 # clip_index 0 → first slot, 1 → second, 2 → third
+# 08:30 beats 09:00 — catches EU pre-commute before feed congestion peaks.
+# 21:30 outperforms 19:00 for the nocturnal Psytrance/Techno audience + West Coast US (12:30 PST).
 POST_SCHEDULE = {
-    "instagram": ["09:00", "13:00", "19:00"],
-    "facebook":  ["09:30", "13:30", "19:30"],  # 30 min after Instagram
-    "youtube":   ["10:00", "14:00", "20:00"],
+    "instagram": ["08:30", "13:00", "21:30"],
+    "facebook":  ["09:00", "13:30", "22:00"],  # 30 min after Instagram
+    "youtube":   ["09:30", "14:00", "22:30"],
 }
 # CET offset: UTC+1 winter, UTC+2 summer (CEST). Use fixed +1 as conservative default;
 # zoneinfo adjusts automatically when available.

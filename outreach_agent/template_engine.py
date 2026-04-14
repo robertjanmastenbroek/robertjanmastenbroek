@@ -39,6 +39,23 @@ from config import CLAUDE_MODEL_EMAIL, CLAUDE_MODEL_FAST
 
 log = logging.getLogger("outreach.templates")
 
+# ─── Isolated HOME for subprocess calls ───────────────────────────────────────
+# ~/.claude/settings.json contains MCP servers (context-mode via npx) and many
+# hooks that hang when the CLI is called as a subprocess without a TTY.
+# Workaround: run the CLI with a minimal HOME that has only an empty settings
+# file. macOS resolves ~/Library/Application Support/ via the real user directory
+# (not $HOME), so OAuth authentication still works correctly.
+_ISOLATED_HOME = Path(__file__).parent / ".claude_subprocess_home"
+
+def _ensure_isolated_home() -> str:
+    """Create a minimal HOME dir for subprocess calls if it doesn't exist."""
+    claude_dir = _ISOLATED_HOME / ".claude"
+    settings = claude_dir / "settings.json"
+    if not settings.exists():
+        claude_dir.mkdir(parents=True, exist_ok=True)
+        settings.write_text("{}\n")
+    return str(_ISOLATED_HOME)
+
 # ─── Locate the Claude CLI ────────────────────────────────────────────────────
 
 def _find_claude_cli() -> str:
@@ -89,15 +106,21 @@ def _call_claude(prompt: str, model: str = CLAUDE_MODEL_EMAIL, timeout: int = 12
     """
     Call the Claude CLI with a prompt. Returns the text response.
     Raises RuntimeError on failure.
+
+    Uses an isolated $HOME with a minimal settings.json to prevent the hooks
+    and MCP servers in ~/.claude/settings.json from hanging the subprocess.
     """
     cli = _get_claude_cli()
+    isolated_home = _ensure_isolated_home()
 
+    env = {**os.environ, "HOME": isolated_home}
     result = subprocess.run(
         [cli, "--model", model, "-p", prompt],
         capture_output=True,
         text=True,
         timeout=timeout,
-        env={**os.environ},
+        stdin=subprocess.DEVNULL,
+        env=env,
     )
     if result.returncode != 0:
         err = (result.stderr or "").strip()
@@ -124,10 +147,19 @@ _TYPE_ADDONS = {
 - No faith angle unless label is faith-focused""",
 
     "curator": """CONTEXT: Spotify playlist curator pitch.
-- Trigger: a specific track they featured or their stated playlist philosophy
-- Challenge: drowning in faceless submissions with no context
+- Subject line formula: "[Track Name] ([BPM] BPM [micro-genre]) for [Exact Playlist Name]"
+  Example: "Jericho (140 BPM Psytrance) for Ritual Techno Selections"
+- Opening (3 sentences max): name one specific thing about their playlist proving you listened,
+  then: track name + BPM + genre + Spotify stream link, then single frictionless ask.
+- Email length: 60–80 words maximum. Never exceed 100.
+- Signature must include: 290K IG @holyraveofficial | Tenerife, CET
+  (signals cross-promotion reach — curators add tracks knowing they get exposure)
+- Trigger: cite a SPECIFIC track already on their playlist + BPM match
+  Example: "Your playlist sits at 136–140 BPM — Jericho is 140 BPM, same register as [track X] you added in March."
+- Challenge: drowning in faceless bulk-blast submissions
 - Value Prop: one specific track + why it sits next to what they already play (cite BPM, mood, energy match)
-- Hidden Objection: "sounds like everything else" → name one concrete differentiator""",
+- Hidden Objection: "sounds like everything else" → name one concrete differentiator
+- DO NOT use this template for press/editorial contacts — they need a different ask""",
 
     "youtube": """CONTEXT: YouTube channel / mix series pitch.
 - Trigger: a specific video, mix, or visual aesthetic

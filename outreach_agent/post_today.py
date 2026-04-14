@@ -73,12 +73,13 @@ FFMPEG  = "/opt/homebrew/bin/ffmpeg"
 FFPROBE = "/opt/homebrew/bin/ffprobe"
 
 # ─── Angle-per-clip mapping ───────────────────────────────────────────────────
-# Each clip length gets a fixed angle every run.
-# 5s  = emotional (artist interior — why this exists, what it cost)
-# 9s  = signal    (who this track is for — specific person/moment)
-# 15s = energy    (what happens to a body in that room)
+# Angles renamed to match TikTok algorithm logic (contrast/body-drop/identity).
+# Clip lengths updated for 2026 watch-event and completion-rate optimisation:
+#   7s  = contrast  (cognitive dissonance — crowd doing something unexpected)
+#   15s = body-drop (audio kicks in hard, crowd reacts physically — drives saves)
+#   28s = identity  ("if you've felt this, you already belong" — drives follows)
 
-CLIP_ANGLE_MAP = {5: "emotional", 9: "signal", 15: "energy"}
+CLIP_ANGLE_MAP = {7: "contrast", 15: "body-drop", 28: "identity"}
 
 # ─── Active tracks (only these 4 are currently being promoted) ───────────────
 
@@ -352,9 +353,12 @@ def pick_source_videos(count: int, exclude: set = None, lead_cat: str = 'perf') 
     if not broll and not perf and not phone:
         sys.exit("ERROR: no source videos found in content/videos/")
 
-    # Target mix: 50% b-roll, 30% performances, 20% phone-footage (user-specified)
-    n_perf  = max(0, round(count * 0.30))
-    n_phone = max(0, round(count * 0.20))
+    # Target mix: phone-footage 45%, performances 40%, b-roll 15%.
+    # Raw/authentic footage beats produced b-roll for algorithm reach in 2026 —
+    # phone footage reads participatory (viewer feels IN the room), b-roll reads
+    # like an ad and triggers skip behaviour in non-fans.
+    n_phone = max(0, round(count * 0.45))
+    n_perf  = max(0, round(count * 0.40))
     n_broll = max(1, count - n_perf - n_phone)
 
     # Clamp to what's actually available
@@ -695,8 +699,10 @@ def main():
         from buffer_poster import upload_video_and_queue
         from datetime import timezone
 
-        # Fixed CET posting slots: 09:00 / 13:00 / 19:00 (Tenerife time, same as distributor.py)
-        _POST_SLOTS_CET = ["09:00", "13:00", "19:00"]
+        # Fixed CET posting slots: 08:30 / 13:00 / 21:30 (Tenerife time)
+        # 08:30 beats 09:00 — catches EU pre-commute before feed congestion peaks.
+        # 21:30 outperforms 19:00 for the nocturnal Psytrance audience + West Coast US.
+        _POST_SLOTS_CET = ["08:30", "13:00", "21:30"]
         try:
             from zoneinfo import ZoneInfo
             _tz_cet = ZoneInfo("Europe/Madrid")
@@ -770,6 +776,8 @@ def main():
                     print(f"    ⚠ content_signal log failed (non-fatal): {_log_exc}")
             except Exception as e:
                 # Total failure (video upload failed on all hosts) — save for retry
+                # IMPORTANT: use continue, not raise — remaining clips must still post.
+                # Previously a raise here silently dropped all subsequent clips.
                 print(f"    ✗ Total posting failure — saving to retry queue: {e}")
                 from post_queue import save_failed_post
                 save_failed_post(
@@ -781,6 +789,7 @@ def main():
                     scheduled_at      = sched,
                     error             = str(e),
                 )
+                continue  # do NOT break — keep posting remaining clips
 
     # ── Summary ───────────────────────────────────────────────────────────────
     _sep("SUMMARY")
