@@ -83,7 +83,17 @@ def _weighted_order_with_youtube_floor(contacts, youtube_share: float = YOUTUBE_
     """
     yt = [c for c in contacts if c.get("type") == "youtube"]
     others = [c for c in contacts if c.get("type") != "youtube"]
-    _random.shuffle(yt)
+    # Sort YouTube contacts by genre_match_score DESC so psytrance/progressive
+    # channels (primary focus, higher scores) dispatch before Christian EDM /
+    # organic house / melodic techno (secondary). Ties are randomized via a
+    # secondary shuffle key for fairness within the same score band.
+    import random as _r
+    yt.sort(
+        key=lambda c: (
+            -(c.get("youtube_genre_match_score") or 0.0),
+            _r.random(),
+        )
+    )
 
     # Weighted order for non-YouTube types
     by_type: dict[str, list] = {}

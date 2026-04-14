@@ -103,25 +103,47 @@ YOUTUBE_MAX_SUBS         = 500_000
 YOUTUBE_MIN_TOTAL_VIEWS  = 100_000
 YOUTUBE_MIN_VIDEO_COUNT  = 20
 YOUTUBE_MAX_UPLOAD_AGE_DAYS = 30
+
+# Discovery seed queries — primary focus is (progressive) psytrance, with
+# secondary melodic techno / progressive house and tertiary Christian EDM /
+# organic house coverage. Ordered by priority; search budget = 100 units per
+# query × ~25 queries = 2500 units per discovery run (well under 8K cap).
 YOUTUBE_DISCOVERY_QUERIES = [
-    # Genre seeds
+    # ── PRIMARY: psytrance / progressive psytrance ──
     "progressive psytrance mix 2026",
     "tribal psytrance mix",
-    "melodic techno mix 2026",
     "psytrance promo channel",
-    "progressive house mix 2026",
-    # Sound-reference artists (from story.py:31 sound_refs)
+    "psytrance 2026",
+    "progressive psytrance 2026",
+    # Psytrance sound-reference artists (from story.py:31 sound_refs)
     "Vini Vici",
     "Astrix",
     "Symphonix",
     "Ranji",
     "Ace Ventura",
+
+    # ── SECONDARY: melodic techno / progressive house ──
+    "melodic techno mix 2026",
+    "melodic house mix 2026",
+    "progressive house mix 2026",
+    "Afterlife melodic techno",
+    # Melodic/progressive artists
     "Colyn",
     "Massano",
     "Argy",
     "Anyma",
-    "Rüfüs Du Sol",
+
+    # ── TERTIARY: Christian EDM ──
+    "christian edm mix",
+    "worship edm",
+    "christian electronic music",
+
+    # ── TERTIARY: organic house ──
+    "organic house mix",
+    "all day i dream mix",
+    "afro house mix",
 ]
+
 # Channel titles that match these names exactly are rejected as artist-owned
 # (they won't upload our music regardless of how good the pitch is).
 YOUTUBE_ARTIST_CHANNEL_BLOCKLIST = {
@@ -137,11 +159,25 @@ YOUTUBE_ARTIST_CHANNEL_MARKERS = [
     "official youtube channel",
     "Topic",  # YouTube auto-generated artist pages end in "- Topic"
 ]
-# Keywords that must appear in a channel's description/title to pass the genre filter
-YOUTUBE_GENRE_KEYWORDS = [
-    "psytrance", "psy-trance", "psy trance", "progressive", "tribal",
-    "techno", "trance", "psy", "mix", "promo", "compilation", "set", "dj set",
+# Keywords that must appear in a channel's description/title to pass the genre
+# filter. PRIMARY keywords (psytrance focus) are weighted 2x in _genre_score
+# so psytrance channels outrank secondary/tertiary genres in the send queue.
+YOUTUBE_GENRE_KEYWORDS_PRIMARY = [
+    "psytrance", "psy-trance", "psy trance", "progressive psytrance",
+    "tribal psytrance", "psy",
 ]
+YOUTUBE_GENRE_KEYWORDS_SECONDARY = [
+    # Melodic techno / progressive / Christian EDM / organic house — all welcome
+    # but these score lower than primary psytrance keywords.
+    "progressive", "tribal", "melodic techno", "melodic house",
+    "progressive house", "techno", "trance", "melodic",
+    "christian", "worship", "gospel", "christian edm",
+    "organic house", "afro house", "deep house",
+    # Channel-type indicators (not genre per se, but signal promo intent)
+    "mix", "promo", "compilation", "set", "dj set",
+]
+# Backwards-compatible flat list (still referenced for regex/search operations)
+YOUTUBE_GENRE_KEYWORDS = YOUTUBE_GENRE_KEYWORDS_PRIMARY + YOUTUBE_GENRE_KEYWORDS_SECONDARY
 
 # ─── Spotify Growth Velocity → Weight Adjustment ──────────────────────────────
 # auto_weights command reads listener velocity and rewrites CONTACT_TYPE_WEIGHTS.

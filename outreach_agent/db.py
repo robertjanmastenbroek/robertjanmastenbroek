@@ -297,7 +297,12 @@ def add_youtube_contact(
     recent_upload_title: str = "",
     genre: str = "",
     notes: str = "",
-    source: str = "agent_discovered",
+    # NOTE: uses 'youtube_discover' (not 'agent_discovered') so new channels
+    # bypass the WARM_UP_DAILY_CAP = 10 gate in agent.py:79. YouTube is RJM's
+    # primary growth channel — discovered contacts go directly into the active
+    # send queue as trusted. The gate still applies to curator/podcast
+    # agent-discovery, which remains protected.
+    source: str = "youtube_discover",
 ) -> tuple[bool, str]:
     """
     Insert a YouTube channel as a contact with all youtube_* metadata populated.

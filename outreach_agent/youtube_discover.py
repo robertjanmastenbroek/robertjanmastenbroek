@@ -43,7 +43,8 @@ from config import (
     YOUTUBE_ARTIST_CHANNEL_BLOCKLIST,
     YOUTUBE_ARTIST_CHANNEL_MARKERS,
     YOUTUBE_DISCOVERY_QUERIES,
-    YOUTUBE_GENRE_KEYWORDS,
+    YOUTUBE_GENRE_KEYWORDS_PRIMARY,
+    YOUTUBE_GENRE_KEYWORDS_SECONDARY,
     YOUTUBE_MAX_SUBS,
     YOUTUBE_MAX_UPLOAD_AGE_DAYS,
     YOUTUBE_MIN_SUBS,
@@ -166,14 +167,30 @@ def _fetch_latest_upload(uploads_playlist_id: str) -> dict | None:
 
 def _genre_score(text: str) -> float:
     """
-    Return a 0.0–1.0 score based on how many genre keywords appear in the text.
-    1.0 = all keywords present, 0.0 = none.
+    Return a 0.0–1.0 score measuring how strongly a channel matches RJM's
+    target genres.
+
+    Psytrance keywords (primary focus) score 2 points each; secondary genre
+    keywords (melodic techno, progressive house, Christian EDM, organic house,
+    plus promo-intent terms like 'mix', 'set') score 1 point each. Full score
+    is reached at 5 points — so a psytrance channel matching 3 primary keywords
+    (6 points, capped at 1.0) outranks a melodic channel matching 5 secondary
+    keywords (5 points = 1.0 tied, BUT more fine-grained ordering via the raw
+    score below the cap).
+
+    The score is stored in youtube_genre_match_score on the contact row, so
+    the send allocator can sort YouTube contacts by score-descending and
+    dispatch psytrance channels first.
     """
     if not text:
         return 0.0
     text_lower = text.lower()
-    hits = sum(1 for kw in YOUTUBE_GENRE_KEYWORDS if kw in text_lower)
-    return min(1.0, hits / max(3, len(YOUTUBE_GENRE_KEYWORDS) / 3))
+    primary_hits = sum(2.0 for kw in YOUTUBE_GENRE_KEYWORDS_PRIMARY if kw in text_lower)
+    secondary_hits = sum(1.0 for kw in YOUTUBE_GENRE_KEYWORDS_SECONDARY if kw in text_lower)
+    # No upper cap — scores above 1.0 are valid and indicate very strong psy
+    # alignment (e.g. 3 primary keywords = 6 → 0.6; 4 primary + 4 secondary = 12 → 1.2).
+    # The allocator sorts by this value descending, so higher raw score wins.
+    return (primary_hits + secondary_hits) / 10.0
 
 
 def _is_artist_channel(snippet: dict, branding: dict) -> bool:
