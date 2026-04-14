@@ -56,48 +56,13 @@ def _scheduled_at_utc(platform: str, clip_index: int) -> str:
 
 
 def _upload_video_for_instagram(video_path: str) -> str:
-    """Upload video to get a public URL for Instagram Graph API. Tries multiple hosts."""
-    # 1. Cloudinary (preferred)
-    cloudinary_url = os.environ.get("CLOUDINARY_URL", "")
-    if cloudinary_url:
-        try:
-            from video_host import upload_video
-            return upload_video(video_path)
-        except Exception as e:
-            logger.warning(f"[distributor] Cloudinary failed: {e}")
+    """Upload video to get a stable public URL for Instagram/TikTok Graph API.
 
-    # 2. uguu.se (free, 48h — enough for IG to fetch)
-    try:
-        with open(video_path, "rb") as f:
-            resp = requests.post(
-                "https://uguu.se/upload",
-                files={"files[]": (Path(video_path).name, f, "video/mp4")},
-                timeout=120,
-            )
-        if resp.status_code == 200:
-            data = resp.json()
-            url = data.get("files", [{}])[0].get("url", "")
-            if url:
-                logger.info(f"[distributor] Uploaded to uguu.se: {url}")
-                return url
-    except Exception as e:
-        logger.warning(f"[distributor] uguu.se failed: {e}")
-
-    # 3. Catbox.moe
-    try:
-        with open(video_path, "rb") as f:
-            resp = requests.post(
-                "https://catbox.moe/user/api.php",
-                data={"reqtype": "fileupload", "userhash": ""},
-                files={"fileToUpload": f},
-                timeout=120,
-            )
-        if resp.status_code == 200 and resp.text.startswith("https://"):
-            return resp.text.strip()
-    except Exception as e:
-        logger.warning(f"[distributor] Catbox failed: {e}")
-
-    raise RuntimeError(f"All video upload methods failed for {video_path}")
+    Delegates entirely to video_host.upload_video() which handles the full
+    priority chain: RJM website (SFTP, stable) → Cloudinary → uguu.se.
+    """
+    from video_host import upload_video
+    return upload_video(video_path)
 
 
 def refresh_instagram_token(access_token: str = "") -> str:

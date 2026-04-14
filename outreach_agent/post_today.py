@@ -472,17 +472,19 @@ def main():
         help="Generate videos + captions locally. Skip Buffer posting."
     )
     parser.add_argument("--track", help="Force a specific track (partial name match).")
+    parser.add_argument("--force", action="store_true", help="Bypass active window check and post immediately.")
     args = parser.parse_args()
 
     mode = "[DRY RUN] " if args.dry_run else ""
 
     # ── Active window gate (live runs only) ───────────────────────────────────
-    if not args.dry_run:
+    if not args.dry_run and not args.force:
         import scheduler
         if not scheduler.is_within_active_window():
             window = scheduler.SendWindow()
             print(f"  ⏸  Outside active send window — {window.status()}")
             print("  Use --dry-run to render clips without posting.")
+            print("  Use --force to bypass the window check.")
             sys.exit(0)
 
     # ── 1. RJM track + peak section + BPM ────────────────────────────────────
@@ -679,19 +681,35 @@ def main():
         for src_path, _ in per_clip[cl]["video_sources"]:
             mark_video_used(Path(src_path))
 
+    # ── Cleanup old uploads from robertjanmastenbroek.com (live only) ─────────
+    if not args.dry_run:
+        try:
+            from video_host import cleanup_old_uploads
+            cleanup_old_uploads(max_age_days=7)
+        except Exception as _clean_exc:
+            print(f"  ⚠ Upload cleanup skipped (non-fatal): {_clean_exc}")
+
     # ── Buffer (live only) ────────────────────────────────────────────────────
     if not args.dry_run:
         _sep("BUFFER — Queuing to TikTok / Instagram Reels / Instagram Story / YouTube")
         from buffer_poster import upload_video_and_queue
-        from datetime import timedelta, timezone
+        from datetime import timezone
 
-        # Schedule all 3 clips for today — 3-hour gaps starting 30 min from now.
-        # Each slot queues: TikTok + Instagram Reel + Instagram Story + YouTube Short.
-        now = datetime.now(timezone.utc)
-        schedule_times = [
-            (now + timedelta(minutes=30) + timedelta(hours=i * 3)).strftime("%Y-%m-%dT%H:%M:%SZ")
-            for i in range(len(output_files))
-        ]
+        # Fixed CET posting slots: 09:00 / 13:00 / 19:00 (Tenerife time, same as distributor.py)
+        _POST_SLOTS_CET = ["09:00", "13:00", "19:00"]
+        try:
+            from zoneinfo import ZoneInfo
+            _tz_cet = ZoneInfo("Europe/Madrid")
+        except Exception:
+            from datetime import timedelta as _td
+            _tz_cet = timezone(_td(hours=1))
+
+        schedule_times = []
+        for _i in range(len(output_files)):
+            _slot = _POST_SLOTS_CET[_i % len(_POST_SLOTS_CET)]
+            _h, _m = int(_slot.split(":")[0]), int(_slot.split(":")[1])
+            _today_cet = datetime.now(_tz_cet).replace(hour=_h, minute=_m, second=0, microsecond=0)
+            schedule_times.append(_today_cet.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
         for i, (clip_len, clip_path) in enumerate(zip(clip_lengths, output_files)):
             caps  = run_captions.get(clip_len, {})
