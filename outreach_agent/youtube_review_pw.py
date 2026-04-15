@@ -64,6 +64,19 @@ _EMAIL_BLOCKLIST_LOCALPARTS = (
 
 _PROFILE_DIR = Path(__file__).parent / ".playwright_profile"
 
+# YouTube rate-limit indicators on the channel About page. When the user has
+# hit the ~10/day limit, clicking "View email address" shows a hidden message
+# instead of revealing the email. If we detect these phrases, the whole
+# session ends — every subsequent channel will hit the same wall.
+_RATE_LIMIT_PHRASES = (
+    "reached today's access limit",
+    "reached your access limit",
+    "email address hidden",
+    "come back tomorrow",
+    "try again tomorrow",
+    "access limit",
+)
+
 
 def _rank_emails(emails: list[str]) -> list[str]:
     good = []
@@ -253,6 +266,39 @@ _VIEW_EMAIL_SELECTORS = [
 ]
 
 
+def _page_hit_rate_limit(page) -> bool:
+    """
+    Detect if the current Chromium page is showing YouTube's daily
+    rate-limit message for business email reveals. When True, the user
+    has used up today's ~10 unlocks and every subsequent channel will
+    return the same message — we should abort the whole session.
+    """
+    try:
+        text = page.evaluate("() => (document.body && document.body.innerText) || ''") or ""
+    except Exception:
+        return False
+    text_lower = text.lower()
+    return any(phrase in text_lower for phrase in _RATE_LIMIT_PHRASES)
+
+
+def _print_rate_limit_banner(channel_name: str) -> None:
+    print()
+    print(f"{_RED}{_BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{_RESET}")
+    print(f"{_RED}{_BOLD}  YouTube daily unlock limit reached{_RESET}")
+    print(f"{_RED}{_BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{_RESET}")
+    print()
+    print(f"  {_YELLOW}YouTube is showing 'Email address hidden — reached today's{_RESET}")
+    print(f"  {_YELLOW}access limit' on the page, which means every remaining{_RESET}")
+    print(f"  {_YELLOW}channel in this session will fail the same way.{_RESET}")
+    print()
+    print(f"  {_DIM}Current channel ({channel_name}) stays in the queue for{_RESET}")
+    print(f"  {_DIM}the next session — not closed.{_RESET}")
+    print()
+    print(f"  {_DIM}Run the launcher again tomorrow for another ~10 unlocks.{_RESET}")
+    print(f"  {_DIM}Your progress is saved.{_RESET}")
+    print()
+
+
 def _has_view_email_button(page, wait_ms: int = 4000) -> bool:
     """
     Return True if the 'View email address' button (or equivalent) is
@@ -406,9 +452,36 @@ def run_review_pw(limit: int = 50) -> dict[str, int]:
                     continue
 
                 # Case C: button is present — this is where we need you.
-                # Auto-click it so the CAPTCHA / reveal appears immediately.
+                # Auto-click it so the CAPTCHA / reveal / limit message appears.
                 if _try_auto_click_view_email(page):
-                    print(f"  {_DIM}auto-clicked 'View email address' — solve CAPTCHA if shown{_RESET}")
+                    print(f"  {_DIM}auto-clicked 'View email address'{_RESET}")
+                    time.sleep(1.5)  # let the post-click state render
+
+                    # Case C.1: rate limit message appeared → end the session.
+                    # Leave the current channel in the queue (don't close it).
+                    if _page_hit_rate_limit(page):
+                        _print_rate_limit_banner(c.get("name", ""))
+                        return stats
+
+                    # Case C.2: email already revealed (no CAPTCHA needed) —
+                    # some users with fresh sessions get instant reveals.
+                    immediate = _extract_emails_from_page(page)
+                    if immediate:
+                        chosen = immediate[0]
+                        ok, reason = _update_email(c["id"], chosen)
+                        if ok:
+                            stats["saved"] += 1
+                            stats["auto_saved"] += 1
+                            stats["reviewed"] += 1
+                            print(f"  {_GREEN}✓ auto-saved after click: {chosen}{_RESET}")
+                            time.sleep(0.4)
+                            continue
+                        else:
+                            print(f"  {_YELLOW}⚠  {reason}{_RESET}")
+                            _blocklist(c["id"], reason="email_dup")
+                            stats["skipped"] += 1
+                            stats["reviewed"] += 1
+                            continue
 
                 while True:
                     action = _prompt()
@@ -433,6 +506,11 @@ def run_review_pw(limit: int = 50) -> dict[str, int]:
                     if action == "scrape":
                         candidates = _extract_emails_from_page(page)
                         if not candidates:
+                            # Did we hit the daily rate limit? If so, exit the
+                            # whole session — every remaining channel will fail.
+                            if _page_hit_rate_limit(page):
+                                _print_rate_limit_banner(c.get("name", ""))
+                                return stats
                             print(f"  {_YELLOW}No email found on page. Options:{_RESET}")
                             print(f"  {_DIM}  - Click 'View email address' then press Enter again{_RESET}")
                             print(f"  {_DIM}  - Paste the email directly{_RESET}")
