@@ -90,6 +90,7 @@ MASTER_PY        = OUTREACH_DIR / "master_agent.py"
 YT_DISCOVER_PY   = OUTREACH_DIR / "youtube_discover.py"
 YT_REVIEW_PY     = OUTREACH_DIR / "youtube_manual_review.py"
 YT_REVIEW_AUTO_PY = OUTREACH_DIR / "youtube_review_auto.py"
+YT_REVIEW_PW_PY  = OUTREACH_DIR / "youtube_review_pw.py"
 CONTACT_MGR_PY  = PROJECT_ROOT / "contact_manager.py"
 POST_TODAY_PY   = OUTREACH_DIR / "post_today.py"
 PLAYLIST_RUN_PY = OUTREACH_DIR / "playlist_run.py"
@@ -169,16 +170,25 @@ def cmd_youtube(args: list[str]):
         sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY)] + rest, cwd=str(OUTREACH_DIR)))
 
     elif action == "review":
-        # Default to the Chrome-integrated auto version; fall back to the basic
-        # manual-paste tool if the auto script is missing for some reason.
-        target = YT_REVIEW_AUTO_PY if YT_REVIEW_AUTO_PY.exists() else YT_REVIEW_PY
-        if not target.exists():
-            print(f"✗ review tool not found")
+        # Default: Playwright-driven Chromium (most reliable — no AppleScript
+        # headaches, no macOS permission prompts, reuses a single tab).
+        # Falls through to the AppleScript version if Playwright is missing,
+        # then to the basic manual-paste tool as the last resort.
+        for candidate in (YT_REVIEW_PW_PY, YT_REVIEW_AUTO_PY, YT_REVIEW_PY):
+            if candidate.exists():
+                sys.exit(_run([_OUTREACH_PYTHON, str(candidate)] + rest, cwd=str(OUTREACH_DIR)))
+        print("✗ no review tool found")
+        sys.exit(1)
+
+    elif action in ("review-applescript", "review_applescript"):
+        # Force the AppleScript-driven version (controls user's main Chrome)
+        if not YT_REVIEW_AUTO_PY.exists():
+            print(f"✗ {YT_REVIEW_AUTO_PY} not found")
             sys.exit(1)
-        sys.exit(_run([_OUTREACH_PYTHON, str(target)] + rest, cwd=str(OUTREACH_DIR)))
+        sys.exit(_run([_OUTREACH_PYTHON, str(YT_REVIEW_AUTO_PY)] + rest, cwd=str(OUTREACH_DIR)))
 
     elif action in ("review-manual", "review_manual"):
-        # Force the older manual-paste version (no Chrome automation)
+        # Force the basic manual-paste version (no browser automation at all)
         if not YT_REVIEW_PY.exists():
             print(f"✗ {YT_REVIEW_PY} not found")
             sys.exit(1)
