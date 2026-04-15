@@ -84,11 +84,12 @@ if _env_path.exists():
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT    = Path(__file__).parent
-OUTREACH_DIR    = PROJECT_ROOT / "outreach_agent"
-AGENT_PY        = OUTREACH_DIR / "agent.py"
-MASTER_PY       = OUTREACH_DIR / "master_agent.py"
-YT_DISCOVER_PY  = OUTREACH_DIR / "youtube_discover.py"
-YT_REVIEW_PY    = OUTREACH_DIR / "youtube_manual_review.py"
+OUTREACH_DIR     = PROJECT_ROOT / "outreach_agent"
+AGENT_PY         = OUTREACH_DIR / "agent.py"
+MASTER_PY        = OUTREACH_DIR / "master_agent.py"
+YT_DISCOVER_PY   = OUTREACH_DIR / "youtube_discover.py"
+YT_REVIEW_PY     = OUTREACH_DIR / "youtube_manual_review.py"
+YT_REVIEW_AUTO_PY = OUTREACH_DIR / "youtube_review_auto.py"
 CONTACT_MGR_PY  = PROJECT_ROOT / "contact_manager.py"
 POST_TODAY_PY   = OUTREACH_DIR / "post_today.py"
 PLAYLIST_RUN_PY = OUTREACH_DIR / "playlist_run.py"
@@ -168,6 +169,16 @@ def cmd_youtube(args: list[str]):
         sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY)] + rest, cwd=str(OUTREACH_DIR)))
 
     elif action == "review":
+        # Default to the Chrome-integrated auto version; fall back to the basic
+        # manual-paste tool if the auto script is missing for some reason.
+        target = YT_REVIEW_AUTO_PY if YT_REVIEW_AUTO_PY.exists() else YT_REVIEW_PY
+        if not target.exists():
+            print(f"✗ review tool not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(target)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif action in ("review-manual", "review_manual"):
+        # Force the older manual-paste version (no Chrome automation)
         if not YT_REVIEW_PY.exists():
             print(f"✗ {YT_REVIEW_PY} not found")
             sys.exit(1)
