@@ -136,9 +136,19 @@ def _update_email(contact_id: int, email: str) -> tuple[bool, str]:
     return True, "saved"
 
 
-def _blocklist(contact_id: int) -> None:
+def _blocklist(contact_id: int, reason: str = "blocklist") -> None:
+    """
+    Permanently close a channel so it never shows up in the review queue
+    again. `reason` is for logging only — the DB status is 'closed' either
+    way. Used for:
+      - 'blocklist'     → user pressed 'b' (wrong fit)
+      - 'skipped'       → user pressed 's' (reviewed, no interest)
+      - 'no_button'     → auto-detected: no 'View email' button on page
+      - 'no_email'      → auto-detected + user confirmed: nothing available
+    """
     with db.get_conn() as conn:
         conn.execute("UPDATE contacts SET status = 'closed' WHERE id = ?", (contact_id,))
+    log.info("closed %s: %s", contact_id, reason)
 
 
 # ─── UI helpers ───────────────────────────────────────────────────────────────
@@ -193,8 +203,9 @@ def _prompt() -> str:
     while True:
         try:
             raw = input(
-                f"  {_BOLD}Click 'View email address' in Chromium → back here → press Enter{_RESET}\n"
-                f"  {_DIM}(or paste an email / s=skip / b=blocklist / q=quit): {_RESET}"
+                f"  {_BOLD}Solve the CAPTCHA in Chromium → back here → press Enter{_RESET}\n"
+                f"  {_DIM}(paste email directly / s=no email here / b=wrong fit / q=quit){_RESET}\n"
+                f"  > "
             ).strip()
         except (KeyboardInterrupt, EOFError):
             return "q"
@@ -232,6 +243,38 @@ def _extract_emails_from_page(page) -> list[str]:
     return _rank_emails(found)
 
 
+# Selectors for the "View email address" / "Business inquiries" button
+# that YouTube shows on channel About pages when the owner has set one.
+_VIEW_EMAIL_SELECTORS = [
+    "text=/view email address/i",
+    "text=/business inquiries/i",
+    "button:has-text('View email address')",
+    "yt-button-renderer:has-text('View email')",
+]
+
+
+def _has_view_email_button(page, wait_ms: int = 4000) -> bool:
+    """
+    Return True if the 'View email address' button (or equivalent) is
+    present on the current page. Waits up to wait_ms for the button to
+    render in case YouTube is still loading. Being conservative: a False
+    here means we're confident there's no button, so we can auto-close
+    the channel without asking the user.
+    """
+    import time as _t
+    deadline = _t.time() + (wait_ms / 1000.0)
+    while _t.time() < deadline:
+        for sel in _VIEW_EMAIL_SELECTORS:
+            try:
+                loc = page.locator(sel).first
+                if loc.count() > 0:
+                    return True
+            except Exception:
+                continue
+        _t.sleep(0.3)
+    return False
+
+
 def _try_auto_click_view_email(page) -> bool:
     """
     Best-effort: click any visible 'View email address' button on the page
@@ -239,14 +282,7 @@ def _try_auto_click_view_email(page) -> bool:
     then show a CAPTCHA — the user handles it.
     """
     try:
-        # Try a few selectors that YouTube uses for the business-email reveal
-        selectors = [
-            "text=/view email address/i",
-            "text=/business inquiries/i",
-            "button:has-text('View email address')",
-            "yt-button-renderer:has-text('View email')",
-        ]
-        for sel in selectors:
+        for sel in _VIEW_EMAIL_SELECTORS:
             try:
                 locator = page.locator(sel).first
                 if locator.count() > 0 and locator.is_visible():
@@ -276,7 +312,15 @@ def run_review_pw(limit: int = 50) -> dict[str, int]:
         return {"reviewed": 0, "saved": 0, "skipped": 0, "blocked": 0, "auto_scraped": 0}
 
     total = len(pending)
-    stats = {"reviewed": 0, "saved": 0, "skipped": 0, "blocked": 0, "auto_scraped": 0}
+    stats = {
+        "reviewed": 0,
+        "saved": 0,           # total saved (auto + manual)
+        "auto_saved": 0,      # saved via description pre-scrape (no user action)
+        "auto_no_button": 0,  # auto-closed because page had no reveal button
+        "manual_scraped": 0,  # saved via user click + Enter
+        "skipped": 0,         # user pressed 's'
+        "blocked": 0,         # user pressed 'b'
+    }
 
     _PROFILE_DIR.mkdir(exist_ok=True)
 
@@ -320,27 +364,51 @@ def run_review_pw(limit: int = 50) -> dict[str, int]:
 
                 try:
                     page.goto(url, timeout=30_000, wait_until="domcontentloaded")
-                    time.sleep(1.5)  # let the About section render
+                    time.sleep(2.0)  # let the About section render
                     print(f"  {_GREEN}→ opened in Chromium{_RESET}  {url}")
                 except Exception as e:
                     print(f"  {_RED}✗ navigation failed: {e}{_RESET}")
+                    _blocklist(c["id"], reason="nav_failed")
                     stats["skipped"] += 1
                     stats["reviewed"] += 1
                     continue
 
-                # Best-effort: try to auto-click the "View email address" button
-                # so the user doesn't have to find it themselves
-                if _try_auto_click_view_email(page):
-                    print(f"  {_DIM}auto-clicked 'View email address' — solve the CAPTCHA if shown{_RESET}")
-
-                # Also do an opportunistic scrape before any user action — some
-                # channels put emails directly in the description, no click needed
+                # ─── Auto-classification (no user prompt) ────────────────────
+                # Case A: email is directly visible in the description — save
+                #         it without asking anything.
                 pre_emails = _extract_emails_from_page(page)
                 if pre_emails:
                     chosen = pre_emails[0]
-                    # Confirm via prompt (fast path — user just hits Enter)
-                    print(f"  {_GREEN}Found email without clicking: {chosen}{_RESET}")
-                    print(f"  {_DIM}(other candidates: {', '.join(pre_emails[1:4]) or 'none'}){_RESET}")
+                    ok, reason = _update_email(c["id"], chosen)
+                    if ok:
+                        stats["saved"] += 1
+                        stats["auto_saved"] += 1
+                        stats["reviewed"] += 1
+                        print(f"  {_GREEN}✓ auto-saved from description: {chosen}{_RESET}")
+                        time.sleep(0.5)  # brief pause so user can see what happened
+                        continue
+                    # Conflict — the email is already in DB. Treat as no-email
+                    # (we won't double-pitch), close the channel, move on.
+                    print(f"  {_YELLOW}⚠  {reason}{_RESET}")
+                    _blocklist(c["id"], reason="email_dup")
+                    stats["skipped"] += 1
+                    stats["reviewed"] += 1
+                    continue
+
+                # Case B: no description email AND no 'View email' button on
+                #         the page — auto-close. Nothing to unlock here.
+                if not _has_view_email_button(page, wait_ms=4000):
+                    _blocklist(c["id"], reason="no_button")
+                    stats["auto_no_button"] += 1
+                    stats["reviewed"] += 1
+                    print(f"  {_DIM}no 'View email address' button — auto-closed{_RESET}")
+                    time.sleep(0.4)
+                    continue
+
+                # Case C: button is present — this is where we need you.
+                # Auto-click it so the CAPTCHA / reveal appears immediately.
+                if _try_auto_click_view_email(page):
+                    print(f"  {_DIM}auto-clicked 'View email address' — solve CAPTCHA if shown{_RESET}")
 
                 while True:
                     action = _prompt()
@@ -348,12 +416,16 @@ def run_review_pw(limit: int = 50) -> dict[str, int]:
                         print(f"\n{_DIM}Quit — progress saved. Run again to resume.{_RESET}")
                         return stats
                     if action == "s":
+                        # Permanently close so this channel doesn't come back
+                        # in the next session. Same effect as 'b', semantically
+                        # "you've looked, no email available here".
+                        _blocklist(c["id"], reason="user_skipped")
                         stats["skipped"] += 1
                         stats["reviewed"] += 1
-                        print(f"  {_DIM}skipped{_RESET}")
+                        print(f"  {_DIM}skipped (closed, won't show again){_RESET}")
                         break
                     if action == "b":
-                        _blocklist(c["id"])
+                        _blocklist(c["id"], reason="blocklist")
                         stats["blocked"] += 1
                         stats["reviewed"] += 1
                         print(f"  {_RED}blocklisted{_RESET}")
@@ -375,7 +447,7 @@ def run_review_pw(limit: int = 50) -> dict[str, int]:
                             print(f"  {_DIM}Try pasting a different one, or 's' to skip{_RESET}")
                             continue
                         stats["saved"] += 1
-                        stats["auto_scraped"] += 1
+                        stats["manual_scraped"] += 1
                         stats["reviewed"] += 1
                         print(f"  {_GREEN}✓ saved (auto) {chosen}{_RESET}")
                         break
