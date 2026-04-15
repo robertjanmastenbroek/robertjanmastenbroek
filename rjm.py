@@ -20,6 +20,7 @@ Usage:
   python3 rjm.py playlist [cmd]           # Playlist DB (status, add, pending_contact, list)
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
   python3 rjm.py youtube discover         # Find YouTube promo channels → contacts DB
+  python3 rjm.py youtube review           # Interactive: click-through to find emails
   python3 rjm.py youtube status           # YouTube-type pipeline counts
   python3 rjm.py youtube budget           # Today's YouTube API unit usage vs cap
   python3 rjm.py run <agent>              # Trigger a sub-agent directly
@@ -87,6 +88,7 @@ OUTREACH_DIR    = PROJECT_ROOT / "outreach_agent"
 AGENT_PY        = OUTREACH_DIR / "agent.py"
 MASTER_PY       = OUTREACH_DIR / "master_agent.py"
 YT_DISCOVER_PY  = OUTREACH_DIR / "youtube_discover.py"
+YT_REVIEW_PY    = OUTREACH_DIR / "youtube_manual_review.py"
 CONTACT_MGR_PY  = PROJECT_ROOT / "contact_manager.py"
 POST_TODAY_PY   = OUTREACH_DIR / "post_today.py"
 PLAYLIST_RUN_PY = OUTREACH_DIR / "playlist_run.py"
@@ -151,6 +153,7 @@ def cmd_youtube(args: list[str]):
     if not args:
         print("Usage:")
         print("  python3 rjm.py youtube discover [--dry-run] [--per-query N]")
+        print("  python3 rjm.py youtube review [--limit 50]  # manual email click-through")
         print("  python3 rjm.py youtube status     # pipeline counts by status")
         print("  python3 rjm.py youtube budget     # today's YouTube API unit usage vs cap")
         sys.exit(1)
@@ -163,6 +166,12 @@ def cmd_youtube(args: list[str]):
             print(f"✗ {YT_DISCOVER_PY} not found")
             sys.exit(1)
         sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif action == "review":
+        if not YT_REVIEW_PY.exists():
+            print(f"✗ {YT_REVIEW_PY} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(YT_REVIEW_PY)] + rest, cwd=str(OUTREACH_DIR)))
 
     elif action == "status":
         # Pipeline counts by status for type='youtube'
