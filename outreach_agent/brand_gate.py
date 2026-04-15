@@ -16,6 +16,7 @@ Returns: {"passes": bool, "score": int (0-5), "flags": list[str], "suggestion": 
 import re
 import sys
 import os
+from typing import Optional
 
 # ── Banned generic phrases (Uniqueness + Falsifiability) ──────────────────────
 _GENERIC_ADJECTIVES = [
@@ -25,14 +26,41 @@ _GENERIC_ADJECTIVES = [
     r"\beveryone\b", r"\bfor all\b",
 ]
 
+# ── Hard-ban openers (inner-monologue drift traps) ────────────────────────────
+# These were the patterns the previous generation produced that failed every
+# stranger-test. Any hook opening with one of these is auto-rejected.
+_HARD_BAN_OPENERS = [
+    r"^for the ones?\b",            # "For the ones / For the one"
+    r"^for those who\b",            # "For those who still…"
+    r"^for the version of\b",       # "For the version of you…"
+    r"^shoulders? release\b",       # therapy-journal voice
+    r"^feet left the floor\b",      # describes-the-video-redundantly
+    r"^built for\b",                # generic dedication
+    r"^if you ?(?:are|'re) ready\b",
+    r"^to the one\b",
+]
+
+# ── Hard-ban phrase patterns (therapy drift, generic dedication) ──────────────
+_HARD_BAN_PHRASES = [
+    r"\brebuilding from\b",
+    r"\bjoy became a weapon\b",     # inner-monologue poetry
+    r"\bstopped hiding\b",
+    r"\bheld something burning\b",
+    r"\beverything shifted\b",
+    r"\bstopped asking why\b",
+    r"\bnothing but honesty\b",
+]
+
 # ── Visual / concrete language markers ────────────────────────────────────────
 _VISUAL_MARKERS = [
     r"\b\d+\s*(?:BPM|bpm)\b",           # BPM number
     r"\b(?:dust|sweat|smoke|candle|crowd|dark|light|fire|water|stone|sand)\b",
     r"\b(?:tribal|techno|psytrance|melodic|bass|drop|synth|kick)\b",
-    r"\b(?:midnight|sunrise|dancefloor|festival|stage)\b",
-    r"\b(?:Jericho|Living Water|Halleluyah|Renamed|Holy Rave)\b",
-    r"\b(?:Joshua|John|Isaiah|Psalm)\s*\d",  # Scripture ref
+    r"\b(?:midnight|sunrise|dancefloor|festival|stage|cliff|sunset)\b",
+    r"\b(?:Jericho|Living Water|Halleluyah|Renamed|Holy Rave|Tenerife)\b",
+    r"\b(?:Joshua|John|Isaiah|Psalm|Jeremiah|Matthew)\s*\d",  # Scripture ref
+    r"\b\d+\s*(?:seconds?|minutes?|am|pm)\b",   # Specific time markers
+    r"\b(?:knees|shoulders|jaw|hands|teeth|sternum|back|collarbone|neck)\b",
 ]
 
 
@@ -45,10 +73,29 @@ def validate_content(text: str) -> dict:
       - score (int): 0–5, one point per test passed
       - flags (list[str]): descriptions of failed tests
       - suggestion (str): guidance when failing
+      - hard_fail (bool): True if a hard-ban pattern matched (auto-reject regardless of score)
     """
     text_lower = text.lower()
     flags = []
     score = 0
+    hard_fail = False
+
+    # Hard-ban check runs first. If any banned opener or phrase matches, the
+    # hook is auto-rejected regardless of how many other tests it passes.
+    # These patterns were identified from the 2026-04-15 failing batch where
+    # poetic inner-monologue drift produced hooks that passed the existing
+    # numeric score but were objectively unusable.
+    stripped = text.strip().strip('"').strip("'")
+    for pat in _HARD_BAN_OPENERS:
+        if re.search(pat, stripped, re.IGNORECASE):
+            flags.append(f"HARD-BAN opener: matches '{pat}' — drift into generic dedication")
+            hard_fail = True
+            break
+    for pat in _HARD_BAN_PHRASES:
+        if re.search(pat, text, re.IGNORECASE):
+            flags.append(f"HARD-BAN phrase: matches '{pat}' — inner-monologue drift")
+            hard_fail = True
+            break
 
     # Test 1: Visualization — at least one visual/concrete marker
     if any(re.search(p, text, re.IGNORECASE) for p in _VISUAL_MARKERS):
@@ -87,11 +134,14 @@ def validate_content(text: str) -> dict:
     else:
         flags.append("Point A→B: no contrast/tension language — add secular/sacred bridge word")
 
-    passes = score >= 3
+    # A hook passes only if it clears the score threshold AND has no hard fail.
+    passes = (score >= 3) and not hard_fail
 
     suggestion = ""
     if not passes:
         parts = []
+        if hard_fail:
+            parts.append("rewrite from scratch — the opener or phrase is on the hard-ban list")
         if "Visualization" in str(flags):
             parts.append("add a concrete detail (BPM, track name, physical scene)")
         if "Falsifiability" in str(flags):
@@ -102,13 +152,22 @@ def validate_content(text: str) -> dict:
             parts.append("add a contrast word (dark/light, chaos/peace, ancient/future)")
         suggestion = "; ".join(parts) if parts else "Rewrite with specific, visual, falsifiable language."
 
-    return {"passes": passes, "score": score, "flags": flags, "suggestion": suggestion}
+    return {
+        "passes": passes,
+        "score": score,
+        "flags": flags,
+        "suggestion": suggestion,
+        "hard_fail": hard_fail,
+    }
 
 
 def gate_or_warn(text: str, context: str = "") -> str:
     """
     Validate and return the text unchanged.
     Prints a warning to stderr if validation fails (non-blocking — never silences output).
+
+    Use for telemetry only. For any new code path where a failing hook must NOT
+    reach render, use gate_or_reject instead.
     """
     result = validate_content(text)
     if not result["passes"]:
@@ -118,3 +177,28 @@ def gate_or_warn(text: str, context: str = "") -> str:
             file=sys.stderr,
         )
     return text
+
+
+def gate_or_reject(text: str, context: str = "") -> Optional[str]:
+    """
+    Validate and return the text if it passes, or None if it fails.
+
+    This is the blocking version. Callers use it in a retry loop:
+
+        hook = gate_or_reject(candidate)
+        if hook is None:
+            hook = try_next_template()
+
+    A None return must be treated as "do not ship this hook". Never substitute
+    warning-only behaviour here — that's how the 2026-04-15 batch shipped.
+    """
+    result = validate_content(text)
+    if result["passes"]:
+        return text
+    prefix = f"[brand_gate:{context}] " if context else "[brand_gate] "
+    reason = "HARD-BAN" if result.get("hard_fail") else f"score={result['score']}/5"
+    print(
+        f"{prefix}REJECT {reason} flags={result['flags']} text={text!r}",
+        file=sys.stderr,
+    )
+    return None

@@ -592,121 +592,274 @@ def _normalize_hook(text) -> str:
 
 def generate_run_hooks(track_title: str, clips_config: list) -> dict:
     """
-    Single Claude call that generates hooks for ALL clips/angles in one run.
-    Ensures hooks are unique across angles — no repeated imagery, themes, or words.
+    Template-driven hook generator (2026-04-16 rewrite).
 
-    clips_config: [{'length': 5, 'angle': 'emotional'}, {'length': 9, 'angle': 'signal'}, ...]
+    This function does NOT ask Claude to invent hooks from scratch. Instead it:
 
-    Returns: {5: {'a': str, 'b': str, 'c': str}, 9: {...}, 15: {...}}
+      1. Picks one proven template per clip-angle from viral_hook_library (a
+         curated bank of short-form video formats that have already produced
+         viral results in the dance/electronic music space).
+      2. Looks up RJM track facts (BPM, scripture anchor, canonical location)
+         from the in-library track facts table.
+      3. Makes ONE Claude call to fill the template slots with track-specific
+         content. The LLM's job is slot-filling, not hook invention.
+      4. Runs each filled hook through the blocking brand gate
+         (brand_gate.gate_or_reject). On rejection, falls back to the next
+         template's curated example_fill — never ships an unvetted hook.
+      5. If every template is rejected (shouldn't happen — example_fills are
+         kept curated), logs the failure and ships the primary example_fill
+         unchanged so the pipeline never stalls.
+
+    The hook shape is locked by the template. The LLM cannot drift into
+    inner-monologue poetry — its output space is constrained to slot content
+    inside an already-proven viral format.
+
+    Legacy signature preserved so post_today.py needs no changes. The return
+    dict gains a 'template_id' field for learning-loop attribution.
+
+    clips_config: [{'length': 7, 'angle': 'contrast'}, {'length': 15, 'angle': 'body-drop'}, ...]
+
+    Returns: {length: {'hook': str, 'mechanism': str, 'template_id': str, 'exploration': bool}}
     """
-    clips_by_length = {c['length']: c['angle'] for c in clips_config}
+    import viral_hook_library as vhl
 
-    # Build per-angle sections for the prompt
-    angle_sections = ""
+    clips_by_length = {c['length']: c['angle'] for c in clips_config}
+    track_facts = vhl.get_track_facts(track_title)
+
+    # Pre-pick a ranked template queue per angle. Primary = index 0; retries
+    # are index 1..N. Templates are weighted-random within each angle so
+    # consecutive runs of the same track get format variety.
+    MAX_TEMPLATE_TRIES_PER_ANGLE = 3
+    template_queue: dict = {}
     for clip in clips_config:
         length = clip['length']
         angle  = clip['angle']
-        instr  = ANGLE_INSTRUCTIONS.get(angle, ANGLE_DEFAULT_INSTRUCTION)
-        angle_sections += f"\n\n{'='*50}\nCLIP {length}s — ANGLE: {angle.upper()}\n{'='*50}\n{instr}\n"
+        template_queue[length] = vhl.get_templates_for_angle(
+            angle, n=MAX_TEMPLATE_TRIES_PER_ANGLE
+        )
 
-    system_prompt = f"""You write hooks for short-form video. Your only job is hooks.
+    # Build one Claude call that fills all primary templates at once.
+    primary_templates = {length: q[0] for length, q in template_queue.items() if q}
 
-{ARTIST_CONTEXT}
-{SUBTLE_SALT_LAYER}
-{BRAND_VOICE_LAYER}
-{HOOK_MECHANISM_LIBRARY}
-{HOOK_FAILURE_MODES}
+    filled: dict = {}
+    if primary_templates:
+        try:
+            filled = _fill_templates_with_claude(
+                track_title=track_title,
+                track_facts=track_facts,
+                templates_by_length=primary_templates,
+            )
+        except Exception as e:
+            logger.warning(f"[generate_run_hooks] primary fill failed: {e}")
+            filled = {}
 
-UNIVERSAL HOOK RULES:
-- 5-8 words. Readable in under 2 seconds.
-- NEVER open with "I". Start with situation, time, place, number, or body.
-- No exclamation marks. Energy is internal.
-- Every hook must be LOCATED: a specific time, place, physical sensation, or concrete detail.
-- Never describe what music sounds like — describe what it does to a body or a moment.
-- No Spotify CTAs in hooks.
+    # Validate + retry per length.
+    hooks: dict = {}
+    for length, angle in clips_by_length.items():
+        queue = template_queue.get(length, [])
+        if not queue:
+            hooks[length] = _emergency_hook(length, angle)
+            continue
 
-CRITICAL — UNIQUENESS ACROSS ALL CLIPS:
-You are writing for {len(clips_config)} different clips in the same run.
-Each clip has a different angle. The hooks MUST use completely different:
-- Imagery and metaphors
-- Time references and locations
-- Body parts or sensations
-- Emotional registers
-If two clips share any visual image, word, or theme, the system has failed.
-Write each angle as if the others don't exist.
+        primary = queue[0]
+        accepted = None
+        tried_template_ids = []
 
-FORMAT OVERRIDE — THIS RUN USES A DIFFERENT FORMAT THAN THE A/B/C SYSTEM ABOVE:
-The A/B/C variant section in the mechanism library does NOT apply here.
-Do NOT return dict-style output like {{'a': '...', 'b': '...', 'c': '...'}}
-Return ranked numbered lists ONLY, in the exact format shown in the user prompt.
-Rank 1 must follow the "OPENER // REVEAL" two-part format.
-Ranks 2–5 are single-line hooks. No dict syntax anywhere."""
+        # Try the primary Claude-filled candidate first.
+        candidate_text = (filled.get(length) or {}).get('hook_text') if filled else None
+        if candidate_text:
+            gated = (_brand_gate.gate_or_reject(
+                candidate_text, context=f"generator.primary.{primary.id}"
+            ) if _BRAND_GATE_AVAILABLE else candidate_text)
+            tried_template_ids.append(primary.id)
+            if gated:
+                accepted = {
+                    'hook':        gated,
+                    'mechanism':   primary.mechanism,
+                    'template_id': primary.id,
+                    'exploration': False,
+                }
 
-    user_prompt = f"""TRACK: {track_title}
+        # Retry with backup templates using their curated example_fill.
+        # example_fills are authored to pass the brand gate by construction,
+        # so this path produces guaranteed-good hooks without an extra LLM call.
+        if accepted is None:
+            for retry_template in queue[1:]:
+                text = retry_template.example_fill
+                gated = (_brand_gate.gate_or_reject(
+                    text, context=f"generator.retry.{retry_template.id}"
+                ) if _BRAND_GATE_AVAILABLE else text)
+                tried_template_ids.append(retry_template.id)
+                if gated:
+                    accepted = {
+                        'hook':        gated,
+                        'mechanism':   retry_template.mechanism,
+                        'template_id': retry_template.id,
+                        'exploration': False,
+                    }
+                    break
 
-Generate hooks for {len(clips_config)} clips. Each clip has a different angle.
-{angle_sections}
+        # Absolute last resort — library bug surfaced as a runtime issue.
+        if accepted is None:
+            logger.warning(
+                f"[generate_run_hooks] all templates rejected for {length}s/{angle}; "
+                f"shipping curated example_fill from {primary.id} unvetted"
+            )
+            accepted = {
+                'hook':        primary.example_fill,
+                'mechanism':   primary.mechanism,
+                'template_id': primary.id,
+                'exploration': False,
+            }
 
-TWO-PART REVEAL FORMAT (rank 1 only):
-Rank 1 MUST use the format: "OPENER // REVEAL"
-  OPENER: 3–5 words that open a loop — incomplete, located, tension or rupture.
-  REVEAL: 3–5 words that escalate or pivot. NOT a resolution. Deepens the wound or shifts the frame.
-  The two parts feel like one thought with a held breath in the middle.
-  Examples:
-    "Started the night everything fell // and that room held it first"
-    "For you still carrying it // three years is not a rounding error"
-    "Jaw drops before the mind // knows what just happened in there"
-  Ranks 2–5 can be single-line hooks (no " // " needed).
+        accepted['hook'] = _normalize_hook(accepted['hook'])
+        accepted['tried_templates'] = tried_template_ids
+        hooks[length] = accepted
 
-For EACH clip, generate 5 ranked candidates (1 = most scroll-stopping).
-After each hook add: | mechanism: [tension/identity/scene/claim/rupture]
+    logger.info(f"Run hooks generated (template mode): {track_title}")
+    for length, meta in hooks.items():
+        logger.info(
+            f"  {length}s [{clips_by_length.get(length,'?')}] "
+            f"({meta['mechanism']}) [{meta.get('template_id','?')}] → \"{meta['hook']}\""
+        )
 
-Format EXACTLY as shown — no preamble, no explanation:
+    return hooks
 
---- {clips_config[0]['length']}s ---
-1. OPENER // REVEAL | mechanism: tension
-2. Hook text | mechanism: identity
-3. Hook text | mechanism: scene
-4. Hook text | mechanism: claim
-5. Hook text | mechanism: rupture
 
-(repeat block for each clip)
-
-Bold is correct. Do not self-censor."""
-
-    try:
-        raw        = _call_claude(system_prompt, user_prompt, timeout=300)
-        candidates = _parse_hook_candidates(raw, list(clips_by_length.keys()))
-
-        # Pick rank 1 per clip, enforcing the OPENER // REVEAL two-part format.
-        hooks = {}
-        for length, cands in candidates.items():
-            if not cands:
-                hooks[length] = _fallback_hook(clips_by_length.get(length))
-                continue
-            # Prefer any candidate that already has //
-            two_part = next((c['text'] for c in cands if ' // ' in c['text']), None)
-            if two_part:
-                hooks[length] = two_part
-            else:
-                # Claude didn't follow the format — split rank 1 at a natural break
-                hooks[length] = _force_two_part(cands[0]['text'])
-
-        # Safety: if Claude returned dict-syntax strings, extract the 'a' value
-        hooks = {l: _normalize_hook(h) for l, h in hooks.items()}
-        logger.info(f"Run hooks generated: {track_title}")
-        for length, hook in hooks.items():
-            logger.info(f"  {length}s [{clips_by_length.get(length,'?')}] → \"{hook}\"")
-        if _BRAND_GATE_AVAILABLE:
-            hooks = {l: _brand_gate.gate_or_warn(h, context="generator.run_hooks") for l, h in hooks.items()}
-        return hooks
-
-    except Exception as e:
-        logger.error(f"Run hook generation failed: {e}")
+def _emergency_hook(length: int, angle: str) -> dict:
+    """Fallback when an unknown angle produces an empty template queue."""
+    import viral_hook_library as vhl
+    pool = vhl.BY_ANGLE.get(angle) or vhl.CONTRAST_TEMPLATES
+    if pool:
+        t = pool[0]
         return {
-            c['length']: _fallback_hook(c['angle'])
-            for c in clips_config
+            'hook':        t.example_fill,
+            'mechanism':   t.mechanism,
+            'template_id': t.id,
+            'exploration': False,
+            'tried_templates': [t.id],
         }
+    return {
+        'hook':        _fallback_hook(angle),
+        'mechanism':   'fallback',
+        'template_id': 'none',
+        'exploration': False,
+        'tried_templates': [],
+    }
+
+
+def _fill_templates_with_claude(
+    track_title: str,
+    track_facts: dict,
+    templates_by_length: dict,
+) -> dict:
+    """
+    One Claude call that fills N templates (one per clip length) with the
+    provided RJM track facts. Returns {length: {'hook_text': str}}.
+
+    The prompt is deliberately small and constrained. Claude's job is to fill
+    slots with concrete, visual, RJM-grounded content — not to invent hooks.
+    The templates are the scaffolding; this call is the paint job.
+    """
+    # Template block
+    template_lines = []
+    for length in sorted(templates_by_length.keys()):
+        t = templates_by_length[length]
+        slot_lines = "\n  ".join(
+            f"- {{{name}}}: {desc}" for name, desc in t.slots.items()
+        )
+        template_lines.append(
+            f"""[{length}s | {t.angle} | {t.mechanism}]
+TEMPLATE: {t.template}
+SLOTS:
+  {slot_lines}
+EXAMPLE FILL (this is the quality bar — match or beat it):
+  {t.example_fill}"""
+        )
+    templates_block = "\n\n".join(template_lines)
+
+    # Facts block
+    facts_lines = [
+        f"TRACK:          {track_title}",
+        f"BPM:            {track_facts.get('bpm', '—')}",
+        f"STYLE:          {track_facts.get('style', '—')}",
+        f"SCRIPTURE:      {track_facts.get('scripture_anchor', '—')}",
+        f"SCRIPTURE NOTE: {track_facts.get('scripture_note', '—')}",
+        f"LOCATION:       {track_facts.get('canonical_location', 'Tenerife Holy Rave')}",
+    ]
+    nouns = track_facts.get('title_nouns') or []
+    if nouns:
+        facts_lines.append(f"TITLE NOUNS:    {', '.join(nouns)}")
+    facts_block = "\n".join(facts_lines)
+
+    fill_system_prompt = """You fill proven viral hook templates with track-specific facts.
+
+You are NOT writing hooks from scratch. You are filling {slots} in templates that
+have already been validated as viral formats. Your job: replace every {slot}
+with concrete, visual, falsifiable content drawn from the track facts provided.
+
+HARD RULES:
+- Do NOT change the template structure. Keep punctuation, word order, and shape
+  exactly as given. Only replace {slots}.
+- Do NOT add extra words outside the slots.
+- Every slot value must be concrete and visualizable in under 2 seconds.
+- BANNED openers: "For the ones", "For those who", "For the version of",
+  "Built for", "To the one", "Shoulders release", "If you are ready".
+- BANNED phrases: "rebuilding from", "joy became a weapon", "nothing but
+  honesty", "stopped hiding", "everything shifted", "held something burning",
+  "stopped asking why".
+- BANNED generic adjectives: "amazing", "incredible", "epic", "stunning",
+  "passionate", "journey", "unique sound".
+- Prefer specific nouns over feelings words. "Shoulders" beats "tension".
+  "3am" beats "late". "Tenerife cliffside" beats "somewhere beautiful".
+- When a template calls for scripture, use the exact scripture anchor provided.
+  When it calls for BPM, use the exact BPM provided.
+- Never open with "I". No exclamation marks. No Spotify CTAs.
+
+The example_fill under each template is the quality bar. Match or beat it.
+Do not go abstract. Do not drift into poetry. Fill and return."""
+
+    fill_user_prompt = f"""TRACK FACTS:
+{facts_block}
+
+TEMPLATES TO FILL:
+{templates_block}
+
+Return exactly {len(templates_by_length)} filled hooks in this format — no preamble, no commentary:
+
+{chr(10).join(f'{length}: <filled template {length}>' for length in sorted(templates_by_length.keys()))}
+
+Fill them now."""
+
+    raw = _call_claude(fill_system_prompt, fill_user_prompt, timeout=180)
+    return _parse_filled_templates(raw, list(templates_by_length.keys()))
+
+
+def _parse_filled_templates(raw: str, lengths: list) -> dict:
+    """
+    Parse the Claude response for template fills. Expected format per line:
+       7: POV: fire meets the psalm
+       15: 8 seconds until your knees forget
+       28: Made this for the friend who texted at 3am…
+    """
+    out: dict = {}
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        m = re.match(r'^(\d+)\s*[:\-]\s*(.+)$', line)
+        if not m:
+            continue
+        try:
+            length = int(m.group(1))
+        except ValueError:
+            continue
+        if length not in lengths:
+            continue
+        hook_text = m.group(2).strip().strip('"').strip("'").strip('*').strip()
+        if hook_text:
+            out[length] = {'hook_text': hook_text}
+    return out
 
 
 def _parse_hook_candidates(raw: str, clip_lengths: list) -> dict:
@@ -782,13 +935,24 @@ def _assign_abc_hooks(candidates_by_length: dict) -> dict:
 
 
 def _fallback_hook(angle: str) -> str:
-    """Minimal fallback hooks in two-part reveal format."""
+    """
+    Last-resort fallback hook — used only when the template library cannot be
+    loaded AND both the primary and retry paths have failed. Keys use the
+    new angle taxonomy (contrast / body-drop / identity). Legacy angle names
+    (emotional / signal / energy) are still accepted for backwards compat
+    with any caller that hasn't migrated.
+    """
     fallbacks = {
-        'emotional': 'Made this the night I almost stopped // and the track knew before I did.',
-        'signal':    'For the version of you still carrying it // without telling anyone why.',
-        'energy':    'The room stopped. Then everything // moved at once.',
+        # New (2026-04 taxonomy)
+        'contrast':  'POV: fire meets the psalm',
+        'body-drop': '8 seconds until your knees forget',
+        'identity':  'Made this for the friend who texted at 3am. Found it in Jericho.',
+        # Legacy
+        'emotional': 'POV: fire meets the psalm',
+        'signal':    'Made this for the friend who texted at 3am. Found it in Jericho.',
+        'energy':    '8 seconds until your knees forget',
     }
-    return fallbacks.get(angle, 'Something shifted here // Atlantic coast, 4am.')
+    return fallbacks.get(angle, 'POV: fire meets the psalm')
 
 
 # ── Call 2: Caption generation ─────────────────────────────────────────────────
