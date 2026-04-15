@@ -164,6 +164,157 @@ def cmd_briefing():
     sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "briefing"], cwd=str(OUTREACH_DIR)))
 
 
+_DAILY_LAUNCHD_LABEL = "com.rjm.youtube-review"
+_DAILY_LAUNCHD_PLIST = Path("/Users/motomoto/Library/LaunchAgents/com.rjm.youtube-review.plist")
+_DAILY_RUNNER       = Path("/Users/motomoto/bin/rjm-youtube-review-daily.sh")
+
+
+def _youtube_daily_status() -> None:
+    """Show whether the daily review task is scheduled + its fire time."""
+    if not _DAILY_LAUNCHD_PLIST.exists():
+        print("  Daily review task: NOT INSTALLED")
+        print(f"  Install with: python3 rjm.py youtube daily on [HH:MM]")
+        return
+    try:
+        out = subprocess.run(
+            ["launchctl", "list"], capture_output=True, text=True
+        ).stdout
+    except Exception:
+        out = ""
+    loaded = _DAILY_LAUNCHD_LABEL in out
+    print(f"  Daily review task: {'LOADED' if loaded else 'installed but not loaded'}")
+    print(f"  Plist:   {_DAILY_LAUNCHD_PLIST}")
+    print(f"  Runner:  {_DAILY_RUNNER}")
+    # Extract the fire hour/minute from the plist
+    try:
+        p = subprocess.run(
+            ["plutil", "-extract", "StartCalendarInterval.Hour", "raw",
+             str(_DAILY_LAUNCHD_PLIST)],
+            capture_output=True, text=True,
+        )
+        hour = p.stdout.strip()
+        p2 = subprocess.run(
+            ["plutil", "-extract", "StartCalendarInterval.Minute", "raw",
+             str(_DAILY_LAUNCHD_PLIST)],
+            capture_output=True, text=True,
+        )
+        minute = p2.stdout.strip()
+        print(f"  Fires:   daily at {hour.zfill(2)}:{minute.zfill(2)} local time")
+    except Exception:
+        pass
+    print(f"  Log:     ~/Library/Logs/rjm-youtube-review-daily.log")
+
+
+def _youtube_daily_set_time(time_str: str) -> None:
+    """Update the plist's fire time (HH:MM) and reload the agent."""
+    try:
+        hh, mm = time_str.split(":")
+        hour = int(hh)
+        minute = int(mm)
+        if not (0 <= hour < 24 and 0 <= minute < 60):
+            raise ValueError
+    except ValueError:
+        print(f"✗ invalid time '{time_str}' — use HH:MM format (e.g. 10:00, 18:30)")
+        sys.exit(1)
+
+    if not _DAILY_LAUNCHD_PLIST.exists():
+        print(f"✗ plist not installed. Run: python3 rjm.py youtube daily on")
+        sys.exit(1)
+
+    # Use plutil to edit the plist in place (safer than rewriting)
+    try:
+        subprocess.run(
+            ["plutil", "-replace", "StartCalendarInterval.Hour", "-integer",
+             str(hour), str(_DAILY_LAUNCHD_PLIST)],
+            check=True,
+        )
+        subprocess.run(
+            ["plutil", "-replace", "StartCalendarInterval.Minute", "-integer",
+             str(minute), str(_DAILY_LAUNCHD_PLIST)],
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"✗ plutil edit failed: {e}")
+        sys.exit(1)
+
+    # Reload so the new time takes effect immediately
+    subprocess.run(["launchctl", "unload", str(_DAILY_LAUNCHD_PLIST)],
+                   capture_output=True)
+    r = subprocess.run(["launchctl", "load", str(_DAILY_LAUNCHD_PLIST)],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print(f"✗ launchctl load failed: {r.stderr}")
+        sys.exit(1)
+    print(f"✓ daily fire time updated to {hour:02d}:{minute:02d}")
+
+
+def _youtube_daily_disable() -> None:
+    """Unload and remove the daily launchd agent."""
+    if not _DAILY_LAUNCHD_PLIST.exists():
+        print("daily task is not installed")
+        return
+    subprocess.run(["launchctl", "unload", str(_DAILY_LAUNCHD_PLIST)],
+                   capture_output=True)
+    _DAILY_LAUNCHD_PLIST.unlink()
+    print(f"✓ daily task removed from {_DAILY_LAUNCHD_PLIST}")
+    print(f"  (Runner script at {_DAILY_RUNNER} left in place — rerun 'daily on' to re-install)")
+
+
+def _youtube_daily_enable(time_str: str = "10:00") -> None:
+    """Install and load the daily launchd agent."""
+    try:
+        hh, mm = time_str.split(":")
+        hour, minute = int(hh), int(mm)
+        if not (0 <= hour < 24 and 0 <= minute < 60):
+            raise ValueError
+    except ValueError:
+        print(f"✗ invalid time '{time_str}' — use HH:MM")
+        sys.exit(1)
+
+    if not _DAILY_RUNNER.exists():
+        print(f"✗ runner script not found at {_DAILY_RUNNER}")
+        print(f"  This should have been installed when the review tool was first set up.")
+        sys.exit(1)
+
+    plist_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{_DAILY_LAUNCHD_LABEL}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{_DAILY_RUNNER}</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>{hour}</integer>
+        <key>Minute</key>
+        <integer>{minute}</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/Users/motomoto/Library/Logs/rjm-youtube-review-daily.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/motomoto/Library/Logs/rjm-youtube-review-daily.err.log</string>
+</dict>
+</plist>
+"""
+    _DAILY_LAUNCHD_PLIST.parent.mkdir(parents=True, exist_ok=True)
+    _DAILY_LAUNCHD_PLIST.write_text(plist_xml)
+
+    subprocess.run(["launchctl", "unload", str(_DAILY_LAUNCHD_PLIST)],
+                   capture_output=True)
+    r = subprocess.run(["launchctl", "load", str(_DAILY_LAUNCHD_PLIST)],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print(f"✗ launchctl load failed: {r.stderr}")
+        sys.exit(1)
+    print(f"✓ daily review task enabled, fires at {hour:02d}:{minute:02d} local time")
+
+
 def cmd_youtube(args: list[str]):
     """YouTube outreach branch — discover channels, show pipeline status, show API budget."""
     if not args:
@@ -173,6 +324,10 @@ def cmd_youtube(args: list[str]):
         print("  python3 rjm.py youtube requalify  # re-filter queue with current rules")
         print("  python3 rjm.py youtube status     # pipeline counts by status")
         print("  python3 rjm.py youtube budget     # today's YouTube API unit usage vs cap")
+        print("  python3 rjm.py youtube daily on [HH:MM]   # schedule daily review task")
+        print("  python3 rjm.py youtube daily off          # remove daily review task")
+        print("  python3 rjm.py youtube daily status       # show daily task state")
+        print("  python3 rjm.py youtube daily time HH:MM   # change fire time")
         sys.exit(1)
 
     action = args[0].lower()
@@ -192,6 +347,27 @@ def cmd_youtube(args: list[str]):
             print(f"✗ {YT_DISCOVER_PY} not found")
             sys.exit(1)
         sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY), "--requalify"], cwd=str(OUTREACH_DIR)))
+
+    elif action == "daily":
+        # Manage the daily review reminder launchd agent
+        sub = rest[0].lower() if rest else "status"
+        if sub == "status":
+            _youtube_daily_status()
+        elif sub in ("on", "enable"):
+            time_str = rest[1] if len(rest) > 1 else "10:00"
+            _youtube_daily_enable(time_str)
+        elif sub in ("off", "disable"):
+            _youtube_daily_disable()
+        elif sub == "time":
+            if len(rest) < 2:
+                print("✗ usage: python3 rjm.py youtube daily time HH:MM")
+                sys.exit(1)
+            _youtube_daily_set_time(rest[1])
+        else:
+            print(f"✗ unknown daily action: {sub!r}")
+            print("  Valid: status, on [HH:MM], off, time HH:MM")
+            sys.exit(1)
+        sys.exit(0)
 
     elif action == "review":
         # Default: Playwright-driven Chromium (most reliable — no AppleScript
