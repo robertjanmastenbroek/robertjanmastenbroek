@@ -33,6 +33,13 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
     set +a
 fi
 
+# Explicitly pick the outreach venv python (which has playwright + google-api-python-client).
+# The main project's venv is the canonical one — worktrees don't carry their own.
+VENV_PYTHON="$PROJECT_ROOT/outreach_agent/venv/bin/python3"
+if [ ! -x "$VENV_PYTHON" ]; then
+    VENV_PYTHON="python3"
+fi
+
 clear
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  RJM — YouTube Channel Email Review"
@@ -49,7 +56,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-python3 rjm.py youtube review --limit 50
+"$VENV_PYTHON" rjm.py youtube review --limit 50
 
 EXIT_CODE=$?
 

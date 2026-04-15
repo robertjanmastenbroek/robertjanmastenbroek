@@ -102,8 +102,13 @@ YOUTUBE_API_DAILY_UNITS_CAP = 8000   # abort discovery if > this many units used
 # Many real promo channels live at 2K–10K subs and post weekly; the original floor
 # was too tight given RJM's aggressive-growth stance on YouTube as a Spotify driver.
 YOUTUBE_MIN_SUBS         = 2_000
-YOUTUBE_MAX_SUBS         = 500_000
-YOUTUBE_MIN_TOTAL_VIEWS  = 30_000    # lowered from 100K to match the 2K sub floor
+# Tightened from 500K → 80K: YouTube rate-limits "View email address" to ~10/day,
+# so every unlock must go to a channel that might actually respond. Big artist-
+# owned channels (Captain Hook, Astrix, etc.) will never upload someone else's
+# track regardless of pitch quality — don't waste unlocks on them. Small/mid-tier
+# promo channels in the 2K-80K range are the sweet spot.
+YOUTUBE_MAX_SUBS         = 80_000
+YOUTUBE_MIN_TOTAL_VIEWS  = 30_000
 YOUTUBE_MIN_VIDEO_COUNT  = 20        # still signals active channel, not brand-new
 YOUTUBE_MAX_UPLOAD_AGE_DAYS = 30
 
@@ -161,7 +166,30 @@ YOUTUBE_ARTIST_CHANNEL_MARKERS = [
     "official music videos",
     "official youtube channel",
     "Topic",  # YouTube auto-generated artist pages end in "- Topic"
+    "my official",
+    "booking:",
+    "management:",
+    "my music",
+    "my debut",
+    "my latest release",
+    "my upcoming",
+    "solo project",
+    "solo artist",
+    "live performances",
+    "sign my",
 ]
+# Channel titles ending in these tokens are almost always artist-owned
+# (Captain Hook Official, Astrix Official, Robert-Jan Mastenbroek Official)
+# — reject as artist channel regardless of subs/genre fit.
+YOUTUBE_ARTIST_CHANNEL_NAME_SUFFIXES = (
+    " official",
+    " music",
+    " records",  # wait — labels ARE promo channels — remove this
+)
+# Actually labels ARE who we want to pitch. Only reject on " official" suffix.
+YOUTUBE_ARTIST_CHANNEL_NAME_SUFFIXES = (
+    " official",
+)
 # Keywords that must appear in a channel's description/title to pass the genre
 # filter. PRIMARY keywords (psytrance focus) are weighted 2x in _genre_score
 # so psytrance channels outrank secondary/tertiary genres in the send queue.

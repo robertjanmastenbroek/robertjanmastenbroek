@@ -91,14 +91,28 @@ YT_DISCOVER_PY   = OUTREACH_DIR / "youtube_discover.py"
 YT_REVIEW_PY     = OUTREACH_DIR / "youtube_manual_review.py"
 YT_REVIEW_AUTO_PY = OUTREACH_DIR / "youtube_review_auto.py"
 YT_REVIEW_PW_PY  = OUTREACH_DIR / "youtube_review_pw.py"
+
+# When running from a git worktree, the venv lives in the main project's
+# outreach_agent/venv/, not inside the worktree. Walk up to find it.
+_MAIN_PROJECT_VENV = Path(
+    "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/venv/bin/python3"
+)
 CONTACT_MGR_PY  = PROJECT_ROOT / "contact_manager.py"
 POST_TODAY_PY   = OUTREACH_DIR / "post_today.py"
 PLAYLIST_RUN_PY = OUTREACH_DIR / "playlist_run.py"
 SPOTIFY_PY      = OUTREACH_DIR / "spotify_tracker.py"
 VENV_PYTHON     = OUTREACH_DIR / "venv" / "bin" / "python3"
 
-# Use venv python for outreach_agent scripts if available, else system python
-_OUTREACH_PYTHON = str(VENV_PYTHON) if VENV_PYTHON.exists() else sys.executable
+# Use venv python for outreach_agent scripts — prefer the worktree's venv if
+# it exists, fall back to the main-project venv (worktrees often don't carry
+# their own venv — they run against the main project's installed deps), and
+# finally fall back to sys.executable as the last resort.
+if VENV_PYTHON.exists():
+    _OUTREACH_PYTHON = str(VENV_PYTHON)
+elif _MAIN_PROJECT_VENV.exists():
+    _OUTREACH_PYTHON = str(_MAIN_PROJECT_VENV)
+else:
+    _OUTREACH_PYTHON = sys.executable
 _BASE_PYTHON     = sys.executable
 
 
@@ -156,6 +170,7 @@ def cmd_youtube(args: list[str]):
         print("Usage:")
         print("  python3 rjm.py youtube discover [--dry-run] [--per-query N]")
         print("  python3 rjm.py youtube review [--limit 50]  # manual email click-through")
+        print("  python3 rjm.py youtube requalify  # re-filter queue with current rules")
         print("  python3 rjm.py youtube status     # pipeline counts by status")
         print("  python3 rjm.py youtube budget     # today's YouTube API unit usage vs cap")
         sys.exit(1)
@@ -168,6 +183,15 @@ def cmd_youtube(args: list[str]):
             print(f"✗ {YT_DISCOVER_PY} not found")
             sys.exit(1)
         sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif action == "requalify":
+        # Re-apply current qualification rules (sub caps, artist heuristic) to
+        # existing skip-status youtube contacts. Blocklists channels that no
+        # longer qualify. Run this after tightening thresholds in config.py.
+        if not YT_DISCOVER_PY.exists():
+            print(f"✗ {YT_DISCOVER_PY} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY), "--requalify"], cwd=str(OUTREACH_DIR)))
 
     elif action == "review":
         # Default: Playwright-driven Chromium (most reliable — no AppleScript

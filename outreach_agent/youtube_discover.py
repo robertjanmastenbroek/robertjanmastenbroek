@@ -42,6 +42,7 @@ from config import (
     YOUTUBE_API_DAILY_UNITS_CAP,
     YOUTUBE_ARTIST_CHANNEL_BLOCKLIST,
     YOUTUBE_ARTIST_CHANNEL_MARKERS,
+    YOUTUBE_ARTIST_CHANNEL_NAME_SUFFIXES,
     YOUTUBE_DISCOVERY_QUERIES,
     YOUTUBE_GENRE_KEYWORDS_PRIMARY,
     YOUTUBE_GENRE_KEYWORDS_SECONDARY,
@@ -215,6 +216,12 @@ def _is_artist_channel(snippet: dict, branding: dict) -> bool:
         return True
     if title.endswith(" - topic"):
         return True
+    # Name suffix heuristic — "Captain Hook Official", "Astrix Official" etc.
+    # are almost always artist-run. We skip LABELS (e.g. "Steyoyoke Records")
+    # because those ARE promo channels and we want to pitch them.
+    for suffix in YOUTUBE_ARTIST_CHANNEL_NAME_SUFFIXES:
+        if title.endswith(suffix.lower()):
+            return True
     for marker in YOUTUBE_ARTIST_CHANNEL_MARKERS:
         if marker.lower() in description.lower():
             return True
@@ -432,6 +439,80 @@ def _extract_channel_email(snippet: dict, channel_id: str = "") -> str:
                     return e
 
     return ""
+
+
+def requalify_existing(blocklist: bool = True) -> dict[str, int]:
+    """
+    Apply the current qualification rules (MAX_SUBS, artist-channel heuristic)
+    to channels already in the DB. Blocklists any that no longer qualify so
+    the review queue only shows channels that MIGHT actually respond.
+
+    This is meant to be run when the config tightens (e.g. lowering MAX_SUBS
+    from 500K to 80K) — existing rows were written under the old thresholds
+    and need to be cleaned up without re-running the API.
+
+    Returns summary dict.
+    """
+    db.init_db()
+    with db.get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, name, email, status, youtube_channel_id,
+                   youtube_subs, notes
+            FROM contacts
+            WHERE type = 'youtube'
+              AND status = 'skip'
+              AND youtube_channel_id IS NOT NULL
+            """
+        ).fetchall()
+    rows = [dict(r) for r in rows]
+    log.info("requalify: %d skip-status youtube contacts to check", len(rows))
+
+    summary = {
+        "checked":           len(rows),
+        "rejected_subs_hi":  0,
+        "rejected_subs_lo":  0,
+        "rejected_artist":   0,
+        "kept":              0,
+    }
+
+    with db.get_conn() as conn:
+        for r in rows:
+            subs = r.get("youtube_subs") or 0
+            name = (r.get("name") or "").strip()
+            notes = (r.get("notes") or "")
+
+            reject_reason = None
+            if subs > YOUTUBE_MAX_SUBS:
+                reject_reason = "subs_hi"
+                summary["rejected_subs_hi"] += 1
+            elif subs and subs < YOUTUBE_MIN_SUBS:
+                reject_reason = "subs_lo"
+                summary["rejected_subs_lo"] += 1
+            else:
+                # Re-run artist heuristic on the cached title + description
+                fake_snippet = {
+                    "title": name,
+                    # Notes is stored as "title: description[:200]"
+                    "description": notes.split(":", 1)[1].strip() if ":" in notes else notes,
+                }
+                if _is_artist_channel(fake_snippet, {}):
+                    reject_reason = "artist"
+                    summary["rejected_artist"] += 1
+
+            if reject_reason is None:
+                summary["kept"] += 1
+                continue
+
+            if blocklist:
+                conn.execute(
+                    "UPDATE contacts SET status = 'closed' WHERE id = ?",
+                    (r["id"],),
+                )
+                log.info("requalify blocklisted (%s): %s [%s subs]",
+                         reject_reason, name[:40], subs)
+
+    return summary
 
 
 def retry_email_extraction(limit: int = 1000) -> dict[str, int]:
@@ -668,10 +749,18 @@ def main() -> int:
         "--retry-limit", type=int, default=500,
         help="Max skip contacts to reprocess in --retry-email mode.",
     )
+    parser.add_argument(
+        "--requalify", action="store_true",
+        help="Apply current qualification rules (sub caps, artist heuristic) to "
+             "existing skip-status contacts. Blocklists channels that no longer "
+             "qualify. Use after tightening thresholds in config.py.",
+    )
     args = parser.parse_args()
 
     try:
-        if args.retry_email:
+        if args.requalify:
+            summary = requalify_existing(blocklist=True)
+        elif args.retry_email:
             summary = retry_email_extraction(limit=args.retry_limit)
         else:
             summary = run_discovery(
@@ -687,7 +776,12 @@ def main() -> int:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
 
-    header = "YouTube Email Retry Summary" if args.retry_email else "YouTube Discovery Summary"
+    if args.requalify:
+        header = "YouTube Requalify Summary"
+    elif args.retry_email:
+        header = "YouTube Email Retry Summary"
+    else:
+        header = "YouTube Discovery Summary"
     print(f"\n=== {header} ===")
     for k, v in summary.items():
         print(f"  {k:<24} {v}")
