@@ -47,6 +47,7 @@ import re
 import subprocess
 import sys
 import time
+import webbrowser
 from typing import Any
 
 import db
@@ -387,8 +388,18 @@ def run_review_auto(limit: int = 50, allow_fallback: bool = True) -> dict[str, i
         print(f"{_RED}Chrome not ready and fallback disabled — aborting.{_RESET}")
         return stats
     if not chrome_ready:
-        print(f"{_YELLOW}Continuing in manual-paste fallback mode.{_RESET}")
-        print(f"{_DIM}Fix the issues above to enable auto-scraping on the next run.{_RESET}")
+        print()
+        print(f"{_YELLOW}{_BOLD}━━━ FALLBACK MODE ━━━{_RESET}")
+        print(f"{_YELLOW}Chrome auto-scrape is NOT active for this session.{_RESET}")
+        print(f"{_DIM}The tool will still open each channel in a new browser tab,{_RESET}")
+        print(f"{_DIM}but you'll need to COPY-PASTE each email manually into this window.{_RESET}")
+        print()
+        print(f"{_DIM}To enable auto-scraping, fix the issues above and restart.{_RESET}")
+        print()
+        try:
+            input(f"  {_DIM}Press Enter to acknowledge and continue in fallback mode...{_RESET}")
+        except (KeyboardInterrupt, EOFError):
+            return stats
         print()
 
     print(f"{_BOLD}Loaded {total} skip-status YouTube contacts.{_RESET}")
@@ -406,13 +417,22 @@ def run_review_auto(limit: int = 50, allow_fallback: bool = True) -> dict[str, i
         if chrome_ready and url.startswith("http"):
             ok, msg = _chrome_navigate(url)
             if ok:
-                print(f"  {_GREEN}→ opened in Chrome{_RESET}  {url}")
+                print(f"  {_GREEN}→ opened in Chrome tab{_RESET}  {url}")
+                time.sleep(1.5)  # give Chrome a beat to render before scrape
             else:
-                print(f"  {_RED}✗ Chrome navigation failed: {msg}{_RESET}")
-                print(f"  {_DIM}Open manually: {url}{_RESET}")
-            time.sleep(1.5)  # give Chrome a beat to render before any auto-scrape
-        else:
-            print(f"  {_CYAN}{url}{_RESET}")
+                print(f"  {_YELLOW}⚠  Chrome AppleScript failed: {msg}{_RESET}")
+                print(f"  {_DIM}Opening in a new browser tab instead...{_RESET}")
+                try:
+                    webbrowser.open(url, new=2)
+                except Exception:
+                    print(f"  {_DIM}Manual open: {url}{_RESET}")
+        elif url.startswith("http"):
+            # Fallback mode — no AppleScript, but still open the tab for the user
+            print(f"  {_CYAN}→ opening in browser{_RESET}  {url}")
+            try:
+                webbrowser.open(url, new=2)
+            except Exception:
+                print(f"  {_DIM}Manual open: {url}{_RESET}")
 
         while True:  # inner loop per channel so failed scrapes can retry
             action = _prompt_after_navigate()
