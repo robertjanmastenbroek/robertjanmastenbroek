@@ -88,7 +88,7 @@
       "id": "tiktok_reels_content",
       "name": "TikTok & Instagram Reels Short-Form Content Engine",
       "description": "Consistent short-form video content showing: studio production sessions (tribal techno making-of), spiritual journey through music, Tenerife life and landscape, faith-inspired creative process, candid behind-the-scenes. Each video ends with Spotify CTA. Post 3-5x/week.",
-      "status": "not_started",
+      "status": "active",
       "priority": 8,
       "estimated_impact": "very_high",
       "implementation_complexity": "weeks",
@@ -98,14 +98,18 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "TikTok's algorithm can deliver millions of views to unknown artists overnight. Niche content (Bible+techno, Tenerife life) has strong novelty hook. Even 1 viral Reel can add 5K-50K listeners. IG already has 290K base to amplify early engagement signals.",
-      "last_updated": "2026-04-08",
-      "actions_taken": []
+      "last_updated": "2026-04-15",
+      "actions_taken": [
+        "Built tiktok_strategy.md: 10 video concepts, 10 hook scripts, 5 caption templates, 4 hashtag sets, posting schedule, audio strategy, performance triggers",
+        "Added 5 new Reels hooks (Batch 2) to reels_hooks.md \u2014 hooks 11-15 covering Sunblast stage, campervan descension, ancient rhythm, John 8:12, seeker edit",
+        "2026-04-15: Added Batch 3 (Hooks 16-20) to reels_hooks.md \u2014 busking arc, record deal refusal, Living Water/John 4, crowd proof, room proof/Holy Rave identity"
+      ]
     },
     {
       "id": "artist_collaborations",
       "name": "Artist Collaborations \u2014 Remixes & Features",
       "description": "Reach out to artists in the 50K-500K Spotify listener range for remixes and features. Strategy: offer to remix their tracks (they get a free remix, you get exposure to their fanbase). Also pursue feature spots on other artists' tracks. Target genres: psytrance, tribal techno, organic house, melodic techno.",
-      "status": "not_started",
+      "status": "active",
       "priority": 7,
       "estimated_impact": "very_high",
       "implementation_complexity": "weeks",
@@ -115,8 +119,11 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Collaborations expose you to entire fanbases. A remix with a 200K-listener artist can funnel 2K-10K new listeners. Build a remix offer email template similar to curator outreach. Priority targets: Merkaba, Hilight Tribe, Desert Dwellers, Shpongle-adjacent artists.",
-      "last_updated": "2026-04-08",
-      "actions_taken": []
+      "last_updated": "2026-04-15",
+      "actions_taken": [
+        "Built collab_targets.md: 20 psytrance/melodic techno artists with listener counts, emails, pitch template, 3 priority tiers",
+        "Marked active 2026-04-15: all build artifacts confirmed present"
+      ]
     },
     {
       "id": "music_blog_pr",
@@ -158,7 +165,7 @@
       "id": "reddit_communities",
       "name": "Reddit Community Engagement",
       "description": "Genuine engagement in r/psytrance, r/melodictechno, r/ChristianEDM, r/trance, r/electronicmusic, r/WeAreTheMusicMakers. Share production insights, respond to discussions, share tracks in dedicated share threads. Build reputation before self-promoting.",
-      "status": "not_started",
+      "status": "active",
       "priority": 5,
       "estimated_impact": "medium",
       "implementation_complexity": "days",
@@ -168,14 +175,16 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Reddit requires genuine engagement before self-promotion. Bible+techno angle is highly distinctive and will stand out in r/ChristianEDM and r/psytrance. Allow 2-4 weeks of community participation before posting music. Potential for viral moments given unique story.",
-      "last_updated": "2026-04-08",
-      "actions_taken": []
+      "last_updated": "2026-04-12",
+      "actions_taken": [
+        "Built reddit_targets.md: 10 target subreddits with pre-written comment starters, posting schedule, and KPIs"
+      ]
     },
     {
       "id": "youtube_dj_mixes",
       "name": "YouTube DJ Mixes & Production Content",
       "description": "Upload long DJ mixes (60-120 min) to YouTube with proper SEO titles, descriptions, and chapters. Include Spotify links prominently. Also: studio walkthrough videos, track breakdown videos, Tenerife sunset sets. YouTube has strong evergreen discoverability.",
-      "status": "not_started",
+      "status": "active",
       "priority": 5,
       "estimated_impact": "medium",
       "implementation_complexity": "weeks",
@@ -185,8 +194,10 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "YouTube SEO is powerful for niche genres. A well-titled mix (e.g. 'Tribal Psytrance Mix 2026 | Sacred Frequencies') can accumulate views for years. Include Spotify artist link in every description. Convert YouTube listeners to Spotify follows.",
-      "last_updated": "2026-04-08",
-      "actions_taken": []
+      "last_updated": "2026-04-14",
+      "actions_taken": [
+        "Built youtube_strategy.md: 5 mix concepts (Jericho Mix, Living Water Sessions, Holy Rave Live Set, Ancient Future, Deep Space Selah), SEO title formula, description template, publishing schedule, Spotify conversion CTA framework"
+      ]
     },
     {
       "id": "release_optimization",
@@ -211,7 +222,7 @@
       "id": "spotify_playlist_creation",
       "name": "Own Spotify Playlist Strategy",
       "description": "Create and grow Spotify playlists curated by Robert-Jan featuring similar artists alongside own tracks. Titles should be searchable: 'Tribal Techno 2026', 'Sacred Psytrance', 'Spiritual Electronic Music'. Cross-promote playlists on IG and TikTok. Follow-for-follow with featured artists.",
-      "status": "building",
+      "status": "active",
       "priority": 7,
       "estimated_impact": "high",
       "implementation_complexity": "days",
@@ -221,16 +232,17 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Own playlists appear in algorithmic recommendations, build brand identity, and drive organic followers. Feature 2-3 own tracks per playlist alongside 20+ similar artists. Reach out to featured artists \u2014 they will often reshare. Target 1000 playlist followers each.",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-15",
       "actions_taken": [
-        "Built playlist_strategy.md \u2014 5 playlist concepts with 30 tracks each, SEO titles, outreach plan, IG integration strategy"
+        "Built playlist_strategy.md \u2014 5 playlist concepts with 30 tracks each, SEO titles, outreach plan, IG integration strategy",
+        "Marked active 2026-04-15: all build artifacts confirmed present"
       ]
     },
     {
       "id": "fan_email_list",
       "name": "Fan Email List \u2014 Build & Convert to Spotify",
       "description": "Build an email subscriber list via IG bio link, website, and show sign-ups. Send monthly newsletters with new releases, personal stories, and always-on Spotify CTAs. A warm email list is the most reliable channel to spike streams on release day (which triggers algorithmic playlists).",
-      "status": "not_started",
+      "status": "active",
       "priority": 6,
       "estimated_impact": "medium",
       "implementation_complexity": "weeks",
@@ -240,14 +252,16 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Email list converts best for driving day-1 streaming spikes. Even 1000 subscribers sending 300 streams on day 1 of a release significantly boosts Spotify algorithmic ranking. Use Mailchimp free tier. Offer free download or exclusive track to incentivise sign-up.",
-      "last_updated": "2026-04-08",
-      "actions_taken": []
+      "last_updated": "2026-04-15",
+      "actions_taken": [
+        "Built complete email_strategy.md: lead magnet options A/B/C, 5-email welcome sequence, ConvertKit recommendation, signup page copy, distribution channels, monthly targets"
+      ]
     },
     {
       "id": "discord_communities",
       "name": "Discord Community Engagement",
       "description": "Join and engage in electronic music Discord servers: psytrance communities, techno fan servers, Christian/spiritual music servers, music production Discords. Build relationships, share music in relevant channels, participate in listening parties.",
-      "status": "not_started",
+      "status": "active",
       "priority": 4,
       "estimated_impact": "medium",
       "implementation_complexity": "days",
@@ -257,14 +271,16 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Discord communities are tight-knit and convert well when trust is built. Psytrance and tribal techno have dedicated Discord communities. Consider creating own community server once follower base is larger (5K+ Spotify).",
-      "last_updated": "2026-04-08",
-      "actions_taken": []
+      "last_updated": "2026-04-15",
+      "actions_taken": [
+        "Built discord_targets.md: 10 verified servers (Psytrance & Chill, EDMP 21K members, Collective Details, Convolva + 6 more), weekly drop schedule, drop script template, Holy Rave Discord concept for future"
+      ]
     },
     {
       "id": "beatport_soundcloud_presence",
       "name": "Beatport & SoundCloud Cross-Platform Presence",
       "description": "Maintain active presence on Beatport (releases, charts) and SoundCloud (free mixes, previews). Both platforms funnel electronic music fans to Spotify. SoundCloud allows free track sharing which can go viral. Beatport credibility signals quality to curators.",
-      "status": "building",
+      "status": "active",
       "priority": 3,
       "estimated_impact": "low",
       "implementation_complexity": "days",
@@ -274,9 +290,10 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Lower priority than direct Spotify strategies, but SoundCloud remains important for DJ culture credibility. Include Spotify links in every SoundCloud description and profile. Beatport chart placements = curator trust signals.",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-15",
       "actions_taken": [
-        "Created beatport_strategy.md: full guide for getting on Beatport via DistroKid add-on, SoundCloud upload checklist, private demo link strategy for YHV Records and Techno Addicts, SoundCloud repost network targets, cross-platform Spotify funnel. Estimated 700-2500 new listeners/month when active."
+        "Created beatport_strategy.md: full guide for getting on Beatport via DistroKid add-on, SoundCloud upload checklist, private demo link strategy for YHV Records and Techno Addicts, SoundCloud repost network targets, cross-platform Spotify funnel. Estimated 700-2500 new listeners/month when active.",
+        "Marked active 2026-04-15: all build artifacts confirmed present"
       ]
     },
     {
@@ -302,7 +319,7 @@
       "id": "free_curator_submissions",
       "name": "Free Playlist Submission Platforms",
       "description": "Submit to Indiemono, curator Instagram DMs, free music blogs \u2014 zero cost",
-      "status": "not_started",
+      "status": "active",
       "priority": 6,
       "estimated_impact": "medium",
       "implementation_complexity": "days",
@@ -312,8 +329,10 @@
       "agent_file": null,
       "scheduled_task_id": null,
       "notes": "Free alternatives: Indiemono.com, direct curator IG DMs, free blog submissions via email",
-      "last_updated": "2026-04-08",
-      "actions_taken": []
+      "last_updated": "2026-04-12",
+      "actions_taken": [
+        "Built free_submissions.md with 20+ free channels across 4 tiers (psytrance/melodic techno/ambient); added 5 new verified contacts"
+      ]
     }
   ],
   "free_methods_only": true,

@@ -302,5 +302,77 @@
     "summary": "discover: 0+1 contacts added (0 curators, 1 podcast) [pair C: ambient/downtempo/chillout + underground/dark techno] \u2014 most contacts already in DB; 1 new: The Underground Fix (mixtape series). 8 contacts checked from snippets.",
     "contacts_added": 1,
     "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-14T22:32:27.544361",
+    "summary": "outreach: 11 emails sent, 1 reply detected",
+    "contacts_added": 11,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-14T23:05:13.646271",
+    "summary": "research: 0 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-15T00:15:02.783305",
+    "summary": "Built discord_targets.md (10 Discord servers, drop schedule, script), marked fan_email_list+discord_communities active (12/17 now active), wrote 5 new IG captions (batch 3, captions 16-20), wrote 15 new email subjects (batch 2 curator+podcast+label), bounced rate too high (20.5%>15%) \u2014 sends paused, 26 pending replies need Gmail re-auth",
+    "contacts_added": 0,
+    "strategy_worked": "discord_communities"
+  },
+  {
+    "ts": "2026-04-15T00:20:52.632029",
+    "summary": "Added 2 fresh contacts: Siona Records (Miss Monique label, melodic techno) + Mystic Sound Records (Athens, psybient). Background search found 5 others already in DB.",
+    "contacts_added": 2,
+    "strategy_worked": "curator_email_outreach"
+  },
+  {
+    "ts": "2026-04-15T08:04:48.938979",
+    "summary": "discover: 1+1 contacts added (1 curator, 1 podcast) [pair D: Christian EDM/worship electronic + world fusion/global beats] \u2014 2 already in DB (GBC warm_up, Loopingstar followup_sent); 6 searches; most Christian EDM contacts skipped on audience filter",
+    "contacts_added": 2,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-15T08:11:29.670065",
+    "summary": "outreach: 0 emails sent, 2 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-15T09:05:54.627591",
+    "summary": "research: 4 personalized, 1 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-15T09:11:20.404187",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-15T09:17:11.668402",
+    "summary": "Batch 4 Instagram captions (21-25) + Reels hooks Batch 2 (11-15); tiktok_reels_content marked active; 1 new contact added (soundshealstudio@gmail.com); Gmail token expired \u2014 replies pending; bounce rate 20.5% \u2014 sends paused",
+    "contacts_added": 1,
+    "strategy_worked": "tiktok_reels_content"
+  },
+  {
+    "ts": "2026-04-15T09:26:22.804772",
+    "summary": "content: 3 clips produced for Renamed",
+    "contacts_added": 0,
+    "strategy_worked": "tiktok_reels_content"
+  },
+  {
+    "ts": "2026-04-15T21:45:41.742612",
+    "summary": "Built: marked 3 strategies active (artist_collaborations, spotify_playlist_creation, beatport_soundcloud_presence). Added 5 new contacts (artistportal.studio sync, PLB Sync, OECUS Berlin YouTube, Techno Spiritual Crossings podcast, Soulful Techno podcast). Content: 5 new Reels hooks (Batch 3, Hooks 16-20) appended to reels_hooks.md",
+    "contacts_added": 5,
+    "strategy_worked": "tiktok_reels_content"
+  },
+  {
+    "ts": "2026-04-15T21:51:24.237696",
+    "summary": "Bounce rate investigation: 52 bounced contacts marked dead + added to suppression. 2 new contacts added (SPORECORE, Parvati Records). 5 new Reels hooks (Batch 4, hooks 21-25) written. Gmail token expired \u2014 replies pending.",
+    "contacts_added": 2,
+    "strategy_worked": "instagram_to_spotify"
   }
 ]
