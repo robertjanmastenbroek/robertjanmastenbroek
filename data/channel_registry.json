@@ -1,0 +1,18 @@
+{
+    "channels": [
+        {"id": "ch_playlist_outreach", "name": "Spotify Playlists", "tactic": "Curator email outreach", "agent": "rjm-outreach", "status": "active", "weight": 0.20, "cost_type": "free", "est_listeners_low": 2000, "est_listeners_high": 10000},
+        {"id": "ch_content_tiktok", "name": "TikTok", "tactic": "Daily viral shorts", "agent": "holy-rave-daily-run", "status": "active", "weight": 0.20, "cost_type": "free", "est_listeners_low": 5000, "est_listeners_high": 8000},
+        {"id": "ch_content_reels", "name": "Instagram Reels", "tactic": "Daily clips from 290K base", "agent": "holy-rave-daily-run", "status": "active", "weight": 0.15, "cost_type": "free", "est_listeners_low": 2000, "est_listeners_high": 5000},
+        {"id": "ch_content_ytshorts", "name": "YouTube Shorts", "tactic": "Daily clips", "agent": "holy-rave-daily-run", "status": "active", "weight": 0.10, "cost_type": "free", "est_listeners_low": 1000, "est_listeners_high": 3000},
+        {"id": "ch_podcast_pitch", "name": "Podcasts", "tactic": "Guest appearance pitching", "agent": "rjm-outreach", "status": "active", "weight": 0.15, "cost_type": "free", "est_listeners_low": 500, "est_listeners_high": 2000},
+        {"id": "ch_editorial", "name": "Spotify Editorial", "tactic": "Pitch for editorial playlists", "agent": "manual", "status": "active", "weight": 0.10, "cost_type": "free", "est_listeners_low": 10000, "est_listeners_high": 100000},
+        {"id": "ch_ig_conversion", "name": "Instagram to Spotify", "tactic": "Convert 290K followers", "agent": "ig-conversion", "status": "queued", "weight": 0.05, "cost_type": "free", "est_listeners_low": 5000, "est_listeners_high": 14500},
+        {"id": "ch_reddit", "name": "Reddit", "tactic": "r/melodictechno community posts", "agent": "reddit-seeder", "status": "queued", "weight": 0.05, "cost_type": "free", "est_listeners_low": 500, "est_listeners_high": 800},
+        {"id": "ch_yt_longform", "name": "YouTube Long-form", "tactic": "DJ mixes, studio sessions", "agent": "yt-longform", "status": "queued", "weight": 0.05, "cost_type": "free", "est_listeners_low": 800, "est_listeners_high": 1200},
+        {"id": "ch_collab", "name": "Artist Collabs", "tactic": "Remix exchanges, playlist swaps", "agent": "collab-agent", "status": "queued", "weight": 0.05, "cost_type": "free", "est_listeners_low": 2000, "est_listeners_high": 5000},
+        {"id": "ch_offering", "name": "Offering Page", "tactic": "Optimize for donations", "agent": "offering-optimizer", "status": "queued", "weight": 0.05, "cost_type": "free", "est_listeners_low": 0, "est_listeners_high": 0},
+        {"id": "ch_submithub", "name": "SubmitHub Premium", "tactic": "Paid playlist submissions", "agent": "submithub-agent", "status": "locked", "weight": 0.0, "cost_type": "self_funded", "cost_per_unit": 2.0, "est_listeners_low": 5, "est_listeners_high": 20},
+        {"id": "ch_groover", "name": "Groover", "tactic": "Paid curator submissions", "agent": "groover-agent", "status": "locked", "weight": 0.0, "cost_type": "self_funded", "cost_per_unit": 2.0, "est_listeners_low": 3, "est_listeners_high": 15}
+    ],
+    "last_reallocation": null
+}
