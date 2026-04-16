@@ -494,17 +494,25 @@ def pick_templates_for_format(
 ) -> list[HookTemplate]:
     """Pick one hook template appropriate for the given clip format.
 
-    - TRANSITIONAL and EMOTIONAL: pick from SAVE_DRIVER_TEMPLATES
-    - PERFORMANCE: pick from PERFORMANCE_TEMPLATES
+    Format → pool mapping (all 46 templates reachable):
+    - TRANSITIONAL (22s bait + content): SAVE_DRIVER + BODY_DROP — the text
+      overlay rides alongside a visual bait cut, so we favour save-drivers but
+      let proven 15s body-drop hooks run too.
+    - EMOTIONAL (7s): CONTRAST + SAVE_DRIVER — contrast hooks are the native
+      7-second shape from the original library; save-drivers keep variety.
+    - PERFORMANCE (28s): BODY_DROP + IDENTITY + PERFORMANCE — identity hooks
+      are the native 28s shape; body-drop + performance templates round it out.
 
-    Weighted random by priority x (weight from learning loop if provided).
+    Weighted random by priority × (weight from learning loop if provided).
     """
     exclude_ids = exclude_ids or set()
 
-    if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.EMOTIONAL):
-        pool = SAVE_DRIVER_TEMPLATES
+    if fmt == ClipFormat.TRANSITIONAL:
+        pool = SAVE_DRIVER_TEMPLATES + BODY_DROP_TEMPLATES
+    elif fmt == ClipFormat.EMOTIONAL:
+        pool = CONTRAST_TEMPLATES + SAVE_DRIVER_TEMPLATES
     elif fmt == ClipFormat.PERFORMANCE:
-        pool = PERFORMANCE_TEMPLATES
+        pool = IDENTITY_TEMPLATES + BODY_DROP_TEMPLATES + PERFORMANCE_TEMPLATES
     else:
         pool = SAVE_DRIVER_TEMPLATES
 

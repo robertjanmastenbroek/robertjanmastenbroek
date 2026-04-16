@@ -45,19 +45,36 @@ def test_existing_templates_preserved():
 def test_pick_templates_transitional():
     templates = pick_templates_for_format(ClipFormat.TRANSITIONAL)
     assert len(templates) == 1
-    assert templates[0].id.startswith("save.")
+    # Transitional draws from save-drivers + body-drop
+    assert templates[0].id.startswith(("save.", "bodydrop."))
 
 
 def test_pick_templates_emotional():
     templates = pick_templates_for_format(ClipFormat.EMOTIONAL)
     assert len(templates) == 1
-    assert templates[0].id.startswith("save.")
+    # Emotional draws from contrast + save-drivers
+    assert templates[0].id.startswith(("contrast.", "save."))
 
 
 def test_pick_templates_performance():
     templates = pick_templates_for_format(ClipFormat.PERFORMANCE)
     assert len(templates) == 1
-    assert templates[0].id.startswith("perf.")
+    # Performance draws from identity + body-drop + perf
+    assert templates[0].id.startswith(("identity.", "bodydrop.", "perf."))
+
+
+def test_pick_templates_reaches_all_original_21():
+    """Over many picks, every original contrast/bodydrop/identity id should surface."""
+    import random
+    random.seed(42)
+    seen_ids = set()
+    # Pull across all formats to cover all pools
+    for _ in range(800):
+        for fmt in (ClipFormat.TRANSITIONAL, ClipFormat.EMOTIONAL, ClipFormat.PERFORMANCE):
+            seen_ids.add(pick_templates_for_format(fmt)[0].id)
+    original_ids = {t.id for t in (CONTRAST_TEMPLATES + BODY_DROP_TEMPLATES + IDENTITY_TEMPLATES)}
+    missing = original_ids - seen_ids
+    assert not missing, f"Unreachable original templates: {missing}"
 
 
 def test_pick_transitional_hook_respects_cooldown():
