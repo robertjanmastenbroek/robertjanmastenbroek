@@ -416,5 +416,53 @@
     "summary": "research: 1 personalized, 1 skipped",
     "contacts_added": 0,
     "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-16T08:01:49.395468",
+    "summary": "--help",
+    "contacts_added": 0,
+    "strategy_worked": ""
+  },
+  {
+    "ts": "2026-04-16T08:04:35.632785",
+    "summary": "discover: 0+0 contacts added (0 curators, 0 podcasts) [pair A]",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-16T08:11:36.916963",
+    "summary": "outreach: 0 emails sent, 0 replies detected \u2014 sends paused (bounce rate 31.0% > 15% limit)",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-16T09:05:41.567608",
+    "summary": "research: 0 personalized, 1 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-16T09:11:04.699266",
+    "summary": "content: 3 clips produced for Halleluyah",
+    "contacts_added": 0,
+    "strategy_worked": "tiktok_reels_content"
+  },
+  {
+    "ts": "2026-04-16T09:11:47.770341",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-16T10:11:18.778815",
+    "summary": "outreach: 34 emails sent, 0 replies detected",
+    "contacts_added": 34,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-16T10:13:23.346225",
+    "summary": "outreach: 0 emails sent, 4 replies detected (3 bounces, 1 classified: Charybdis Records negative fit)",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
   }
 ]

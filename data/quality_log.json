@@ -70,5 +70,29 @@
     "passed": true,
     "reason": "",
     "checked_at": "2026-04-15T21:12:31.545235+00:00"
+  },
+  {
+    "clip": "halleluyah_7s.mp4",
+    "duration": 7,
+    "angle": "contrast",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-16T08:10:40.793274+00:00"
+  },
+  {
+    "clip": "halleluyah_15s.mp4",
+    "duration": 15,
+    "angle": "body-drop",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-16T08:11:04.385091+00:00"
+  },
+  {
+    "clip": "halleluyah_28s.mp4",
+    "duration": 28,
+    "angle": "identity",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-16T08:11:04.605459+00:00"
   }
 ]
