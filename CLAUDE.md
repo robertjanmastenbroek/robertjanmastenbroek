@@ -30,6 +30,18 @@ Tone: modern, professional, cool, credible. Never preachy. Lead with music; the 
 ## Visual Identity
 Dark, Holy, Futuristic. References: Anyma (visual scale), Rüfüs Du Sol (mood/depth), Argy (tribal/techno texture). Sacred geometry aesthetics. High contrast, centered subjects. Visual objects over abstract concepts (a candle in a dark club > "spiritual").
 
+**Locked design tokens** (do not change without explicit user approval):
+- Dark: `#0a0a0a` · Gold: `#d4af37` · Text: `#ffffff` · Muted: `#a0a0a0`
+- Serif: `Cormorant Garamond` · Sans: `Inter`
+- No Cinzel, no Spectral, no teal, no constellation/canvas animations, no overflow-text heroes.
+
+**Visual change discipline.** Any edit to `index.html`, `offering/index.html`, `/story`, `/links`, or any other public-facing visual asset MUST:
+1. Land in its own dedicated commit — never bundled with content-engine, pipeline, outreach, or "chore" work.
+2. Use a commit title that starts with `visual:` or `design:` so it's easy to audit in log.
+3. Preserve the locked design tokens above unless the user explicitly requests a palette/font change in writing.
+
+If an agent (rjm-master, frontend-design, or any other) is about to touch these files as part of a larger task, stop and isolate the change first.
+
 ## Holy Rave Brand
 "Holy Rave" = RJM's live show and tour brand. Not tied to a church venue or sober crowd. Wherever RJM plays, the rave becomes holy. "Selah" is reserved for a venue/residency/EP only — Holy Rave has equity (1.9M IG views, 500K TikTok). Viral formula: real footage of people dancing + contrast hook in text overlay + track as audio + under 40s + location tag.
 

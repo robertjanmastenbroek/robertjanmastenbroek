@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-JZG345ND51"></script>
     <script>
@@ -12,7 +11,6 @@
         gtag('js', new Date());
         gtag('config', 'G-JZG345ND51');
     </script>
-
     <title>Robert-Jan Mastenbroek — Sacred Music for Every Dancefloor</title>
     <meta name="description" content="Bible-based melodic techno and tribal psytrance. Ancient scripture at 140 BPM. New track every Friday — follow on Spotify.">
     <meta name="keywords" content="Robert-Jan Mastenbroek, melodic techno, tribal psytrance, christian electronic music, holy rave, sacred music, bible techno">
@@ -24,1196 +22,1448 @@
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
 
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --void: #070706;
-            --stone: #0e0d0b;
-            --ember: #181612;
-            --bone: #f0e9dc;
-            --bone-dim: rgba(240, 233, 220, 0.55);
-            --bone-mute: rgba(240, 233, 220, 0.22);
-            --gold: #c9a44a;
-            --gold-dim: rgba(201, 164, 74, 0.12);
-            --gold-glow: rgba(201, 164, 74, 0.35);
-            --teal: #2fd8c4;
-            --teal-dim: rgba(47, 216, 196, 0.08);
-            --teal-mid: rgba(47, 216, 196, 0.35);
-            --font-display: 'Cinzel', 'Palatino Linotype', serif;
-            --font-body: 'Spectral', Georgia, serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        html { scroll-behavior: smooth; }
+        :root {
+            --dark-bg: #0a0a0a;
+            --secondary-bg: #111111;
+            --card-bg: #161616;
+            --accent-gold: #d4af37;
+            --accent-gold-dim: rgba(212, 175, 55, 0.15);
+            --accent-blue: #4a90e2;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --gradient-dark: linear-gradient(180deg, #0a0a0a 0%, #111111 50%, #0a0a0a 100%);
+            --font-serif: 'Cormorant Garamond', Georgia, serif;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-serif);
+        }
 
         body {
-            font-family: var(--font-body);
-            background: var(--void);
-            color: var(--bone);
-            line-height: 1.7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
             overflow-x: hidden;
         }
 
-        /* Film grain overlay */
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-            background-size: 300px 300px;
-            opacity: 0.025;
-            pointer-events: none;
-            z-index: 9000;
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-gold);
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: var(--void); }
-        ::-webkit-scrollbar-thumb { background: var(--gold); }
-
-        /* ==================== NAVIGATION ==================== */
+        /* Navigation */
         nav {
             position: fixed;
             top: 0;
             width: 100%;
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 1000;
-            padding: 1.75rem 2.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        nav .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.25rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: background 0.6s ease, padding 0.4s ease, border-color 0.6s ease;
-            border-bottom: 1px solid transparent;
         }
 
-        nav.scrolled {
-            background: rgba(7, 7, 6, 0.94);
-            backdrop-filter: blur(28px);
-            -webkit-backdrop-filter: blur(28px);
-            padding: 1.1rem 2.5rem;
-            border-bottom-color: rgba(201, 164, 74, 0.1);
-        }
-
-        .nav-logo {
-            font-family: var(--font-display);
-            font-size: 0.75rem;
+        nav .logo {
+            font-size: 1.1rem;
             font-weight: 600;
-            letter-spacing: 0.3em;
-            color: var(--bone);
-            text-decoration: none;
+            letter-spacing: 3px;
             text-transform: uppercase;
+            color: var(--text-primary);
         }
 
-        .nav-links {
+        nav .logo span {
+            color: var(--accent-gold);
+        }
+
+        nav ul {
             display: flex;
-            gap: 2.5rem;
             list-style: none;
+            gap: 2.5rem;
         }
 
-        .nav-links a {
-            font-family: var(--font-display);
-            font-size: 0.6rem;
-            font-weight: 400;
-            letter-spacing: 0.22em;
-            color: var(--bone-dim);
+        nav a {
+            color: var(--text-secondary);
             text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
             transition: color 0.3s ease;
             position: relative;
         }
 
-        .nav-links a::after {
+        nav a::after {
             content: '';
             position: absolute;
-            bottom: -5px;
+            bottom: -4px;
             left: 0;
             width: 0;
             height: 1px;
-            background: var(--gold);
-            transition: width 0.35s ease;
+            background: var(--accent-gold);
+            transition: width 0.3s ease;
         }
 
-        .nav-links a:hover { color: var(--bone); }
-        .nav-links a:hover::after { width: 100%; }
-
-        .nav-hamburger {
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            cursor: pointer;
-            z-index: 1001;
+        nav a:hover {
+            color: var(--text-primary);
         }
 
-        .nav-hamburger span {
-            display: block;
-            width: 22px;
-            height: 1px;
-            background: var(--bone);
-            transition: all 0.3s ease;
-            transform-origin: center;
-        }
-
-        /* ==================== HERO ==================== */
-        #hero {
-            position: relative;
-            height: 100vh;
-            min-height: 600px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            overflow: hidden;
-        }
-
-        #hero::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70vmin;
-            height: 70vmin;
-            background: radial-gradient(ellipse, rgba(201, 164, 74, 0.05) 0%, transparent 65%);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        #geometry-canvas {
-            position: absolute;
-            inset: 0;
+        nav a:hover::after {
             width: 100%;
-            height: 100%;
-            z-index: 0;
         }
 
-        .hero-content {
+        /* Mobile Menu */
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text-primary);
+            margin: 5px 0;
+            transition: 0.3s;
+        }
+
+        /* Hero Section */
+        .hero {
             position: relative;
-            z-index: 2;
-            padding: 2rem;
+            background: var(--gradient-dark);
         }
 
-        .hero-eyebrow {
-            font-family: var(--font-display);
-            font-size: 0.57rem;
-            letter-spacing: 0.45em;
-            color: var(--teal);
-            text-transform: uppercase;
-            margin-bottom: 2.25rem;
-            opacity: 0;
-            animation: riseIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
         }
 
-        .hero-name {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: clamp(3.2rem, 8vw, 9.5rem);
-            letter-spacing: 0.04em;
-            line-height: 0.88;
-            text-transform: uppercase;
-            margin-bottom: 2.25rem;
-            opacity: 0;
-            animation: riseIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.65s forwards;
-        }
-
-        .hero-name .line1 {
-            display: block;
-            color: var(--bone);
-        }
-
-        .hero-name .line2 {
-            display: block;
-            color: transparent;
-            -webkit-text-stroke: 1px rgba(240, 233, 220, 0.4);
-        }
-
-        .hero-tagline {
-            font-family: var(--font-body);
-            font-style: italic;
-            font-weight: 300;
-            font-size: clamp(0.85rem, 1.4vw, 1.05rem);
-            color: var(--bone-dim);
-            letter-spacing: 0.04em;
-            margin-bottom: 3rem;
-            opacity: 0;
-            animation: riseIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.9s forwards;
-        }
-
-        .hero-ctas {
+        .hero-cta {
             display: flex;
             gap: 1rem;
-            justify-content: center;
             flex-wrap: wrap;
-            opacity: 0;
-            animation: riseIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.15s forwards;
         }
 
-        .hero-scroll-hint {
-            position: absolute;
-            bottom: 2.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.6rem;
-            opacity: 0;
-            animation: riseIn 1.1s ease 2s forwards;
-        }
-
-        .hero-scroll-hint span {
-            font-family: var(--font-display);
-            font-size: 0.5rem;
-            letter-spacing: 0.35em;
-            color: var(--bone-mute);
+        .btn {
+            padding: 1rem 2.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
             text-transform: uppercase;
-        }
-
-        .scroll-bar {
-            width: 1px;
-            height: 45px;
-            background: linear-gradient(to bottom, var(--bone-mute), transparent);
-            animation: pulseBar 2.2s ease-in-out infinite;
-        }
-
-        /* ==================== BUTTONS ==================== */
-        .btn-primary {
+            letter-spacing: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            font-family: var(--font-display);
-            font-size: 0.62rem;
-            font-weight: 600;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--void);
-            background: var(--gold);
-            border: none;
-            padding: 0.9rem 2.2rem;
-            text-decoration: none;
-            transition: box-shadow 0.3s ease, opacity 0.3s ease;
-            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--accent-gold);
+            color: var(--dark-bg);
+            border: 2px solid var(--accent-gold);
         }
 
         .btn-primary:hover {
-            box-shadow: 0 0 32px var(--gold-glow), 0 0 8px var(--gold-glow);
-            opacity: 0.92;
-        }
-
-        .btn-ghost {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-family: var(--font-display);
-            font-size: 0.62rem;
-            font-weight: 600;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--bone);
             background: transparent;
-            border: 1px solid var(--bone-mute);
-            padding: 0.9rem 2.2rem;
-            text-decoration: none;
-            transition: border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
+            color: var(--accent-gold);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
         }
 
-        .btn-ghost:hover {
-            border-color: var(--teal);
-            color: var(--teal);
-            box-shadow: 0 0 20px var(--teal-dim);
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--border-hover);
         }
 
-        /* ==================== SECTION SHARED ==================== */
-        .section-wrap {
-            max-width: 1360px;
+        .btn-secondary:hover {
+            border-color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        /* Section Styling */
+        section {
+            padding: 8rem 2rem;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 0 2.5rem;
         }
 
-        .section-pad { padding-top: 8rem; padding-bottom: 8rem; }
-
-        .glyph-divider {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
-            margin-bottom: 5rem;
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
         }
 
-        .glyph-line {
-            flex: 1;
-            max-width: 100px;
-            height: 1px;
-        }
-
-        .glyph-line.l { background: linear-gradient(to right, transparent, var(--bone-mute)); }
-        .glyph-line.r { background: linear-gradient(to left, transparent, var(--bone-mute)); }
-
-        .glyph-divider svg { width: 22px; height: 22px; opacity: 0.55; flex-shrink: 0; }
-
-        .eyebrow {
-            font-family: var(--font-display);
-            font-size: 0.55rem;
-            letter-spacing: 0.42em;
-            color: var(--teal);
+        .section-header h2 {
+            font-size: clamp(2.2rem, 5vw, 3.2rem);
+            margin-bottom: 1rem;
+            letter-spacing: 4px;
             text-transform: uppercase;
-            margin-bottom: 0.7rem;
+            font-weight: 600;
         }
 
-        .section-heading {
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 4vw, 3.2rem);
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: var(--bone);
-            line-height: 0.95;
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        /* ==================== REVEAL ==================== */
-        .reveal {
-            opacity: 0;
-            transform: translateY(28px);
-            transition: opacity 0.85s ease, transform 0.85s ease;
+        .gold-line {
+            width: 60px;
+            height: 2px;
+            background: var(--accent-gold);
+            margin: 1.5rem auto 0;
         }
 
-        .reveal.in { opacity: 1; transform: translateY(0); }
-
-        /* ==================== MUSIC SECTION ==================== */
-        #music {
-            background: var(--stone);
+        /* Stats Bar */
+        .stats-bar {
+            background: var(--secondary-bg);
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 3rem 2rem;
         }
 
-        .music-header {
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: end;
-            margin-bottom: 4.5rem;
-        }
-
-        .music-intro {
-            font-family: var(--font-body);
-            font-size: 1rem;
-            font-weight: 300;
-            color: var(--bone-dim);
-            line-height: 1.85;
-        }
-
-        /* Track list */
-        .track-list { margin-bottom: 5rem; }
-
-        .track-item {
-            display: grid;
-            grid-template-columns: 2.75rem 1fr auto;
-            align-items: center;
+            grid-template-columns: repeat(3, 1fr);
             gap: 2rem;
-            padding: 1.4rem 0;
-            border-bottom: 1px solid rgba(240, 233, 220, 0.055);
-            position: relative;
-            opacity: 0;
-            transform: translateX(-18px);
-            transition: opacity 0.65s ease, transform 0.65s ease;
-        }
-
-        .track-item.in { opacity: 1; transform: translateX(0); }
-
-        .track-item::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: var(--gold);
-            transition: width 0.45s ease;
-        }
-
-        .track-item:hover::after { width: 100%; }
-
-        .track-num {
-            font-family: var(--font-display);
-            font-size: 0.65rem;
-            color: var(--bone-mute);
-            letter-spacing: 0.08em;
             text-align: center;
         }
 
-        .track-name {
-            font-family: var(--font-display);
-            font-size: 1rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            color: var(--bone);
-            margin-bottom: 0.2rem;
-        }
-
-        .track-sub {
-            font-family: var(--font-body);
-            font-size: 0.72rem;
-            font-style: italic;
-            color: var(--bone-mute);
-        }
-
-        .track-ref {
-            font-family: var(--font-display);
-            font-size: 0.57rem;
-            letter-spacing: 0.18em;
-            color: var(--teal);
-            text-transform: uppercase;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .spotify-embed { overflow: hidden; }
-
-        .spotify-embed iframe {
-            width: 100%;
-            display: block;
-        }
-
-        /* ==================== ABOUT ==================== */
-        #about { background: var(--void); }
-
-        .about-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 7rem;
-            align-items: center;
-        }
-
-        .about-img-wrap {
-            position: relative;
-        }
-
-        .about-img-wrap::before {
-            content: '';
-            position: absolute;
-            top: -18px;
-            left: -18px;
-            right: 18px;
-            bottom: 18px;
-            border: 1px solid rgba(201, 164, 74, 0.18);
-            pointer-events: none;
-        }
-
-        .about-img-wrap img {
-            width: 100%;
-            display: block;
-            filter: grayscale(15%) contrast(1.06);
-            position: relative;
-        }
-
-        .about-pull {
-            font-family: var(--font-body);
-            font-style: italic;
-            font-weight: 300;
-            font-size: clamp(1.2rem, 2.2vw, 1.75rem);
-            color: var(--bone);
-            line-height: 1.45;
-            border-left: 2px solid var(--gold);
-            padding-left: 1.4rem;
-            margin-bottom: 2rem;
-        }
-
-        .about-body {
-            font-family: var(--font-body);
-            font-size: 0.93rem;
-            font-weight: 300;
-            color: var(--bone-dim);
-            line-height: 1.95;
-            margin-bottom: 1.4rem;
-        }
-
-        .about-stats {
-            display: flex;
-            gap: 3rem;
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(240, 233, 220, 0.07);
-        }
-
-        .stat-num {
-            display: block;
-            font-family: var(--font-display);
-            font-size: 1.7rem;
+        .stat-item h3 {
+            font-size: 2.5rem;
             font-weight: 700;
-            color: var(--gold);
-            margin-bottom: 0.25rem;
+            color: var(--accent-gold);
+            margin-bottom: 0.5rem;
         }
 
-        .stat-label {
-            font-family: var(--font-display);
-            font-size: 0.52rem;
-            letter-spacing: 0.22em;
-            color: var(--bone-mute);
+        .stat-item p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* ==================== SELAH ==================== */
-        #selah {
-            background: var(--stone);
+        /* Music Section */
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .music-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .music-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .spotify-embed {
+            width: 100%;
+            height: 352px;
+            border: none;
+            border-radius: 12px;
+        }
+
+        .platform-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .platform-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .platform-link:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+            transform: translateY(-2px);
+        }
+
+        .platform-link svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #youtube-videos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .video-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .video-card .thumbnail {
             position: relative;
             overflow: hidden;
         }
 
-        .selah-geo {
+        .video-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .video-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .video-card .play-icon {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: min(900px, 130vmin);
-            height: min(900px, 130vmin);
-            opacity: 0.035;
-            pointer-events: none;
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .selah-inner {
-            position: relative;
-            z-index: 1;
+        .video-card:hover .play-icon {
+            opacity: 1;
+        }
+
+        .video-card .play-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+            margin-left: 4px;
+        }
+
+        .video-info {
+            padding: 1.5rem;
+        }
+
+        .video-info h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .video-info p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Story Section */
+        .story-section {
+            background: var(--secondary-bg);
+            margin: 0;
+            max-width: 100%;
+            padding: 8rem 2rem;
+        }
+
+        .story-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .story-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6rem;
+            gap: 4rem;
             align-items: center;
         }
 
-        .selah-mono {
-            font-family: var(--font-display);
-            font-size: 0.52rem;
-            letter-spacing: 0.5em;
-            color: var(--teal);
+        .story-text p {
+            font-size: 1.15rem;
+            line-height: 1.9;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .story-text .highlight {
+            color: var(--accent-gold);
+            font-weight: 500;
+        }
+
+        .story-visual {
+            position: relative;
+        }
+
+        .story-quote {
+            background: var(--card-bg);
+            border-left: 3px solid var(--accent-gold);
+            padding: 2rem;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .story-quote blockquote {
+            font-size: 1.3rem;
+            font-style: italic;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .story-quote cite {
+            color: var(--accent-gold);
+            font-size: 0.9rem;
+            font-style: normal;
+        }
+
+        /* Event Section */
+        #event {
+            position: relative;
+            background-image: url('images/holy-rave-bg.jpg');
+            background-size: cover;
+            background-position: center top;
+            background-attachment: scroll;
+            padding: 10rem 2rem;
+        }
+
+        #event::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.72) 100%);
+            z-index: 0;
+        }
+
+        #event .section-header,
+        #event .event-card {
+            position: relative;
+            z-index: 1;
+        }
+
+        #event .section-header h2,
+        #event .section-header p {
+            text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+        }
+
+        #event .section-header p {
+            color: rgba(255,255,255,0.85);
+        }
+
+        .event-card {
+            background: rgba(10, 10, 10, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .event-card .event-badge {
+            display: inline-block;
+            background: var(--accent-gold-dim);
+            color: var(--accent-gold);
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.5rem;
+        }
+
+        .event-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .event-card .event-details {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .event-card .event-details span {
+            display: block;
+            margin: 0.5rem 0;
+        }
+
+        /* Booking Section */
+        .booking-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 3rem;
+        }
+
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            background: var(--dark-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .contact-form input::placeholder,
+        .contact-form textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px var(--accent-gold-dim);
+        }
+
+        .contact-form textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .contact-form .btn-primary {
+            width: 100%;
+            padding: 1.25rem;
+            border: none;
+        }
+
+        .form-success {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .form-success svg {
+            width: 60px;
+            height: 60px;
+            color: var(--accent-gold);
+            margin-bottom: 1rem;
+        }
+
+        .form-success h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .form-success p {
+            color: var(--text-secondary);
+        }
+
+        /* Newsletter */
+        .newsletter {
+            background: var(--secondary-bg);
+            border-top: 1px solid var(--border-subtle);
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+
+        .newsletter h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .newsletter p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .newsletter-form {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .newsletter-form input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: var(--dark-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .newsletter-form input:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+
+        .newsletter-form button {
+            padding: 1rem 2rem;
+            background: var(--accent-gold);
+            color: var(--dark-bg);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .newsletter-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark-bg);
+            border-top: 1px solid var(--border-subtle);
+            padding: 4rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 4rem;
+        }
+
+        .footer-brand h4 {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
             text-transform: uppercase;
             margin-bottom: 1rem;
         }
 
-        .selah-big {
-            font-family: var(--font-display);
-            font-size: clamp(5rem, 11vw, 10.5rem);
-            font-weight: 900;
-            letter-spacing: 0.02em;
+        .footer-brand p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .footer-links h5 {
+            font-size: 0.9rem;
             text-transform: uppercase;
-            color: var(--bone);
-            line-height: 0.86;
-            margin-bottom: 2.5rem;
-        }
-
-        .selah-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-            margin-bottom: 3rem;
-        }
-
-        .selah-meta-row {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .selah-tick {
-            width: 1px;
-            height: 18px;
-            background: var(--gold);
-            flex-shrink: 0;
-        }
-
-        .selah-meta-text {
-            font-family: var(--font-display);
-            font-size: 0.65rem;
-            letter-spacing: 0.22em;
-            color: var(--bone-dim);
-            text-transform: uppercase;
-        }
-
-        .selah-desc {
-            font-family: var(--font-body);
-            font-size: 0.97rem;
-            font-weight: 300;
-            color: var(--bone-dim);
-            line-height: 1.9;
+            letter-spacing: 1px;
             margin-bottom: 1.5rem;
+            color: var(--accent-gold);
         }
 
-        .selah-note {
-            font-family: var(--font-display);
-            font-size: 0.58rem;
-            letter-spacing: 0.18em;
-            color: var(--teal);
-            text-transform: uppercase;
-            margin-top: 2.5rem;
-        }
-
-        /* ==================== SUPPORT ==================== */
-        #support {
-            background: var(--void);
-            text-align: center;
-        }
-
-        .support-inner { max-width: 620px; margin: 0 auto; }
-
-        .support-title {
-            font-family: var(--font-display);
-            font-size: clamp(1.9rem, 3.5vw, 3rem);
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--bone);
-            line-height: 0.95;
-            margin-bottom: 1.5rem;
-        }
-
-        .support-body {
-            font-family: var(--font-body);
-            font-size: 0.97rem;
-            font-weight: 300;
-            color: var(--bone-dim);
-            line-height: 1.9;
-            margin-bottom: 3rem;
-        }
-
-        .support-ctas {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        /* ==================== FOOTER ==================== */
-        footer {
-            border-top: 1px solid rgba(240, 233, 220, 0.06);
-            padding: 3rem 2.5rem;
-            max-width: 1360px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-        }
-
-        .footer-brand {
-            font-family: var(--font-display);
-            font-size: 0.65rem;
-            font-weight: 600;
-            letter-spacing: 0.28em;
-            color: var(--bone-dim);
-            text-transform: uppercase;
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 2rem;
+        .footer-links ul {
             list-style: none;
         }
 
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
         .footer-links a {
-            font-family: var(--font-display);
-            font-size: 0.57rem;
-            letter-spacing: 0.2em;
-            color: var(--bone-mute);
+            color: var(--text-secondary);
             text-decoration: none;
-            text-transform: uppercase;
+            font-size: 0.9rem;
             transition: color 0.3s ease;
         }
 
-        .footer-links a:hover { color: var(--teal); }
-
-        .footer-copy {
-            font-family: var(--font-body);
-            font-size: 0.68rem;
-            color: var(--bone-mute);
+        .footer-links a:hover {
+            color: var(--text-primary);
         }
 
-        /* ==================== KEYFRAMES ==================== */
-        @keyframes riseIn {
-            from { opacity: 0; transform: translateY(22px); }
-            to   { opacity: 1; transform: translateY(0); }
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
         }
 
-        @keyframes pulseBar {
-            0%, 100% { opacity: 0.25; transform: scaleY(0.95); }
-            50%       { opacity: 0.7;  transform: scaleY(1.1); }
+        .social-links a {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
         }
 
-        /* ==================== RESPONSIVE ==================== */
-        @media (max-width: 900px) {
-            .music-header { grid-template-columns: 1fr; gap: 2rem; }
-            .about-grid   { grid-template-columns: 1fr; gap: 3rem; }
-            .about-img-wrap::before { display: none; }
-            .selah-inner  { grid-template-columns: 1fr; gap: 3rem; }
-            .selah-big    { font-size: clamp(4.5rem, 18vw, 7rem); }
+        .social-links a:hover {
+            color: var(--accent-gold);
+            border-color: var(--accent-gold);
+            transform: translateY(-3px);
+        }
+
+        .social-links svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 3rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-bottom p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .story-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
-            nav { padding: 1.25rem 1.5rem; }
-            nav.scrolled { padding: 0.9rem 1.5rem; }
-            .nav-links { display: none; }
-            .nav-links.open {
+            nav ul {
+                display: none;
+            }
+
+            nav ul.active {
                 display: flex;
                 flex-direction: column;
-                position: fixed;
-                inset: 0;
-                background: var(--void);
-                justify-content: center;
-                align-items: center;
-                gap: 2.5rem;
-                z-index: 999;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(10, 10, 10, 0.98);
+                padding: 2rem;
+                gap: 1.5rem;
+                border-bottom: 1px solid var(--border-subtle);
             }
-            .nav-links.open a { font-size: 1.1rem; letter-spacing: 0.22em; }
-            .nav-hamburger { display: flex; }
-            .section-pad { padding-top: 5rem; padding-bottom: 5rem; }
-            .section-wrap { padding: 0 1.5rem; }
-            .track-item { grid-template-columns: 2rem 1fr; }
-            .track-ref { display: none; }
-            .about-stats { gap: 1.75rem; }
-            footer { flex-direction: column; text-align: center; }
-            .footer-links { justify-content: center; }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            section {
+                padding: 5rem 1.5rem;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .newsletter-form {
+                flex-direction: column;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-subtle);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Spotify Goal Section ── */
+        .spotify-goal-section {
+            background: var(--secondary-bg);
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 7rem 2rem;
+        }
+        .spotify-goal-inner {
+            max-width: 660px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .spotify-eyebrow {
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #1DB954;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        .spotify-goal-title {
+            font-family: var(--font-serif);
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 500;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+        .spotify-goal-sub {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 2.5rem;
+        }
+        .listener-count-display {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-bottom: 1.25rem;
+        }
+        .listener-current {
+            font-family: var(--font-serif);
+            font-size: clamp(2.8rem, 7vw, 4.5rem);
+            font-weight: 600;
+            color: #1DB954;
+            line-height: 1;
+        }
+        .listener-goal-label {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            padding-bottom: 0.2rem;
+        }
+        .progress-track {
+            background: rgba(255,255,255,0.06);
+            border-radius: 100px;
+            height: 6px;
+            max-width: 400px;
+            margin: 0 auto 0.75rem;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1DB954, #4ad87a);
+            border-radius: 100px;
+            width: 0%;
+            transition: width 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .progress-pct {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            margin-bottom: 2.5rem;
+        }
+        .btn-spotify {
+            background: #1DB954;
+            color: #000;
+            border: 2px solid #1DB954;
+        }
+        .btn-spotify:hover {
+            background: transparent;
+            color: #1DB954;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(29,185,84,0.25);
+        }
+
+        /* ── Hero secondary links ── */
+        .hero-secondary-links {
+            margin-top: 1.25rem;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+        .hero-secondary-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .hero-secondary-links a:hover { color: var(--text-primary); }
+        .hero-secondary-links .sep { margin: 0 0.6rem; opacity: 0.4; }
+
+        /* ── Hero Two-Column Layout ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7rem 3rem 4rem;
+        }
+        .hero-inner {
+            display: flex;
+            align-items: center;
+            gap: 6rem;
+            max-width: 1100px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+        .hero-text {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+        }
+        .hero-eyebrow {
+            font-size: 0.78rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        .hero-text h1 {
+            font-size: clamp(2.6rem, 5.5vw, 4.2rem);
+            text-align: left;
+            letter-spacing: 2px;
+            margin-bottom: 1.25rem;
+            line-height: 1.1;
+        }
+        .hero-desc {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 2.5rem;
+            max-width: 480px;
+        }
+        .hero-visual {
+            flex: 0 0 380px;
+        }
+        .hero-visual img {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid rgba(212,175,55,0.2);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 60px rgba(212,175,55,0.08);
+            display: block;
+        }
+        @media (max-width: 900px) {
+            .hero { padding: 7rem 2rem 4rem; }
+            .hero-inner { flex-direction: column-reverse; gap: 2.5rem; text-align: center; }
+            .hero-text { text-align: center; }
+            .hero-text h1 { text-align: center; font-size: clamp(2.4rem, 8vw, 3.5rem); }
+            .hero-desc { margin-left: auto; margin-right: auto; }
+            .hero-cta { justify-content: center; }
+            .hero-secondary-links { text-align: center; }
+            .hero-visual { flex: none; width: 200px; }
+            .hero-visual img { aspect-ratio: 1/1; border-radius: 50%; }
+        }
+
+        /* ── Email Capture Section ── */
+        .email-section {
+            background: var(--secondary-bg);
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+        .email-inner {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .email-section .eyebrow {
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 1.25rem;
+            font-weight: 600;
+        }
+        .email-section h2 {
+            font-family: var(--font-serif);
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            letter-spacing: 1px;
+        }
+        .email-section .sub {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 2.25rem;
+            line-height: 1.7;
+        }
+        .email-form {
+            display: flex;
+            max-width: 420px;
+            margin: 0 auto 1rem;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .email-form:focus-within { border-color: var(--accent-gold); }
+        .email-form input {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: var(--font-sans);
+        }
+        .email-form input::placeholder { color: #555; }
+        .email-form button {
+            padding: 1rem 1.5rem;
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .email-form button:hover { background: #e8c84a; }
+        .email-form button:disabled { opacity: 0.6; cursor: wait; }
+        .email-note { font-size: 0.8rem; color: #444; }
+        .email-success { color: var(--accent-gold); font-size: 1.05rem; display: none; font-family: var(--font-serif); font-style: italic; }
+        @media (max-width: 480px) {
+            .email-form { flex-direction: column; }
+            .email-form input { border-bottom: 1px solid var(--border-subtle); }
         }
     </style>
 </head>
 <body>
-
-    <!-- NAVIGATION -->
-    <nav id="main-nav">
-        <a href="#" class="nav-logo">RJM</a>
-        <ul class="nav-links" id="nav-links">
-            <li><a href="#music">Music</a></li>
-            <li><a href="story/index.html">Story</a></li>
-            <li><a href="#selah">Selah</a></li>
-            <li><a href="#support">Support</a></li>
-        </ul>
-        <div class="nav-hamburger" id="nav-hamburger" role="button" tabindex="0" aria-label="Open menu">
-            <span></span><span></span><span></span>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="logo">Robert-Jan <span>M</span></div>
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul id="navMenu">
+                <li><a href="#music">Music</a></li>
+                <li><a href="/story">Story</a></li>
+                <li><a href="#event">Sunset Sessions</a></li>
+                <li><a href="#booking">Booking</a></li>
+                <li><a href="/offering">Donate</a></li>
+            </ul>
         </div>
     </nav>
 
-    <!-- HERO -->
-    <section id="hero">
-        <canvas id="geometry-canvas" aria-hidden="true"></canvas>
-
-        <div class="hero-content">
-            <p class="hero-eyebrow">Ancient Truth &nbsp;·&nbsp; Future Sound</p>
-            <h1 class="hero-name">
-                <span class="line1">Robert-Jan</span>
-                <span class="line2">Mastenbroek</span>
-            </h1>
-            <p class="hero-tagline">Sacred music for every dancefloor — melodic techno &amp; tribal psytrance from Tenerife.</p>
-            <div class="hero-ctas">
-                <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" rel="noopener" class="btn-primary">Listen on Spotify</a>
-                <a href="https://www.instagram.com/holyraveofficial/" target="_blank" rel="noopener" class="btn-ghost">@holyraveofficial</a>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="hero-text">
+                <p class="hero-eyebrow">Robert-Jan Mastenbroek</p>
+                <h1>Sacred Music<br>for Every Dancefloor</h1>
+                <p class="hero-desc">Bible-based melodic techno and tribal psytrance — ancient scripture at 140 BPM. New track every Friday.</p>
+                <div class="hero-cta">
+                    <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 1.05rem; padding: 1.1rem 2.75rem;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                        </svg>
+                        Listen on Spotify
+                    </a>
+                </div>
+                <p class="hero-secondary-links" style="margin-top: 1.25rem;">
+                    <a href="https://www.youtube.com/@robertjanmastenbroekofficial" target="_blank">YouTube</a>
+                    <span class="sep">·</span>
+                    <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank">WhatsApp</a>
+                    <span class="sep">·</span>
+                    <a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank">Instagram</a>
+                </p>
             </div>
-        </div>
-
-        <div class="hero-scroll-hint">
-            <span>Scroll</span>
-            <div class="scroll-bar"></div>
+            <div class="hero-visual">
+                <img src="images/robert-jan-mastenbroek.jpg"
+                     alt="Robert-Jan Mastenbroek — electronic music producer, Holy Rave"
+                     onerror="this.parentElement.style.display='none'">
+            </div>
         </div>
     </section>
 
-    <!-- MUSIC -->
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item">
+                <h3>291K</h3>
+                <p>Instagram Followers</p>
+            </div>
+            <div class="stat-item">
+                <h3>30+</h3>
+                <p>Original Tracks — All Owned</p>
+            </div>
+            <div class="stat-item">
+                <h3>Every Friday</h3>
+                <p>New Song Released</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Music Section -->
     <section id="music">
-        <div class="section-wrap section-pad">
-            <div class="glyph-divider">
-                <div class="glyph-line l"></div>
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <polygon points="12,2 22,7.5 22,16.5 12,22 2,16.5 2,7.5" stroke="#c9a44a" stroke-width="1" fill="none"/>
-                    <circle cx="12" cy="12" r="2.5" fill="#c9a44a" opacity="0.75"/>
-                </svg>
-                <div class="glyph-line r"></div>
-            </div>
-
-            <div class="music-header">
-                <div>
-                    <p class="eyebrow">The Catalogue</p>
-                    <h2 class="section-heading">Music</h2>
-                </div>
-                <p class="music-intro reveal">Original productions rooted in ancient scripture — built for the dancefloor, sourced from the Word. Each track carries a frequency.</p>
-            </div>
-
-            <div class="track-list">
-                <div class="track-item">
-                    <span class="track-num">01</span>
-                    <div>
-                        <div class="track-name">Renamed</div>
-                        <div class="track-sub">Melodic Techno</div>
-                    </div>
-                    <div class="track-ref">Isaiah 62</div>
-                </div>
-                <div class="track-item">
-                    <span class="track-num">02</span>
-                    <div>
-                        <div class="track-name">Halleluyah</div>
-                        <div class="track-sub">Psytrance · 140 BPM</div>
-                    </div>
-                    <div class="track-ref">—</div>
-                </div>
-                <div class="track-item">
-                    <span class="track-num">03</span>
-                    <div>
-                        <div class="track-name">Jericho</div>
-                        <div class="track-sub">Psytrance · 140 BPM</div>
-                    </div>
-                    <div class="track-ref">Joshua 6</div>
-                </div>
-                <div class="track-item">
-                    <span class="track-num">04</span>
-                    <div>
-                        <div class="track-name">Fire In Our Hands</div>
-                        <div class="track-sub">130 BPM</div>
-                    </div>
-                    <div class="track-ref">—</div>
-                </div>
-                <div class="track-item">
-                    <span class="track-num">05</span>
-                    <div>
-                        <div class="track-name">Living Water</div>
-                        <div class="track-sub">124 BPM</div>
-                    </div>
-                    <div class="track-ref">John 4</div>
-                </div>
-                <div class="track-item">
-                    <span class="track-num">06</span>
-                    <div>
-                        <div class="track-name">He Is The Light</div>
-                        <div class="track-sub">Melodic Techno</div>
-                    </div>
-                    <div class="track-ref">John 8</div>
-                </div>
-            </div>
-
-            <div class="spotify-embed reveal">
+        <div class="section-header">
+            <h2>Latest Releases</h2>
+            <p>Bible-based electronic music. Melodic techno meets Scripture.</p>
+            <div class="gold-line"></div>
+        </div>
+        <div class="music-grid">
+            <div class="music-card">
                 <iframe
-                    src="https://open.spotify.com/embed/artist/2Seaafm5k1hAuCkpdq7yds?utm_source=generator&theme=0"
-                    width="100%"
-                    height="352"
-                    frameBorder="0"
+                    class="spotify-embed"
+                    src="https://open.spotify.com/embed/track/0JDiFWqAa7exA8zh53D4JG?utm_source=generator&theme=0"
                     allowfullscreen=""
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    title="Robert-Jan Mastenbroek on Spotify">
+                    loading="lazy">
+                </iframe>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 0.9rem; padding: 0.85rem 2rem;">
+                Open full catalogue on Spotify →
+            </a>
+        </div>
+
+        <div style="margin-top: 5rem;">
+            <p style="text-align: center; font-size: 0.75rem; letter-spacing: 4px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 2rem;">Full Catalogue — 30+ Tracks</p>
+            <div class="music-card">
+                <iframe
+                    class="spotify-embed"
+                    src="https://open.spotify.com/embed/artist/2Seaafm5k1hAuCkpdq7yds?utm_source=generator&theme=0"
+                    allowfullscreen=""
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy">
                 </iframe>
             </div>
         </div>
     </section>
 
-    <!-- ABOUT -->
-    <section id="about">
-        <div class="section-wrap section-pad">
-            <div class="glyph-divider reveal">
-                <div class="glyph-line l"></div>
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" stroke="#c9a44a" stroke-width="1" fill="none"/>
-                    <circle cx="12" cy="12" r="5"  stroke="#2fd8c4" stroke-width="1" fill="none"/>
-                    <circle cx="12" cy="12" r="1.5" fill="#c9a44a"/>
+    <!-- Spotify Mission Goal Section -->
+    <div class="spotify-goal-section">
+        <div class="spotify-goal-inner">
+            <p class="spotify-eyebrow">Join the Mission</p>
+            <h2 class="spotify-goal-title">Follow. Share. Let It Spread.</h2>
+            <p class="spotify-goal-sub">
+                Every follow, every save, every share tells the algorithm this music deserves a bigger stage.
+                That's how the gospel spreads now — one listener at a time.
+            </p>
+            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 1rem; padding: 1rem 2.5rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
                 </svg>
-                <div class="glyph-line r"></div>
-            </div>
+                Add to Spotify — it's free
+            </a>
+        </div>
+    </div>
 
-            <div class="about-grid">
-                <div class="about-img-wrap reveal">
-                    <img src="images/robert-jan-mastenbroek.jpg" alt="Robert-Jan Mastenbroek" loading="lazy">
-                </div>
-                <div>
-                    <p class="eyebrow">The Artist</p>
-                    <h2 class="section-heading" style="margin-bottom: 2rem;">Robert-Jan<br>Mastenbroek</h2>
-                    <blockquote class="about-pull reveal">"The dust on the synth carries the same frequency as the scripture that moved it."</blockquote>
-                    <p class="about-body reveal">Dutch DJ and producer based in Tenerife. 30+ original tracks fusing melodic techno and tribal psytrance with ancient scripture. The Word at 126–140 BPM. Independent — no label, no manager.</p>
-                    <p class="about-body reveal">Every track begins in the text. Jericho falls at 140 BPM. Living Water moves at 124. Holy Rave is not a church event. It is wherever RJM plays.</p>
-                    <div class="about-stats reveal">
-                        <div>
-                            <span class="stat-num">290K</span>
-                            <span class="stat-label">Instagram</span>
-                        </div>
-                        <div>
-                            <span class="stat-num">30+</span>
-                            <span class="stat-label">Original Tracks</span>
-                        </div>
-                        <div>
-                            <span class="stat-num">1M</span>
-                            <span class="stat-label">North Star</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
+    <!-- Story Section -->
+    <section id="story">
+        <div class="section-header">
+            <h2>The Story Behind the Music</h2>
+            <div class="gold-line"></div>
+        </div>
+        <div style="max-width: 640px; margin: 0 auto; text-align: center;">
+            <p style="font-size: 1.15rem; line-height: 1.95; color: var(--text-secondary); margin-bottom: 2.5rem;">
+                He built a €6M empire, lost it all at thirty, and ended up living in a camper van on a beach in Tenerife. One night, on his knees, he asked to be happy again the way he was as a child. That prayer became the music.
+            </p>
+            <a href="/story" class="btn btn-secondary">Read the full story →</a>
         </div>
     </section>
 
-    <!-- SELAH -->
-    <section id="selah">
-        <!-- Sacred geometry mandala — large background SVG -->
-        <svg class="selah-geo" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="400" cy="400" r="380" stroke="white" stroke-width="0.8" fill="none"/>
-            <circle cx="400" cy="400" r="280" stroke="white" stroke-width="0.8" fill="none"/>
-            <circle cx="400" cy="400" r="180" stroke="white" stroke-width="0.8" fill="none"/>
-            <circle cx="400" cy="400" r="80"  stroke="white" stroke-width="0.8" fill="none"/>
-            <!-- Star of David / hexagram -->
-            <polygon points="400,50 700,225 700,575 400,750 100,575 100,225" stroke="white" stroke-width="0.6" fill="none"/>
-            <polygon points="400,750 700,575 700,225 400,50 100,225 100,575" stroke="white" stroke-width="0.6" fill="none"/>
-            <!-- Inner triangles -->
-            <polygon points="400,120 660,360 140,360" stroke="white" stroke-width="0.4" fill="none"/>
-            <polygon points="400,680 140,440 660,440" stroke="white" stroke-width="0.4" fill="none"/>
-            <!-- Outer spokes -->
-            <line x1="400" y1="20"  x2="400" y2="780" stroke="white" stroke-width="0.3"/>
-            <line x1="20"  y1="400" x2="780" y2="400" stroke="white" stroke-width="0.3"/>
-            <line x1="90"  y1="90"  x2="710" y2="710" stroke="white" stroke-width="0.3"/>
-            <line x1="710" y1="90"  x2="90"  y2="710" stroke="white" stroke-width="0.3"/>
-        </svg>
-
-        <div class="section-wrap section-pad">
-            <div class="selah-inner">
-                <div>
-                    <p class="selah-mono">An Event by RJM</p>
-                    <h2 class="selah-big">Selah</h2>
-                    <div class="selah-meta">
-                        <div class="selah-meta-row">
-                            <div class="selah-tick"></div>
-                            <span class="selah-meta-text">Tenerife, Canary Islands</span>
-                        </div>
-                        <div class="selah-meta-row">
-                            <div class="selah-tick"></div>
-                            <span class="selah-meta-text">Summer 2026</span>
-                        </div>
-                        <div class="selah-meta-row">
-                            <div class="selah-tick"></div>
-                            <span class="selah-meta-text">Melodic Techno · Tribal Psytrance</span>
-                        </div>
-                    </div>
-                    <a href="selah.html" class="btn-primary">Learn More</a>
-                </div>
-
-                <div class="reveal">
-                    <p class="eyebrow" style="margin-bottom: 1.5rem;">What is Selah?</p>
-                    <p class="selah-desc">In the Psalms, <em>Selah</em> is a pause — a moment to stop, reflect, and let the music land. Not silence. A breath between movements. The ancient instruction to be still.</p>
-                    <p class="selah-desc">SELAH is RJM's first dedicated live event series. An underground rave built on sacred architecture — tribal rhythm, deep melodic pressure, and the presence that follows both.</p>
-                    <p class="selah-desc">The walls came down at Jericho. The music played first.</p>
-                    <p class="selah-note">Details and tickets — Summer 2026.</p>
-                </div>
-            </div>
+    <!-- Artist Profile Embed -->
+    <section style="padding: 4rem 1.5rem; text-align: center;">
+        <div style="max-width: 640px; margin: 0 auto;">
+            <iframe
+                class="spotify-embed"
+                src="https://open.spotify.com/embed/artist/2Seaafm5k1hAuCkpdq7yds?utm_source=generator&theme=0"
+                width="100%"
+                height="352"
+                frameborder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy">
+            </iframe>
         </div>
     </section>
 
-    <!-- SUPPORT -->
-    <section id="support">
-        <div class="section-wrap section-pad">
-            <div class="glyph-divider reveal">
-                <div class="glyph-line l"></div>
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L14.5 9.5H22.5L16.2 14.1L18.7 21.5L12 16.9L5.3 21.5L7.8 14.1L1.5 9.5H9.5L12 2Z" stroke="#c9a44a" stroke-width="1" fill="none"/>
+    <!-- Email Capture -->
+    <section class="email-section">
+        <div class="email-inner">
+            <p class="eyebrow">Stay Close</p>
+            <h2>New track. Every Friday.</h2>
+            <p class="sub">Be the first to hear it — straight to your inbox.</p>
+            <form class="email-form" id="email-form" onsubmit="handleSubscribe(event)">
+                <input type="email" id="subscribe-email" placeholder="your@email.com" required autocomplete="email">
+                <button type="submit" id="subscribe-btn">Notify Me</button>
+            </form>
+            <p class="email-success" id="email-success">You're in. See you Friday.</p>
+            <p class="email-note">No spam. Just music. Unsubscribe anytime.</p>
+        </div>
+    </section>
+
+    <!-- Event Section -->
+    <section id="event">
+        <div class="section-header">
+            <h2>Sunset Sessions</h2>
+            <p>Where the dance floor becomes the altar.</p>
+            <div class="gold-line"></div>
+        </div>
+        <div class="event-card">
+            <span class="event-badge">Weekly · Free Entry</span>
+            <h3>Sunset Sessions</h3>
+            <div class="event-details">
+                <span>📍 Location revealed to community members every Friday</span>
+                <span>🎵 Ecstatic Dance / Sacred Music</span>
+                <span>✨ Dancing for Jesus in a safe, high-energy environment</span>
+            </div>
+            <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" class="btn btn-primary">Join the WhatsApp Community →</a>
+        </div>
+    </section>
+
+    <!-- Support Section -->
+    <section id="support" style="background: var(--secondary-bg); max-width: 100%; padding: 8rem 2rem;">
+        <div style="max-width: 700px; margin: 0 auto; text-align: center;">
+            <div class="section-header">
+                <h2>Help the Music Reach Further</h2>
+                <div class="gold-line"></div>
+            </div>
+            <p style="font-size: 1.15rem; line-height: 1.9; color: var(--text-secondary); margin-bottom: 2.5rem;">
+                The most powerful thing you can do — and it costs nothing — is follow on Spotify and save the tracks you love. Every stream tells the algorithm this music matters. That's how it reaches people who need it most.
+            </p>
+            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-spotify" style="font-size: 1rem; padding: 1.1rem 2.8rem; margin-bottom: 1.25rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
                 </svg>
-                <div class="glyph-line r"></div>
-            </div>
-            <div class="support-inner">
-                <p class="eyebrow">Stay Free</p>
-                <h2 class="support-title">Keep Holy Rave Free</h2>
-                <p class="support-body reveal">The music is independent — no label, no manager, just the Word and the work. If Holy Rave has moved something in you, you can help keep it free and growing. Every contribution goes directly into the next track, the next event, the next city.</p>
-                <div class="support-ctas reveal">
-                    <a href="offering/index.html" class="btn-primary">Support the Mission</a>
-                    <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" rel="noopener" class="btn-ghost">Follow on Spotify</a>
-                </div>
+                Follow on Spotify — free
+            </a>
+            <p style="color: #444; font-size: 0.88rem; margin-top: 0.5rem;">
+                Want to go further? <a href="/offering" style="color: var(--text-secondary); text-decoration: underline;">Support the mission financially →</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- Booking Section -->
+    <section id="booking">
+        <div class="section-header">
+            <h2>Booking & Inquiries</h2>
+            <p>Bring Sunset Sessions to your stage.</p>
+            <div class="gold-line"></div>
+        </div>
+        <div class="booking-content">
+            <div class="contact-info" style="text-align: center;">
+                <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem;">
+                    Available for festivals, churches, clubs, and private events.
+                </p>
+                <a href="https://api.whatsapp.com/send/?phone=31681150445&text=Hey+Robert-Jan%21+I%27d+like+to+discuss+a+booking+for+Holy+Rave+at+my+venue%2Ffestival%2Fchurch.+Can+we+talk%3F&" target="_blank" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.5rem 3rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    WhatsApp me about a booking
+                </a>
+                <p style="margin-top: 2rem; color: var(--text-secondary); font-size: 0.9rem;">
+                    For bookings, collaborations, or media inquiries
+                </p>
             </div>
         </div>
     </section>
 
-    <!-- FOOTER -->
+    <!-- Footer -->
     <footer>
-        <div class="footer-brand">Robert-Jan Mastenbroek</div>
-        <ul class="footer-links">
-            <li><a href="https://www.instagram.com/holyraveofficial/" target="_blank" rel="noopener">Instagram</a></li>
-            <li><a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" rel="noopener">Spotify</a></li>
-            <li><a href="story/index.html">Story</a></li>
-            <li><a href="selah.html">Selah</a></li>
-        </ul>
-        <p class="footer-copy">© 2026 RJM · Ancient Truth. Future Sound.</p>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h4>Robert-Jan Mastenbroek</h4>
+                <p>Jesus loving raver — taking sacred music to every dancefloor. Electronic music producer creating melodic techno and tribal psytrance where the sacred meets the dancefloor.</p>
+                <div class="social-links">
+                    <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" title="Spotify">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                    </a>
+                    <a href="https://music.apple.com/us/artist/robert-jan-mastenbroek/1875064180" target="_blank" title="Apple Music">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                    </a>
+                    <a href="https://www.youtube.com/@robertjanmastenbroekofficial" target="_blank" title="YouTube">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    </a>
+                    <a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank" title="Instagram">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/></svg>
+                    </a>
+                    <a href="https://tiktok.com/@robertjanmastenbroek" target="_blank" title="TikTok">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+                    </a>
+                    <a href="https://facebook.com/rjmastenbroek" target="_blank" title="Facebook">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h5>Quick Links</h5>
+                <ul>
+                    <li><a href="#music">Music</a></li>
+                    <li><a href="/story">Story</a></li>
+                    <li><a href="#event">Sunset Sessions</a></li>
+                    <li><a href="#booking">Booking</a></li>
+                    <li><a href="/offering">Support the Mission</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h5>Listen Now</h5>
+                <ul>
+                    <li><a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank">Spotify</a></li>
+                    <li><a href="https://music.apple.com/us/artist/robert-jan-mastenbroek/1875064180" target="_blank">Apple Music</a></li>
+                    <li><a href="https://www.youtube.com/@robertjanmastenbroekofficial" target="_blank">YouTube</a></li>
+                    <li><a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank">Instagram</a></li>
+                    <li><a href="https://tiktok.com/@robertjanmastenbroek" target="_blank">TikTok</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Robert-Jan Mastenbroek. All rights reserved.</p>
+            <p>Ancient Truth. Future Sound.</p>
+        </div>
     </footer>
 
     <script>
-    // ==================== SACRED GEOMETRY CANVAS ====================
-    (function () {
-        const canvas = document.getElementById('geometry-canvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        let W, H, nodes;
-
-        function resize() {
-            W = canvas.width  = canvas.offsetWidth;
-            H = canvas.height = canvas.offsetHeight;
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
         }
 
-        function buildNodes() {
-            nodes = [];
-            const cx = W / 2, cy = H / 2;
-            const R = Math.min(W, H);
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.getElementById('navMenu').classList.remove('active');
+                }
+            });
+        });
 
-            // Anchor: center
-            nodes.push({ x: cx, y: cy, kind: 'anchor', r: 2.5, angle: 0, radius: 0, speed: 0 });
-
-            // Inner hexagon — 6 nodes
-            for (let i = 0; i < 6; i++) {
-                const a = (i / 6) * Math.PI * 2;
-                nodes.push({ x: 0, y: 0, kind: 'ring', r: 2, angle: a, radius: R * 0.15, speed:  0.00028, cx, cy });
-            }
-
-            // Middle 12-gon
-            for (let i = 0; i < 12; i++) {
-                const a = (i / 12) * Math.PI * 2;
-                nodes.push({ x: 0, y: 0, kind: 'ring', r: 1.5, angle: a, radius: R * 0.27, speed: -0.00014, cx, cy });
-            }
-
-            // Outer 18-gon
-            for (let i = 0; i < 18; i++) {
-                const a = (i / 18) * Math.PI * 2;
-                nodes.push({ x: 0, y: 0, kind: 'ring', r: 1, angle: a, radius: R * 0.39, speed:  0.00009, cx, cy });
-            }
-
-            // Scattered drift nodes
-            for (let i = 0; i < 22; i++) {
-                nodes.push({
-                    x:  Math.random() * W,
-                    y:  Math.random() * H,
-                    vx: (Math.random() - 0.5) * 0.14,
-                    vy: (Math.random() - 0.5) * 0.14,
-                    kind: 'drift',
-                    r: Math.random() * 1.1 + 0.4
+        async function handleSubscribe(e) {
+            e.preventDefault();
+            const btn = document.getElementById('subscribe-btn');
+            const email = document.getElementById('subscribe-email').value;
+            const success = document.getElementById('email-success');
+            const form = document.getElementById('email-form');
+            btn.textContent = '...';
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
                 });
+                const data = await res.json();
+                if (data.ok) {
+                    form.style.display = 'none';
+                    success.style.display = 'block';
+                } else {
+                    throw new Error(data.error || 'Failed');
+                }
+            } catch (err) {
+                btn.textContent = 'Try Again';
+                btn.disabled = false;
             }
         }
 
-        function tick() {
-            nodes.forEach(n => {
-                if (n.kind === 'ring') {
-                    n.angle += n.speed;
-                    n.x = n.cx + Math.cos(n.angle) * n.radius;
-                    n.y = n.cy + Math.sin(n.angle) * n.radius;
-                } else if (n.kind === 'drift') {
-                    n.x += n.vx;
-                    n.y += n.vy;
-                    if (n.x < 0 || n.x > W) n.vx *= -1;
-                    if (n.y < 0 || n.y > H) n.vy *= -1;
-                }
-            });
-        }
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-        const GOLD = [201, 164, 74];
-        const TEAL = [47,  216, 196];
-        const MAX_DIST_FACTOR = 0.22;
-
-        function draw() {
-            ctx.clearRect(0, 0, W, H);
-            const maxD = Math.min(W, H) * MAX_DIST_FACTOR;
-
-            // Connections
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const a = nodes[i], b = nodes[j];
-                    const dx = b.x - a.x, dy = b.y - a.y;
-                    const d  = Math.sqrt(dx * dx + dy * dy);
-                    if (d >= maxD) continue;
-
-                    const structural = a.kind !== 'drift' && b.kind !== 'drift';
-                    const [r, g, bv] = structural ? GOLD : TEAL;
-                    const alpha = (1 - d / maxD) * (structural ? 0.38 : 0.22);
-
-                    ctx.beginPath();
-                    ctx.strokeStyle = `rgba(${r},${g},${bv},${alpha})`;
-                    ctx.lineWidth = structural ? 0.55 : 0.35;
-                    ctx.moveTo(a.x, a.y);
-                    ctx.lineTo(b.x, b.y);
-                    ctx.stroke();
-                }
-            }
-
-            // Nodes
-            nodes.forEach(n => {
-                const [r, g, bv] = n.kind === 'drift' ? TEAL : GOLD;
-                const alpha = n.kind === 'drift' ? 0.45 : 0.85;
-
-                if (n.kind !== 'drift') {
-                    // soft halo
-                    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 5);
-                    grad.addColorStop(0, `rgba(${r},${g},${bv},0.25)`);
-                    grad.addColorStop(1, `rgba(${r},${g},${bv},0)`);
-                    ctx.beginPath();
-                    ctx.fillStyle = grad;
-                    ctx.arc(n.x, n.y, n.r * 5, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-
-                ctx.beginPath();
-                ctx.fillStyle = `rgba(${r},${g},${bv},${alpha})`;
-                ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-                ctx.fill();
-            });
-        }
-
-        function loop() {
-            tick();
-            draw();
-            requestAnimationFrame(loop);
-        }
-
-        // Init
-        resize();
-        buildNodes();
-        loop();
-
-        window.addEventListener('resize', () => { resize(); buildNodes(); }, { passive: true });
-    })();
-
-    // ==================== NAV SCROLL STATE ====================
-    const mainNav = document.getElementById('main-nav');
-    window.addEventListener('scroll', () => {
-        mainNav.classList.toggle('scrolled', window.scrollY > 55);
-    }, { passive: true });
-
-    // ==================== MOBILE MENU ====================
-    const hamburger  = document.getElementById('nav-hamburger');
-    const navLinks   = document.getElementById('nav-links');
-    const hamSpans   = hamburger ? hamburger.querySelectorAll('span') : [];
-
-    function setHamOpen(open) {
-        if (!navLinks) return;
-        navLinks.classList.toggle('open', open);
-        hamSpans[0].style.transform = open ? 'rotate(45deg) translate(4px, 4px)' : '';
-        hamSpans[1].style.opacity   = open ? '0' : '1';
-        hamSpans[2].style.transform = open ? 'rotate(-45deg) translate(4px, -4px)' : '';
-    }
-
-    hamburger && hamburger.addEventListener('click', () => setHamOpen(!navLinks.classList.contains('open')));
-    navLinks  && navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setHamOpen(false)));
-
-    // ==================== SCROLL REVEAL ====================
-    const revealItems = document.querySelectorAll('.reveal');
-    const trackItems  = document.querySelectorAll('.track-item');
-
-    const observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add('in');
-            observer.unobserve(entry.target);
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            nav.style.background = window.scrollY > 100 ? 'rgba(10, 10, 10, 0.98)' : 'rgba(10, 10, 10, 0.9)';
         });
-    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
-    revealItems.forEach(el => observer.observe(el));
-
-    // Staggered track reveal
-    const trackObserver = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            const idx = Array.from(trackItems).indexOf(entry.target);
-            setTimeout(() => entry.target.classList.add('in'), idx * 70);
-            trackObserver.unobserve(entry.target);
-        });
-    }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
-
-    trackItems.forEach(el => trackObserver.observe(el));
     </script>
-
 </body>
 </html>
