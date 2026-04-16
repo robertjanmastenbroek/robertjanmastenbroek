@@ -1,5 +1,253 @@
 [
   {
+    "file": "craftsmanship/855255.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855271.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855469.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855634.mp4",
+    "category": "craftsmanship",
+    "duration_s": 6.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855859.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/856350.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/1093662.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855381.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855432.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855502.mp4",
+    "category": "elemental",
+    "duration_s": 5.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855697.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855965.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/856171.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/856193.mp4",
+    "category": "elemental",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/856295.mp4",
+    "category": "elemental",
+    "duration_s": 5.88,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/856380.mp4",
+    "category": "elemental",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/857032.mp4",
+    "category": "elemental",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/855449.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/855617.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/855770.mp4",
+    "category": "illusion",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856142.mp4",
+    "category": "illusion",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856257.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856356.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856528.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856662.mp4",
+    "category": "illusion",
+    "duration_s": 6.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856831.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856857.mp4",
+    "category": "illusion",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/857040.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/857134.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/857136.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/857146.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
     "file": "nature/1448735.mp4",
     "category": "nature",
     "duration_s": 7.01,
@@ -360,94 +608,6 @@
     "times_used": 0
   },
   {
-    "file": "elemental/1093662.mp4",
-    "category": "elemental",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/855381.mp4",
-    "category": "elemental",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/855432.mp4",
-    "category": "elemental",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/855502.mp4",
-    "category": "elemental",
-    "duration_s": 5.5,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/855697.mp4",
-    "category": "elemental",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/855965.mp4",
-    "category": "elemental",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/856171.mp4",
-    "category": "elemental",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/856193.mp4",
-    "category": "elemental",
-    "duration_s": 7.01,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/856295.mp4",
-    "category": "elemental",
-    "duration_s": 5.88,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/856380.mp4",
-    "category": "elemental",
-    "duration_s": 7.01,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "elemental/857032.mp4",
-    "category": "elemental",
-    "duration_s": 7.01,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
     "file": "sports/1093667.mp4",
     "category": "sports",
     "duration_s": 7.01,
@@ -504,193 +664,9 @@
     "times_used": 0
   },
   {
-    "file": "craftsmanship/855255.mp4",
-    "category": "craftsmanship",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "craftsmanship/855271.mp4",
-    "category": "craftsmanship",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "craftsmanship/855469.mp4",
-    "category": "craftsmanship",
-    "duration_s": 7.01,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "craftsmanship/855634.mp4",
-    "category": "craftsmanship",
-    "duration_s": 6.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "craftsmanship/855859.mp4",
-    "category": "craftsmanship",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "craftsmanship/856350.mp4",
-    "category": "craftsmanship",
-    "duration_s": 7.01,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/855449.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/855617.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/855770.mp4",
-    "category": "illusion",
-    "duration_s": 7.01,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/856142.mp4",
-    "category": "illusion",
-    "duration_s": 7.01,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/856257.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/856356.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/856528.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/856662.mp4",
-    "category": "illusion",
-    "duration_s": 6.63,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/856831.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/856857.mp4",
-    "category": "illusion",
-    "duration_s": 7.01,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/857040.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/857134.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/857136.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "illusion/857146.mp4",
-    "category": "illusion",
-    "duration_s": 7.0,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "viral/Wrap-It-LOL.mp4",
+    "file": "viral/2025-so-far.mp4",
     "category": "viral",
-    "duration_s": 4.1,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "viral/Snake-Bite-Hook.mp4",
-    "category": "viral",
-    "duration_s": 5.066667,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "viral/Sandal-Throw.mp4",
-    "category": "viral",
-    "duration_s": 7.1,
-    "last_used": null,
-    "performance_score": 1.0,
-    "times_used": 0
-  },
-  {
-    "file": "viral/Low-Battery.mp4",
-    "category": "viral",
-    "duration_s": 4.666667,
+    "duration_s": 7.4,
     "last_used": null,
     "performance_score": 1.0,
     "times_used": 0
@@ -712,6 +688,22 @@
     "times_used": 0
   },
   {
+    "file": "viral/Cart-Crash.mp4",
+    "category": "viral",
+    "duration_s": 4.466667,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/DashCammer.mp4",
+    "category": "viral",
+    "duration_s": 16.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
     "file": "viral/Hi-Front-Seat.mp4",
     "category": "viral",
     "duration_s": 2.733333,
@@ -720,9 +712,57 @@
     "times_used": 0
   },
   {
-    "file": "viral/Cart-Crash.mp4",
+    "file": "viral/Low-Battery.mp4",
     "category": "viral",
-    "duration_s": 4.466667,
+    "duration_s": 4.666667,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/No-Crunch.mp4",
+    "category": "viral",
+    "duration_s": 5.033333,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Rice-Bear.mp4",
+    "category": "viral",
+    "duration_s": 4.833333,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Roof-Roller.mp4",
+    "category": "viral",
+    "duration_s": 5.066667,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Sandal-Throw.mp4",
+    "category": "viral",
+    "duration_s": 7.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Slap-Flower.mp4",
+    "category": "viral",
+    "duration_s": 7.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Snake-Bite-Hook.mp4",
+    "category": "viral",
+    "duration_s": 5.066667,
     "last_used": null,
     "performance_score": 1.0,
     "times_used": 0
@@ -744,41 +784,3289 @@
     "times_used": 0
   },
   {
-    "file": "viral/Slap-Flower.mp4",
+    "file": "viral/Wrap-It-LOL.mp4",
     "category": "viral",
-    "duration_s": 7.9,
+    "duration_s": 4.1,
     "last_used": null,
     "performance_score": 1.0,
     "times_used": 0
   },
   {
-    "file": "viral/DashCammer.mp4",
+    "file": "viral/a-man-crying.mp4",
     "category": "viral",
-    "duration_s": 16.6,
+    "duration_s": 12.0,
     "last_used": null,
     "performance_score": 1.0,
     "times_used": 0
   },
   {
-    "file": "viral/Rice-Bear.mp4",
+    "file": "viral/air-bud-fail.mp4",
     "category": "viral",
-    "duration_s": 4.833333,
+    "duration_s": 9.07,
     "last_used": null,
     "performance_score": 1.0,
     "times_used": 0
   },
   {
-    "file": "viral/No-Crunch.mp4",
+    "file": "viral/ape-water.mp4",
     "category": "viral",
-    "duration_s": 5.033333,
+    "duration_s": 1.93,
     "last_used": null,
     "performance_score": 1.0,
     "times_used": 0
   },
   {
-    "file": "viral/Roof-Roller.mp4",
+    "file": "viral/arigato.mp4",
     "category": "viral",
-    "duration_s": 5.066667,
+    "duration_s": 13.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/asian-dancing-in-trance.mp4",
+    "category": "viral",
+    "duration_s": 15.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/atm-swipe.mp4",
+    "category": "viral",
+    "duration_s": 8.75,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/atv-roll.mp4",
+    "category": "viral",
+    "duration_s": 3.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/axe-in-camera.mp4",
+    "category": "viral",
+    "duration_s": 9.93,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/baby-face.mp4",
+    "category": "viral",
+    "duration_s": 4.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/baby-fall-down-slide.mp4",
+    "category": "viral",
+    "duration_s": 2.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/baby-spitting-up.mp4",
+    "category": "viral",
+    "duration_s": 0.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/back-breaker.mp4",
+    "category": "viral",
+    "duration_s": 4.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/back-flop.mp4",
+    "category": "viral",
+    "duration_s": 2.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bad-drop-in.mp4",
+    "category": "viral",
+    "duration_s": 8.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/badminton-face.mp4",
+    "category": "viral",
+    "duration_s": 8.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ball-off-door.mp4",
+    "category": "viral",
+    "duration_s": 1.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/baseball-catcher.mp4",
+    "category": "viral",
+    "duration_s": 6.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/baseball-foul.mp4",
+    "category": "viral",
+    "duration_s": 2.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/basketball-fail.mp4",
+    "category": "viral",
+    "duration_s": 3.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/basketball-fake-out.mp4",
+    "category": "viral",
+    "duration_s": 3.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/basketball-fake.mp4",
+    "category": "viral",
+    "duration_s": 4.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/basketball-roof.mp4",
+    "category": "viral",
+    "duration_s": 6.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/basketball-smash.mp4",
+    "category": "viral",
+    "duration_s": 3.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bat-fling.mp4",
+    "category": "viral",
+    "duration_s": 8.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/beach-message.mp4",
+    "category": "viral",
+    "duration_s": 10.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bear-attack.mp4",
+    "category": "viral",
+    "duration_s": 8.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/big-sled.mp4",
+    "category": "viral",
+    "duration_s": 3.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/big-splash.mp4",
+    "category": "viral",
+    "duration_s": 2.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/big-trip.mp4",
+    "category": "viral",
+    "duration_s": 3.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bike-crash.mp4",
+    "category": "viral",
+    "duration_s": 3.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bike-drop.mp4",
+    "category": "viral",
+    "duration_s": 2.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bike-flip.mp4",
+    "category": "viral",
+    "duration_s": 3.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bike-flipper.mp4",
+    "category": "viral",
+    "duration_s": 7.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bike-plant.mp4",
+    "category": "viral",
+    "duration_s": 2.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bike-trick.mp4",
+    "category": "viral",
+    "duration_s": 5.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bike-tumble.mp4",
+    "category": "viral",
+    "duration_s": 1.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/birthday-fireworks.mp4",
+    "category": "viral",
+    "duration_s": 12.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bmx-air.mp4",
+    "category": "viral",
+    "duration_s": 6.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bmx-back-fail.mp4",
+    "category": "viral",
+    "duration_s": 2.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bmx-budget.mp4",
+    "category": "viral",
+    "duration_s": 3.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bmx-flipper.mp4",
+    "category": "viral",
+    "duration_s": 4.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bmx-stairs.mp4",
+    "category": "viral",
+    "duration_s": 2.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/board-break.mp4",
+    "category": "viral",
+    "duration_s": 2.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/boarder-flip.mp4",
+    "category": "viral",
+    "duration_s": 5.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bottle-ninja.mp4",
+    "category": "viral",
+    "duration_s": 2.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bottle-opener.mp4",
+    "category": "viral",
+    "duration_s": 6.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bottle-toss.mp4",
+    "category": "viral",
+    "duration_s": 3.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bowling-ballz.mp4",
+    "category": "viral",
+    "duration_s": 4.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bowling-fail.mp4",
+    "category": "viral",
+    "duration_s": 5.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bowling-for-balls.mp4",
+    "category": "viral",
+    "duration_s": 7.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/boxing-ko.mp4",
+    "category": "viral",
+    "duration_s": 1.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/brain-thinking.mp4",
+    "category": "viral",
+    "duration_s": 9.98,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/break-camera.mp4",
+    "category": "viral",
+    "duration_s": 3.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bridge-drop.mp4",
+    "category": "viral",
+    "duration_s": 3.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bucket-toss.mp4",
+    "category": "viral",
+    "duration_s": 9.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bull-charging.mp4",
+    "category": "viral",
+    "duration_s": 1.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bull-stomp.mp4",
+    "category": "viral",
+    "duration_s": 3.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bumpy-slide.mp4",
+    "category": "viral",
+    "duration_s": 3.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bush-message.mp4",
+    "category": "viral",
+    "duration_s": 3.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/bye-ribs.mp4",
+    "category": "viral",
+    "duration_s": 4.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cage-flip.mp4",
+    "category": "viral",
+    "duration_s": 5.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/camera-smash.mp4",
+    "category": "viral",
+    "duration_s": 1.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/candle-whack.mp4",
+    "category": "viral",
+    "duration_s": 1.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/car-cornerback.mp4",
+    "category": "viral",
+    "duration_s": 1.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/car-flip-over.mp4",
+    "category": "viral",
+    "duration_s": 2.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/car-lift.mp4",
+    "category": "viral",
+    "duration_s": 7.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cat-bag.mp4",
+    "category": "viral",
+    "duration_s": 11.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cat-dancing.mp4",
+    "category": "viral",
+    "duration_s": 10.84,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cat-driving.mp4",
+    "category": "viral",
+    "duration_s": 12.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cat-toss.mp4",
+    "category": "viral",
+    "duration_s": 6.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/catch-plane.mp4",
+    "category": "viral",
+    "duration_s": 3.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cats-celebrating-with-cake.mp4",
+    "category": "viral",
+    "duration_s": 15.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cement-slide.mp4",
+    "category": "viral",
+    "duration_s": 3.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/chair-grind.mp4",
+    "category": "viral",
+    "duration_s": 1.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/champions-proud.mp4",
+    "category": "viral",
+    "duration_s": 9.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/charlie-brown.mp4",
+    "category": "viral",
+    "duration_s": 9.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/chicken-explosion.mp4",
+    "category": "viral",
+    "duration_s": 3.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/chicken-lays-egg.mp4",
+    "category": "viral",
+    "duration_s": 1.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/chill-guy-coffee.mp4",
+    "category": "viral",
+    "duration_s": 9.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/coaster-drop.mp4",
+    "category": "viral",
+    "duration_s": 3.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/coconut-tree.mp4",
+    "category": "viral",
+    "duration_s": 3.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/confused-cat.mp4",
+    "category": "viral",
+    "duration_s": 8.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/construction-water.mp4",
+    "category": "viral",
+    "duration_s": 4.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/contractor-injury.mp4",
+    "category": "viral",
+    "duration_s": 3.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cop-slide.mp4",
+    "category": "viral",
+    "duration_s": 4.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/corn-throw.mp4",
+    "category": "viral",
+    "duration_s": 0.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/couch-airbag.mp4",
+    "category": "viral",
+    "duration_s": 1.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/count-boom.mp4",
+    "category": "viral",
+    "duration_s": 8.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/counting-less-money.mp4",
+    "category": "viral",
+    "duration_s": 9.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/counting-money.mp4",
+    "category": "viral",
+    "duration_s": 9.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cow-roll.mp4",
+    "category": "viral",
+    "duration_s": 4.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cow-roof.mp4",
+    "category": "viral",
+    "duration_s": 5.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/crash-lift.mp4",
+    "category": "viral",
+    "duration_s": 3.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cricket-crash.mp4",
+    "category": "viral",
+    "duration_s": 3.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cup-flip.mp4",
+    "category": "viral",
+    "duration_s": 13.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cup-score.mp4",
+    "category": "viral",
+    "duration_s": 16.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cut-coconut-water.mp4",
+    "category": "viral",
+    "duration_s": 3.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/cute-pigs.mp4",
+    "category": "viral",
+    "duration_s": 10.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/dent-hood.mp4",
+    "category": "viral",
+    "duration_s": 1.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/dirt-bike-fall.mp4",
+    "category": "viral",
+    "duration_s": 1.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/dirt-bike-flip.mp4",
+    "category": "viral",
+    "duration_s": 3.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/diver-drop.mp4",
+    "category": "viral",
+    "duration_s": 3.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/dog-kick-to-face.mp4",
+    "category": "viral",
+    "duration_s": 5.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/dog-kick.mp4",
+    "category": "viral",
+    "duration_s": 3.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/dog-stay.mp4",
+    "category": "viral",
+    "duration_s": 6.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/dog-sweep.mp4",
+    "category": "viral",
+    "duration_s": 1.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/donal-trump-s-son.mp4",
+    "category": "viral",
+    "duration_s": 9.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/donkey-takes-tumble.mp4",
+    "category": "viral",
+    "duration_s": 1.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/double-everything.mp4",
+    "category": "viral",
+    "duration_s": 4.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/driver-punching.mp4",
+    "category": "viral",
+    "duration_s": 13.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/driving-cow.mp4",
+    "category": "viral",
+    "duration_s": 4.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/duck-heart.mp4",
+    "category": "viral",
+    "duration_s": 5.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/eagle-poo.mp4",
+    "category": "viral",
+    "duration_s": 1.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/eat-this.mp4",
+    "category": "viral",
+    "duration_s": 2.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/egg-pool.mp4",
+    "category": "viral",
+    "duration_s": 8.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/electrocuted-bird.mp4",
+    "category": "viral",
+    "duration_s": 1.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/exhaust-smoke.mp4",
+    "category": "viral",
+    "duration_s": 0.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/extreme-bike-crash.mp4",
+    "category": "viral",
+    "duration_s": 2.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/face-plant.mp4",
+    "category": "viral",
+    "duration_s": 1.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/facial-peel.mp4",
+    "category": "viral",
+    "duration_s": 4.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/falling-off-treadmill.mp4",
+    "category": "viral",
+    "duration_s": 2.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/fast-calculation.mp4",
+    "category": "viral",
+    "duration_s": 5.41,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/fat-guy-dancing.mp4",
+    "category": "viral",
+    "duration_s": 10.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/fat-mouse.mp4",
+    "category": "viral",
+    "duration_s": 7.71,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/feed-fish.mp4",
+    "category": "viral",
+    "duration_s": 10.93,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/feed-gator.mp4",
+    "category": "viral",
+    "duration_s": 4.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/fighter-falling-over.mp4",
+    "category": "viral",
+    "duration_s": 1.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/firework-surprise.mp4",
+    "category": "viral",
+    "duration_s": 9.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/flip-bounce.mp4",
+    "category": "viral",
+    "duration_s": 2.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/flip-on-head.mp4",
+    "category": "viral",
+    "duration_s": 5.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/flying-drop-phone.mp4",
+    "category": "viral",
+    "duration_s": 1.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/football-tackle.mp4",
+    "category": "viral",
+    "duration_s": 3.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/football-toss.mp4",
+    "category": "viral",
+    "duration_s": 2.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/freezer-bomb.mp4",
+    "category": "viral",
+    "duration_s": 9.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/frog-jump.mp4",
+    "category": "viral",
+    "duration_s": 6.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/front-kick-ko.mp4",
+    "category": "viral",
+    "duration_s": 5.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/front-roll.mp4",
+    "category": "viral",
+    "duration_s": 2.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/fucking-chill.mp4",
+    "category": "viral",
+    "duration_s": 18.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/funny-chug.mp4",
+    "category": "viral",
+    "duration_s": 5.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/funny-guy-dancing.mp4",
+    "category": "viral",
+    "duration_s": 8.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/giant-axe.mp4",
+    "category": "viral",
+    "duration_s": 4.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/gingerbread-fall.mp4",
+    "category": "viral",
+    "duration_s": 2.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/glass-break.mp4",
+    "category": "viral",
+    "duration_s": 2.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/golf-bang.mp4",
+    "category": "viral",
+    "duration_s": 1.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/golf-miss.mp4",
+    "category": "viral",
+    "duration_s": 2.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/golf-shot.mp4",
+    "category": "viral",
+    "duration_s": 1.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/golf-spin.mp4",
+    "category": "viral",
+    "duration_s": 2.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/golf-surprise.mp4",
+    "category": "viral",
+    "duration_s": 8.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/gorilla-butt.mp4",
+    "category": "viral",
+    "duration_s": 2.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/gorilla-spin.mp4",
+    "category": "viral",
+    "duration_s": 3.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/gorilla-thinking.mp4",
+    "category": "viral",
+    "duration_s": 9.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/head-bang.mp4",
+    "category": "viral",
+    "duration_s": 14.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/head-on-crash.mp4",
+    "category": "viral",
+    "duration_s": 2.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/heights-jump.mp4",
+    "category": "viral",
+    "duration_s": 4.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/here-fishy-fishy.mp4",
+    "category": "viral",
+    "duration_s": 18.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/high-heel-slip.mp4",
+    "category": "viral",
+    "duration_s": 2.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/hit-by-car-flip.mp4",
+    "category": "viral",
+    "duration_s": 1.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/hood-bump.mp4",
+    "category": "viral",
+    "duration_s": 3.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/horse-kick.mp4",
+    "category": "viral",
+    "duration_s": 1.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/horse-kicker.mp4",
+    "category": "viral",
+    "duration_s": 3.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/horse-kicks-chicken.mp4",
+    "category": "viral",
+    "duration_s": 2.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/i-don-t-trust-her.mp4",
+    "category": "viral",
+    "duration_s": 8.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/i-m-so-sorry.mp4",
+    "category": "viral",
+    "duration_s": 11.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/i-want-some-more.mp4",
+    "category": "viral",
+    "duration_s": 4.39,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ice-balls.mp4",
+    "category": "viral",
+    "duration_s": 3.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ice-coffee-shake.mp4",
+    "category": "viral",
+    "duration_s": 3.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ice-destroy.mp4",
+    "category": "viral",
+    "duration_s": 15.35,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ice-screw.mp4",
+    "category": "viral",
+    "duration_s": 16.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ice-slide.mp4",
+    "category": "viral",
+    "duration_s": 2.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/impressive-dive.mp4",
+    "category": "viral",
+    "duration_s": 2.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/inertia-bottle.mp4",
+    "category": "viral",
+    "duration_s": 5.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/jerry-peers-into-hole.mp4",
+    "category": "viral",
+    "duration_s": 4.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/josie-bike.mp4",
+    "category": "viral",
+    "duration_s": 3.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/jump-cone.mp4",
+    "category": "viral",
+    "duration_s": 1.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/jump-in-pool.mp4",
+    "category": "viral",
+    "duration_s": 2.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/jump-into-water.mp4",
+    "category": "viral",
+    "duration_s": 2.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/jumping-off-motorcycle.mp4",
+    "category": "viral",
+    "duration_s": 1.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/jurassic-park-shock.mp4",
+    "category": "viral",
+    "duration_s": 6.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/just-be-normal.mp4",
+    "category": "viral",
+    "duration_s": 5.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kaboom-baby.mp4",
+    "category": "viral",
+    "duration_s": 7.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/karate-flips.mp4",
+    "category": "viral",
+    "duration_s": 7.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/katy-perry-suspense.mp4",
+    "category": "viral",
+    "duration_s": 14.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ketchup-swing.mp4",
+    "category": "viral",
+    "duration_s": 5.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kick-back-ball.mp4",
+    "category": "viral",
+    "duration_s": 4.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kick-bottle.mp4",
+    "category": "viral",
+    "duration_s": 1.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kick-golf-ball.mp4",
+    "category": "viral",
+    "duration_s": 2.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kick-slo-mo.mp4",
+    "category": "viral",
+    "duration_s": 3.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kick-to-head.mp4",
+    "category": "viral",
+    "duration_s": 1.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kick-water-bottle.mp4",
+    "category": "viral",
+    "duration_s": 1.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kickboxer-ko.mp4",
+    "category": "viral",
+    "duration_s": 1.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/kid-heights.mp4",
+    "category": "viral",
+    "duration_s": 3.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/knife-fall.mp4",
+    "category": "viral",
+    "duration_s": 6.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/launch-tackle.mp4",
+    "category": "viral",
+    "duration_s": 1.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/leg-water-splash.mp4",
+    "category": "viral",
+    "duration_s": 0.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/leo-highlights.mp4",
+    "category": "viral",
+    "duration_s": 4.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/lil-whip.mp4",
+    "category": "viral",
+    "duration_s": 1.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/lil-zipline.mp4",
+    "category": "viral",
+    "duration_s": 2.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/little-javelin-throw.mp4",
+    "category": "viral",
+    "duration_s": 1.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/little-laces.mp4",
+    "category": "viral",
+    "duration_s": 3.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/little-shot-put.mp4",
+    "category": "viral",
+    "duration_s": 2.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/little-tug.mp4",
+    "category": "viral",
+    "duration_s": 7.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/look-at-you.mp4",
+    "category": "viral",
+    "duration_s": 5.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/love-tap.mp4",
+    "category": "viral",
+    "duration_s": 4.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/lower-tone.mp4",
+    "category": "viral",
+    "duration_s": 5.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/lumber-toss.mp4",
+    "category": "viral",
+    "duration_s": 11.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/man-dancing-to-give-me-everything-tonight.mp4",
+    "category": "viral",
+    "duration_s": 11.05,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/man-falling.mp4",
+    "category": "viral",
+    "duration_s": 1.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/man-laughing-lying-on-bed.mp4",
+    "category": "viral",
+    "duration_s": 8.22,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/man-spiderman.mp4",
+    "category": "viral",
+    "duration_s": 7.61,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/marriage-advice.mp4",
+    "category": "viral",
+    "duration_s": 1.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/massive-splash.mp4",
+    "category": "viral",
+    "duration_s": 7.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/matthew-in-love.mp4",
+    "category": "viral",
+    "duration_s": 11.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/mid-air-crash.mp4",
+    "category": "viral",
+    "duration_s": 1.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/mini-sledgehammer.mp4",
+    "category": "viral",
+    "duration_s": 3.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/miss-a-sound.mp4",
+    "category": "viral",
+    "duration_s": 6.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/missed-pass.mp4",
+    "category": "viral",
+    "duration_s": 2.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/monkey-bars.mp4",
+    "category": "viral",
+    "duration_s": 3.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/monkey-mouth.mp4",
+    "category": "viral",
+    "duration_s": 6.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/monkey-window.mp4",
+    "category": "viral",
+    "duration_s": 1.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/moon-jump.mp4",
+    "category": "viral",
+    "duration_s": 5.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/motor-face-plant.mp4",
+    "category": "viral",
+    "duration_s": 2.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/motor-tree.mp4",
+    "category": "viral",
+    "duration_s": 5.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/motorcycle-crash.mp4",
+    "category": "viral",
+    "duration_s": 1.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/motorcycle-flip-crash.mp4",
+    "category": "viral",
+    "duration_s": 1.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/motorcycle-flip.mp4",
+    "category": "viral",
+    "duration_s": 1.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/motorcycle-slipper.mp4",
+    "category": "viral",
+    "duration_s": 2.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/muddy-surprise.mp4",
+    "category": "viral",
+    "duration_s": 5.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/night-soccer.mp4",
+    "category": "viral",
+    "duration_s": 2.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ninja-bottle.mp4",
+    "category": "viral",
+    "duration_s": 1.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ninja-girl.mp4",
+    "category": "viral",
+    "duration_s": 4.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ninja-kick.mp4",
+    "category": "viral",
+    "duration_s": 0.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/no-babies.mp4",
+    "category": "viral",
+    "duration_s": 2.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/no-no-no-fuck-no.mp4",
+    "category": "viral",
+    "duration_s": 9.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/no-pants-workout.mp4",
+    "category": "viral",
+    "duration_s": 5.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/no-text-back.mp4",
+    "category": "viral",
+    "duration_s": 1.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/no-you-re-not.mp4",
+    "category": "viral",
+    "duration_s": 8.93,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/open-fossil.mp4",
+    "category": "viral",
+    "duration_s": 15.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/opposite-cookie.mp4",
+    "category": "viral",
+    "duration_s": 4.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/out-of-bounds.mp4",
+    "category": "viral",
+    "duration_s": 2.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pan-face.mp4",
+    "category": "viral",
+    "duration_s": 4.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pancake-flip.mp4",
+    "category": "viral",
+    "duration_s": 3.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/parachute-run.mp4",
+    "category": "viral",
+    "duration_s": 7.93,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/parachute.mp4",
+    "category": "viral",
+    "duration_s": 5.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/parking-meter.mp4",
+    "category": "viral",
+    "duration_s": 2.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/parkour-fail.mp4",
+    "category": "viral",
+    "duration_s": 2.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pass-shovel.mp4",
+    "category": "viral",
+    "duration_s": 2.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pig-flop.mp4",
+    "category": "viral",
+    "duration_s": 1.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pinata-catch.mp4",
+    "category": "viral",
+    "duration_s": 2.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pinata-fail.mp4",
+    "category": "viral",
+    "duration_s": 2.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/plane-crash.mp4",
+    "category": "viral",
+    "duration_s": 8.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/plate-toss.mp4",
+    "category": "viral",
+    "duration_s": 2.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/playground-fail.mp4",
+    "category": "viral",
+    "duration_s": 8.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pogo-leap.mp4",
+    "category": "viral",
+    "duration_s": 4.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pogo-stick-fail.mp4",
+    "category": "viral",
+    "duration_s": 2.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pole-vault-slide.mp4",
+    "category": "viral",
+    "duration_s": 2.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pool-flipper.mp4",
+    "category": "viral",
+    "duration_s": 4.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pool-jump-fail.mp4",
+    "category": "viral",
+    "duration_s": 4.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/popcorn-wine.mp4",
+    "category": "viral",
+    "duration_s": 13.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pot-smash.mp4",
+    "category": "viral",
+    "duration_s": 3.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/powder-boom.mp4",
+    "category": "viral",
+    "duration_s": 1.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/power-slap-fall.mp4",
+    "category": "viral",
+    "duration_s": 0.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/prank-mickey.mp4",
+    "category": "viral",
+    "duration_s": 20.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pretzel-surprise.mp4",
+    "category": "viral",
+    "duration_s": 4.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/pull-up-fail.mp4",
+    "category": "viral",
+    "duration_s": 1.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/punch-in-face.mp4",
+    "category": "viral",
+    "duration_s": 0.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/quick-door.mp4",
+    "category": "viral",
+    "duration_s": 2.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/raccoon-surprise.mp4",
+    "category": "viral",
+    "duration_s": 16.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/rat-dancing.mp4",
+    "category": "viral",
+    "duration_s": 15.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/rate-this-dunk.mp4",
+    "category": "viral",
+    "duration_s": 4.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/rear-end-bike.mp4",
+    "category": "viral",
+    "duration_s": 3.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/rear-ended.mp4",
+    "category": "viral",
+    "duration_s": 9.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/reverse-kicker.mp4",
+    "category": "viral",
+    "duration_s": 2.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/rice-donut.mp4",
+    "category": "viral",
+    "duration_s": 5.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/river-jump.mp4",
+    "category": "viral",
+    "duration_s": 3.87,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/roll-off-stretcher.mp4",
+    "category": "viral",
+    "duration_s": 1.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/roof-collapse.mp4",
+    "category": "viral",
+    "duration_s": 2.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/roof-pong.mp4",
+    "category": "viral",
+    "duration_s": 2.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/rope-swing.mp4",
+    "category": "viral",
+    "duration_s": 4.11,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/rubik-s-cube.mp4",
+    "category": "viral",
+    "duration_s": 2.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sack-whack.mp4",
+    "category": "viral",
+    "duration_s": 4.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/samurai-sword.mp4",
+    "category": "viral",
+    "duration_s": 2.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sand-soccer.mp4",
+    "category": "viral",
+    "duration_s": 10.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sandy-flip-fail.mp4",
+    "category": "viral",
+    "duration_s": 2.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sandy-front-flip.mp4",
+    "category": "viral",
+    "duration_s": 2.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sandy-neck.mp4",
+    "category": "viral",
+    "duration_s": 2.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/school-girl-punch.mp4",
+    "category": "viral",
+    "duration_s": 7.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/scooter-fail.mp4",
+    "category": "viral",
+    "duration_s": 1.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/scooter-fence-crash.mp4",
+    "category": "viral",
+    "duration_s": 4.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/scooter-ramp.mp4",
+    "category": "viral",
+    "duration_s": 4.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/scrape-down.mp4",
+    "category": "viral",
+    "duration_s": 6.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/screw-spin.mp4",
+    "category": "viral",
+    "duration_s": 17.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/seagull-grab.mp4",
+    "category": "viral",
+    "duration_s": 9.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/shoe-laces.mp4",
+    "category": "viral",
+    "duration_s": 4.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/shrek-dancing.mp4",
+    "category": "viral",
+    "duration_s": 13.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sign-smash.mp4",
+    "category": "viral",
+    "duration_s": 1.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/skate-slip.mp4",
+    "category": "viral",
+    "duration_s": 4.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/skate-smash.mp4",
+    "category": "viral",
+    "duration_s": 3.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/skateboard-flop.mp4",
+    "category": "viral",
+    "duration_s": 3.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/skateboard-slam.mp4",
+    "category": "viral",
+    "duration_s": 2.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/skateboard-stair-jump.mp4",
+    "category": "viral",
+    "duration_s": 2.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/skater-boy.mp4",
+    "category": "viral",
+    "duration_s": 3.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/skirt-hide.mp4",
+    "category": "viral",
+    "duration_s": 3.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/slap-happy.mp4",
+    "category": "viral",
+    "duration_s": 2.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/slap-to-kick.mp4",
+    "category": "viral",
+    "duration_s": 2.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sledge-hammer.mp4",
+    "category": "viral",
+    "duration_s": 1.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/slip-in-mud.mp4",
+    "category": "viral",
+    "duration_s": 1.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/slip-run.mp4",
+    "category": "viral",
+    "duration_s": 2.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/small-boat.mp4",
+    "category": "viral",
+    "duration_s": 9.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/small-hula-hoop.mp4",
+    "category": "viral",
+    "duration_s": 10.93,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/small-rope.mp4",
+    "category": "viral",
+    "duration_s": 1.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/small-wheel.mp4",
+    "category": "viral",
+    "duration_s": 2.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/smash-shake.mp4",
+    "category": "viral",
+    "duration_s": 8.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/snake-bite.mp4",
+    "category": "viral",
+    "duration_s": 6.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/snow-skid.mp4",
+    "category": "viral",
+    "duration_s": 2.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/snow-splash.mp4",
+    "category": "viral",
+    "duration_s": 8.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/snowball-boom.mp4",
+    "category": "viral",
+    "duration_s": 6.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/snowball-splash.mp4",
+    "category": "viral",
+    "duration_s": 4.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/snowball-surprise.mp4",
+    "category": "viral",
+    "duration_s": 7.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/snowboard-flip.mp4",
+    "category": "viral",
+    "duration_s": 1.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/snowy-surprise.mp4",
+    "category": "viral",
+    "duration_s": 5.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/soccer-ball-window.mp4",
+    "category": "viral",
+    "duration_s": 1.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/soccer-juggle.mp4",
+    "category": "viral",
+    "duration_s": 3.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/soccer-launch.mp4",
+    "category": "viral",
+    "duration_s": 2.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/soccer-rebound.mp4",
+    "category": "viral",
+    "duration_s": 2.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/soccer-stand.mp4",
+    "category": "viral",
+    "duration_s": 2.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/soccer-surprise.mp4",
+    "category": "viral",
+    "duration_s": 3.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/soccer-tire.mp4",
+    "category": "viral",
+    "duration_s": 5.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/soda-bottle-explosion.mp4",
+    "category": "viral",
+    "duration_s": 3.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/softball-scream.mp4",
+    "category": "viral",
+    "duration_s": 4.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/softball-to-camera.mp4",
+    "category": "viral",
+    "duration_s": 7.2,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/spark-light.mp4",
+    "category": "viral",
+    "duration_s": 6.23,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/speed-packing.mp4",
+    "category": "viral",
+    "duration_s": 4.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/spider-butt.mp4",
+    "category": "viral",
+    "duration_s": 3.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/spiderman-entrance.mp4",
+    "category": "viral",
+    "duration_s": 2.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/spin-kick.mp4",
+    "category": "viral",
+    "duration_s": 2.07,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/squat-fail.mp4",
+    "category": "viral",
+    "duration_s": 2.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/squid-game-success.mp4",
+    "category": "viral",
+    "duration_s": 10.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sticker-wipe.mp4",
+    "category": "viral",
+    "duration_s": 53.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/stop-spending.mp4",
+    "category": "viral",
+    "duration_s": 4.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/street-surfing.mp4",
+    "category": "viral",
+    "duration_s": 4.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/success-cry.mp4",
+    "category": "viral",
+    "duration_s": 7.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sun-launch.mp4",
+    "category": "viral",
+    "duration_s": 4.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/surf-slam.mp4",
+    "category": "viral",
+    "duration_s": 5.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/sweet-shoes.mp4",
+    "category": "viral",
+    "duration_s": 10.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/swinging-glove.mp4",
+    "category": "viral",
+    "duration_s": 7.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/table-belly.mp4",
+    "category": "viral",
+    "duration_s": 3.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tennis-smash.mp4",
+    "category": "viral",
+    "duration_s": 2.57,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/that-s-enough-for-me-today.mp4",
+    "category": "viral",
+    "duration_s": 5.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/that-s-so-nice.mp4",
+    "category": "viral",
+    "duration_s": 6.24,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/the-type-of-shit-i-am-on.mp4",
+    "category": "viral",
+    "duration_s": 5.85,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/theme-park.mp4",
+    "category": "viral",
+    "duration_s": 4.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/there-is-no-passion.mp4",
+    "category": "viral",
+    "duration_s": 7.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/throw-shovel.mp4",
+    "category": "viral",
+    "duration_s": 11.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tire-exploding.mp4",
+    "category": "viral",
+    "duration_s": 1.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tire-pop.mp4",
+    "category": "viral",
+    "duration_s": 6.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tire-popper.mp4",
+    "category": "viral",
+    "duration_s": 8.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tongue-punch.mp4",
+    "category": "viral",
+    "duration_s": 2.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tony-hawk.mp4",
+    "category": "viral",
+    "duration_s": 4.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tp-toss.mp4",
+    "category": "viral",
+    "duration_s": 2.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/trail-flipper.mp4",
+    "category": "viral",
+    "duration_s": 2.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/trash-bag-fail.mp4",
+    "category": "viral",
+    "duration_s": 2.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/trash-toss.mp4",
+    "category": "viral",
+    "duration_s": 21.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tree-chop.mp4",
+    "category": "viral",
+    "duration_s": 20.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tree-fall.mp4",
+    "category": "viral",
+    "duration_s": 4.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tree-jump.mp4",
+    "category": "viral",
+    "duration_s": 1.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tree-smash.mp4",
+    "category": "viral",
+    "duration_s": 4.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tree-surprise.mp4",
+    "category": "viral",
+    "duration_s": 5.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/truck-door-opening.mp4",
+    "category": "viral",
+    "duration_s": 1.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/truck-flip.mp4",
+    "category": "viral",
+    "duration_s": 8.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/trust-fall-fail.mp4",
+    "category": "viral",
+    "duration_s": 1.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tube-launch.mp4",
+    "category": "viral",
+    "duration_s": 2.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/tuck-roll.mp4",
+    "category": "viral",
+    "duration_s": 2.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/turn-look.mp4",
+    "category": "viral",
+    "duration_s": 3.7,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/turtle-bite.mp4",
+    "category": "viral",
+    "duration_s": 11.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/two-goats.mp4",
+    "category": "viral",
+    "duration_s": 5.64,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/two-puppets.mp4",
+    "category": "viral",
+    "duration_s": 8.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ufc-cartwheel.mp4",
+    "category": "viral",
+    "duration_s": 1.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ufc-knockout.mp4",
+    "category": "viral",
+    "duration_s": 3.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/ufc-slap.mp4",
+    "category": "viral",
+    "duration_s": 2.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/underwear-phone.mp4",
+    "category": "viral",
+    "duration_s": 4.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/unicycle-smash.mp4",
+    "category": "viral",
+    "duration_s": 4.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/uppercut.mp4",
+    "category": "viral",
+    "duration_s": 3.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/using-calculator-crying.mp4",
+    "category": "viral",
+    "duration_s": 7.17,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/vodka-stairs.mp4",
+    "category": "viral",
+    "duration_s": 2.03,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/volley-smash.mp4",
+    "category": "viral",
+    "duration_s": 3.43,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wake-up-water.mp4",
+    "category": "viral",
+    "duration_s": 4.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wall-climber.mp4",
+    "category": "viral",
+    "duration_s": 8.37,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/warrior-flip.mp4",
+    "category": "viral",
+    "duration_s": 4.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/water-jug.mp4",
+    "category": "viral",
+    "duration_s": 4.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/water-launch.mp4",
+    "category": "viral",
+    "duration_s": 3.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/water-leap.mp4",
+    "category": "viral",
+    "duration_s": 6.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/water-on-phone.mp4",
+    "category": "viral",
+    "duration_s": 3.73,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/water-ride-splash.mp4",
+    "category": "viral",
+    "duration_s": 6.83,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/watermelon-split.mp4",
+    "category": "viral",
+    "duration_s": 3.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wave-crash.mp4",
+    "category": "viral",
+    "duration_s": 3.13,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/we-can-t-go-over-it.mp4",
+    "category": "viral",
+    "duration_s": 8.67,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wedding-cry.mp4",
+    "category": "viral",
+    "duration_s": 4.33,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/what-is-it.mp4",
+    "category": "viral",
+    "duration_s": 5.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/what-the-fuck-s-that.mp4",
+    "category": "viral",
+    "duration_s": 5.97,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wheely-fail.mp4",
+    "category": "viral",
+    "duration_s": 5.4,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/why-are-you-crying.mp4",
+    "category": "viral",
+    "duration_s": 14.47,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/will-smith-telescope.mp4",
+    "category": "viral",
+    "duration_s": 4.3,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wind-shield-smash.mp4",
+    "category": "viral",
+    "duration_s": 7.27,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/windmill-ball.mp4",
+    "category": "viral",
+    "duration_s": 4.53,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wine-shot.mp4",
+    "category": "viral",
+    "duration_s": 1.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wire-pop.mp4",
+    "category": "viral",
+    "duration_s": 6.77,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wo0o.mp4",
+    "category": "viral",
+    "duration_s": 3.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/wrong-bite.mp4",
+    "category": "viral",
+    "duration_s": 3.93,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/yes-head-nod-alfred-christian-bale-toby-maguire-caprio-tom-cruise.mp4",
+    "category": "viral",
+    "duration_s": 16.88,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/you-keep-talking-man-shut-the-fuck-up.mp4",
+    "category": "viral",
+    "duration_s": 6.27,
     "last_used": null,
     "performance_score": 1.0,
     "times_used": 0
