@@ -26,6 +26,10 @@ PLISTS=(
   com.rjm.brain-l2          # strategic pass, weekly Sun 20:00 CET
   com.rjm.brain-veto-check  # execute due proposals, hourly
   com.rjm.brain-assess      # Growth Health Score, daily 08:05 CET
+  # Data + external-platform scrapers (do not share the rjm-run-agent wrapper)
+  com.rjm.spotify-scrape    # daily 17:30 CET — Playwright scrape, feeds learning loop
+  com.rjm.youtube-review    # daily 10:00 CET — YouTube Studio daily review
+  com.rjm.token-refresh     # IG/FB long-lived token refresh
 )
 
 cmd="${1:-status}"
@@ -77,6 +81,9 @@ install_all() {
   echo "  brain-l2         — Sunday 20:00 CET (BTL strategic: channel reallocation)"
   echo "  brain-veto-check — hourly (BTL: execute due proposals)"
   echo "  brain-assess     — daily at 08:05 CET (BTL: Growth Health Score)"
+  echo "  spotify-scrape   — daily at 17:30 CET (Playwright → spotify_stats)"
+  echo "  youtube-review   — daily at 10:00 CET (YouTube Studio review)"
+  echo "  token-refresh    — IG/FB long-lived token refresh"
 }
 
 uninstall_all() {

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.rjm.spotify-scrape</string>
+
+  <!--
+    Daily Spotify monthly-listener scrape via Playwright.
+    Runs at 17:30 CET — 30 min BEFORE com.rjm.viral-learning (18:00) so
+    the learning loop reads fresh spotify_stats when computing per-batch
+    follower deltas for the composite reward.
+
+    Python 3.13 is required because outreach_agent/db.py uses 3.13 syntax.
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/python3.13</string>
+    <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/spotify_auto_logger.py</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre</string>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>17</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_spotify_scrape.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_spotify_scrape.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/motomoto</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>
