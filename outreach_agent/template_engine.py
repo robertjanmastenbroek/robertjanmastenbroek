@@ -487,9 +487,65 @@ def generate_email(contact: dict, learning_context: str = "") -> tuple[str, str]
     subject, body = _parse_response(raw)
 
     log.info("Generated — subject: %r", subject)
+
+    gate_issues: list[str] = []
+    gate_passed = True
     if _BRAND_GATE_AVAILABLE:
+        try:
+            validation = _brand_gate.validate_content(body)
+            gate_passed = bool(validation.get("passes", True))
+            gate_issues = list(validation.get("flags", []) or [])
+        except Exception as exc:
+            log.warning("brand_gate.validate_content failed: %s", exc)
+        # Keep the existing non-blocking behaviour for now (Lake 5 flips this).
         _brand_gate.gate_or_warn(body, context="template_engine.generate_email")
+
+    try:
+        from db import log_personalization_audit
+        from config import CLAUDE_MODEL_EMAIL
+        log_personalization_audit(
+            email=contact.get("email", ""),
+            contact_type=contact.get("type", "curator"),
+            subject=subject,
+            body=body,
+            hooks_used=_extract_hooks_from_prompt(contact),
+            research_used=bool(contact.get("research_notes")),
+            model=CLAUDE_MODEL_EMAIL,
+            learning_applied=bool(learning_context),
+            brand_gate_passed=gate_passed,
+            brand_gate_issues=gate_issues,
+        )
+    except Exception as exc:
+        log.warning("personalization_audit logging failed for %s: %s",
+                    contact.get("email"), exc)
+
     return subject, body
+
+
+def _extract_hooks_from_prompt(contact: dict) -> list[str]:
+    """Derive a best-effort list of personalization hooks used for this contact.
+
+    We don't parse Claude's output — we record which SIGNALS were available.
+    That's what matters for learning: "this contact had research + christian +
+    bpm match" tells us more than parsing which subset Claude chose to lean on.
+    """
+    hooks: list[str] = []
+    if contact.get("research_notes"):
+        hooks.append("research")
+    if contact.get("playlist_size"):
+        hooks.append(f"playlist_{contact['playlist_size']}")
+    genre = (contact.get("genre") or "").lower()
+    notes = (contact.get("notes") or "").lower()
+    if any(tok in (genre + " " + notes) for tok in ("christian", "faith", "worship", "gospel")):
+        hooks.append("christian")
+    if contact.get("youtube_channel_id"):
+        hooks.append("youtube_channel")
+    if contact.get("youtube_recent_upload_title"):
+        hooks.append("youtube_recent_upload")
+    if "bpm" in (notes or ""):
+        hooks.append("bpm_match")
+    hooks.append(f"type_{contact.get('type', 'unknown')}")
+    return hooks
 
 
 def generate_emails_batch(contacts, learning_contexts=None):

@@ -178,6 +178,24 @@ CREATE TABLE IF NOT EXISTS release_calendar (
     notes           TEXT
 );
 
+CREATE TABLE IF NOT EXISTS personalization_audit (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    email           TEXT    NOT NULL,
+    contact_type    TEXT    NOT NULL,
+    generated_at    TEXT    NOT NULL,
+    subject         TEXT,
+    body_snippet    TEXT,
+    hooks_used      TEXT,   -- JSON list of hook keys the template engine reported
+    research_used   INTEGER DEFAULT 0,  -- 1 if research_notes were non-empty
+    model           TEXT,
+    learning_applied INTEGER DEFAULT 0, -- 1 if a learning insight was fed in
+    brand_gate_passed INTEGER DEFAULT 1,-- 0 if validator found issues
+    brand_gate_issues TEXT   -- JSON list of issue strings (if any)
+);
+CREATE INDEX IF NOT EXISTS idx_personalization_email ON personalization_audit(email);
+CREATE INDEX IF NOT EXISTS idx_personalization_type ON personalization_audit(contact_type);
+CREATE INDEX IF NOT EXISTS idx_personalization_at ON personalization_audit(generated_at);
+
 CREATE TABLE IF NOT EXISTS form_submissions (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     playlist_id     TEXT    NOT NULL,
@@ -917,6 +935,62 @@ def get_unresearched_verified(limit: int = 10) -> list:
             WHERE status = 'verified' AND (research_done IS NULL OR research_done = 0)
             ORDER BY date_added ASC LIMIT ?
         """, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def log_personalization_audit(
+    email: str,
+    contact_type: str,
+    subject: str = "",
+    body: str = "",
+    hooks_used: list[str] | None = None,
+    research_used: bool = False,
+    model: str = "",
+    learning_applied: bool = False,
+    brand_gate_passed: bool = True,
+    brand_gate_issues: list[str] | None = None,
+) -> None:
+    """Record every generated email for forensic review and learning.
+
+    Never raises — failures log a warning so the send pipeline is unaffected.
+    Lake 1 Task 5 of the outreach completeness plan.
+    """
+    import json as _json
+    try:
+        snippet = (body or "")[:400]
+        hooks_json  = _json.dumps(hooks_used or [])
+        issues_json = _json.dumps(brand_gate_issues or [])
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO personalization_audit
+                    (email, contact_type, generated_at, subject, body_snippet,
+                     hooks_used, research_used, model, learning_applied,
+                     brand_gate_passed, brand_gate_issues)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    email.lower(), contact_type, datetime.now().isoformat(),
+                    subject, snippet, hooks_json, int(bool(research_used)),
+                    model, int(bool(learning_applied)),
+                    int(bool(brand_gate_passed)), issues_json,
+                ),
+            )
+    except Exception as exc:
+        log.warning("personalization_audit insert failed for %s: %s", email, exc)
+
+
+def get_personalization_audit(email: str, limit: int = 5) -> list[dict]:
+    """Return most-recent personalization audit rows for a contact."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM personalization_audit
+            WHERE email = ?
+            ORDER BY generated_at DESC LIMIT ?
+            """,
+            (email.lower(), limit),
+        ).fetchall()
         return [dict(r) for r in rows]
 
 
