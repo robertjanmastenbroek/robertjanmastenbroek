@@ -26,6 +26,10 @@ PLISTS=(
   com.rjm.brain-l2          # strategic pass, weekly Sun 20:00 CET
   com.rjm.brain-veto-check  # execute due proposals, hourly
   com.rjm.brain-assess      # Growth Health Score, daily 08:05 CET
+  # Data + external-platform scrapers (do not share the rjm-run-agent wrapper)
+  com.rjm.spotify-scrape    # daily 17:30 CET — Playwright scrape, feeds learning loop
+  com.rjm.youtube-review    # daily 10:00 CET — YouTube Studio daily review
+  com.rjm.token-refresh     # IG/FB long-lived token refresh
 )
 
 cmd="${1:-status}"
@@ -35,6 +39,16 @@ install_all() {
   chmod +x "$PROJECT_ROOT/scripts/run_agent.sh"
   mkdir -p "$LAUNCH_AGENTS_DIR"
   mkdir -p "$PROJECT_ROOT/logs"
+
+  # Install the launchd wrapper outside ~/Documents/ so /bin/bash can read it.
+  # macOS TCC denies /bin/bash (no Full Disk Access) read access to ~/Documents/,
+  # so scripts inside the project dir can't be launched by launchd directly.
+  # The wrapper exec's /opt/homebrew/bin/python3.13 (which HAS FDA) against the
+  # Python entry points, bypassing bash's limitation.
+  mkdir -p "$HOME/bin"
+  cp "$PROJECT_ROOT/scripts/rjm-run-agent.sh" "$HOME/bin/rjm-run-agent.sh"
+  chmod +x "$HOME/bin/rjm-run-agent.sh"
+  echo "  Wrapper installed: $HOME/bin/rjm-run-agent.sh"
 
   for label in "${PLISTS[@]}"; do
     src="$LAUNCHD_DIR/${label}.plist"
@@ -67,6 +81,9 @@ install_all() {
   echo "  brain-l2         — Sunday 20:00 CET (BTL strategic: channel reallocation)"
   echo "  brain-veto-check — hourly (BTL: execute due proposals)"
   echo "  brain-assess     — daily at 08:05 CET (BTL: Growth Health Score)"
+  echo "  spotify-scrape   — daily at 17:30 CET (Playwright → spotify_stats)"
+  echo "  youtube-review   — daily at 10:00 CET (YouTube Studio review)"
+  echo "  token-refresh    — IG/FB long-lived token refresh"
 }
 
 uninstall_all() {
