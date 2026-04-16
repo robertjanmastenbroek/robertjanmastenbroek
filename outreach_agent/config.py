@@ -25,6 +25,13 @@ GMAIL_SCOPES = [
 FROM_EMAIL     = os.getenv("RJM_FROM_EMAIL", "motomotosings@gmail.com")
 FROM_NAME      = "Robert-Jan Mastenbroek"
 
+# ─── Safety Net ───────────────────────────────────────────────────────────────
+# Maximum send attempts before a contact is moved to 'dead_letter' and stops
+# consuming quota. Set in Lake 1 of the outreach-completeness plan to prevent
+# transient errors (Gmail 5xx, brand-gate repeated rejection) from infinite-retrying
+# against the same address.
+MAX_SEND_ATTEMPTS    = 3
+
 # ─── Rate Limits ──────────────────────────────────────────────────────────────
 MAX_EMAILS_PER_DAY   = 150          # Daily cap — safe for warmed personal Gmail doing targeted cold outreach
 MAX_CONTENT_POSTS_PER_DAY = 3       # Daily cap for Buffer video posts (TikTok + IG Reels + YouTube count as 1 batch)

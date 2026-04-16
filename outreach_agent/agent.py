@@ -28,7 +28,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ─── Logging setup (file + console) ──────────────────────────────────────────
-from config import LOG_PATH, DRAFT_MODE, BATCH_SIZE, WARM_UP_DAILY_CAP
+from config import LOG_PATH, DRAFT_MODE, BATCH_SIZE, WARM_UP_DAILY_CAP, MAX_SEND_ATTEMPTS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,6 +42,7 @@ log = logging.getLogger("outreach.agent")
 
 import db
 import bounce
+import events
 import gmail_client
 import template_engine
 import scheduler
@@ -50,6 +51,33 @@ import reply_classifier
 import reply_responder
 import followup_engine
 import learning
+
+
+def _run_step(step_name: str, fn, *args, **kwargs):
+    """Run a non-fatal cycle step with structured logging + event on failure.
+
+    Replaces the silent ``try/except log.warning`` pattern that hid recurring
+    problems (Gmail OAuth expiry, rate limits, schema drift). Every failure is
+    now published to the event bus as ``agent.step_failed`` so rjm.py status
+    and the master agent can surface it.
+    """
+    try:
+        return fn(*args, **kwargs)
+    except Exception as exc:
+        log.warning("Cycle step '%s' failed (non-fatal): %s", step_name, exc, exc_info=True)
+        try:
+            events.publish(
+                "agent.step_failed",
+                source="outreach_agent.cmd_run",
+                payload={
+                    "step": step_name,
+                    "error": str(exc)[:500],
+                    "error_type": type(exc).__name__,
+                },
+            )
+        except Exception as pub_exc:
+            log.warning("Could not publish agent.step_failed event: %s", pub_exc)
+        return None
 
 
 # ─── Core send pipeline ───────────────────────────────────────────────────────
@@ -161,9 +189,35 @@ def _send_batch(batch_size: int) -> dict:
         # Generate personalised email
         try:
             subject, body = template_engine.generate_email(contact, learn_ctx)
+        except template_engine.BrandGateRejected as exc:
+            # Brand gate refused two drafts in a row — do NOT ship, do NOT
+            # dead_letter, do NOT bump attempts. This is a content problem,
+            # not a contact problem. Put the row back to 'verified' so the
+            # next cycle can try again (by then, learning may have shifted).
+            log.warning("Brand gate rejected %s: %s", email, exc)
+            db.update_contact(email, status="verified")
+            try:
+                import events as _events
+                _events.publish(
+                    "template.brand_gate_rejected",
+                    source="agent._send_batch",
+                    payload={"email": email, "reason": str(exc)},
+                )
+            except Exception:
+                pass
+            skipped += 1
+            continue
         except Exception as exc:
             log.error("Email generation failed for %s: %s", email, exc)
-            db.update_contact(email, status="verified")   # put back in queue
+            attempts = db.get_send_attempts(email)
+            if attempts >= MAX_SEND_ATTEMPTS:
+                log.warning(
+                    "Dead-lettering %s after %d failed attempts (last: template crash)",
+                    email, attempts,
+                )
+                db.mark_dead_letter(email, reason=f"template crash: {exc}")
+            else:
+                db.update_contact(email, status="verified")   # put back in queue
             failed += 1
             continue
 
@@ -212,7 +266,15 @@ def _send_batch(batch_size: int) -> dict:
 
         except Exception as exc:
             log.error("Send failed for %s: %s", email, exc)
-            db.update_contact(email, status="verified")   # put back in queue
+            attempts = db.get_send_attempts(email)
+            if attempts >= MAX_SEND_ATTEMPTS:
+                log.warning(
+                    "Dead-lettering %s after %d failed attempts (last: %s)",
+                    email, attempts, exc,
+                )
+                db.mark_dead_letter(email, reason=f"send error: {exc}")
+            else:
+                db.update_contact(email, status="verified")   # put back in queue
             failed += 1
 
     return {"sent": sent, "failed": failed, "skipped": skipped}
@@ -251,34 +313,22 @@ def cmd_run():
     _verify_pending_contacts()
 
     # 4. Scan inbox for replies + bounces (non-fatal — Gmail OAuth may be temporarily unavailable)
-    try:
-        inbox_result = reply_detector.run_full_inbox_check()
+    inbox_result = _run_step("inbox_check", reply_detector.run_full_inbox_check)
+    if inbox_result is not None:
         log.info("Inbox check: %s", inbox_result)
-    except Exception as exc:
-        log.warning("Inbox check failed (non-fatal — check Gmail OAuth credentials): %s", exc)
-        inbox_result = None
 
     # 5. Classify any unclassified replies (catches backlog + anything from step 4)
-    try:
-        classify_result = reply_classifier.classify_pending()
-        if classify_result.get("classified", 0) > 0:
-            log.info("Reply classification: %s", classify_result)
-    except Exception as exc:
-        log.warning("Reply classification failed (non-fatal): %s", exc)
+    classify_result = _run_step("reply_classify", reply_classifier.classify_pending)
+    if classify_result and classify_result.get("classified", 0) > 0:
+        log.info("Reply classification: %s", classify_result)
 
     # 5b. Auto-reply to warm leads (positive, question, booking_intent)
-    try:
-        reply_result = reply_responder.run(dry_run=DRAFT_MODE)
-        if reply_result.get("sent", 0) > 0:
-            log.info("Auto-replies sent: %s", reply_result)
-    except Exception as exc:
-        log.warning("Auto-reply step failed (non-fatal): %s", exc)
+    reply_result = _run_step("reply_responder", reply_responder.run, dry_run=DRAFT_MODE)
+    if reply_result and reply_result.get("sent", 0) > 0:
+        log.info("Auto-replies sent: %s", reply_result)
 
     # 6. Maybe generate learning insights (only if enough data)
-    try:
-        learning.maybe_generate_insights()
-    except Exception as exc:
-        log.warning("Learning step failed (non-fatal): %s", exc)
+    _run_step("learning_insights", learning.maybe_generate_insights)
 
     # 7. Send follow-ups (they count toward daily quota)
     followup_quota = min(10, scheduler.remaining_quota_today() // 3)
@@ -306,6 +356,20 @@ def cmd_run():
         summary.get("_today_sent", 0),
         summary.get("_reply_rate", "—"),
     )
+
+    # 10. Heartbeat so rjm.py status / master_agent can detect outreach-cycle staleness.
+    try:
+        import fleet_state
+        fleet_state.heartbeat(
+            "outreach_cycle",
+            status="ok",
+            result={
+                "today_sent": summary.get("_today_sent", 0),
+                "quota_remaining": scheduler.remaining_quota_today(),
+            },
+        )
+    except Exception as exc:
+        log.warning("fleet_state heartbeat skipped: %s", exc)
 
 
 def cmd_setup():
