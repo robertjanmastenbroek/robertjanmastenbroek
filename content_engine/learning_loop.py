@@ -22,7 +22,10 @@ LEARNING_DIR    = PROJECT_DIR / "learning"
 
 logger = logging.getLogger(__name__)
 
-INSTAGRAM_GRAPH_BASE = "https://graph.instagram.com/v21.0"
+# Use graph.facebook.com (business IG accounts go through the Facebook Graph API,
+# not the deprecated graph.instagram.com subdomain). Fix re-applied from
+# commit 8746606 after the 2026-04-15 full-rewrite of this module regressed it.
+INSTAGRAM_GRAPH_BASE = "https://graph.facebook.com/v21.0"
 YOUTUBE_ANALYTICS    = "https://youtubeanalytics.googleapis.com/v2/reports"
 
 # How aggressively weights shift each day. 0 = no change, 1 = full replacement.
@@ -43,10 +46,15 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
         if not post_id:
             continue
         try:
+            # `plays` was removed in Graph API v22+. Request `views` alongside
+            # it so the call still works on both v21 and v22, and fall back to
+            # whichever the API actually returns. A single unsupported metric
+            # in the comma-separated list will 400 the whole response, so we
+            # include both rather than branching on API version.
             resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{post_id}/insights",
                 params={
-                    "metric": "plays,reach,saved,shares,total_interactions",
+                    "metric": "views,plays,reach,saved,shares,total_interactions",
                     "period": "lifetime",
                     "access_token": access_token,
                 },
@@ -59,7 +67,8 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
             raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
                    for d in resp.json().get("data", [])}
 
-            plays  = raw.get("plays", 0)
+            # views is the v22+ name; plays is the v21 fallback.
+            plays  = raw.get("views", 0) or raw.get("plays", 0)
             reach  = raw.get("reach", 1)
             saved  = raw.get("saved", 0)
             shares = raw.get("shares", 0)
@@ -260,13 +269,18 @@ def _save_performance_log(records: list, date_str: str):
     )
 
 
-def run(date_str: str = None, post_registry: list = None) -> "PromptWeights":
+def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
     """
     Full learning loop run.
     Reads post_registry from data/performance/YYYY-MM-DD_posts.json if not provided.
-    Returns updated PromptWeights.
+    Returns updated UnifiedWeights.
+
+    Pulls IG + YT metrics (the platforms with native insights APIs); FB/TikTok/Stories
+    records flow in through other writers (buffer_poster feedback, manual imports).
+    All platforms in the registry participate in the multi-dimensional weight update,
+    as long as the registry entries carry completion/save/scroll-stop signal.
     """
-    from content_engine.types import PromptWeights
+    from content_engine.types import UnifiedWeights
 
     if date_str is None:
         date_str = _date.today().isoformat()
@@ -277,7 +291,7 @@ def run(date_str: str = None, post_registry: list = None) -> "PromptWeights":
             post_registry = json.loads(registry_path.read_text())
         else:
             logger.warning("[learning_loop] No post registry — weights unchanged")
-            return PromptWeights.load()
+            return UnifiedWeights.load()
 
     ig_posts = [p for p in post_registry if p.get("platform") == "instagram"]
     yt_posts = [p for p in post_registry if p.get("platform") == "youtube"]
@@ -296,16 +310,31 @@ def run(date_str: str = None, post_registry: list = None) -> "PromptWeights":
 
     if not records:
         logger.warning("[learning_loop] No performance records collected — weights unchanged")
-        return PromptWeights.load()
+        return UnifiedWeights.load()
 
     _save_performance_log(records, date_str)
 
-    old_weights = PromptWeights.load()
-    new_weights = calculate_new_weights(records, old_weights)
+    # Hydrate records with full metadata from the registry (format, template, track, etc.)
+    # so the multi-dimensional EMA has something to group on.
+    registry_by_post_id = {p.get("post_id", ""): p for p in post_registry if p.get("post_id")}
+    records_as_dicts = []
+    for r in records:
+        base = r.__dict__.copy()
+        extra = registry_by_post_id.get(r.post_id, {})
+        # merge — don't overwrite real metric values
+        for k, v in extra.items():
+            base.setdefault(k, v)
+        records_as_dicts.append(base)
+
+    old_weights = UnifiedWeights.load()
+    new_weights = calculate_unified_weights(records_as_dicts, old_weights)
     new_weights.save()
-    logger.info(f"[learning_loop] Weights updated — best={new_weights.best_platform}, "
+
+    top_hook = max(new_weights.hook_weights, key=new_weights.hook_weights.get) if new_weights.hook_weights else "n/a"
+    top_format = max(new_weights.format_weights, key=new_weights.format_weights.get) if new_weights.format_weights else "n/a"
+    logger.info(f"[learning_loop] Weights updated — best_platform={new_weights.best_platform}, "
                 f"length={new_weights.best_clip_length}s, "
-                f"top hook={max(new_weights.hook_weights, key=new_weights.hook_weights.get)}")
+                f"top hook={top_hook}, top format={top_format}")
 
     outliers = detect_outliers(records)
     for o in outliers:
@@ -313,6 +342,142 @@ def run(date_str: str = None, post_registry: list = None) -> "PromptWeights":
         _write_breakthrough(o, date_str)
 
     return new_weights
+
+
+# ---------------------------------------------------------------------------
+# Multi-dimensional learning (unified pipeline)
+# ---------------------------------------------------------------------------
+
+def calculate_unified_weights(
+    records: list,
+    old_weights: "UnifiedWeights",
+    learning_rate: float = 0.3,
+) -> "UnifiedWeights":
+    """Calculate new unified weights from today's performance records.
+
+    Updates per: format, platform, template, visual, track, transitional category.
+    Signal = completion_rate * 0.5 + save_rate * 0.3 + scroll_stop_rate * 0.2
+    """
+    from content_engine.types import UnifiedWeights
+
+    new = UnifiedWeights(
+        hook_weights=dict(old_weights.hook_weights),
+        visual_weights=dict(old_weights.visual_weights),
+        format_weights=dict(old_weights.format_weights),
+        platform_weights=dict(old_weights.platform_weights),
+        transitional_category_weights=dict(old_weights.transitional_category_weights),
+        track_weights=dict(old_weights.track_weights),
+        best_clip_length=old_weights.best_clip_length,
+        best_platform=old_weights.best_platform,
+        updated=datetime.now().isoformat(),
+    )
+
+    if not records:
+        return new
+
+    # Compute signal per record
+    signals = []
+    for r in records:
+        signal = (
+            r.get("completion_rate", 0) * 0.5
+            + r.get("save_rate", 0) * 0.3
+            + r.get("scroll_stop_rate", 0) * 0.2
+        )
+        signals.append((r, signal))
+
+    # Group signals by dimension and update via EMA
+    _ema_update(new.format_weights, signals, "format_type", learning_rate)
+    _ema_update(new.platform_weights, signals, "platform", learning_rate)
+    _ema_update(new.hook_weights, signals, "hook_template_id", learning_rate)
+    _ema_update(new.visual_weights, signals, "visual_type", learning_rate)
+    _ema_update(new.track_weights, signals, "track_title", learning_rate)
+    _ema_update(new.transitional_category_weights, signals, "transitional_category", learning_rate)
+
+    # Update best_platform
+    if new.platform_weights:
+        new.best_platform = max(new.platform_weights, key=new.platform_weights.get)
+
+    return new
+
+
+def _ema_update(weights: dict, signals: list, key: str, lr: float):
+    """EMA update for a single dimension."""
+    group_signals = defaultdict(list)
+    for record, signal in signals:
+        val = record.get(key, "")
+        if val:
+            group_signals[val].append(signal)
+
+    for name, sigs in group_signals.items():
+        avg_signal = sum(sigs) / len(sigs)
+        # Normalize to 0-2 range (assuming signal is 0-1, multiply by 2)
+        normalized = min(avg_signal * 2.0, 2.0)
+        old = weights.get(name, 1.0)
+        weights[name] = old * (1 - lr) + normalized * lr
+
+
+def track_rotation_vote(
+    pool: list,
+    new_release: dict = None,
+    min_days: int = 7,
+) -> dict:
+    """Vote on track rotation.
+
+    Composite score: spotify_popularity * 0.004 + video_save_rate * 0.6
+    (popularity is 0-100, scale 0.004 keeps it at most 0.4)
+    """
+    if not pool:
+        return {"action": "keep", "reason": "pool empty"}
+
+    scored = []
+    for t in pool:
+        score = t.get("spotify_popularity", 0) * 0.004 + t.get("video_save_rate", 0) * 0.6
+        scored.append((t["title"], score))
+    scored.sort(key=lambda x: x[1])
+    bottom = scored[0]
+
+    if new_release:
+        new_score = new_release.get("spotify_popularity", 0) * 0.004 + new_release.get("video_save_rate", 0) * 0.6
+        if new_score > bottom[1]:
+            return {
+                "action": "swap",
+                "remove": bottom[0],
+                "add": new_release["title"],
+                "reason": f"{new_release['title']} ({new_score:.3f}) > {bottom[0]} ({bottom[1]:.3f})",
+            }
+        return {"action": "keep", "reason": f"{new_release['title']} score too low"}
+
+    if len(pool) < 4:
+        return {"action": "add", "reason": "pool below minimum"}
+
+    return {"action": "keep", "reason": "no change needed"}
+
+
+def update_template_lifecycle(
+    template_scores: dict,
+    days_active: int = 14,
+) -> dict:
+    """Update template priorities based on EMA scores.
+
+    - <14d           -> status=learning,        priority=1.0
+    - score > 1.5    -> status=boosted,         priority=2.0
+    - score < 0.3 + 30d+ -> status=deprecated,  priority=0.0
+    - score < 0.5    -> status=deprioritized,   priority=0.3
+    - else           -> status=active,          priority=1.0
+    """
+    result = {}
+    for template_id, score in template_scores.items():
+        if days_active < 14:
+            result[template_id] = {"priority": 1.0, "status": "learning"}
+        elif score > 1.5:
+            result[template_id] = {"priority": 2.0, "status": "boosted"}
+        elif score < 0.3 and days_active >= 30:
+            result[template_id] = {"priority": 0.0, "status": "deprecated"}
+        elif score < 0.5:
+            result[template_id] = {"priority": 0.3, "status": "deprioritized"}
+        else:
+            result[template_id] = {"priority": 1.0, "status": "active"}
+    return result
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ from content_engine.learning_loop import (
     fetch_instagram_metrics, fetch_youtube_metrics,
     calculate_new_weights, detect_outliers, run,
 )
-from content_engine.types import PerformanceRecord, PromptWeights
+from content_engine.types import PerformanceRecord, PromptWeights, UnifiedWeights
 
 
 def _rec(**kwargs) -> PerformanceRecord:
@@ -94,19 +94,20 @@ def test_detect_outliers_empty():
 
 
 def test_run_returns_weights_when_no_registry(tmp_path, monkeypatch):
+    # The unified daily loop now persists UnifiedWeights so the multi-dim EMA
+    # (format / platform / template / track) isn't overwritten by the old
+    # PromptWeights shape on every daily run.
     import content_engine.learning_loop as ll
     import content_engine.types as t
     monkeypatch.setattr(ll, "PERFORMANCE_DIR", tmp_path / "perf")
     monkeypatch.setattr(ll, "LEARNING_DIR",    tmp_path / "learn")
     monkeypatch.setattr(t,  "PROJECT_DIR",     tmp_path)
 
-    # No registry file → should return defaults
     (tmp_path).mkdir(exist_ok=True)
-    PromptWeights.defaults().save()
-    monkeypatch.setattr(t, "PROJECT_DIR", tmp_path)
+    UnifiedWeights.defaults().save()
 
     result = run(date_str="2026-04-12")
-    assert isinstance(result, PromptWeights)
+    assert isinstance(result, UnifiedWeights)
 
 
 def test_run_updates_weights_with_records(tmp_path, monkeypatch):
@@ -115,7 +116,7 @@ def test_run_updates_weights_with_records(tmp_path, monkeypatch):
     monkeypatch.setattr(ll, "PERFORMANCE_DIR", tmp_path / "perf")
     monkeypatch.setattr(ll, "LEARNING_DIR",    tmp_path / "learn")
     monkeypatch.setattr(t,  "PROJECT_DIR",     tmp_path)
-    PromptWeights.defaults().save()
+    UnifiedWeights.defaults().save()
 
     registry = [
         {"post_id": "ig1", "platform": "instagram", "clip_index": 0, "variant": "a",
@@ -127,6 +128,6 @@ def test_run_updates_weights_with_records(tmp_path, monkeypatch):
          patch.dict(os.environ, {"INSTAGRAM_ACCESS_TOKEN": "tok"}):
         result = run(date_str="2026-04-12", post_registry=registry)
 
-    assert isinstance(result, PromptWeights)
+    assert isinstance(result, UnifiedWeights)
     assert result.updated != ""
     assert (tmp_path / "perf" / "2026-04-12.json").exists()

@@ -13,7 +13,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-SCORE_THRESHOLD = 7.0   # Below this → trigger AI generation in visual_engine
+SCORE_THRESHOLD = 7.0   # Below this → caller should fall back / skip the clip (no AI generation in unified pipeline)
 
 PROJECT_DIR        = Path(__file__).parent.parent
 VIDEO_ROTATION_FILE = PROJECT_DIR / "video_rotation.json"

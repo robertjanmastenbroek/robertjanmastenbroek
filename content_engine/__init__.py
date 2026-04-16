@@ -1,1 +1,1 @@
-"""Viral Shorts Mindhive — autonomous video pipeline."""
+"""Unified Holy Rave daily content pipeline."""
