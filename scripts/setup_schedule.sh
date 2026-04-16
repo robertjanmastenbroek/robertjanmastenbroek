@@ -12,12 +12,15 @@ LAUNCHD_DIR="$PROJECT_ROOT/scripts/launchd"
 LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
 
 PLISTS=(
+  # Outreach + growth agents
   com.rjm.outreach
   com.rjm.master
   com.rjm.discover
   com.rjm.research
+  # Content supervision (Claude agents on run_agent.sh)
   com.rjm.daily
   com.rjm.weekly
+  # Unified content pipeline (direct python)
   com.rjm.viral-trend
   com.rjm.viral-daily
   com.rjm.viral-learning
@@ -26,6 +29,10 @@ PLISTS=(
   com.rjm.brain-l2          # strategic pass, weekly Sun 20:00 CET
   com.rjm.brain-veto-check  # execute due proposals, hourly
   com.rjm.brain-assess      # Growth Health Score, daily 08:05 CET
+  # Analytics + maintenance
+  com.rjm.spotify-scrape
+  com.rjm.token-refresh
+  com.rjm.youtube-review
 )
 
 cmd="${1:-status}"
@@ -61,12 +68,18 @@ install_all() {
   echo "  master           — every 3 hrs  (8×/day)"
   echo "  discover         — every 4 hrs  (6×/day)"
   echo "  research         — 6×/day at 02:17 06:17 10:17 14:17 18:17 22:17"
-  echo "  daily            — daily at 09:07"
-  echo "  weekly           — Monday at 09:13"
+  echo "  daily            — daily at 09:07 (post-pipeline supervisor)"
+  echo "  weekly           — Monday at 09:13 (analytics pulse)"
+  echo "  viral-trend      — daily at 06:00 (trend scan → today's brief)"
+  echo "  viral-daily      — daily at 08:00 (unified pipeline: 3 clips × 6 targets)"
+  echo "  viral-learning   — daily at 18:00 (bandit weights update)"
   echo "  brain-l1         — every 6 hrs  (BTL tactical: bandit refresh)"
   echo "  brain-l2         — Sunday 20:00 CET (BTL strategic: channel reallocation)"
   echo "  brain-veto-check — hourly (BTL: execute due proposals)"
   echo "  brain-assess     — daily at 08:05 CET (BTL: Growth Health Score)"
+  echo "  spotify-scrape   — daily at 17:30 (before learning loop)"
+  echo "  token-refresh    — Monday at 07:00 (IG token keep-alive)"
+  echo "  youtube-review   — daily at 10:00 (YT daily review)"
 }
 
 uninstall_all() {
