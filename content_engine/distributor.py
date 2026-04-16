@@ -516,24 +516,75 @@ def post_youtube_short(video_path: str, title: str, description: str,
         return {"success": False, "platform": "youtube", "error": str(e)}
 
 
+# Platforms that have a Buffer channel connected. Buffer is TikTok's ONLY
+# posting path (no native TikTok API in this environment), and the last-resort
+# fallback for Instagram and YouTube when their native API calls fail. Facebook
+# has no Buffer channel — native Graph API only.
+_BUFFER_CHANNELS = {"tiktok", "instagram", "youtube"}
+
+
 def _buffer_fallback(clip: dict, scheduled_at: str = "") -> dict:
-    """Fall back to existing buffer_poster.py if native API unavailable."""
+    """Post a clip to exactly ONE Buffer channel.
+
+    Historically this called ``buffer_poster.upload_video_and_queue()``, which
+    fanned out to TikTok + Instagram Reel + Instagram Story + YouTube on every
+    call — so any single native API failure caused three duplicate posts on
+    the other platforms. Now we target only the platform the caller specified.
+
+    Returns ``{"success": False, "error": "no_buffer_channel"}`` for platforms
+    Buffer can't reach (facebook, facebook_story, instagram_story — Stories
+    aren't a Buffer fallback surface since Buffer doesn't treat them as a
+    peer of Reels).
+    """
+    platform = clip["platform"]
+    if platform not in _BUFFER_CHANNELS:
+        return {
+            "success": False,
+            "platform": platform,
+            "error": f"no Buffer channel for {platform}",
+            "via": "buffer_fallback",
+        }
+
     try:
         import buffer_poster
-        result = buffer_poster.upload_video_and_queue(
-            clip_path=clip["path"],
-            tiktok_caption=clip.get("caption", ""),
-            instagram_caption=clip.get("caption", ""),
-            youtube_title=clip.get("track_title", "RJM") + " | Holy Rave #shorts",
-            youtube_desc=clip.get("caption", ""),
-            scheduled_at=scheduled_at or None,
-        )
-        success = any(v.get("success") for v in (result or {}).values())
-        return {"success": success, "post_id": "buffer", "platform": clip["platform"],
-                "via": "buffer_fallback"}
+        video_url = buffer_poster.upload_video(clip["path"])
+        caption   = clip.get("caption", "")
+
+        if platform == "youtube":
+            title = clip.get("track_title", "RJM") + " | Holy Rave #shorts"
+            post_id = buffer_poster._create_video_post(
+                "youtube", video_url, caption,
+                title=title, description=caption,
+                scheduled_at=scheduled_at or None,
+            )
+        else:
+            # tiktok or instagram — same mutation path, caption-only metadata
+            post_id = buffer_poster._create_video_post(
+                platform, video_url, caption,
+                scheduled_at=scheduled_at or None,
+            )
+
+        # Count against Buffer's daily cap (parity with upload_video_and_queue).
+        try:
+            import db as _db
+            _db.init_db()
+            _db.increment_content_count()
+        except Exception:
+            pass
+
+        return {
+            "success":  True,
+            "post_id":  post_id,
+            "platform": platform,
+            "via":      "buffer_fallback",
+        }
     except Exception as e:
-        return {"success": False, "platform": clip["platform"],
-                "error": f"Buffer fallback failed: {e}"}
+        return {
+            "success":  False,
+            "platform": platform,
+            "error":    f"Buffer fallback failed: {e}",
+            "via":      "buffer_fallback",
+        }
 
 
 def distribute_clip(clip: dict) -> dict:
@@ -618,13 +669,15 @@ def distribute_clip(clip: dict) -> dict:
     else:
         result = {"success": False, "platform": platform, "error": f"Unknown platform: {platform}"}
 
-    # If native API failed, try Buffer fallback with schedule preserved — but only
-    # for Reel targets. Stories and TikTok-via-Buffer already attempted what they
-    # could; looping back to Buffer for a Story would post it as a Reel.
+    # If the native API failed, fall back to Buffer with schedule preserved —
+    # but only for platforms that HAVE a Buffer channel (instagram, youtube).
+    # Facebook has no Buffer channel (Graph API is the only path). Stories and
+    # TikTok already attempted what they could; TikTok IS Buffer, and Stories
+    # would get posted as Reels through Buffer which is not what we want.
     if (
         not result.get("success")
         and result.get("via") != "buffer_fallback"
-        and platform in ("instagram", "youtube", "facebook")
+        and platform in ("instagram", "youtube")
     ):
         logger.warning(f"[distributor] {platform} native failed: {result.get('error')} — Buffer fallback")
         result = _buffer_fallback(clip, scheduled_at)

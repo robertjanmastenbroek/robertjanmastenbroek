@@ -112,6 +112,98 @@ def test_distribute_unknown_platform():
     assert result["success"] is False
 
 
+# ─── _buffer_fallback ───────────────────────────────────────────────────────
+# Regression guard: Buffer must post to EXACTLY ONE channel matching the clip's
+# target platform. The old upload_video_and_queue() fanned out to TikTok + IG
+# Reel + IG Story + YouTube on every call, causing duplicate posts whenever any
+# single native API failed (or whenever TikTok ran as the primary Buffer path).
+
+def test_buffer_fallback_posts_to_single_tiktok_channel():
+    import content_engine.distributor as d
+    clip = {**CLIP_IG, "platform": "tiktok", "caption": "drop it"}
+    with patch("buffer_poster.upload_video", return_value="https://cdn/v.mp4"), \
+         patch("buffer_poster._create_video_post", return_value="buf_tt") as mock_post, \
+         patch("db.init_db"), patch("db.increment_content_count"):
+        result = d._buffer_fallback(clip)
+
+    assert result["success"] is True
+    assert result["platform"] == "tiktok"
+    assert result["post_id"]  == "buf_tt"
+    # Must target ONLY the tiktok channel
+    mock_post.assert_called_once()
+    assert mock_post.call_args.args[0] == "tiktok"
+
+
+def test_buffer_fallback_posts_to_single_instagram_channel():
+    import content_engine.distributor as d
+    clip = {**CLIP_IG, "platform": "instagram"}
+    with patch("buffer_poster.upload_video", return_value="https://cdn/v.mp4"), \
+         patch("buffer_poster._create_video_post", return_value="buf_ig") as mock_post, \
+         patch("db.init_db"), patch("db.increment_content_count"):
+        result = d._buffer_fallback(clip)
+
+    assert result["success"] is True
+    mock_post.assert_called_once()
+    assert mock_post.call_args.args[0] == "instagram"
+
+
+def test_buffer_fallback_posts_to_single_youtube_channel():
+    import content_engine.distributor as d
+    clip = {**CLIP_IG, "platform": "youtube", "track_title": "Jericho"}
+    with patch("buffer_poster.upload_video", return_value="https://cdn/v.mp4"), \
+         patch("buffer_poster._create_video_post", return_value="buf_yt") as mock_post, \
+         patch("db.init_db"), patch("db.increment_content_count"):
+        result = d._buffer_fallback(clip)
+
+    assert result["success"] is True
+    mock_post.assert_called_once()
+    assert mock_post.call_args.args[0] == "youtube"
+    # YouTube post must receive a title kwarg so Buffer doesn't reject it
+    assert "title" in mock_post.call_args.kwargs
+    assert "Jericho" in mock_post.call_args.kwargs["title"]
+
+
+def test_buffer_fallback_rejects_facebook():
+    # Facebook has no Buffer channel — falling back would raise in Buffer.
+    # Distributor must short-circuit instead of calling into buffer_poster.
+    import content_engine.distributor as d
+    clip = {**CLIP_IG, "platform": "facebook"}
+    with patch("buffer_poster._create_video_post") as mock_post:
+        result = d._buffer_fallback(clip)
+    assert result["success"] is False
+    assert "no Buffer channel" in result["error"]
+    mock_post.assert_not_called()
+
+
+def test_buffer_fallback_rejects_stories():
+    import content_engine.distributor as d
+    for story_platform in ("instagram_story", "facebook_story"):
+        clip = {**CLIP_IG, "platform": story_platform}
+        with patch("buffer_poster._create_video_post") as mock_post:
+            result = d._buffer_fallback(clip)
+        assert result["success"] is False, f"{story_platform} should not go to Buffer"
+        mock_post.assert_not_called()
+
+
+def test_tiktok_dispatch_goes_through_single_channel_buffer():
+    """End-to-end: a TikTok clip must reach Buffer's TikTok channel and
+    NOT also post to Instagram or YouTube. Guards against the historic
+    upload_video_and_queue() fan-out bug.
+    """
+    import content_engine.distributor as d
+    clip = {**CLIP_IG, "platform": "tiktok"}
+    with patch("buffer_poster.upload_video", return_value="https://cdn/v.mp4"), \
+         patch("buffer_poster._create_video_post", return_value="buf_tt") as mock_post, \
+         patch("db.init_db"), patch("db.increment_content_count"):
+        result = d.distribute_clip(clip)
+
+    assert result["success"] is True
+    assert result["platform"] == "tiktok"
+    # Exactly one Buffer call, exactly to tiktok
+    assert mock_post.call_count == 1
+    assert mock_post.call_args.args[0] == "tiktok"
+
+
 # ─── _atomic_env_update ──────────────────────────────────────────────────────
 # Token refresh writes back to .env. If two refreshes race, a naive read→edit→
 # write pipeline can truncate the file. The atomic helper writes to a temp
