@@ -99,7 +99,6 @@ _MAIN_PROJECT_VENV = Path(
     "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/venv/bin/python3"
 )
 CONTACT_MGR_PY  = PROJECT_ROOT / "contact_manager.py"
-POST_TODAY_PY   = OUTREACH_DIR / "post_today.py"
 PLAYLIST_RUN_PY = OUTREACH_DIR / "playlist_run.py"
 SPOTIFY_PY      = OUTREACH_DIR / "spotify_tracker.py"
 VENV_PYTHON     = OUTREACH_DIR / "venv" / "bin" / "python3"
