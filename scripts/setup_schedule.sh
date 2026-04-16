@@ -21,6 +21,11 @@ PLISTS=(
   com.rjm.viral-trend
   com.rjm.viral-daily
   com.rjm.viral-learning
+  # BTL (Boil the Lake) growth brain — self-improving orchestration layer
+  com.rjm.brain-l1          # tactical pass, every 6h
+  com.rjm.brain-l2          # strategic pass, weekly Sun 20:00 CET
+  com.rjm.brain-veto-check  # execute due proposals, hourly
+  com.rjm.brain-assess      # Growth Health Score, daily 08:05 CET
 )
 
 cmd="${1:-status}"
@@ -52,12 +57,16 @@ install_all() {
   echo "  ./scripts/setup_schedule.sh status"
   echo ""
   echo "Schedule summary:"
-  echo "  outreach  — every 30 min (active window 08:00–23:00)"
-  echo "  master    — every 3 hrs  (8×/day)"
-  echo "  discover  — every 4 hrs  (6×/day)"
-  echo "  research  — 6×/day at 02:17 06:17 10:17 14:17 18:17 22:17"
-  echo "  daily     — daily at 09:07"
-  echo "  weekly    — Monday at 09:13"
+  echo "  outreach         — every 30 min (active window 08:00–23:00)"
+  echo "  master           — every 3 hrs  (8×/day)"
+  echo "  discover         — every 4 hrs  (6×/day)"
+  echo "  research         — 6×/day at 02:17 06:17 10:17 14:17 18:17 22:17"
+  echo "  daily            — daily at 09:07"
+  echo "  weekly           — Monday at 09:13"
+  echo "  brain-l1         — every 6 hrs  (BTL tactical: bandit refresh)"
+  echo "  brain-l2         — Sunday 20:00 CET (BTL strategic: channel reallocation)"
+  echo "  brain-veto-check — hourly (BTL: execute due proposals)"
+  echo "  brain-assess     — daily at 08:05 CET (BTL: Growth Health Score)"
 }
 
 uninstall_all() {

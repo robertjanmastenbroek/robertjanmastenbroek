@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Literal
 import json
 from pathlib import Path
@@ -51,6 +52,12 @@ class PerformanceRecord:
     hook_mechanism: str
     visual_type: str
     clip_length: int
+    format_type: str = ""
+    hook_template_id: str = ""
+    hook_sub_mode: str = ""
+    transitional_category: str = ""
+    transitional_file: str = ""
+    track_title: str = ""
     views: int = 0
     completion_rate: float = 0.0
     scroll_stop_rate: float = 0.0
@@ -89,3 +96,100 @@ class PromptWeights:
             w.save()
             return w
         return cls(**json.loads(path.read_text()))
+
+
+class ClipFormat(Enum):
+    TRANSITIONAL = "transitional"
+    EMOTIONAL = "emotional"
+    PERFORMANCE = "performance"
+
+
+@dataclass
+class TransitionalHook:
+    """A pre-cleared bait clip for transitional hook format."""
+    file: str
+    category: str
+    duration_s: float
+    last_used: str | None
+    performance_score: float
+    times_used: int
+
+
+@dataclass
+class TrackInfo:
+    """A track in the active pool with auto-populated facts."""
+    title: str
+    file_path: str
+    bpm: int
+    energy: float
+    danceability: float
+    valence: float
+    scripture_anchor: str
+    spotify_id: str
+    spotify_popularity: int
+    pool_weight: float
+    entered_pool: str
+
+
+@dataclass
+class UnifiedWeights:
+    """Expanded weights covering all learning dimensions."""
+    hook_weights: dict
+    visual_weights: dict
+    format_weights: dict
+    platform_weights: dict
+    transitional_category_weights: dict
+    track_weights: dict
+    best_clip_length: int
+    best_platform: str
+    updated: str
+
+    @classmethod
+    def defaults(cls) -> "UnifiedWeights":
+        return cls(
+            hook_weights={
+                "tension": 1.0, "identity": 1.0, "scene": 1.0,
+                "claim": 1.0, "rupture": 1.0,
+            },
+            visual_weights={
+                "performance": 1.0, "b_roll": 1.0, "phone": 1.0,
+            },
+            format_weights={
+                "transitional": 1.0, "emotional": 1.0, "performance": 1.0,
+            },
+            platform_weights={
+                "instagram": 1.0, "youtube": 1.0, "facebook": 1.0,
+                "tiktok": 1.0, "instagram_story": 1.0, "facebook_story": 1.0,
+            },
+            transitional_category_weights={
+                "nature": 1.0, "satisfying": 1.0, "elemental": 1.0,
+                "sports": 1.0, "craftsmanship": 1.0, "illusion": 1.0,
+            },
+            track_weights={},
+            best_clip_length=15,
+            best_platform="instagram",
+            updated="",
+        )
+
+    def save(self, path=None):
+        path = path or (PROJECT_DIR / "prompt_weights.json")
+        path.write_text(json.dumps(self.__dict__, indent=2))
+
+    @classmethod
+    def load(cls, path=None) -> "UnifiedWeights":
+        path = path or (PROJECT_DIR / "prompt_weights.json")
+        if not path.exists():
+            w = cls.defaults()
+            w.save(path)
+            return w
+        data = json.loads(path.read_text())
+        # Backwards compat: old PromptWeights may be on disk
+        if "format_weights" not in data:
+            w = cls.defaults()
+            w.hook_weights = data.get("hook_weights", w.hook_weights)
+            w.visual_weights = data.get("visual_weights", w.visual_weights)
+            w.best_clip_length = data.get("best_clip_length", w.best_clip_length)
+            w.best_platform = data.get("best_platform", w.best_platform)
+            w.updated = data.get("updated", w.updated)
+            return w
+        return cls(**data)

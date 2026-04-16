@@ -75,7 +75,7 @@ Outreach limits: max 150 emails/day, active window 08:00–23:00 CET, 8hr overni
 | `BRAND_DNA.md` | Canonical brand rules, story, platform tactics |
 | `outreach_agent/agent.py` | Main outreach agent |
 | `outreach_agent/config.py` | Email settings, limits, timing |
-| `outreach_agent/post_today.py` | Daily content post script |
+| `content_engine/pipeline.py` | Unified daily content pipeline (`rjm.py content viral`) |
 | `contacts.csv` | 84 contacts (labels, curators) |
 | `content/audio/` | Source audio for clips |
 | `content/videos/` | Source video footage |

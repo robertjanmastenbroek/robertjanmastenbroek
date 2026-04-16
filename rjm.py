@@ -14,12 +14,12 @@ Usage:
   python3 rjm.py learning                 # Show learning-loop weights + top/bottom hooks
   python3 rjm.py learning fetch           # Pull fresh IG + YouTube metrics
   python3 rjm.py learning recompute       # Recompute arm weights from rolling 28-day window
-  python3 rjm.py content [--dry-run]      # Holy Rave daily content run (legacy, 3 clips → Buffer)
-  python3 rjm.py content viral            # Viral pipeline: trend→visual→assemble→distribute
-  python3 rjm.py content viral --dry-run  # Viral pipeline dry-run (no posting)
+  python3 rjm.py content [--dry-run]      # Unified daily pipeline (3 formats → 6 targets)
+  python3 rjm.py content viral [--dry-run]            # Alias for default content run
   python3 rjm.py content trend-scan       # Run trend scanner (06:00 CET)
   python3 rjm.py content learning         # Run learning loop (18:00 CET)
   python3 rjm.py content retry            # Retry all failed posts in queue
+  python3 rjm.py content reset-platform <name>        # Reset circuit-breaker for one target
   python3 rjm.py playlist [cmd]           # Playlist DB (status, add, pending_contact, list)
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
   python3 rjm.py youtube discover         # Find YouTube promo channels → contacts DB
@@ -39,6 +39,23 @@ Usage:
   python3 rjm.py memory get <key>         # Read a memory key
   python3 rjm.py schedule [install|uninstall|status]  # Manage launchd fleet schedules
 
+  Boil the Lake (BTL) protocol:
+  python3 rjm.py brain status             # Full BTL orchestrator snapshot
+  python3 rjm.py brain l1                 # L1 tactical pass (bandit refresh)
+  python3 rjm.py brain l2                 # L2 strategic pass (channel reallocation)
+  python3 rjm.py brain veto_check         # Execute proposals past veto window
+  python3 rjm.py brain assess             # Growth Health Score
+  python3 rjm.py experiment list          # All experiments
+  python3 rjm.py experiment active        # Currently running experiments
+  python3 rjm.py experiment results       # Completed + analyzed results
+  python3 rjm.py veto <id> | veto all     # Kill a proposal (or all pending)
+  python3 rjm.py proposals                # Pending proposals (24hr veto window)
+  python3 rjm.py budget                   # Donations / allocated / spent / available
+  python3 rjm.py channels                 # Channel portfolio + weights + LEI
+  python3 rjm.py channels activate <id>   # Activate a queued channel
+  python3 rjm.py channels pause <id>      # Pause an active channel
+  python3 rjm.py score                    # Growth Health Score (0-100)
+
 Examples:
   python3 rjm.py status                   # Is everything running?
   python3 rjm.py briefing                 # What should I focus on today?
@@ -55,8 +72,9 @@ Examples:
   python3 rjm.py contacts status          # Contact DB overview
   python3 rjm.py contacts sync            # Import contacts.csv → SQLite
   python3 rjm.py contacts search tribal   # Search contacts
-  python3 rjm.py content                  # Render 3 clips + queue to Buffer
-  python3 rjm.py content --dry-run        # Render only, skip Buffer
+  python3 rjm.py content                  # Render 3 formats × 6 targets via the unified pipeline
+  python3 rjm.py content --dry-run        # Same, but skip distribution
+  python3 rjm.py content reset-platform tiktok  # Clear circuit breaker for a single target
   python3 rjm.py playlist status          # Playlist discovery progress
   python3 rjm.py spotify status           # Listener count + milestone
   python3 rjm.py spotify log 333          # Record today's listener count
@@ -101,9 +119,9 @@ _MAIN_PROJECT_VENV = Path(
     "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/venv/bin/python3"
 )
 CONTACT_MGR_PY  = PROJECT_ROOT / "contact_manager.py"
-POST_TODAY_PY   = OUTREACH_DIR / "post_today.py"
 PLAYLIST_RUN_PY = OUTREACH_DIR / "playlist_run.py"
 SPOTIFY_PY      = OUTREACH_DIR / "spotify_tracker.py"
+GROWTH_BRAIN_PY = OUTREACH_DIR / "growth_brain.py"
 VENV_PYTHON     = OUTREACH_DIR / "venv" / "bin" / "python3"
 
 # Use venv python for outreach_agent scripts — prefer the worktree's venv if
@@ -566,8 +584,13 @@ def cmd_content(args: list[str]):
     """Run the Holy Rave daily content engine."""
     subcommand = args[0].lower() if args else ""
 
-    if subcommand == "viral":
-        # New 5-module viral pipeline: trend→visual→assemble→distribute→learn
+    if subcommand in ("viral", ""):
+        # Unified daily pipeline (default). `viral` retained as an alias so
+        # existing schedulers / muscle memory keep working.
+        if subcommand == "" and not args:
+            print("[content] Running unified pipeline (default)…")
+        elif subcommand == "":
+            print("[content] Running unified pipeline (legacy alias — flags forwarded)…")
         dry_run = "--dry-run" in args
         sys.path.insert(0, str(PROJECT_ROOT))
         import logging
@@ -604,12 +627,41 @@ def cmd_content(args: list[str]):
         }, indent=2, default=str))
         sys.exit(0)
 
-    else:
-        # Legacy pipeline (post_today.py)
-        if not POST_TODAY_PY.exists():
-            print(f"✗ {POST_TODAY_PY} not found")
+    elif subcommand == "retry":
+        # Retry all failed posts in queue
+        cmd_content_retry()
+        sys.exit(0)
+
+    elif subcommand == "reset-platform":
+        # Reset the circuit-breaker state for a single distributor target so
+        # the next run is allowed to attempt it again. Useful after fixing a
+        # token, quota, or upstream API outage.
+        if len(args) < 2:
+            print("Usage: rjm.py content reset-platform <platform_name>")
             sys.exit(1)
-        sys.exit(_run([_OUTREACH_PYTHON, str(POST_TODAY_PY)] + args, cwd=str(PROJECT_ROOT)))
+        platform = args[1]
+        cb_path = PROJECT_ROOT / "data" / "circuit_breaker.json"
+        if cb_path.exists():
+            import json
+            try:
+                state = json.loads(cb_path.read_text())
+            except json.JSONDecodeError:
+                print(f"✗ {cb_path} is not valid JSON — refusing to overwrite")
+                sys.exit(1)
+            if platform in state:
+                state.pop(platform, None)
+                cb_path.write_text(json.dumps(state, indent=2))
+                print(f"✓ Circuit breaker reset for {platform}")
+            else:
+                print(f"  No circuit breaker entry for {platform} (nothing to reset)")
+        else:
+            print(f"  No circuit breaker state found at {cb_path}")
+        sys.exit(0)
+
+    else:
+        print(f"✗ Unknown content subcommand: {subcommand!r}")
+        print("  Valid: viral (default), trend-scan, learning, retry, reset-platform <platform>")
+        sys.exit(1)
 
 
 def cmd_playlist(args: list[str]):
@@ -893,6 +945,178 @@ def cmd_schedule(args: list[str]):
     sys.exit(_run(["/bin/bash", str(setup_sh), sub], cwd=str(PROJECT_ROOT)))
 
 
+# ─── BTL Protocol Commands ───────────────────────────────────────────────────
+
+
+def _run_py_snippet(code: str):
+    """Run a quick Python snippet in the outreach venv (cwd=outreach_agent/)."""
+    result = subprocess.run(
+        [str(_OUTREACH_PYTHON), "-c", code],
+        cwd=str(OUTREACH_DIR),
+    )
+    sys.exit(result.returncode)
+
+
+def cmd_brain(args: list[str]):
+    """Growth brain commands: status, l1, l2, veto_check, assess, discover, insights."""
+    if not GROWTH_BRAIN_PY.exists():
+        print(f"✗ {GROWTH_BRAIN_PY} not found")
+        sys.exit(1)
+    if not args:
+        args = ["status"]
+    sys.exit(_run([_OUTREACH_PYTHON, str(GROWTH_BRAIN_PY)] + args, cwd=str(OUTREACH_DIR)))
+
+
+def cmd_experiment(args: list[str]):
+    """Experiment commands: list, active, results."""
+    sub = args[0] if args else "list"
+    if sub == "list":
+        _run_py_snippet("""
+import db, btl_db, experiment_engine
+db.init_db(); btl_db.init_btl_tables()
+rows = experiment_engine.list_experiments()
+if not rows:
+    print("No experiments yet.")
+for e in rows:
+    print(f"  [{e['status']:10s}] {e['id']}  {e['channel']}  {e['hypothesis'][:60]}")
+""")
+    elif sub == "active":
+        _run_py_snippet("""
+import db, btl_db, experiment_engine
+db.init_db(); btl_db.init_btl_tables()
+active = experiment_engine.list_experiments(status='active')
+if not active:
+    print("No active experiments.")
+for e in active:
+    print(f"  {e['id']}  ch={e['channel']}  started={(e.get('started_at') or '?')[:10]}")
+    print(f"    {e['hypothesis'][:80]}")
+""")
+    elif sub == "results":
+        _run_py_snippet("""
+import db, btl_db, experiment_engine
+db.init_db(); btl_db.init_btl_tables()
+analyzed = experiment_engine.list_experiments(status='analyzed')
+if not analyzed:
+    print("No completed experiments yet.")
+for e in analyzed:
+    print(f"  {e['id']}  result={e.get('result','?')}  ch={e['channel']}")
+    if e.get('learning'):
+        print(f"    Learning: {e['learning'][:80]}")
+""")
+    else:
+        print(f"Unknown experiment command: {sub}")
+        print("Usage: python3 rjm.py experiment [list|active|results]")
+        sys.exit(1)
+
+
+def cmd_veto(args: list[str]):
+    """Veto a proposal: veto <id> | veto all."""
+    if not args:
+        print("Usage: python3 rjm.py veto <proposal_id> | veto all")
+        sys.exit(1)
+    target = args[0]
+    if target == "all":
+        _run_py_snippet("""
+import db, btl_db, veto_system
+db.init_db(); btl_db.init_btl_tables()
+n = veto_system.veto_all("Manual emergency brake via CLI")
+print(f"Vetoed {n} proposals.")
+""")
+    else:
+        # Pass the proposal id via env var to avoid quoting issues
+        os.environ["_RJM_VETO_TARGET"] = target
+        _run_py_snippet("""
+import os, db, btl_db, veto_system
+db.init_db(); btl_db.init_btl_tables()
+target = os.environ["_RJM_VETO_TARGET"]
+veto_system.veto_proposal(target, "Manual veto via CLI")
+print(f"Vetoed {target}.")
+""")
+
+
+def cmd_proposals(args: list[str]):
+    """List pending proposals awaiting execution."""
+    _run_py_snippet("""
+import db, btl_db, veto_system
+db.init_db(); btl_db.init_btl_tables()
+pending = veto_system.get_pending_proposals()
+if not pending:
+    print("No pending proposals.")
+for p in pending:
+    print(f"  [{p['id']}] {p['title']}")
+    print(f"    Risk: {p['risk_level']}  Executes: {p['execute_after'][:16]}")
+""")
+
+
+def cmd_budget(args: list[str]):
+    """Growth budget summary (donations / allocated / spent / available)."""
+    _run_py_snippet("""
+import db, btl_db, revenue_tracker
+db.init_db(); btl_db.init_btl_tables()
+summary = revenue_tracker.get_budget_summary()
+print("=== Growth Budget ===")
+print(f"  Total donations:  EUR {summary['total_donations']:.2f}")
+print(f"  Allocated (50%):  EUR {summary['total_allocated']:.2f}")
+print(f"  Total spent:      EUR {summary['total_spent']:.2f}")
+print(f"  Available:        EUR {summary['available_balance']:.2f}")
+""")
+
+
+def cmd_channels(args: list[str]):
+    """Channel portfolio: list | activate <id> | pause <id>."""
+    sub = args[0] if args else "list"
+    if sub in ("list", ""):
+        _run_py_snippet("""
+import db, btl_db, strategy_portfolio
+db.init_db(); btl_db.init_btl_tables()
+summary = strategy_portfolio.get_portfolio_summary()
+active_n = summary.get('active_count', summary.get('active', 0))
+queued_n = summary.get('queued_count', summary.get('queued', 0))
+paused_n = summary.get('paused_count', summary.get('paused', 0))
+print(f"=== Channels: {active_n} active, {queued_n} queued, {paused_n} paused ===\\n")
+for ch in summary['channels']:
+    lei = ch.get('lei_7d', 0) or 0
+    status = ch.get('status', '?')
+    if status == 'active':
+        icon = '\\u2713'
+    elif status == 'queued':
+        icon = '\\u25cb'
+    else:
+        icon = '\\u2717'
+    print(f"  {icon} {ch['id']:30s}  w={ch.get('weight', 0.0):.2f}  LEI={lei:.0f}  [{status}]")
+""")
+    elif sub == "activate" and len(args) > 1:
+        os.environ["_RJM_CHANNEL_ID"] = args[1]
+        _run_py_snippet("""
+import os, db, btl_db, strategy_portfolio
+db.init_db(); btl_db.init_btl_tables()
+cid = os.environ["_RJM_CHANNEL_ID"]
+strategy_portfolio.activate_channel(cid)
+print(f"Activated {cid}")
+""")
+    elif sub == "pause" and len(args) > 1:
+        os.environ["_RJM_CHANNEL_ID"] = args[1]
+        _run_py_snippet("""
+import os, db, btl_db, strategy_portfolio
+db.init_db(); btl_db.init_btl_tables()
+cid = os.environ["_RJM_CHANNEL_ID"]
+strategy_portfolio.pause_channel(cid)
+print(f"Paused {cid}")
+""")
+    else:
+        print(f"Unknown channels command: {sub}")
+        print("Usage: python3 rjm.py channels [list | activate <id> | pause <id>]")
+        sys.exit(1)
+
+
+def cmd_score(args: list[str]):
+    """Growth Health Score (delegates to growth_brain.py assess)."""
+    if not GROWTH_BRAIN_PY.exists():
+        print(f"✗ {GROWTH_BRAIN_PY} not found")
+        sys.exit(1)
+    sys.exit(_run([_OUTREACH_PYTHON, str(GROWTH_BRAIN_PY), "assess"] + args, cwd=str(OUTREACH_DIR)))
+
+
 def cmd_status():
     """
     Full system status — runs master health + outreach status in sequence.
@@ -1055,13 +1279,20 @@ def main():
             print("Agents: outreach, discover, research, verify")
         else:
             cmd_run(agent, rest[1:])
-    elif cmd == "content":
-        action = rest[0].lower() if rest else ""
-        if action == "retry":
-            cmd_content_retry()
-        else:
-            print("Usage: python3 rjm.py content retry")
-            sys.exit(1)
+    elif cmd == "brain":
+        cmd_brain(rest)
+    elif cmd == "experiment":
+        cmd_experiment(rest)
+    elif cmd == "veto":
+        cmd_veto(rest)
+    elif cmd == "proposals":
+        cmd_proposals(rest)
+    elif cmd == "budget":
+        cmd_budget(rest)
+    elif cmd == "channels":
+        cmd_channels(rest)
+    elif cmd == "score":
+        cmd_score(rest)
     elif cmd == "swarm":
         cmd_swarm(rest)
     elif cmd == "memory":

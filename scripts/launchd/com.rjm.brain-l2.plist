@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.rjm.brain-l2</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/scripts/run_agent.sh</string>
+    <string>brain-l2</string>
+  </array>
+
+  <!-- BTL Layer 2 — strategic pass: Sunday 20:00 CET (matches
+       config.BTL_L2_DAY="sunday" / BTL_L2_HOUR_CET=20). Reallocates
+       channel weights based on the week's LEI — higher blast radius
+       than L1, so weekly. Weekday=0 is Sunday in launchd. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>0</integer>
+    <key>Hour</key><integer>20</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_brain-l2.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_brain-l2.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/motomoto</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>

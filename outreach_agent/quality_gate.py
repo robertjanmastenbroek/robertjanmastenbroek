@@ -18,11 +18,13 @@ import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+import anthropic
 
 EXPECTED_WIDTH  = 1080
 EXPECTED_HEIGHT = 1920
 DURATION_TOLERANCE = 1.0
 MIN_FILE_SIZE_BYTES = 1_000_000
+VISION_MODEL = "claude-haiku-4-5-20251001"
 LOG_PATH = Path(__file__).parent.parent / "data" / "quality_log.json"
 
 
@@ -130,11 +132,10 @@ def _check_visual(clip_path: str, angle: str = "") -> tuple:
 
 
 def _score_frame(frame_b64: str, angle: str) -> tuple:
-    """Send frame to Claude Vision via CLI. Returns (passed, reason)."""
-    import tempfile
-    import base64
-
+    """Send frame to Claude Vision. Returns (passed, reason)."""
+    client = anthropic.Anthropic()
     angle_context = f" The clip angle is '{angle}'." if angle else ""
+
     prompt = f"""You are reviewing a video frame from a short-form clip for Holy Rave — a dark, sacred, futuristic music brand by Dutch DJ Robert-Jan Mastenbroek.{angle_context}
 
 Rate this frame 1–5 for posting quality:
@@ -146,29 +147,31 @@ Rate this frame 1–5 for posting quality:
 
 Respond with JSON only: {{"score": N, "reason": "one sentence"}}"""
 
-    # Write the frame to a temp file so we can pass it to the Claude CLI
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-        f.write(base64.standard_b64decode(frame_b64))
-        tmp_frame = f.name
+    response = client.messages.create(
+        model=VISION_MODEL,
+        max_tokens=100,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": frame_b64,
+                    },
+                },
+                {"type": "text", "text": prompt},
+            ],
+        }],
+    )
 
     try:
-        result = subprocess.run(
-            ["claude", "-p", prompt, "--image", tmp_frame, "--output-format", "text"],
-            capture_output=True, text=True, timeout=30,
-        )
-        raw = result.stdout.strip()
-        # Strip markdown code fences if present
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        parsed = json.loads(raw)
-        score = int(parsed.get("score", 3))
-        reason = parsed.get("reason", "")
-    except (json.JSONDecodeError, KeyError, ValueError, subprocess.TimeoutExpired, FileNotFoundError):
+        result = json.loads(response.content[0].text.strip())
+        score = int(result.get("score", 3))
+        reason = result.get("reason", "")
+    except (json.JSONDecodeError, KeyError, ValueError):
         return True, ""
-    finally:
-        Path(tmp_frame).unlink(missing_ok=True)
 
     if score >= 3:
         return True, ""

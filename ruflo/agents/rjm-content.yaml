@@ -56,6 +56,6 @@ sources:
   output: ../content/output/
 
 scripts:
-  run: python3 ../outreach_agent/post_today.py
+  run: python3 ../rjm.py content viral
 
 createdAt: "2026-04-11T00:00:00.000Z"

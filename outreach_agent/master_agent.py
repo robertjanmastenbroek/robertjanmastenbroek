@@ -1605,6 +1605,143 @@ def cmd_auto_weights():
         pass
 
 
+# ─── BTL (Boil the Lake) Operational Modes ───────────────────────────────────
+
+def _get_current_listeners() -> int:
+    """Best-effort current Spotify monthly listener count.
+
+    Tries `spotify_tracker.py current` first; falls back to the previous
+    snapshot, then to a sane default (325) so the score never crashes.
+    """
+    tracker_path = Path(__file__).parent / "spotify_tracker.py"
+    if tracker_path.exists():
+        try:
+            result = subprocess.run(
+                [sys.executable, str(tracker_path), "current"],
+                capture_output=True, text=True, cwd=str(Path(__file__).parent),
+            )
+            return int(result.stdout.strip()) if result.stdout.strip().isdigit() else 325
+        except Exception:
+            pass
+    return 325
+
+
+def _get_previous_listeners() -> int:
+    """Previous Spotify monthly listener count from data/listeners.json."""
+    listeners_file = Path(__file__).parent.parent / "data" / "listeners.json"
+    if listeners_file.exists():
+        try:
+            data = json.loads(listeners_file.read_text())
+            return data.get("count", 325)
+        except Exception:
+            pass
+    return 325
+
+
+def cmd_btl_optimize():
+    """L1 — bandit weight refresh from recent experiment outcomes."""
+    try:
+        import growth_brain
+    except ImportError:
+        print("BTL protocol not installed (growth_brain missing).")
+        sys.exit(1)
+    result = growth_brain.run_l1_optimize()
+    print(json.dumps(result, indent=2, default=str))
+
+
+def cmd_btl_reallocate():
+    """L2 — strategic capital reallocation across active channels."""
+    try:
+        import growth_brain
+    except ImportError:
+        print("BTL protocol not installed (growth_brain missing).")
+        sys.exit(1)
+    result = growth_brain.run_l2_reallocate()
+    print(json.dumps(result, indent=2, default=str))
+
+
+def cmd_btl_veto_check():
+    """Run veto sweep on pending proposals; auto-execute survivors."""
+    try:
+        import growth_brain
+    except ImportError:
+        print("BTL protocol not installed (growth_brain missing).")
+        sys.exit(1)
+    result = growth_brain.run_veto_check()
+    print(json.dumps(result, indent=2, default=str))
+
+
+def cmd_btl_assess():
+    """Compute the 0–100 Growth Health Score and print formatted summary."""
+    try:
+        import growth_brain
+    except ImportError:
+        print("BTL protocol not installed (growth_brain missing).")
+        sys.exit(1)
+    score = growth_brain.run_self_assess(
+        listeners_current=_get_current_listeners(),
+        listeners_previous=_get_previous_listeners(),
+    )
+    total = score.get("total_score", 0)
+    components = score.get("components", {})
+    action = score.get("triggered_action", {}) or {}
+
+    print(f"\n{'═'*60}")
+    print(f"  GROWTH HEALTH SCORE: {total}/100")
+    print(f"{'═'*60}")
+
+    if components:
+        print("\n  Components:")
+        for key, value in components.items():
+            print(f"    {key:<32} {value}")
+
+    if action:
+        print("\n  Triggered Action:")
+        level = action.get("level", "unknown")
+        descr = action.get("description") or action.get("name") or ""
+        print(f"    Level:       {level}")
+        if descr:
+            print(f"    Description: {descr}")
+
+    print(f"\n{'═'*60}\n")
+
+
+def cmd_btl_digest():
+    """Print the daily veto digest body (proposals awaiting human review)."""
+    try:
+        import veto_system
+    except ImportError:
+        print("BTL protocol not installed (veto_system missing).")
+        sys.exit(1)
+    body = veto_system.build_digest_body()
+    print(body)
+
+
+def cmd_btl_fund():
+    """Poll Stripe for new donations; print available growth budget."""
+    try:
+        import revenue_tracker
+    except ImportError:
+        print("BTL protocol not installed (revenue_tracker missing).")
+        sys.exit(1)
+
+    new_donations = revenue_tracker.poll_stripe()
+    if new_donations:
+        print(f"Found {len(new_donations)} new donation(s):")
+        for d in new_donations:
+            print(f"  {json.dumps(d, default=str)}")
+    else:
+        print("No new donations found.")
+
+    try:
+        budget = revenue_tracker.get_budget_summary()
+        print("\nBudget Summary:")
+        for key, value in budget.items():
+            print(f"  {key:<20} EUR {value}")
+    except Exception as exc:
+        print(f"\n[budget summary unavailable: {exc}]")
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1660,6 +1797,18 @@ def main():
             cmd_run(agent, args[2:])
     elif args[0] == "auto_weights":
         cmd_auto_weights()
+    elif args[0] == "btl_optimize":
+        cmd_btl_optimize()
+    elif args[0] == "btl_reallocate":
+        cmd_btl_reallocate()
+    elif args[0] == "btl_veto_check":
+        cmd_btl_veto_check()
+    elif args[0] == "btl_assess":
+        cmd_btl_assess()
+    elif args[0] == "btl_digest":
+        cmd_btl_digest()
+    elif args[0] == "btl_fund":
+        cmd_btl_fund()
     else:
         print(__doc__)
 
