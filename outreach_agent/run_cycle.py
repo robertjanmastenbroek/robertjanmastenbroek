@@ -137,24 +137,76 @@ def _weighted_order_with_youtube_floor(contacts, youtube_share: float = YOUTUBE_
 def _rescue_stale_queued():
     """
     Contacts stuck in 'queued' for > 2 hours were likely abandoned by a crashed task.
-    Reset them to 'verified' so they can be retried — unless they've hit 3 attempts,
-    in which case mark as 'skip' to stop pestering the same address.
+    Reset them to 'verified' so they can be retried — unless they've hit
+    MAX_SEND_ATTEMPTS, in which case dead-letter them to stop consuming quota.
     """
+    from config import MAX_SEND_ATTEMPTS
     cutoff = (datetime.now() - timedelta(hours=2)).isoformat()
+    rescued = 0
+    dead_lettered = 0
     with db.get_conn() as conn:
         stale = conn.execute("""
             SELECT email, send_attempts FROM contacts
             WHERE status = 'queued' AND date_queued < ?
         """, (cutoff,)).fetchall()
         for row in stale:
-            if (row["send_attempts"] or 0) >= 3:
+            attempts = row["send_attempts"] or 0
+            if attempts >= MAX_SEND_ATTEMPTS:
                 conn.execute(
-                    "UPDATE contacts SET status='skip' WHERE email=?", (row["email"],)
+                    "UPDATE contacts SET status='dead_letter',"
+                    " notes = COALESCE(notes, '') || ' | DEAD_LETTER: stale_queued' "
+                    "WHERE email=?",
+                    (row["email"],),
                 )
+                dead_lettered += 1
             else:
                 conn.execute(
                     "UPDATE contacts SET status='verified' WHERE email=?", (row["email"],)
                 )
+                rescued += 1
+    if rescued or dead_lettered:
+        try:
+            import events as _events
+            _events.publish(
+                "pipeline.stale_queued",
+                source="run_cycle._rescue_stale_queued",
+                payload={"rescued": rescued, "dead_lettered": dead_lettered},
+            )
+        except Exception:
+            pass
+
+
+def _detect_stale_research(max_age_days: int = 3) -> int:
+    """Publish an event if contacts have been waiting for research too long.
+
+    Returns the count of stale contacts. Does NOT change state — unresearched
+    contacts are still eligible for sending, just ranked lower. Purpose is
+    telemetry: if this number grows, rjm-research is likely broken.
+    """
+    cutoff = (datetime.now() - timedelta(days=max_age_days)).date().isoformat()
+    with db.get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n FROM contacts
+            WHERE status = 'verified'
+              AND (research_done IS NULL OR research_done = 0)
+              AND date_verified IS NOT NULL
+              AND date_verified < ?
+            """,
+            (cutoff,),
+        ).fetchone()
+    count = int(row["n"]) if row else 0
+    if count:
+        try:
+            import events as _events
+            _events.publish(
+                "pipeline.stale_research",
+                source="run_cycle._detect_stale_research",
+                payload={"count": count, "max_age_days": max_age_days},
+            )
+        except Exception:
+            pass
+    return count
 
 
 def cmd_plan():
@@ -164,6 +216,7 @@ def cmd_plan():
     """
     db.init_db()
     _rescue_stale_queued()
+    _detect_stale_research()
 
     plan = {
         "window_open":    scheduler.is_within_active_window(),
