@@ -339,6 +339,20 @@ def cmd_run():
         summary.get("_reply_rate", "—"),
     )
 
+    # 10. Heartbeat so rjm.py status / master_agent can detect outreach-cycle staleness.
+    try:
+        import fleet_state
+        fleet_state.heartbeat(
+            "outreach_cycle",
+            status="ok",
+            result={
+                "today_sent": summary.get("_today_sent", 0),
+                "quota_remaining": scheduler.remaining_quota_today(),
+            },
+        )
+    except Exception as exc:
+        log.warning("fleet_state heartbeat skipped: %s", exc)
+
 
 def cmd_setup():
     """First-time setup: init DB, authenticate Gmail."""

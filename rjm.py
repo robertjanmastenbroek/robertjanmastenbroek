@@ -797,6 +797,43 @@ def cmd_status():
     except Exception as _e:
         print(f"\n[ Rate Limits ]\n  (unavailable: {_e})")
 
+    # ── Fleet heartbeats (agent liveness) ────────────────────────────────────
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
+        import fleet_state as _fleet  # type: ignore
+        import events as _events      # type: ignore
+        agents = _fleet.get_all()
+        stale_names = {a["agent_name"] for a in _fleet.get_stale()}
+        print("\n[ Fleet Heartbeats ]\n")
+        if not agents:
+            print("  (no heartbeats recorded yet)")
+        else:
+            for a in agents[:10]:
+                icon = "⏸ " if a["agent_name"] in stale_names else ("✓ " if a["status"] == "ok" else "✗ ")
+                print(
+                    f"  {icon} {a['agent_name']:<18} last={a['last_heartbeat'][:16]}  "
+                    f"runs={a['run_count']}  err={a['error_count']}"
+                )
+
+        # Surface recent cycle-step failures + rate-limit events for visibility
+        recent_failures = _events.recent(event_type="agent.step_failed", limit=3)
+        recent_rate_hits = _events.recent(event_type="rate_limit.hit", limit=3)
+        if recent_failures:
+            print("\n  Recent cycle failures:")
+            for ev in recent_failures:
+                import json as _json
+                p = _json.loads(ev["payload"])
+                print(f"    ⚠ {p.get('step','?')} — {p.get('error','')[:80]} ({ev['created_at'][:16]})")
+        if recent_rate_hits:
+            print("\n  Recent rate-limit hits:")
+            for ev in recent_rate_hits:
+                import json as _json
+                p = _json.loads(ev["payload"])
+                print(f"    ⏸  {p.get('reason','?')} ({ev['created_at'][:16]})")
+    except Exception as _e:
+        print(f"\n[ Fleet Heartbeats ]\n  (unavailable: {_e})")
+
     # 1. Master health check
     print("\n[ Master Agent Health ]\n")
     _run([_OUTREACH_PYTHON, str(MASTER_PY), "health"], cwd=str(OUTREACH_DIR))
