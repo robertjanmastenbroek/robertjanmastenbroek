@@ -36,6 +36,23 @@ Usage:
   python3 rjm.py memory get <key>         # Read a memory key
   python3 rjm.py schedule [install|uninstall|status]  # Manage launchd fleet schedules
 
+  Boil the Lake (BTL) protocol:
+  python3 rjm.py brain status             # Full BTL orchestrator snapshot
+  python3 rjm.py brain l1                 # L1 tactical pass (bandit refresh)
+  python3 rjm.py brain l2                 # L2 strategic pass (channel reallocation)
+  python3 rjm.py brain veto_check         # Execute proposals past veto window
+  python3 rjm.py brain assess             # Growth Health Score
+  python3 rjm.py experiment list          # All experiments
+  python3 rjm.py experiment active        # Currently running experiments
+  python3 rjm.py experiment results       # Completed + analyzed results
+  python3 rjm.py veto <id> | veto all     # Kill a proposal (or all pending)
+  python3 rjm.py proposals                # Pending proposals (24hr veto window)
+  python3 rjm.py budget                   # Donations / allocated / spent / available
+  python3 rjm.py channels                 # Channel portfolio + weights + LEI
+  python3 rjm.py channels activate <id>   # Activate a queued channel
+  python3 rjm.py channels pause <id>      # Pause an active channel
+  python3 rjm.py score                    # Growth Health Score (0-100)
+
 Examples:
   python3 rjm.py status                   # Is everything running?
   python3 rjm.py briefing                 # What should I focus on today?
