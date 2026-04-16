@@ -23,18 +23,62 @@ FACEBOOK_GRAPH_BASE  = "https://graph.facebook.com/v21.0"
 TIKTOK_API_BASE      = "https://open.tiktokapis.com/v2"
 YOUTUBE_UPLOAD_BASE  = "https://www.googleapis.com/upload/youtube/v3"
 
+# All 6 distribution targets the unified daily content pipeline fans out to.
+# Reels go to instagram/youtube/facebook/tiktok; ephemeral cuts go to
+# instagram_story/facebook_story (24h, link-stickered to the Spotify URL).
+DISTRIBUTION_TARGETS = [
+    "instagram", "youtube", "facebook", "tiktok",
+    "instagram_story", "facebook_story",
+]
+
 # Peak posting times in CET/CEST (Europe/Madrid = Tenerife)
 # clip_index 0 → first slot, 1 → second, 2 → third
-# 08:30 beats 09:00 — catches EU pre-commute before feed congestion peaks.
-# 21:30 outperforms 19:00 for the nocturnal Psytrance/Techno audience + West Coast US (12:30 PST).
+# Stories run alongside Reels but offset slightly so they don't compete for
+# the same audience attention window.
 POST_SCHEDULE = {
-    "instagram": ["08:30", "13:00", "21:30"],
-    "facebook":  ["09:00", "13:30", "22:00"],  # 30 min after Instagram
-    "youtube":   ["09:30", "14:00", "22:30"],
+    "instagram":       ["08:30", "13:00", "19:30"],
+    "youtube":         ["09:00", "13:30", "20:00"],
+    "facebook":        ["09:15", "13:45", "20:15"],
+    "tiktok":          ["09:30", "14:00", "20:30"],
+    "instagram_story": ["08:45", "13:15", "19:45"],
+    "facebook_story":  ["09:15", "13:45", "20:15"],
 }
 # CET offset: UTC+1 winter, UTC+2 summer (CEST). Use fixed +1 as conservative default;
 # zoneinfo adjusts automatically when available.
 _CET_OFFSET = timedelta(hours=1)
+
+
+class CircuitBreaker:
+    """Track consecutive failures per platform. Trip after threshold.
+
+    Once tripped, the breaker stays open until ``reset()`` or ``record_success()``
+    is called for that platform. Each successful post resets the failure counter.
+    """
+
+    def __init__(self, threshold: int = 3):
+        self.threshold = threshold
+        self._failures: dict[str, int] = {}
+        self._tripped: set[str] = set()
+
+    def record_failure(self, platform: str) -> None:
+        self._failures[platform] = self._failures.get(platform, 0) + 1
+        if self._failures[platform] >= self.threshold:
+            self._tripped.add(platform)
+            logger.warning(
+                f"[distributor] Circuit breaker TRIPPED for {platform} after "
+                f"{self.threshold} consecutive failures"
+            )
+
+    def record_success(self, platform: str) -> None:
+        self._failures[platform] = 0
+        self._tripped.discard(platform)
+
+    def is_open(self, platform: str) -> bool:
+        return platform in self._tripped
+
+    def reset(self, platform: str) -> None:
+        self._failures[platform] = 0
+        self._tripped.discard(platform)
 
 
 def _scheduled_at_utc(platform: str, clip_index: int) -> str:
@@ -517,6 +561,220 @@ def distribute_clip(clip: dict) -> dict:
     return result
 
 
-def distribute_all(clips: list) -> list:
-    """Distribute all clips. Returns list of result dicts."""
-    return [distribute_clip(c) for c in clips]
+def post_instagram_story(video_path: str, caption: str, ig_user_id: str,
+                         access_token: str, spotify_url: str = "") -> dict:
+    """Post an Instagram Story via Graph API. Same flow as Reel but media_type=STORIES.
+
+    Optional ``spotify_url`` becomes a Story link sticker — the only direct
+    Spotify-driver Stories provide.
+    """
+    try:
+        # Refresh token before use — keeps the 60-day clock alive
+        access_token = refresh_instagram_token(access_token)
+        video_url = _upload_video_for_instagram(video_path)
+        if not video_url:
+            return {"success": False, "platform": "instagram_story",
+                    "error": "video upload failed"}
+
+        # 1. Create media container (STORIES type)
+        params = {
+            "video_url":    video_url,
+            "media_type":   "STORIES",
+            "caption":      caption,
+            "access_token": access_token,
+        }
+        if spotify_url:
+            params["link"] = spotify_url  # Link sticker
+
+        resp = requests.post(
+            f"{INSTAGRAM_GRAPH_BASE}/{ig_user_id}/media",
+            data=params,
+            timeout=30,
+        )
+        data = resp.json()
+        container_id = data.get("id")
+        if not container_id:
+            return {"success": False, "platform": "instagram_story",
+                    "error": f"container creation failed: {data}"}
+
+        # 2. Poll for FINISHED (up to 2 minutes)
+        for _ in range(24):
+            time.sleep(5)
+            status_resp = requests.get(
+                f"{INSTAGRAM_GRAPH_BASE}/{container_id}",
+                params={"fields": "status_code", "access_token": access_token},
+                timeout=15,
+            )
+            status = status_resp.json().get("status_code", "")
+            if status == "FINISHED":
+                break
+            if status == "ERROR":
+                return {"success": False, "platform": "instagram_story",
+                        "error": "container processing error"}
+
+        # 3. Publish
+        pub_resp = requests.post(
+            f"{INSTAGRAM_GRAPH_BASE}/{ig_user_id}/media_publish",
+            data={"creation_id": container_id, "access_token": access_token},
+            timeout=30,
+        )
+        pub_data = pub_resp.json()
+        return {"success": True, "platform": "instagram_story",
+                "post_id": pub_data.get("id", container_id)}
+
+    except Exception as e:
+        return {"success": False, "platform": "instagram_story", "error": str(e)}
+
+
+def post_facebook_story(video_path: str, page_id: str, page_token: str) -> dict:
+    """Post a Facebook Story via Graph API ``video_stories`` endpoint."""
+    try:
+        url = f"{FACEBOOK_GRAPH_BASE}/{page_id}/video_stories"
+
+        # 1. Initialize upload
+        init_resp = requests.post(
+            url,
+            data={"upload_phase": "start", "access_token": page_token},
+            timeout=30,
+        )
+        init_data = init_resp.json()
+        video_id = init_data.get("video_id")
+        if not video_id:
+            return {"success": False, "platform": "facebook_story",
+                    "error": f"story init failed: {init_data}"}
+
+        # 2. Upload video binary
+        upload_url = f"{FACEBOOK_GRAPH_BASE}/{video_id}"
+        with open(video_path, "rb") as f:
+            requests.post(
+                upload_url,
+                files={"source": f},
+                data={"access_token": page_token, "upload_phase": "transfer"},
+                timeout=120,
+            )
+
+        # 3. Finish
+        finish_resp = requests.post(
+            url,
+            data={
+                "upload_phase": "finish",
+                "video_id":     video_id,
+                "access_token": page_token,
+            },
+            timeout=30,
+        )
+        finish_data = finish_resp.json()
+        return {"success": bool(finish_data.get("success", False)),
+                "platform": "facebook_story",
+                "post_id":  str(video_id)}
+
+    except Exception as e:
+        return {"success": False, "platform": "facebook_story", "error": str(e)}
+
+
+def _distribute_single(clip: dict, target: str) -> dict:
+    """Route a clip to the correct posting function for the given target."""
+    if target == "instagram":
+        return distribute_clip({**clip, "platform": "instagram"})
+    if target == "youtube":
+        return distribute_clip({**clip, "platform": "youtube"})
+    if target == "facebook":
+        return distribute_clip({**clip, "platform": "facebook"})
+    if target == "tiktok":
+        # TikTok native posting requires a separate OAuth dance; route via Buffer.
+        return _buffer_fallback(
+            {**clip, "platform": "tiktok"},
+            _scheduled_at_utc("tiktok", clip.get("clip_index", 0)),
+        )
+    if target == "instagram_story":
+        story_path   = clip.get("story_path", clip.get("path", ""))
+        ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "")
+        access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+        spotify_url  = clip.get("spotify_url", "")
+        if not (ig_user_id and access_token):
+            return {"success": False, "platform": "instagram_story",
+                    "error": "credentials missing"}
+        return post_instagram_story(
+            story_path, clip.get("caption", ""), ig_user_id, access_token, spotify_url,
+        )
+    if target == "facebook_story":
+        story_path = clip.get("story_path", clip.get("path", ""))
+        page_id    = os.environ.get("FACEBOOK_PAGE_ID", "")
+        page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "")
+        if not (page_id and page_token):
+            return {"success": False, "platform": "facebook_story",
+                    "error": "credentials missing"}
+        return post_facebook_story(story_path, page_id, page_token)
+
+    return {"success": False, "platform": target, "error": f"unknown target: {target}"}
+
+
+def _distribute_with_retry(clip: dict, target: str, max_retries: int = 3) -> dict:
+    """Distribute to a single target with exponential backoff retry.
+
+    Delays between attempts: 2s, 8s, 32s. After exhausting native retries for
+    a Reel target (instagram/youtube/facebook), falls back to Buffer with the
+    schedule preserved. Story targets do NOT fall back to Buffer (Buffer can't
+    post Stories).
+    """
+    delays = [2, 8, 32]
+    result: dict = {}
+
+    for attempt in range(max_retries):
+        result = _distribute_single(clip, target)
+        if result.get("success"):
+            return result
+        if attempt < max_retries - 1:
+            logger.warning(
+                f"[distributor] Retry {attempt + 1}/{max_retries} for {target}: "
+                f"{result.get('error', '')}"
+            )
+            time.sleep(delays[attempt])
+
+    # Final fallback to Buffer (only for Reel targets — Stories aren't supported by Buffer)
+    if target in ("instagram", "youtube", "facebook"):
+        logger.info(f"[distributor] Falling back to Buffer for {target}")
+        return _buffer_fallback(
+            {**clip, "platform": target},
+            _scheduled_at_utc(target, clip.get("clip_index", 0)),
+        )
+
+    return result
+
+
+def distribute_all(clips: list, circuit_breaker: "CircuitBreaker | None" = None) -> list:
+    """Distribute clips to all 6 targets with retry + circuit breaker.
+
+    For each clip, fans out to every target in ``DISTRIBUTION_TARGETS``. A target
+    whose circuit breaker is open is skipped (and the failure recorded in the
+    result list so the caller can see what was suppressed).
+    """
+    cb = circuit_breaker or CircuitBreaker()
+    results: list = []
+
+    for clip in clips:
+        for target in DISTRIBUTION_TARGETS:
+            if cb.is_open(target):
+                logger.warning(f"[distributor] Skipping {target} — circuit breaker open")
+                results.append({
+                    "platform":   target,
+                    "success":    False,
+                    "error":      "circuit breaker open",
+                    "clip_index": clip.get("clip_index"),
+                    "variant":    clip.get("variant"),
+                })
+                continue
+
+            result = _distribute_with_retry(clip, target, max_retries=3)
+            if result.get("success"):
+                cb.record_success(target)
+            else:
+                cb.record_failure(target)
+
+            # Preserve clip metadata on every result row
+            result.setdefault("platform", target)
+            result["clip_index"] = clip.get("clip_index")
+            result["variant"]    = clip.get("variant")
+            results.append(result)
+
+    return results
