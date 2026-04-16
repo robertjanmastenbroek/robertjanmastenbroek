@@ -245,9 +245,10 @@ def _burn_text_overlay(
             font = candidate
             break
 
+    escaped_font = _escape_drawtext(font)
     drawtext = (
         f"drawtext=text='{escaped}'"
-        f":fontfile='{font}'"
+        f":fontfile='{escaped_font}'"
         f":fontsize={font_size}"
         f":fontcolor=white"
         f":shadowcolor=black@0.6:shadowx=3:shadowy=3"
@@ -513,9 +514,10 @@ def render_story_variant(
             font = candidate
             break
 
+    escaped_font = _escape_drawtext(font)
     drawtext = (
         f"drawtext=text='{escaped}'"
-        f":fontfile='{font}':fontsize=42"
+        f":fontfile='{escaped_font}':fontsize=42"
         f":fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2"
         f":x=(w-text_w)/2:y={y_pos}"
     )
