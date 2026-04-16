@@ -206,15 +206,19 @@ def _burn_text_overlay(
     start_time: float = 0.0,
     end_time: float | None = None,
 ) -> str:
-    """Burn text overlay using Pillow (PNG) + ffmpeg overlay filter.
+    """Burn branded text overlay using Pillow + ffmpeg overlay filter.
 
-    Replaces the drawtext approach which requires --enable-libfreetype in
-    ffmpeg. Pillow renders the text to a transparent RGBA PNG sized to the
-    full frame (1080×1920), positioned correctly, then ffmpeg composites it
-    using the overlay filter with alpha fade in/out.
+    Design system (Dark / Holy / Futuristic):
+    - Font: Bebas Neue (display, uppercase, wide tracking) → Impact fallback
+    - Background: full-width semi-transparent dark bar behind each line of
+      text (not a floating pill — the bar bleeds edge-to-edge so text is
+      always readable regardless of background footage)
+    - Text: pure white, 4px multi-directional shadow for depth
+    - Accent line: 3px white line above the text block (visual anchor)
+    - Position: lower third (y_pct) for feed hooks; upper third for story CTA
 
-    Returns output_path on success, input_path on failure so that callers
-    can safely chain: ``next_input = _burn_text_overlay(...)``
+    Returns output_path on success, input_path on failure so callers can
+    safely chain: ``next_input = _burn_text_overlay(...)``
     """
     from PIL import Image, ImageDraw, ImageFont
 
@@ -227,26 +231,13 @@ def _burn_text_overlay(
     if end_time is None:
         end_time = max(start_time + 0.5, info["duration"] - 1.0) if info["duration"] > 1 else info["duration"]
 
-    # --- Word-wrap ---
-    words = text.split()
-    lines: list[str] = []
-    current: list[str] = []
-    for word in words:
-        line_len = sum(len(w) for w in current) + len(current) + len(word)
-        if line_len <= wrap_chars:
-            current.append(word)
-        else:
-            if current:
-                lines.append(" ".join(current))
-            current = [word]
-    if current:
-        lines.append(" ".join(current))
-
-    # --- Load font ---
+    # --- Load font: Bebas Neue → Impact → Helvetica ---
     font = None
     for candidate in [
         os.path.expanduser("~/.fonts/BebasNeue-Regular.ttf"),
         "/Library/Fonts/BebasNeue-Regular.ttf",
+        "/System/Library/Fonts/Supplemental/Impact.ttf",
+        "/Library/Fonts/Impact.ttf",
         "/System/Library/Fonts/Helvetica.ttc",
         "/System/Library/Fonts/HelveticaNeue.ttc",
     ]:
@@ -259,23 +250,81 @@ def _burn_text_overlay(
     if font is None:
         font = ImageFont.load_default()
 
-    # --- Create RGBA frame ---
+    # --- Word-wrap (pixel-aware when possible) ---
+    words = text.split()
+    lines: list[str] = []
+    current: list[str] = []
+    max_px = OUTPUT_W - 80  # 40px side padding each side
+
+    def _line_width(words_: list[str]) -> int:
+        try:
+            tmp = Image.new("RGBA", (1, 1))
+            d = ImageDraw.Draw(tmp)
+            bb = d.textbbox((0, 0), " ".join(words_), font=font)
+            return bb[2] - bb[0]
+        except Exception:
+            return sum(len(w) for w in words_) * (font_size // 2)
+
+    for word in words:
+        test = current + [word]
+        if _line_width(test) <= max_px:
+            current = test
+        else:
+            if current:
+                lines.append(" ".join(current))
+            current = [word]
+    if current:
+        lines.append(" ".join(current))
+    if not lines:
+        lines = [text]
+
+    # --- Measure block ---
+    line_height = font_size + 12
+    pad_v = 18          # top/bottom padding inside each bar
+    bar_h = line_height + pad_v * 2
+    total_block_h = len(lines) * bar_h
+    accent_h = 3        # accent line height
+    gap = 8             # gap between accent line and text block
+
+    y_anchor = int(OUTPUT_H * y_pct) - total_block_h // 2
+
+    # --- Render overlay ---
     canvas = Image.new("RGBA", (OUTPUT_W, OUTPUT_H), (0, 0, 0, 0))
     draw = ImageDraw.Draw(canvas)
 
-    line_height = font_size + 8
-    total_height = len(lines) * line_height
-    y_start = int(OUTPUT_H * y_pct) - total_height // 2
+    # Accent line (white bar above text block)
+    draw.rectangle(
+        [0, y_anchor - gap - accent_h, OUTPUT_W, y_anchor - gap],
+        fill=(255, 255, 255, 230),
+    )
 
     for i, line in enumerate(lines):
-        bbox = draw.textbbox((0, 0), line, font=font)
-        text_w = bbox[2] - bbox[0]
-        x = (OUTPUT_W - text_w) // 2
-        y = y_start + i * line_height
-        draw.text((x + 3, y + 3), line, font=font, fill=(0, 0, 0, 180))   # shadow
-        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))      # text
+        bar_y0 = y_anchor + i * bar_h
+        bar_y1 = bar_y0 + bar_h
 
-    # --- Write PNG to temp file, composite with ffmpeg overlay ---
+        # Full-width dark background bar (alternating opacity for depth)
+        bar_alpha = 200 if i % 2 == 0 else 185
+        draw.rectangle([0, bar_y0, OUTPUT_W, bar_y1], fill=(0, 0, 0, bar_alpha))
+
+        # Measure text for centering
+        try:
+            bb = draw.textbbox((0, 0), line, font=font)
+            text_w = bb[2] - bb[0]
+            text_h = bb[3] - bb[1]
+        except Exception:
+            text_w = len(line) * (font_size // 2)
+            text_h = font_size
+
+        x = (OUTPUT_W - text_w) // 2
+        y = bar_y0 + (bar_h - text_h) // 2
+
+        # Multi-directional shadow for depth
+        for dx, dy in [(4, 4), (-4, 4), (4, -4), (-4, -4), (0, 4)]:
+            draw.text((x + dx, y + dy), line, font=font, fill=(0, 0, 0, 160))
+        # White text
+        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
+
+    # --- Composite with ffmpeg overlay ---
     overlay_png = None
     try:
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
