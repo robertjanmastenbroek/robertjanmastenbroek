@@ -84,8 +84,8 @@ class CircuitBreaker:
 def _scheduled_at_utc(platform: str, clip_index: int) -> str:
     """
     Return ISO-8601 UTC datetime string for when clip_index should go live.
-    Uses POST_SCHEDULE times in CET. If the slot is already past for today,
-    still returns today's time (Buffer/YouTube will publish immediately).
+    Uses POST_SCHEDULE times in CET. If the slot has already passed, returns
+    now + 15 minutes so Buffer/TikTok always receive a future timestamp.
     """
     try:
         from zoneinfo import ZoneInfo
@@ -96,8 +96,16 @@ def _scheduled_at_utc(platform: str, clip_index: int) -> str:
     slots  = POST_SCHEDULE.get(platform, POST_SCHEDULE["instagram"])
     slot   = slots[clip_index % len(slots)]
     h, m   = int(slot.split(":")[0]), int(slot.split(":")[1])
+    now    = datetime.now(timezone.utc)
     today  = datetime.now(tz).replace(hour=h, minute=m, second=0, microsecond=0)
     utc_dt = today.astimezone(timezone.utc)
+
+    # If the scheduled time is in the past (or within the next 5 minutes, which
+    # is too tight for Buffer to accept), push to now + 15 minutes so the post
+    # is always accepted as a future-scheduled item.
+    if utc_dt <= now + timedelta(minutes=5):
+        utc_dt = now + timedelta(minutes=15)
+
     return utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
