@@ -152,6 +152,19 @@ def bounce_rate_safe() -> tuple[bool, str]:
     return True, f"Bounce rate OK: {actual_bounces}/{total_sent} = {rate:.1%} over last {BOUNCE_RATE_WINDOW_DAYS}d"
 
 
+def _publish_rate_limit(reason: str, **payload) -> None:
+    """Emit a rate_limit.hit event. Never raises — telemetry must not block sends."""
+    try:
+        import events  # local import avoids circular on cold start
+        events.publish(
+            "rate_limit.hit",
+            source="outreach_agent.scheduler",
+            payload={"reason": reason, **payload},
+        )
+    except Exception as exc:
+        log.debug("rate_limit.hit publish skipped: %s", exc)
+
+
 class SendWindow:
     """
     Context manager / guard that checks all rate limit conditions.
@@ -172,6 +185,23 @@ class SendWindow:
             self.in_window and self.quota_left > 0
             and self.interval_ok and self.bounce_ok
         )
+
+        # Publish rate_limit.hit when any gate is blocking — so master agent
+        # and rjm.py status can surface the reason instead of guessing why the
+        # batch came back empty.
+        if not self.can_send:
+            if not self.bounce_ok:
+                _publish_rate_limit("bounce_rate", status=self.bounce_status)
+            elif not self.in_window:
+                _publish_rate_limit(
+                    "outside_window",
+                    seconds_until_open=seconds_until_window_opens(),
+                )
+            elif self.quota_left <= 0:
+                _publish_rate_limit("daily_quota", limit=MAX_EMAILS_PER_DAY)
+            elif not self.interval_ok:
+                wait = max(0, int(MIN_INTERVAL_SECONDS - seconds_since_last_send()))
+                _publish_rate_limit("min_interval", wait_seconds=wait)
 
     def status(self) -> str:
         if not self.bounce_ok:
