@@ -306,6 +306,10 @@ def run(dry_run: bool = False) -> dict:
 
         log.info("Processing [%s] %s — %s", intent.upper(), email, name)
 
+        # Live runs claimed in get_and_claim_pending_replies(); dry_runs did not.
+        # A try/finally centralises claim release so every early-continue path
+        # is covered without needing to remember unmark_claimed() at each site.
+        claim_settled = dry_run  # dry_runs have no claim to release
         try:
             # ── Guard: check Gmail thread directly before sending ──────────────
             # Prevents duplicates when master agent or other paths already replied
@@ -316,6 +320,7 @@ def run(dry_run: bool = False) -> dict:
                 log.info("SKIP %s — already replied in Gmail thread %s", email, thread_id)
                 if not dry_run:
                     mark_replied(email)   # sync DB with reality
+                    claim_settled = True
                 skipped += 1
                 continue
             # ──────────────────────────────────────────────────────────────────
@@ -328,8 +333,6 @@ def run(dry_run: bool = False) -> dict:
                 subject, body = _generate_question_reply(contact, reply_body)
             else:
                 log.info("Skipping %s — intent '%s' not handled", email, intent)
-                if not dry_run:
-                    unmark_claimed(email)
                 skipped += 1
                 continue
 
@@ -352,13 +355,19 @@ def run(dry_run: bool = False) -> dict:
                 in_reply_to_message_id=contact.get("reply_message_id"),
             )
             mark_replied(email)
+            claim_settled = True
             log.info("Reply sent to %s — message_id=%s", email, result.get("id"))
             sent += 1
 
         except Exception as exc:
-            log.error("Failed to reply to %s: %s", email, exc)
-            unmark_claimed(email)  # release claim so it retries next cycle
+            log.error("Failed to reply to %s: %s", email, exc, exc_info=True)
             failed += 1
+        finally:
+            if not claim_settled:
+                try:
+                    unmark_claimed(email)
+                except Exception as release_exc:
+                    log.error("Could not release claim on %s: %s", email, release_exc)
 
     log.info("Reply responder done — sent: %d, skipped: %d, failed: %d", sent, skipped, failed)
     return {"sent": sent, "skipped": skipped, "failed": failed}
