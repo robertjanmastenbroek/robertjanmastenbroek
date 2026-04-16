@@ -209,6 +209,60 @@ def _detect_stale_research(max_age_days: int = 3) -> int:
     return count
 
 
+def _publish_plan_gaps(plan: dict) -> None:
+    """Emit a `pipeline.gap_detected` event when the plan has nothing to do.
+
+    Called by `cmd_plan` after the plan is built. Silence is the steady state:
+    we only publish when something is wrong (empty queue, closed window,
+    exhausted quota, or a plan that somehow produced zero actions despite
+    having capacity). The master dashboard listens for these events to show
+    *why* the fleet is idle.
+    """
+    actions = plan.get("actions", [])
+    action_count = len(actions)
+    if action_count > 0:
+        return  # plan is healthy — say nothing
+
+    reasons = []
+    if not plan.get("window_open", False):
+        reasons.append("window_closed")
+    if (plan.get("quota_remaining") or 0) <= 0:
+        reasons.append("quota_exhausted")
+
+    verified_count = 0
+    try:
+        with db.get_conn() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM contacts WHERE status='verified'"
+            ).fetchone()
+            verified_count = int(row["n"]) if row else 0
+    except Exception:
+        pass
+
+    if verified_count == 0:
+        reasons.append("no_sendable_contacts")
+    if not reasons:
+        # Window open, quota OK, verified contacts exist, yet the plan is
+        # empty. Something upstream (template gen, scoring) is eating work.
+        reasons.append("empty_plan_unexplained")
+
+    try:
+        import events as _events
+        _events.publish(
+            "pipeline.gap_detected",
+            source="run_cycle.cmd_plan",
+            payload={
+                "reasons": reasons,
+                "verified_count": verified_count,
+                "action_count": action_count,
+                "window_open": bool(plan.get("window_open", False)),
+                "quota_remaining": int(plan.get("quota_remaining") or 0),
+            },
+        )
+    except Exception:
+        pass
+
+
 def cmd_plan():
     """
     Output a JSON action plan for the current cycle.
@@ -389,6 +443,11 @@ def cmd_plan():
         """).fetchall()
 
     plan["threads_to_check"] = [dict(r) for r in open_threads]
+
+    # --- Pipeline gap telemetry ---
+    # Emit a single `pipeline.gap_detected` event if this plan has nothing to
+    # do, so the master/health view can surface why the fleet is idle.
+    _publish_plan_gaps(plan)
 
     if _HIVE_AVAILABLE:
         _fleet_state.heartbeat("run_cycle", status="ok", result={
