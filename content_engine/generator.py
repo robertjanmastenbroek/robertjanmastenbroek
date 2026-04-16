@@ -23,7 +23,7 @@ from content_engine.hook_library import (
     pick_templates_for_format,
     get_all_templates,
 )
-from content_engine.brand_gate import gate_or_reject
+from content_engine.brand_gate import gate_or_reject, gate_or_warn
 
 PROJECT_DIR = Path(__file__).parent.parent
 logger = logging.getLogger(__name__)
@@ -213,7 +213,12 @@ Rules:
 
     response = _call_claude(prompt, timeout=60)
     if response and len(response) < 1000:
-        return response.strip()
+        # Captions legitimately exceed 280 chars (hashtags + CTA + scripture),
+        # so the "One Mississippi" length test in gate_or_reject would over-
+        # reject. gate_or_warn matches the PR #4 pattern (every generation
+        # path validates through the brand gate) without blocking on length,
+        # surfacing banned-adjective / HARD-BAN hits in logs.
+        return gate_or_warn(response.strip(), context=f"caption:{platform}")
 
     # Fallback caption
     hashtags = "#melodictechno #holyrave #tenerife #newmusic #techno"
