@@ -436,10 +436,11 @@ def render_emotional(
         ]
         subprocess.run(cmd, check=True, capture_output=True, timeout=120)
 
-    # 2. Trim to target duration
+    # 2. Trim to target duration (-stream_loop loops if source is shorter)
     trimmed = str(work_dir / "_emo_trimmed.mp4")
     cmd = [
-        "ffmpeg", "-y", "-i", content_vert, "-t", str(target_duration),
+        "ffmpeg", "-y", "-stream_loop", "-1", "-i", content_vert,
+        "-t", str(target_duration),
         "-c:v", "libx264", "-preset", "fast", "-crf", "22", "-an", trimmed,
     ]
     subprocess.run(cmd, check=True, capture_output=True, timeout=120)
@@ -482,8 +483,9 @@ def render_performance(
     seg_duration = target_duration / max(len(content_segments), 1)
     for i, seg in enumerate(content_segments):
         sp = str(work_dir / f"_perf_seg_{i}.mp4")
+        # -stream_loop -1 loops short clips so they fill the full seg_duration.
         cmd = [
-            "ffmpeg", "-y", "-i", seg,
+            "ffmpeg", "-y", "-stream_loop", "-1", "-i", seg,
             "-t", str(seg_duration),
             "-vf", f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase,crop={OUTPUT_W}:{OUTPUT_H}",
             "-c:v", "libx264", "-preset", "fast", "-crf", "22",

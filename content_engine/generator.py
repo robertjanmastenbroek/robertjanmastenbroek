@@ -101,7 +101,9 @@ def _call_claude(prompt: str, system: str = "", timeout: int = 120) -> Optional[
             cmd, capture_output=True, text=True,
             timeout=timeout, cwd="/tmp",
         )
-        if result.returncode == 0 and result.stdout.strip():
+        # Accept stdout even on non-zero exit — hooks (e.g. session-end-cleanup)
+        # can exit with non-zero without affecting the model's stdout response.
+        if result.stdout.strip():
             return result.stdout.strip()
         logger.warning(f"Claude call failed: {result.stderr[:300]}")
         return None
