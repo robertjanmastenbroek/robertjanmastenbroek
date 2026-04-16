@@ -200,7 +200,13 @@ def _apply_color_grade(input_path: str, output_path: str, platform: str,
         # Fall back to simple grade without scroll-stop ramp
         if scroll_stop:
             return _apply_color_grade(input_path, output_path, platform, scroll_stop=False)
-        return input_path
+        # Copy input to output so the pipeline can continue without color grade.
+        # Previously returned `input_path`, which meant downstream stages read from
+        # a file that didn't match `output_path` — the next stage then tried to
+        # read the (non-existent) output and failed the whole clip.
+        import shutil
+        shutil.copy2(input_path, output_path)
+        return output_path
 
 
 def _burn_text_overlay(
