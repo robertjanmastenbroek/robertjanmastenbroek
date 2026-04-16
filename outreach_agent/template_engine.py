@@ -260,6 +260,19 @@ SPOTIFY ARTIST PAGE: {ARTIST['spotify_artist']}
 """
     if research:
         user += f"\nRECIPIENT RESEARCH (use for personalised opener):\n{research}\n"
+        user += (
+            "\nHOOK MODE: research-first. The opener MUST reference one specific "
+            "detail from RECIPIENT RESEARCH above (a playlist name, a recent track, "
+            "a quote). Do not paraphrase vaguely — use the concrete detail verbatim "
+            "where it fits naturally. Failing this test means the email is generic.\n"
+        )
+    else:
+        user += (
+            "\nHOOK MODE: genre-fallback. No research available — lead with the "
+            "BPM/genre match between the recommended track and the recipient's "
+            "stated focus. Do NOT invent details about their playlist, show, or "
+            "recent work. Honest genre-match > fabricated personalisation.\n"
+        )
 
     if learning_context:
         user += f"\nINSIGHTS FROM PAST SUCCESSFUL EMAILS:\n{learning_context}\n"
@@ -460,6 +473,40 @@ def _parse_response(raw: str) -> tuple[str, str]:
     return subject, body
 
 
+def _parse_response_with_hooks(raw: str) -> tuple[str, str, list[str]]:
+    """Parse Claude's JSON response into (subject, body, hooks_used).
+
+    Same contract as `_parse_response` plus the model's self-reported hooks.
+    When the model omits `hooks_used`, returns an empty list (the caller can
+    fall back to `_extract_hooks_from_prompt` heuristics).
+    """
+    raw_stripped = re.sub(r"```(?:json)?", "", raw).strip().rstrip("`").strip()
+    match = re.search(r"\{.*?\}", raw_stripped, re.DOTALL)
+    if not match:
+        raise ValueError(f"No JSON object found in Claude response: {raw_stripped[:200]!r}")
+    block = match.group(0)
+    try:
+        data = json.loads(block)
+    except json.JSONDecodeError:
+        match2 = re.search(r"\{.*\}", raw_stripped, re.DOTALL)
+        if match2:
+            data = json.loads(match2.group(0))
+        else:
+            raise
+
+    subject = (data.get("subject", "") or "").strip()
+    body    = (data.get("body", "") or "").strip()
+    if not subject or not body:
+        raise ValueError("Claude returned empty subject or body")
+
+    body = _inject_spotify_links(body)
+    body = _ensure_signature(body)
+
+    hooks_raw = data.get("hooks_used") or []
+    hooks = [str(h).strip() for h in hooks_raw if isinstance(h, (str, int))] if isinstance(hooks_raw, list) else []
+    return subject, body, hooks
+
+
 # ─── Public API ───────────────────────────────────────────────────────────────
 
 def generate_email(contact: dict, learning_context: str = "") -> tuple[str, str]:
@@ -484,7 +531,7 @@ def generate_email(contact: dict, learning_context: str = "") -> tuple[str, str]
              contact.get("email"), contact.get("type"))
 
     raw = _call_claude(prompt)
-    subject, body = _parse_response(raw)
+    subject, body, model_hooks = _parse_response_with_hooks(raw)
 
     log.info("Generated — subject: %r", subject)
 
@@ -503,12 +550,15 @@ def generate_email(contact: dict, learning_context: str = "") -> tuple[str, str]
     try:
         from db import log_personalization_audit
         from config import CLAUDE_MODEL_EMAIL
+        # Prefer the model's self-reported hooks; fall back to the heuristic
+        # extractor only when the model omitted `hooks_used` entirely.
+        hooks = model_hooks if model_hooks else _extract_hooks_from_prompt(contact)
         log_personalization_audit(
             email=contact.get("email", ""),
             contact_type=contact.get("type", "curator"),
             subject=subject,
             body=body,
-            hooks_used=_extract_hooks_from_prompt(contact),
+            hooks_used=hooks,
             research_used=bool(contact.get("research_notes")),
             model=CLAUDE_MODEL_EMAIL,
             learning_applied=bool(learning_context),
@@ -548,14 +598,14 @@ def _extract_hooks_from_prompt(contact: dict) -> list[str]:
     return hooks
 
 
-def generate_emails_batch(contacts, learning_contexts=None):
-    """
-    Generate emails for all contacts in ONE Claude CLI call.
-    Returns {email: (subject, body)}. Contacts that fail are omitted.
-    """
-    if not contacts:
-        return {}
+def _build_batch_prompt(contacts, learning_contexts=None) -> str:
+    """Build the full batch prompt — one string, N contact blocks.
 
+    Each contact block includes a HOOK MODE directive that branches on
+    whether research_notes is present:
+      - research-first → opener must reference a specific research detail
+      - genre-fallback → lead with BPM/genre match, do not fabricate
+    """
     if learning_contexts is None:
         learning_contexts = {}
 
@@ -582,12 +632,23 @@ def generate_emails_batch(contacts, learning_contexts=None):
             block += f"\n{christian_addon}"
         if research:
             block += f"\nRECIPIENT RESEARCH:\n{research}"
+            block += (
+                "\nHOOK MODE: research-first. Opener must reference one concrete "
+                "detail from RECIPIENT RESEARCH (playlist name, recent track, quote). "
+                "No vague paraphrase — use the specific detail verbatim."
+            )
+        else:
+            block += (
+                "\nHOOK MODE: genre-fallback. No research — lead with the BPM/genre "
+                "match between the recommended track and the recipient's stated focus. "
+                "Do NOT invent playlist names, show titles, or recent-work details."
+            )
         if learn_ctx:
             block += f"\nINSIGHTS FROM PAST SUCCESSES:\n{learn_ctx}"
         blocks.append(block)
 
     n = len(contacts)
-    prompt = (
+    return (
         _SYSTEM_BASE
         + f"\n\nGenerate {n} outreach emails, one per contact below.\n"
         + f"Return ONLY a JSON array with exactly {n} objects in order:\n"
@@ -595,6 +656,18 @@ def generate_emails_batch(contacts, learning_contexts=None):
         + "\n\n".join(blocks)
         + f"\n\nReturn ONLY the JSON array of {n} items. No other text."
     )
+
+
+def generate_emails_batch(contacts, learning_contexts=None):
+    """
+    Generate emails for all contacts in ONE Claude CLI call.
+    Returns {email: (subject, body)}. Contacts that fail are omitted.
+    """
+    if not contacts:
+        return {}
+
+    prompt = _build_batch_prompt(contacts, learning_contexts)
+    n = len(contacts)
 
     log.info("Batch-generating %d emails in one CLI call...", n)
     try:

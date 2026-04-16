@@ -27,10 +27,11 @@ def test_generate_email_logs_audit_row(temp_db, fake_claude, monkeypatch):
     assert row["research_used"] == 1
     assert row["learning_applied"] == 1
 
+    # The fake_claude fixture returns hooks_used=["bpm_match","genre_fallback"]
+    # verbatim. With model-reported hooks now trusted, those are what we record.
     hooks = json.loads(row["hooks_used"])
-    assert "research" in hooks
-    assert "christian" in hooks
-    assert "type_curator" in hooks
+    assert "bpm_match" in hooks
+    assert "genre_fallback" in hooks
 
 
 def test_generate_email_records_brand_gate_pass_state(temp_db, fake_claude, monkeypatch):
