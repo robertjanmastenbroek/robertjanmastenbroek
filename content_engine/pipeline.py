@@ -135,6 +135,9 @@ def run_full_day(dry_run: bool = False, config: Optional[DailyPipelineConfig] = 
         registry_dir = PERFORMANCE_DIR
 
     # 8. Save post registry
+    # One entry per (clip, platform) pair. Match results to their source clip via
+    # clip_index — the cross-product bug turned 3 clips × 6 targets (18 expected)
+    # into 3 × 18 = 54 rows.
     registry = []
     for clip in valid_clips:
         entry = {
@@ -151,15 +154,22 @@ def run_full_day(dry_run: bool = False, config: Optional[DailyPipelineConfig] = 
             "track_title": track.title,
             "clip_length": clip["clip_length"],
         }
-        # If we distributed, expand into per-platform entries with post IDs
+        # If we distributed, expand into per-platform entries for THIS clip only
         if not dry_run and results:
-            for r in results:
-                if r.get("success") and r.get("platform", "") != "":
-                    entry_copy = dict(entry)
-                    entry_copy["platform"] = r["platform"]
-                    entry_copy["post_id"] = r.get("post_id", "")
-                    entry_copy["posted_at"] = r.get("posted_at", "")
-                    registry.append(entry_copy)
+            clip_results = [
+                r for r in results
+                if r.get("clip_index") == clip["clip_index"]
+                and r.get("platform", "") != ""
+            ]
+            for r in clip_results:
+                entry_copy = dict(entry)
+                entry_copy["platform"] = r["platform"]
+                entry_copy["post_id"] = r.get("post_id", "")
+                entry_copy["posted_at"] = r.get("posted_at", "")
+                entry_copy["success"] = bool(r.get("success"))
+                if not r.get("success"):
+                    entry_copy["error"] = r.get("error", "")
+                registry.append(entry_copy)
         else:
             registry.append(entry)
 

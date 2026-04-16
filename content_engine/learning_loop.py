@@ -260,13 +260,18 @@ def _save_performance_log(records: list, date_str: str):
     )
 
 
-def run(date_str: str = None, post_registry: list = None) -> "PromptWeights":
+def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
     """
     Full learning loop run.
     Reads post_registry from data/performance/YYYY-MM-DD_posts.json if not provided.
-    Returns updated PromptWeights.
+    Returns updated UnifiedWeights.
+
+    Pulls IG + YT metrics (the platforms with native insights APIs); FB/TikTok/Stories
+    records flow in through other writers (buffer_poster feedback, manual imports).
+    All platforms in the registry participate in the multi-dimensional weight update,
+    as long as the registry entries carry completion/save/scroll-stop signal.
     """
-    from content_engine.types import PromptWeights
+    from content_engine.types import UnifiedWeights
 
     if date_str is None:
         date_str = _date.today().isoformat()
@@ -277,7 +282,7 @@ def run(date_str: str = None, post_registry: list = None) -> "PromptWeights":
             post_registry = json.loads(registry_path.read_text())
         else:
             logger.warning("[learning_loop] No post registry — weights unchanged")
-            return PromptWeights.load()
+            return UnifiedWeights.load()
 
     ig_posts = [p for p in post_registry if p.get("platform") == "instagram"]
     yt_posts = [p for p in post_registry if p.get("platform") == "youtube"]
@@ -296,16 +301,31 @@ def run(date_str: str = None, post_registry: list = None) -> "PromptWeights":
 
     if not records:
         logger.warning("[learning_loop] No performance records collected — weights unchanged")
-        return PromptWeights.load()
+        return UnifiedWeights.load()
 
     _save_performance_log(records, date_str)
 
-    old_weights = PromptWeights.load()
-    new_weights = calculate_new_weights(records, old_weights)
+    # Hydrate records with full metadata from the registry (format, template, track, etc.)
+    # so the multi-dimensional EMA has something to group on.
+    registry_by_post_id = {p.get("post_id", ""): p for p in post_registry if p.get("post_id")}
+    records_as_dicts = []
+    for r in records:
+        base = r.__dict__.copy()
+        extra = registry_by_post_id.get(r.post_id, {})
+        # merge — don't overwrite real metric values
+        for k, v in extra.items():
+            base.setdefault(k, v)
+        records_as_dicts.append(base)
+
+    old_weights = UnifiedWeights.load()
+    new_weights = calculate_unified_weights(records_as_dicts, old_weights)
     new_weights.save()
-    logger.info(f"[learning_loop] Weights updated — best={new_weights.best_platform}, "
+
+    top_hook = max(new_weights.hook_weights, key=new_weights.hook_weights.get) if new_weights.hook_weights else "n/a"
+    top_format = max(new_weights.format_weights, key=new_weights.format_weights.get) if new_weights.format_weights else "n/a"
+    logger.info(f"[learning_loop] Weights updated — best_platform={new_weights.best_platform}, "
                 f"length={new_weights.best_clip_length}s, "
-                f"top hook={max(new_weights.hook_weights, key=new_weights.hook_weights.get)}")
+                f"top hook={top_hook}, top format={top_format}")
 
     outliers = detect_outliers(records)
     for o in outliers:
