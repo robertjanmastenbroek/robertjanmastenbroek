@@ -4,12 +4,18 @@ Contact Scorer — ranks contacts by expected ROI for the current cycle.
 
 Bridges: Learning Engine <-> Contact DB <-> Scheduler <-> Spotify Growth Tracker.
 
-Scoring factors (total 10.0 points):
+Scoring factors (total 10.5 points, clamped to 10.0):
   1. Contact type weight from config             (0–3.0)
   2. Research quality (non-empty notes)          (0–2.0)
   3. Historical reply rate for this type         (0–2.0)
   4. Spotify momentum multiplier                 (0–1.5)
   5. Schedule fit (send time proximity)          (0–1.5)
+  6. Insights-driven type boost                  (0–0.5)
+
+Factor 6 closes the learning loop: when Claude saves an insight that
+mentions a contact type positively (e.g. "podcast replies doubled when…"),
+future rankings for that type get a small bonus so we naturally lean into
+what's actually working.
 """
 
 import sys
@@ -117,6 +123,44 @@ def _schedule_fit_score(email: str) -> float:
         return 0.75
 
 
+_POSITIVE_SIGNALS = (
+    "lifted", "lift", "boost", "boosted", "double", "doubled", "up", "higher",
+    "improved", "increase", "increased", "wins", "won", "stronger", "best",
+    "outperform", "outperformed", "better",
+)
+
+
+def _insights_boost(contact_type: str) -> float:
+    """0–0.5 bonus when recent insights mention this type in a positive frame.
+
+    We look at the last few insights and grep for the type name alongside a
+    positive-signal word. One matching insight → 0.25, two or more → 0.5.
+    Zero when no data. Failure-safe — never raises.
+    """
+    if not _DB_AVAILABLE or not contact_type:
+        return 0.0
+    try:
+        insights = _db.get_recent_insights(limit=10) or []
+    except Exception:
+        return 0.0
+
+    ctype_lc = contact_type.lower().strip()
+    hits = 0
+    for row in insights:
+        content = (row["content"] if "content" in row.keys() else "") or ""
+        content_lc = content.lower()
+        if ctype_lc not in content_lc:
+            continue
+        if any(signal in content_lc for signal in _POSITIVE_SIGNALS):
+            hits += 1
+
+    if hits >= 2:
+        return 0.5
+    if hits == 1:
+        return 0.25
+    return 0.0
+
+
 def score(contact: dict) -> float:
     """
     Score a single contact dict (keys: email, contact_type, status, research_notes).
@@ -128,6 +172,7 @@ def score(contact: dict) -> float:
     s += _reply_rate_score(contact.get("contact_type", ""))
     s += _spotify_momentum()
     s += _schedule_fit_score(contact.get("email", ""))
+    s += _insights_boost(contact.get("contact_type", ""))
     return round(min(s, 10.0), 3)
 
 
