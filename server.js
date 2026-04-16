@@ -112,6 +112,50 @@ app.get('/api/mrr', async (req, res) => {
   }
 });
 
+// ─── Supporter Count (humans, not euros) ─────────────────────────────────────
+// Returns the number of active monthly supporters. Never returns less than
+// SUPPORTER_BASE_COUNT (env var, default 4) — that's the off-platform floor
+// for existing supporters who pledged outside Stripe at launch.
+let supporterCache = { count: 0, fetchedAt: 0 };
+const SUPPORTER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const SUPPORTER_BASE_COUNT = parseInt(process.env.SUPPORTER_BASE_COUNT || '4', 10);
+
+app.get('/api/supporters-count', async (req, res) => {
+  if (Date.now() - supporterCache.fetchedAt < SUPPORTER_CACHE_TTL) {
+    return res.json({ count: supporterCache.count });
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return res.json({ count: SUPPORTER_BASE_COUNT });
+  }
+
+  try {
+    let activeCount = 0;
+    let hasMore = true;
+    let startingAfter = undefined;
+
+    const stripe = getStripe();
+    while (hasMore) {
+      const params = { status: 'active', limit: 100 };
+      if (startingAfter) params.starting_after = startingAfter;
+      const subs = await stripe.subscriptions.list(params);
+      activeCount += subs.data.length;
+      hasMore = subs.has_more;
+      if (hasMore) startingAfter = subs.data[subs.data.length - 1].id;
+    }
+
+    const total = Math.max(SUPPORTER_BASE_COUNT, activeCount + SUPPORTER_BASE_COUNT);
+    // NOTE: we ADD the base rather than MAX it, so the 4 off-platform supporters
+    // are always counted alongside Stripe supporters. Adjust if you prefer MAX.
+    const finalCount = activeCount + SUPPORTER_BASE_COUNT;
+    supporterCache = { count: finalCount, fetchedAt: Date.now() };
+    res.json({ count: finalCount });
+  } catch (err) {
+    console.error('Supporter count error:', err.message);
+    res.json({ count: supporterCache.count || SUPPORTER_BASE_COUNT });
+  }
+});
+
 // ─── Tier 4 Dynamic Checkout ─────────────────────────────────────────────────
 app.post('/api/create-checkout', async (req, res) => {
   const { amount } = req.body;

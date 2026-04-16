@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Support the Mission · Robert-Jan Mastenbroek</title>
-  <meta name="description" content="Keep Holy Rave free. Every event free, every week. Your support makes that possible.">
-  <meta property="og:title" content="Keep Holy Rave Free · Support the Mission">
-  <meta property="og:description" content="Every event free. Every week. No tickets, no dress code, no faith test. Your support is what makes that possible.">
+  <title>Send Me · Robert-Jan Mastenbroek</title>
+  <meta name="description" content="Keep Holy Rave free. Send me to the rooms that need it most. Here am I. Send me. — Isaiah 6:8">
+  <meta property="og:title" content="Send Me · Keep Holy Rave Free">
+  <meta property="og:description" content="Every dancefloor. Every city. Every person. Here am I. Send me.">
   <meta property="og:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -443,13 +443,138 @@
     }
     .footer-strip a:hover { color: var(--gold); }
 
+    /* ── Video slot ── */
+    .video-wrap {
+      max-width: 560px;
+      width: 100%;
+      margin: 2.5rem auto 0;
+      aspect-ratio: 9 / 16;
+      background: var(--card);
+      border: 1px solid var(--gold-border);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .video-wrap .video-placeholder {
+      position: absolute; inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(160deg, #1a1600 0%, var(--card) 60%);
+    }
+    .video-wrap .video-placeholder .eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .video-wrap .video-placeholder .title {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      color: var(--text);
+      font-style: italic;
+      line-height: 1.3;
+    }
+    .video-wrap .video-placeholder .hint {
+      font-size: 0.8rem;
+      color: #555;
+      letter-spacing: 1px;
+    }
+
+    /* ── Story section ── */
+    .story-section {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 6rem 2rem 3rem;
+    }
+    .story-section .prose p {
+      color: var(--muted);
+      line-height: 1.95;
+      font-size: 1.08rem;
+      margin-bottom: 1.5rem;
+    }
+    .story-section .prose .pull {
+      color: var(--text);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.4rem;
+      border-left: 2px solid var(--gold);
+      padding: 0.25rem 0 0.25rem 1.5rem;
+      margin: 2.5rem 0;
+    }
+    .story-section .prose .close-line {
+      color: var(--gold);
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      text-align: center;
+      margin-top: 3rem;
+      font-style: italic;
+    }
+
+    /* ── Three-card "What your support does" ── */
+    .support-does {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 2rem 5rem;
+    }
+    .three-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+    .three-cards .tier-card {
+      cursor: default;
+    }
+    .three-cards .tier-card:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--gold-border);
+    }
+    .three-cards .tier-desc {
+      font-style: normal;
+      color: var(--text);
+    }
+
+    /* ── Supporter count (humans, not euros) ── */
+    .supporter-count {
+      text-align: center;
+      margin: 3rem auto 0;
+      padding: 1rem 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .supporter-count strong {
+      color: var(--gold);
+      font-weight: 600;
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+      margin: 0 0.35rem;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 1024px) {
       .tiers-grid { grid-template-columns: repeat(2, 1fr); }
+      .three-cards { grid-template-columns: 1fr; gap: 1rem; }
     }
     @media (max-width: 600px) {
       .tiers-grid { grid-template-columns: 1fr; }
       .hero h1 { letter-spacing: 2px; }
+      .story-section { padding: 4rem 1.5rem 2rem; }
+      .story-section .prose p { font-size: 1rem; }
     }
   </style>
 </head>
@@ -463,34 +588,94 @@
 
   <!-- Hero -->
   <div class="hero">
-    <p class="hero-eyebrow">Sacred Music · Free Dancefloors</p>
-    <h1>Keep Holy Rave<br>Free</h1>
-    <p class="sub">Every event free. Every week. No tickets, no dress code, no faith test. Your support is what makes that possible.</p>
+    <p class="hero-eyebrow">Send Me · Isaiah 6:8</p>
+    <h1>Keep Holy Rave<br>Free.</h1>
+    <p class="sub">Every dancefloor. Every city. Every person. No tickets, no dress code, no faith test. Your support is what sends me to the rooms that need it most.</p>
 
-    <!-- Live MRR Counter -->
-    <div class="mrr-block">
-      <span class="mrr-amount">
-        €<span id="mrr-value">—</span>
-      </span>
-      <span class="mrr-label">
-        <span class="mrr-pulse"></span>/ month in mission support
-      </span>
+    <!-- 60-second video — replace placeholder with <video> tag once /content/videos/send-me.mp4 is live -->
+    <div class="video-wrap">
+      <!-- BEGIN video placeholder (swap when video file exists) -->
+      <div class="video-placeholder">
+        <span class="eyebrow">60 seconds</span>
+        <span class="title">The story,<br>in one breath.</span>
+        <span class="hint">— coming soon —</span>
+      </div>
+      <!-- END video placeholder -->
+      <!--
+      <video
+        src="/content/videos/send-me.mp4"
+        poster="/images/send-me-poster.jpg"
+        controls playsinline muted autoplay loop>
+      </video>
+      -->
     </div>
-    <p class="mrr-caption">Live · updates every few minutes</p>
   </div>
 
   <!-- Scripture -->
   <div class="scripture">
-    <blockquote>"Let everything that has breath praise the Lord."</blockquote>
-    <cite>— Psalm 150:6</cite>
+    <blockquote>"Then I heard the voice of the Lord saying, 'Whom shall I send, and who will go for us?' And I said: Here am I. Send me."</blockquote>
+    <cite>— Isaiah 6:8</cite>
   </div>
+
+  <!-- The Story -->
+  <section class="story-section">
+    <p class="section-label">The Story</p>
+    <h2 class="section-title">How we got here</h2>
+    <div class="gold-line"></div>
+
+    <div class="prose">
+      <p>I built a crowdfunding platform once. €6 million through it. I was a millionaire at twenty-seven. Then it all burned — in the Netherlands, in the papers, in public. I left.</p>
+
+      <p>I lived in a campervan for almost six years. Busked on streets in Tenerife. One night, on my knees inside the van, I asked Jesus to make me happy like I was as a child — before the money, the status, the noise.</p>
+
+      <p class="pull">He did.</p>
+
+      <p>I was baptized on a beach in Tenerife not long after.</p>
+
+      <p>Last summer I sold the van. I thought I was meant to settle here. I was wrong — things are growing faster than I can stay still for, and I'm being sent further than the island.</p>
+
+      <p>Now I make music. 140 BPM tribal psytrance. 130 BPM melodic techno. Hebrew lyrics over the drop. The Psalms at a rave. Tracks called Jericho and Living Water and Halleluyah.</p>
+
+      <p>I play preferably for free. Because the people who might need this most are usually the ones who can't afford a ticket.</p>
+
+      <p>Something happens in those rooms. People who came to escape end up screaming IN THE NAME OF JESUS at 140 BPM and don't know why. Nobody knows the truth, until we die — but I believe. And the rooms feel like I'm not the only one who figured out something was happening.</p>
+
+      <p>I want to bring this everywhere. A new camper. A rig. A tank of diesel. Wherever I'm called — a beach in Tenerife, a street in Amsterdam, a rooftop across the sea.</p>
+
+      <p>If Holy Rave has ever moved something in you — or in someone you love — this is how you keep the door open for the next person walking in.</p>
+
+      <p class="close-line">Here am I. Send me.</p>
+    </div>
+  </section>
+
+  <!-- What Your Support Does -->
+  <section class="support-does">
+    <p class="section-label">What your support does</p>
+    <h2 class="section-title">Three things. Forever.</h2>
+    <div class="gold-line"></div>
+
+    <div class="three-cards">
+      <div class="tier-card">
+        <span class="tier-name">The Door</span>
+        <p class="tier-desc">Every Holy Rave stays free. No tickets. No dress code. No faith test. Every week. Forever.</p>
+      </div>
+      <div class="tier-card">
+        <span class="tier-name">The Road</span>
+        <p class="tier-desc">A camper and a rig. So I can drive to the people who need this most — and still keep every dancefloor free when I get there.</p>
+      </div>
+      <div class="tier-card">
+        <span class="tier-name">The Next Track</span>
+        <p class="tier-desc">New music every Friday. Independent forever. No label, no gatekeeper. Every track an offering.</p>
+      </div>
+    </div>
+  </section>
 
   <!-- Tiers -->
   <div class="tiers-section">
-    <p class="section-label">Join the mission</p>
-    <h2 class="section-title">Choose Your Part</h2>
+    <p class="section-label">Choose your part</p>
+    <h2 class="section-title">Send Me</h2>
     <div class="gold-line"></div>
-    <p class="section-sub">Every tier keeps the dancefloor free. Pick what feels right.</p>
+    <p class="section-sub">Every tier sends the music further. Pick what feels right.</p>
 
     <div class="tiers-grid">
 
@@ -501,9 +686,9 @@
           <span class="currency">€</span>5
           <span class="period"> / month</span>
         </div>
-        <p class="tier-desc">"You show up. That means everything."</p>
+        <p class="tier-desc">"You kept a door open for a stranger this week."</p>
         <a href="https://buy.stripe.com/8x2fZigmH7Dofab2hMfbq01" class="btn-tier" target="_blank" rel="noopener">
-          Support this mission
+          Send me →
         </a>
       </div>
 
@@ -514,9 +699,9 @@
           <span class="currency">€</span>15
           <span class="period"> / month</span>
         </div>
-        <p class="tier-desc">"You keep the doors open."</p>
+        <p class="tier-desc">"The sound system stays on. The room stays free."</p>
         <a href="https://buy.stripe.com/00w8wQ0nJ0aW7HJ3lQfbq02" class="btn-tier" target="_blank" rel="noopener">
-          Support this mission
+          Send me →
         </a>
       </div>
 
@@ -528,9 +713,9 @@
           <span class="currency">€</span>33
           <span class="period"> / month</span>
         </div>
-        <p class="tier-desc">"You're part of what makes this possible."</p>
+        <p class="tier-desc">"You're part of the road. Every mile carries your name."</p>
         <a href="https://buy.stripe.com/4gM14o8UfcXI0fh2hMfbq03" class="btn-tier" target="_blank" rel="noopener">
-          Support this mission
+          Send me →
         </a>
       </div>
 
@@ -541,7 +726,7 @@
           <span class="currency">€</span>100<span style="font-family:var(--sans);font-size:1rem;color:var(--muted);">+</span>
           <span class="period"> / month</span>
         </div>
-        <p class="tier-desc">"You're a cornerstone of this mission."</p>
+        <p class="tier-desc">"You're why the camper starts. You're why the next city hears this."</p>
         <div class="custom-amount-wrapper">
           <span class="custom-amount-label">Set your monthly amount</span>
           <div class="custom-amount-input-row">
@@ -559,11 +744,16 @@
         </div>
         <p class="tier-error" id="tier4-error"></p>
         <button class="btn-tier" id="tier4-btn" onclick="startCustomCheckout()">
-          Support this mission
+          Send me →
         </button>
       </div>
 
     </div>
+
+    <!-- Supporter count — humans, not euros -->
+    <p class="supporter-count">
+      <strong id="supporter-count">4</strong> people keeping Holy Rave free
+    </p>
   </div>
 
   <!-- One-time -->
@@ -582,23 +772,25 @@
   </div>
 
   <script>
-    // ── Load MRR counter ──────────────────────────────────────────────────────
-    async function loadMRR() {
+    // ── Load supporter count (humans, not euros) ──────────────────────────────
+    // Falls back gracefully to the seed value (4) baked into the HTML if the
+    // endpoint isn't available or returns something lower than the seed.
+    async function loadSupporterCount() {
+      const el = document.getElementById('supporter-count');
+      const seed = parseInt(el.textContent, 10) || 4;
       try {
-        const res = await fetch('/api/mrr');
+        const res = await fetch('/api/supporters-count');
+        if (!res.ok) return; // keep seed
         const data = await res.json();
-        const el = document.getElementById('mrr-value');
-        if (data.mrr > 0) {
-          animateCounter(el, 0, data.mrr, 1200);
-        } else {
-          el.textContent = '0';
-        }
+        const count = Math.max(seed, data.count || 0);
+        animateCounter(el, seed, count, 900);
       } catch (e) {
-        document.getElementById('mrr-value').textContent = '0';
+        // Keep seed value on failure — never show 0 or a count lower than seed.
       }
     }
 
     function animateCounter(el, from, to, duration) {
+      if (from === to) { el.textContent = to.toLocaleString('nl-NL'); return; }
       const start = performance.now();
       const range = to - from;
       function step(now) {
@@ -656,7 +848,7 @@
       if (e.key === 'Enter') startCustomCheckout();
     });
 
-    loadMRR();
+    loadSupporterCount();
   </script>
 
 </body>
