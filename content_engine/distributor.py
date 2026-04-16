@@ -111,6 +111,66 @@ def _upload_video_for_instagram(video_path: str) -> str:
     return upload_video(video_path)
 
 
+def _atomic_env_update(updates: dict[str, str]) -> bool:
+    """
+    Atomically update or append one or more KEY=VALUE pairs in .env.
+
+    Uses a temp file + os.replace() so readers never see a partial file,
+    and concurrent refreshes (e.g. two cron jobs racing) can't corrupt state.
+    The last writer wins — which is exactly what we want for rotated tokens.
+
+    Returns True on success, False on any failure (logged).
+    """
+    import os as _os
+    import re
+    import tempfile
+
+    env_path = PROJECT_DIR / ".env"
+    if not env_path.exists():
+        return False
+
+    try:
+        text = env_path.read_text()
+        for key, value in updates.items():
+            # Escape backslashes so re.sub's replacement string treats them literally
+            safe_value = value.replace("\\", "\\\\")
+            pattern = rf"^{re.escape(key)}=.*$"
+            if re.search(pattern, text, re.MULTILINE):
+                text = re.sub(pattern, f"{key}={safe_value}", text, flags=re.MULTILINE)
+            else:
+                if text and not text.endswith("\n"):
+                    text += "\n"
+                text += f"{key}={value}\n"
+
+        # Write to temp file in same directory (so os.replace is atomic on same FS),
+        # then atomically swap into place. NamedTemporaryFile with delete=False so
+        # we can close then rename without Python nuking the file first.
+        fd, tmp_path = tempfile.mkstemp(
+            prefix=".env.", suffix=".tmp", dir=str(PROJECT_DIR)
+        )
+        try:
+            with _os.fdopen(fd, "w") as f:
+                f.write(text)
+            # Preserve original permissions if readable
+            try:
+                mode = env_path.stat().st_mode & 0o777
+                _os.chmod(tmp_path, mode)
+            except Exception:
+                pass
+            _os.replace(tmp_path, env_path)
+        except Exception:
+            # Clean up temp file if replace failed
+            try:
+                _os.unlink(tmp_path)
+            except Exception:
+                pass
+            raise
+        return True
+    except Exception as e:
+        logger.warning(f"[distributor] atomic .env update failed: {e}")
+        return False
+
+
 def refresh_instagram_token(access_token: str = "") -> str:
     """
     Refresh the Instagram long-lived token (valid 60 days, resets on each refresh).
@@ -132,20 +192,7 @@ def refresh_instagram_token(access_token: str = "") -> str:
         expires_in = data.get("expires_in", 0)
         if new_token:
             logger.info(f"[distributor] Instagram token refreshed (expires in {expires_in}s / ~{expires_in//86400}d)")
-            # Persist to .env
-            env_path = PROJECT_DIR / ".env"
-            if env_path.exists():
-                text = env_path.read_text()
-                import re
-                if re.search(r"^INSTAGRAM_ACCESS_TOKEN=", text, re.MULTILINE):
-                    text = re.sub(
-                        r"^(INSTAGRAM_ACCESS_TOKEN=).*$",
-                        f"\\g<1>{new_token}",
-                        text, flags=re.MULTILINE,
-                    )
-                else:
-                    text += f"\nINSTAGRAM_ACCESS_TOKEN={new_token}\n"
-                env_path.write_text(text)
+            _atomic_env_update({"INSTAGRAM_ACCESS_TOKEN": new_token})
             os.environ["INSTAGRAM_ACCESS_TOKEN"] = new_token
             return new_token
         error = data.get("error", {})
@@ -173,20 +220,11 @@ def get_facebook_page_token(user_access_token: str, page_id: str) -> str:
             if page.get("id") == page_id or page.get("name", "").lower().replace(" ", "") in ("holyraveofficial", "robertjanmastenbroek"):
                 token = page.get("access_token", "")
                 if token:
-                    # Persist so we don't need to re-fetch every run
-                    env_path = PROJECT_DIR / ".env"
-                    if env_path.exists():
-                        import re
-                        text = env_path.read_text()
-                        if re.search(r"^FACEBOOK_PAGE_TOKEN=", text, re.MULTILINE):
-                            text = re.sub(r"^(FACEBOOK_PAGE_TOKEN=).*$", f"\\g<1>{token}", text, flags=re.MULTILINE)
-                        else:
-                            text += f"\nFACEBOOK_PAGE_TOKEN={token}\n"
-                        if re.search(r"^FACEBOOK_PAGE_ID=", text, re.MULTILINE):
-                            text = re.sub(r"^(FACEBOOK_PAGE_ID=).*$", f"\\g<1>{page['id']}", text, flags=re.MULTILINE)
-                        else:
-                            text += f"FACEBOOK_PAGE_ID={page['id']}\n"
-                        env_path.write_text(text)
+                    # Persist atomically so concurrent refreshes can't corrupt .env
+                    _atomic_env_update({
+                        "FACEBOOK_PAGE_TOKEN": token,
+                        "FACEBOOK_PAGE_ID": page["id"],
+                    })
                     os.environ["FACEBOOK_PAGE_TOKEN"] = token
                     os.environ["FACEBOOK_PAGE_ID"]    = page["id"]
                     logger.info(f"[distributor] Facebook page token obtained for: {page.get('name')}")
@@ -245,7 +283,9 @@ def post_facebook_reel(video_path: str, description: str, page_id: str, page_tok
             return {"success": False, "platform": "facebook",
                     "error": transfer_resp.json().get("error", {}).get("message", transfer_resp.text[:200])}
 
-        # 3. Finish — set description and publish
+        # 3. Finish — set description and publish. Meta defaults uploaded videos
+        # to draft state; explicitly setting published=true ensures the Reel goes
+        # live instead of sitting in the Page's "Your Posts" drafts.
         finish_resp = requests.post(
             f"{FACEBOOK_GRAPH_BASE}/{page_id}/videos",
             params={"access_token": page_token},
@@ -254,6 +294,8 @@ def post_facebook_reel(video_path: str, description: str, page_id: str, page_tok
                 "upload_session_id": upload_id,
                 "description":       description,
                 "content_tags":      "",
+                "published":         "true",
+                "video_state":       "PUBLISHED",
             },
             timeout=30,
         )
@@ -546,11 +588,44 @@ def distribute_clip(clip: dict) -> dict:
             logger.info("[distributor] YouTube credentials missing — using Buffer")
             result = _buffer_fallback(clip, scheduled_at)
 
+    elif platform == "tiktok":
+        # TikTok posting routes through Buffer (no native OAuth flow in this environment).
+        result = _buffer_fallback(clip, scheduled_at)
+
+    elif platform == "instagram_story":
+        story_path   = clip.get("story_path", clip.get("path", ""))
+        ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "")
+        access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+        spotify_url  = clip.get("spotify_url", "")
+        if ig_user_id and access_token:
+            result = post_instagram_story(
+                story_path, caption, ig_user_id, access_token, spotify_url,
+            )
+        else:
+            logger.info("[distributor] Instagram Story credentials missing — skipping")
+            result = {"success": False, "platform": "instagram_story", "error": "credentials missing"}
+
+    elif platform == "facebook_story":
+        story_path = clip.get("story_path", clip.get("path", ""))
+        page_id    = os.environ.get("FACEBOOK_PAGE_ID", "")
+        page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "")
+        if page_id and page_token:
+            result = post_facebook_story(story_path, page_id, page_token)
+        else:
+            logger.info("[distributor] Facebook Story credentials missing — skipping")
+            result = {"success": False, "platform": "facebook_story", "error": "credentials missing"}
+
     else:
         result = {"success": False, "platform": platform, "error": f"Unknown platform: {platform}"}
 
-    # If native API failed, try Buffer fallback with schedule preserved
-    if not result.get("success") and result.get("via") != "buffer_fallback":
+    # If native API failed, try Buffer fallback with schedule preserved — but only
+    # for Reel targets. Stories and TikTok-via-Buffer already attempted what they
+    # could; looping back to Buffer for a Story would post it as a Reel.
+    if (
+        not result.get("success")
+        and result.get("via") != "buffer_fallback"
+        and platform in ("instagram", "youtube", "facebook")
+    ):
         logger.warning(f"[distributor] {platform} native failed: {result.get('error')} — Buffer fallback")
         result = _buffer_fallback(clip, scheduled_at)
 
@@ -567,7 +642,12 @@ def post_instagram_story(video_path: str, caption: str, ig_user_id: str,
 
     Optional ``spotify_url`` becomes a Story link sticker — the only direct
     Spotify-driver Stories provide.
+
+    Note: ``caption`` is accepted for API symmetry but NOT sent to the Graph API —
+    STORIES media_type rejects the caption parameter. Any copy must be baked
+    into the video via drawtext in the renderer's story variant.
     """
+    del caption  # intentionally unused — STORIES has no caption field
     try:
         # Refresh token before use — keeps the 60-day clock alive
         access_token = refresh_instagram_token(access_token)
@@ -576,11 +656,10 @@ def post_instagram_story(video_path: str, caption: str, ig_user_id: str,
             return {"success": False, "platform": "instagram_story",
                     "error": "video upload failed"}
 
-        # 1. Create media container (STORIES type)
+        # 1. Create media container (STORIES type) — no caption param
         params = {
             "video_url":    video_url,
             "media_type":   "STORIES",
-            "caption":      caption,
             "access_token": access_token,
         }
         if spotify_url:
@@ -627,11 +706,15 @@ def post_instagram_story(video_path: str, caption: str, ig_user_id: str,
 
 
 def post_facebook_story(video_path: str, page_id: str, page_token: str) -> dict:
-    """Post a Facebook Story via Graph API ``video_stories`` endpoint."""
+    """Post a Facebook Story via Graph API ``video_stories`` endpoint.
+
+    Uses Meta's 3-phase resumable upload: start → transfer (to /{video_id}) →
+    finish (with post_status=PUBLISHED so the Story goes live).
+    """
     try:
         url = f"{FACEBOOK_GRAPH_BASE}/{page_id}/video_stories"
 
-        # 1. Initialize upload
+        # 1. Initialize upload — Meta returns upload_url + video_id
         init_resp = requests.post(
             url,
             data={"upload_phase": "start", "access_token": page_token},
@@ -639,74 +722,77 @@ def post_facebook_story(video_path: str, page_id: str, page_token: str) -> dict:
         )
         init_data = init_resp.json()
         video_id = init_data.get("video_id")
+        upload_url = init_data.get("upload_url", "")
         if not video_id:
             return {"success": False, "platform": "facebook_story",
                     "error": f"story init failed: {init_data}"}
 
-        # 2. Upload video binary
-        upload_url = f"{FACEBOOK_GRAPH_BASE}/{video_id}"
-        with open(video_path, "rb") as f:
-            requests.post(
-                upload_url,
-                files={"source": f},
-                data={"access_token": page_token, "upload_phase": "transfer"},
-                timeout=120,
-            )
+        # 2. Upload video binary. Meta's resumable upload for video_stories uses
+        # the returned upload_url (from the start phase). Fall back to
+        # /{video_id} with multipart source if no upload_url was provided.
+        transfer_ok = False
+        if upload_url:
+            with open(video_path, "rb") as f:
+                file_size = Path(video_path).stat().st_size
+                transfer_resp = requests.post(
+                    upload_url,
+                    data=f.read(),
+                    headers={
+                        "Authorization": f"OAuth {page_token}",
+                        "offset": "0",
+                        "file_size": str(file_size),
+                    },
+                    timeout=300,
+                )
+                transfer_ok = transfer_resp.status_code in (200, 201)
+        if not transfer_ok:
+            # Legacy path — some FB Page SDKs still accept this
+            with open(video_path, "rb") as f:
+                transfer_resp = requests.post(
+                    f"{FACEBOOK_GRAPH_BASE}/{video_id}",
+                    files={"source": f},
+                    data={"access_token": page_token, "upload_phase": "transfer"},
+                    timeout=300,
+                )
+                transfer_ok = transfer_resp.status_code in (200, 201)
+        if not transfer_ok:
+            return {"success": False, "platform": "facebook_story",
+                    "error": f"transfer failed: {transfer_resp.text[:200]}"}
 
-        # 3. Finish
+        # 3. Finish — publish explicitly. Without post_status the Story never
+        # shows up on the Page Story tray.
         finish_resp = requests.post(
             url,
             data={
                 "upload_phase": "finish",
                 "video_id":     video_id,
+                "post_status":  "PUBLISHED",
                 "access_token": page_token,
             },
             timeout=30,
         )
         finish_data = finish_resp.json()
-        return {"success": bool(finish_data.get("success", False)),
-                "platform": "facebook_story",
-                "post_id":  str(video_id)}
+        success = bool(finish_data.get("success", False)) or bool(finish_data.get("post_id"))
+        return {
+            "success":  success,
+            "platform": "facebook_story",
+            "post_id":  str(finish_data.get("post_id", video_id)),
+            "error":    None if success else finish_data.get("error", {}).get("message", str(finish_data)),
+        }
 
     except Exception as e:
         return {"success": False, "platform": "facebook_story", "error": str(e)}
 
 
 def _distribute_single(clip: dict, target: str) -> dict:
-    """Route a clip to the correct posting function for the given target."""
-    if target == "instagram":
-        return distribute_clip({**clip, "platform": "instagram"})
-    if target == "youtube":
-        return distribute_clip({**clip, "platform": "youtube"})
-    if target == "facebook":
-        return distribute_clip({**clip, "platform": "facebook"})
-    if target == "tiktok":
-        # TikTok native posting requires a separate OAuth dance; route via Buffer.
-        return _buffer_fallback(
-            {**clip, "platform": "tiktok"},
-            _scheduled_at_utc("tiktok", clip.get("clip_index", 0)),
-        )
-    if target == "instagram_story":
-        story_path   = clip.get("story_path", clip.get("path", ""))
-        ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "")
-        access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
-        spotify_url  = clip.get("spotify_url", "")
-        if not (ig_user_id and access_token):
-            return {"success": False, "platform": "instagram_story",
-                    "error": "credentials missing"}
-        return post_instagram_story(
-            story_path, clip.get("caption", ""), ig_user_id, access_token, spotify_url,
-        )
-    if target == "facebook_story":
-        story_path = clip.get("story_path", clip.get("path", ""))
-        page_id    = os.environ.get("FACEBOOK_PAGE_ID", "")
-        page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "")
-        if not (page_id and page_token):
-            return {"success": False, "platform": "facebook_story",
-                    "error": "credentials missing"}
-        return post_facebook_story(story_path, page_id, page_token)
+    """Route a clip to the correct posting function for the given target.
 
-    return {"success": False, "platform": target, "error": f"unknown target: {target}"}
+    Single dispatch surface: all targets flow through ``distribute_clip``, which
+    knows how to handle every entry in ``DISTRIBUTION_TARGETS``.
+    """
+    if target not in DISTRIBUTION_TARGETS:
+        return {"success": False, "platform": target, "error": f"unknown target: {target}"}
+    return distribute_clip({**clip, "platform": target})
 
 
 def _distribute_with_retry(clip: dict, target: str, max_retries: int = 3) -> dict:

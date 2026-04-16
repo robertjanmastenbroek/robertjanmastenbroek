@@ -18,7 +18,10 @@ CLIP_YT = {**CLIP_IG, "platform": "youtube", "variant": "b"}
 
 
 def test_post_schedule_has_three_times_per_platform():
-    for platform in ("instagram", "youtube"):
+    # All 6 distribution targets (4 Reel destinations + 2 Story destinations)
+    # run on a 3-slot daily schedule.
+    for platform in ("instagram", "youtube", "facebook", "tiktok",
+                     "instagram_story", "facebook_story"):
         assert len(POST_SCHEDULE[platform]) == 3
 
 
@@ -32,7 +35,7 @@ def test_post_instagram_reel_success():
 
     with patch("content_engine.distributor.requests.post", side_effect=[mock_container, mock_publish]), \
          patch("content_engine.distributor.requests.get",  return_value=mock_status), \
-         patch("content_engine.distributor._upload_to_cloudinary", return_value="https://cdn/v.mp4"), \
+         patch("content_engine.distributor._upload_video_for_instagram", return_value="https://cdn/v.mp4"), \
          patch("content_engine.distributor.time.sleep"):
         result = post_instagram_reel("/tmp/clip.mp4", "Caption", "123", "tok")
 
@@ -45,7 +48,7 @@ def test_post_instagram_reel_returns_error_on_400():
     mock_fail = MagicMock(status_code=400)
     mock_fail.json.return_value = {"error": {"message": "Invalid token"}}
     with patch("content_engine.distributor.requests.post", return_value=mock_fail), \
-         patch("content_engine.distributor._upload_to_cloudinary", return_value="https://cdn/v.mp4"):
+         patch("content_engine.distributor._upload_video_for_instagram", return_value="https://cdn/v.mp4"):
         result = post_instagram_reel("/tmp/clip.mp4", "Cap", "123", "tok")
     assert result["success"] is False
     assert "error" in result
@@ -91,15 +94,14 @@ def test_distribute_clip_falls_back_to_buffer_on_native_failure(monkeypatch):
     assert result["success"] is True
 
 
-def test_distribute_all_returns_six_results():
-    clips = [
-        {**CLIP_IG, "clip_index": i, "platform": p}
-        for i in range(3) for p in ("instagram", "youtube")
-    ]
+def test_distribute_all_fans_out_to_all_six_targets():
+    # The unified pipeline takes 3 clip specs (one per clip_index) and fans
+    # each one out to all 6 distribution targets. 3 × 6 = 18 results.
+    clips = [{**CLIP_IG, "clip_index": i} for i in range(3)]
     with patch("content_engine.distributor.distribute_clip",
                return_value={"success": True, "post_id": "x", "platform": "test"}):
         results = distribute_all(clips)
-    assert len(results) == 6
+    assert len(results) == 18
 
 
 def test_distribute_unknown_platform():
@@ -108,3 +110,74 @@ def test_distribute_unknown_platform():
                return_value={"success": False, "platform": "snapchat", "error": "Buffer fallback failed: x", "via": "buffer_fallback"}):
         result = distribute_clip(clip)
     assert result["success"] is False
+
+
+# ─── _atomic_env_update ──────────────────────────────────────────────────────
+# Token refresh writes back to .env. If two refreshes race, a naive read→edit→
+# write pipeline can truncate the file. The atomic helper writes to a temp
+# file in the same dir and swaps it in with os.replace().
+
+def test_atomic_env_update_replaces_existing_key(tmp_path, monkeypatch):
+    import content_engine.distributor as d
+    env = tmp_path / ".env"
+    env.write_text("INSTAGRAM_ACCESS_TOKEN=old\nOTHER=keep\n")
+    monkeypatch.setattr(d, "PROJECT_DIR", tmp_path)
+
+    assert d._atomic_env_update({"INSTAGRAM_ACCESS_TOKEN": "new_token"}) is True
+    text = env.read_text()
+    assert "INSTAGRAM_ACCESS_TOKEN=new_token" in text
+    assert "OTHER=keep" in text
+    assert "old" not in text
+
+
+def test_atomic_env_update_appends_missing_key(tmp_path, monkeypatch):
+    import content_engine.distributor as d
+    env = tmp_path / ".env"
+    env.write_text("EXISTING=1\n")
+    monkeypatch.setattr(d, "PROJECT_DIR", tmp_path)
+
+    d._atomic_env_update({"NEW_KEY": "hello"})
+    assert "EXISTING=1" in env.read_text()
+    assert "NEW_KEY=hello" in env.read_text()
+
+
+def test_atomic_env_update_handles_multiple_keys(tmp_path, monkeypatch):
+    import content_engine.distributor as d
+    env = tmp_path / ".env"
+    env.write_text("FACEBOOK_PAGE_TOKEN=old\n")
+    monkeypatch.setattr(d, "PROJECT_DIR", tmp_path)
+
+    d._atomic_env_update({
+        "FACEBOOK_PAGE_TOKEN": "fresh",
+        "FACEBOOK_PAGE_ID":    "12345",
+    })
+    text = env.read_text()
+    assert "FACEBOOK_PAGE_TOKEN=fresh" in text
+    assert "FACEBOOK_PAGE_ID=12345" in text
+
+
+def test_atomic_env_update_returns_false_when_missing(tmp_path, monkeypatch):
+    import content_engine.distributor as d
+    monkeypatch.setattr(d, "PROJECT_DIR", tmp_path)
+    # .env doesn't exist in tmp_path
+    assert d._atomic_env_update({"KEY": "value"}) is False
+
+
+def test_atomic_env_update_preserves_file_on_failure(tmp_path, monkeypatch):
+    """If the write fails mid-flight, the original .env must be intact.
+
+    This is the whole point of the temp-file + os.replace() pattern: readers
+    (other cron jobs, live processes) never see a truncated file.
+    """
+    import content_engine.distributor as d
+    env = tmp_path / ".env"
+    env.write_text("IMPORTANT=do_not_lose\n")
+    monkeypatch.setattr(d, "PROJECT_DIR", tmp_path)
+
+    # Force os.replace to raise after the temp file is written.
+    with patch("content_engine.distributor.os.replace", side_effect=OSError("boom")):
+        result = d._atomic_env_update({"KEY": "value"})
+
+    assert result is False
+    # Original content untouched
+    assert env.read_text() == "IMPORTANT=do_not_lose\n"
