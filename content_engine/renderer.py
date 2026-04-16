@@ -1,7 +1,7 @@
 """
 renderer.py — Unified video rendering for all 3 clip formats.
 
-Consolidates outreach_agent/processor.py + content_engine/assembler.py into
+Consolidates the legacy outreach_agent/processor.py and assembler logic into
 one module with three render paths: transitional, emotional, performance.
 Plus Stories variant and output validation.
 """

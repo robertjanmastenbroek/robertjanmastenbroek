@@ -11,12 +11,12 @@ Usage:
   python3 rjm.py outreach [cmd]           # Outreach agent (run, status, verify, add, ...)
   python3 rjm.py master [cmd]             # Master agent (dashboard, gaps, weekly, run, ...)
   python3 rjm.py contacts [cmd]           # Contact manager (status, queue, sync, add, ...)
-  python3 rjm.py content [--dry-run]      # Holy Rave daily content run (legacy, 3 clips → Buffer)
-  python3 rjm.py content viral            # Viral pipeline: trend→visual→assemble→distribute
-  python3 rjm.py content viral --dry-run  # Viral pipeline dry-run (no posting)
+  python3 rjm.py content [--dry-run]      # Unified daily pipeline (3 formats → 6 targets)
+  python3 rjm.py content viral [--dry-run]            # Alias for default content run
   python3 rjm.py content trend-scan       # Run trend scanner (06:00 CET)
   python3 rjm.py content learning         # Run learning loop (18:00 CET)
   python3 rjm.py content retry            # Retry all failed posts in queue
+  python3 rjm.py content reset-platform <name>        # Reset circuit-breaker for one target
   python3 rjm.py playlist [cmd]           # Playlist DB (status, add, pending_contact, list)
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
   python3 rjm.py youtube discover         # Find YouTube promo channels → contacts DB
@@ -52,8 +52,9 @@ Examples:
   python3 rjm.py contacts status          # Contact DB overview
   python3 rjm.py contacts sync            # Import contacts.csv → SQLite
   python3 rjm.py contacts search tribal   # Search contacts
-  python3 rjm.py content                  # Render 3 clips + queue to Buffer
-  python3 rjm.py content --dry-run        # Render only, skip Buffer
+  python3 rjm.py content                  # Render 3 formats × 6 targets via the unified pipeline
+  python3 rjm.py content --dry-run        # Same, but skip distribution
+  python3 rjm.py content reset-platform tiktok  # Clear circuit breaker for a single target
   python3 rjm.py playlist status          # Playlist discovery progress
   python3 rjm.py spotify status           # Listener count + milestone
   python3 rjm.py spotify log 333          # Record today's listener count
@@ -435,8 +436,13 @@ def cmd_content(args: list[str]):
     """Run the Holy Rave daily content engine."""
     subcommand = args[0].lower() if args else ""
 
-    if subcommand == "viral":
-        # New 5-module viral pipeline: trend→visual→assemble→distribute→learn
+    if subcommand in ("viral", ""):
+        # Unified daily pipeline (default). `viral` retained as an alias so
+        # existing schedulers / muscle memory keep working.
+        if subcommand == "" and not args:
+            print("[content] Running unified pipeline (default)…")
+        elif subcommand == "":
+            print("[content] Running unified pipeline (legacy alias — flags forwarded)…")
         dry_run = "--dry-run" in args
         sys.path.insert(0, str(PROJECT_ROOT))
         import logging
@@ -467,12 +473,41 @@ def cmd_content(args: list[str]):
         print(json.dumps(weights.__dict__, indent=2))
         sys.exit(0)
 
-    else:
-        # Legacy pipeline (post_today.py)
-        if not POST_TODAY_PY.exists():
-            print(f"✗ {POST_TODAY_PY} not found")
+    elif subcommand == "retry":
+        # Retry all failed posts in queue
+        cmd_content_retry()
+        sys.exit(0)
+
+    elif subcommand == "reset-platform":
+        # Reset the circuit-breaker state for a single distributor target so
+        # the next run is allowed to attempt it again. Useful after fixing a
+        # token, quota, or upstream API outage.
+        if len(args) < 2:
+            print("Usage: rjm.py content reset-platform <platform_name>")
             sys.exit(1)
-        sys.exit(_run([_OUTREACH_PYTHON, str(POST_TODAY_PY)] + args, cwd=str(PROJECT_ROOT)))
+        platform = args[1]
+        cb_path = PROJECT_ROOT / "data" / "circuit_breaker.json"
+        if cb_path.exists():
+            import json
+            try:
+                state = json.loads(cb_path.read_text())
+            except json.JSONDecodeError:
+                print(f"✗ {cb_path} is not valid JSON — refusing to overwrite")
+                sys.exit(1)
+            if platform in state:
+                state.pop(platform, None)
+                cb_path.write_text(json.dumps(state, indent=2))
+                print(f"✓ Circuit breaker reset for {platform}")
+            else:
+                print(f"  No circuit breaker entry for {platform} (nothing to reset)")
+        else:
+            print(f"  No circuit breaker state found at {cb_path}")
+        sys.exit(0)
+
+    else:
+        print(f"✗ Unknown content subcommand: {subcommand!r}")
+        print("  Valid: viral (default), trend-scan, learning, retry, reset-platform <platform>")
+        sys.exit(1)
 
 
 def cmd_playlist(args: list[str]):
@@ -918,13 +953,6 @@ def main():
             print("Agents: outreach, discover, research, verify")
         else:
             cmd_run(agent, rest[1:])
-    elif cmd == "content":
-        action = rest[0].lower() if rest else ""
-        if action == "retry":
-            cmd_content_retry()
-        else:
-            print("Usage: python3 rjm.py content retry")
-            sys.exit(1)
     elif cmd == "swarm":
         cmd_swarm(rest)
     elif cmd == "memory":
