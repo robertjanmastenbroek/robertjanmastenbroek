@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 PROJECT_DIR = Path(__file__).parent.parent
 DEFAULT_HOOKS_DIR = PROJECT_DIR / "content" / "hooks" / "transitional"
-CATEGORIES = ["nature", "satisfying", "elemental", "sports", "craftsmanship", "illusion"]
+CATEGORIES = ["nature", "satisfying", "elemental", "sports", "craftsmanship", "illusion", "viral"]
 
 
 class TransitionalManager:

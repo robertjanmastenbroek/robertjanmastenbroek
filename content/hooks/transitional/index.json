@@ -1,1 +1,122 @@
-[]
+[
+  {
+    "file": "viral/Wrap-It-LOL.mp4",
+    "category": "viral",
+    "duration_s": 4.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Snake-Bite-Hook.mp4",
+    "category": "viral",
+    "duration_s": 5.066667,
+    "last_used": "2026-04-16",
+    "performance_score": 1.0,
+    "times_used": 1
+  },
+  {
+    "file": "viral/Sandal-Throw.mp4",
+    "category": "viral",
+    "duration_s": 7.1,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Low-Battery.mp4",
+    "category": "viral",
+    "duration_s": 4.666667,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Ankle-Break-Hook.mp4",
+    "category": "viral",
+    "duration_s": 1.8,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Car-Bump.mp4",
+    "category": "viral",
+    "duration_s": 2.266667,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Hi-Front-Seat.mp4",
+    "category": "viral",
+    "duration_s": 2.733333,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Cart-Crash.mp4",
+    "category": "viral",
+    "duration_s": 4.466667,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Spongebob.mp4",
+    "category": "viral",
+    "duration_s": 22.133333,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/WTF-Sando.mp4",
+    "category": "viral",
+    "duration_s": 4.833333,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Slap-Flower.mp4",
+    "category": "viral",
+    "duration_s": 7.9,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/DashCammer.mp4",
+    "category": "viral",
+    "duration_s": 16.6,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Rice-Bear.mp4",
+    "category": "viral",
+    "duration_s": 4.833333,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/No-Crunch.mp4",
+    "category": "viral",
+    "duration_s": 5.033333,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "viral/Roof-Roller.mp4",
+    "category": "viral",
+    "duration_s": 5.066667,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  }
+]
