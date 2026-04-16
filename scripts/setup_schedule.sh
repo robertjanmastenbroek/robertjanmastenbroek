@@ -36,6 +36,16 @@ install_all() {
   mkdir -p "$LAUNCH_AGENTS_DIR"
   mkdir -p "$PROJECT_ROOT/logs"
 
+  # Install the launchd wrapper outside ~/Documents/ so /bin/bash can read it.
+  # macOS TCC denies /bin/bash (no Full Disk Access) read access to ~/Documents/,
+  # so scripts inside the project dir can't be launched by launchd directly.
+  # The wrapper exec's /opt/homebrew/bin/python3.13 (which HAS FDA) against the
+  # Python entry points, bypassing bash's limitation.
+  mkdir -p "$HOME/bin"
+  cp "$PROJECT_ROOT/scripts/rjm-run-agent.sh" "$HOME/bin/rjm-run-agent.sh"
+  chmod +x "$HOME/bin/rjm-run-agent.sh"
+  echo "  Wrapper installed: $HOME/bin/rjm-run-agent.sh"
+
   for label in "${PLISTS[@]}"; do
     src="$LAUNCHD_DIR/${label}.plist"
     dst="$LAUNCH_AGENTS_DIR/${label}.plist"
