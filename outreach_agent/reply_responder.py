@@ -73,7 +73,7 @@ def get_and_claim_pending_replies() -> list[dict]:
                gmail_thread_id, response_snippet,
                sent_subject, sent_body
         FROM contacts
-        WHERE reply_intent IN ('booking_intent','booking_inquiry','positive','question')
+        WHERE reply_intent IN ('booking_intent','booking_inquiry','positive','question','playlist_added')
           AND reply_action IS NOT NULL
           AND date_replied IS NULL
         ORDER BY reply_classified_at ASC
@@ -213,6 +213,31 @@ TASK: Write a warm, brief follow-up that deepens the connection.
     return _parse_subject_body(raw, contact)
 
 
+def _generate_playlist_added_reply(contact: dict, reply_body: str) -> tuple[str, str]:
+    """Generate a brief thank-you reply when a curator confirms they added the track."""
+    prompt = f"""You are writing a reply email on behalf of {FROM_NAME}, a DJ/producer based in Tenerife.
+
+{COMPACT_STORY}
+
+{get_voice_rules()}
+
+CONTEXT:
+- Contact: {contact['name']} ({contact['type']}) — {contact.get('notes','') or contact.get('genre','')}
+- Their reply: "{reply_body or contact.get('response_snippet','')}"
+- Original email subject we sent: "{contact.get('sent_subject','')}"
+- Suggested action: "{contact.get('reply_action','')}"
+
+TASK: Write a warm, brief thank-you reply acknowledging the playlist add.
+- Thank them genuinely (specific, not generic)
+- Mention you'd love to share future tracks that fit their playlist vibe
+- Keep it under 4 sentences. Human, not corporate.
+- Sign off as: Robert-Jan
+- Output JSON only: {{"subject": "...", "body": "..."}}"""
+
+    raw = _call_claude(prompt, model=CLAUDE_MODEL_FAST, timeout=120)
+    return _parse_subject_body(raw, contact)
+
+
 def _generate_question_reply(contact: dict, reply_body: str) -> tuple[str, str]:
     """Generate subject + body answering their question."""
     prompt = f"""You are writing a reply email on behalf of {FROM_NAME}, a DJ/producer based in Tenerife.
@@ -279,7 +304,7 @@ def run(dry_run: bool = False) -> dict:
                    gmail_thread_id, response_snippet,
                    sent_subject, sent_body
             FROM contacts
-            WHERE reply_intent IN ('booking_intent','booking_inquiry','positive','question')
+            WHERE reply_intent IN ('booking_intent','booking_inquiry','positive','question','playlist_added')
               AND reply_action IS NOT NULL
               AND date_replied IS NULL
             ORDER BY reply_classified_at ASC
@@ -326,6 +351,8 @@ def run(dry_run: bool = False) -> dict:
                 subject, body = _generate_positive_reply(contact, reply_body)
             elif intent == "question":
                 subject, body = _generate_question_reply(contact, reply_body)
+            elif intent == "playlist_added":
+                subject, body = _generate_playlist_added_reply(contact, reply_body)
             else:
                 log.info("Skipping %s — intent '%s' not handled", email, intent)
                 if not dry_run:

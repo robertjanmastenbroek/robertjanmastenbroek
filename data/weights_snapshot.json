@@ -1,0 +1,56 @@
+{
+  "_sample_size": 9,
+  "_pooled_reward": 0.0975,
+  "_by_arm_samples": {
+    "hook_mechanism": {
+      "tension": 9
+    },
+    "visual_type": {
+      "b_roll": 9
+    },
+    "clip_length": {
+      "5": 3,
+      "9": 3,
+      "15": 3
+    },
+    "platform": {
+      "youtube": 6,
+      "instagram": 3
+    }
+  },
+  "_by_arm_raw_means": {
+    "hook_mechanism": {
+      "tension": 0.0975
+    },
+    "visual_type": {
+      "b_roll": 0.0975
+    },
+    "clip_length": {
+      "5": 0.12,
+      "9": 0.0919,
+      "15": 0.0806
+    },
+    "platform": {
+      "youtube": 0.1431,
+      "instagram": 0.0062
+    }
+  },
+  "_exploration_eps": 0.2,
+  "_updated": "2026-04-16T00:38:25.472567",
+  "_window_days": 28,
+  "hook_mechanism": {
+    "tension": 1.0
+  },
+  "visual_type": {
+    "b_roll": 1.0
+  },
+  "clip_length": {
+    "5": 1.0,
+    "9": 1.0,
+    "15": 1.0
+  },
+  "platform": {
+    "youtube": 1.0,
+    "instagram": 0.6812
+  }
+}

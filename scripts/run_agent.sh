@@ -120,6 +120,18 @@ case "$AGENT" in
     /opt/homebrew/bin/python3.13 rjm.py content learning 2>&1 | tee -a "$LOG"
     log "Viral learning loop finished (exit $?)"
     ;;
+  metrics-fetch|weights-learn|learning)
+    # Single unified pass: fetch IG + YouTube + Spotify metrics and recompute
+    # arm weights from a rolling 28-day window. The new content_engine
+    # learning loop does fetch + recompute in one shot — the old split
+    # (metrics_fetcher + weights_learner) has been quarantined.
+    # Generator + assembler read the new snapshot (data/weights_snapshot.json)
+    # on their next run via content_engine.learning_loop.load_latest_weights().
+    log "Starting content_engine.learning_loop ($AGENT)"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 content_engine/learning_loop.py 2>&1 | tee -a "$LOG"
+    log "learning_loop finished (exit $?)"
+    ;;
   *)
     log "ERROR: unknown agent '$AGENT'"
     exit 1

@@ -11,7 +11,8 @@ Daily flow:
 """
 import json
 import logging
-from datetime import date as _date
+import uuid
+from datetime import date as _date, datetime as _datetime
 from pathlib import Path
 
 PROJECT_DIR     = Path(__file__).parent.parent
@@ -82,24 +83,37 @@ def run_full_day(dry_run: bool = False) -> dict:
         logger.warning(f"[pipeline] {len(failures)} distribution failures: "
                        f"{[r.get('error', '') for r in failures]}")
 
-    # Save post registry for learning loop at 18:00
+    # Save post registry for learning loop at 18:00.
+    # Schema includes every creative decision needed for the bandit to learn
+    # over (mechanism, lead, length, track, variant, exploration flag).
+    batch_id  = f"{date_str}-{uuid.uuid4().hex[:8]}"
+    posted_at = _datetime.utcnow().isoformat()
+
     registry = []
     for clip, result in zip(clips, results):
-        if result.get("success"):
-            registry.append({
-                "post_id":        result.get("post_id", ""),
-                "platform":       clip["platform"],
-                "clip_index":     clip["clip_index"],
-                "variant":        clip["variant"],
-                "hook_mechanism": clip["hook_mechanism"],
-                "visual_type":    clip["visual_type"],
-                "clip_length":    clip["clip_length"],
-            })
+        if not result.get("success"):
+            continue
+        registry.append({
+            "batch_id":       batch_id,
+            "post_id":        result.get("post_id", ""),
+            "platform":       clip["platform"],
+            "via":            result.get("via", "native"),
+            "clip_index":     clip["clip_index"],
+            "variant":        clip["variant"],
+            "hook_text":      clip.get("hook_text", ""),
+            "hook_mechanism": clip.get("hook_mechanism", "other"),
+            "exploration":    bool(clip.get("exploration", False)),
+            "visual_type":    clip.get("visual_type", ""),
+            "clip_length":    clip["clip_length"],
+            "track_title":    clip.get("track_title", ""),
+            "posted_at":      posted_at,
+        })
 
     PERFORMANCE_DIR.mkdir(parents=True, exist_ok=True)
     registry_path = PERFORMANCE_DIR / f"{date_str}_posts.json"
     registry_path.write_text(json.dumps(registry, indent=2))
-    logger.info(f"[pipeline] Post registry saved: {registry_path} ({len(registry)} entries)")
+    logger.info(f"[pipeline] Post registry saved: {registry_path} "
+                f"({len(registry)} entries, batch={batch_id})")
 
     summary = {
         "date":         date_str,

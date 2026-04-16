@@ -1,0 +1,74 @@
+[
+  {
+    "clip": "jericho_5s.mp4",
+    "duration": 5,
+    "angle": "emotional",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-12T02:12:43.746978+00:00"
+  },
+  {
+    "clip": "jericho_9s.mp4",
+    "duration": 9,
+    "angle": "signal",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-12T02:13:07.735729+00:00"
+  },
+  {
+    "clip": "jericho_15s.mp4",
+    "duration": 15,
+    "angle": "energy",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-12T02:13:30.086335+00:00"
+  },
+  {
+    "clip": "renamed_7s.mp4",
+    "duration": 7,
+    "angle": "contrast",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-15T08:25:27.417679+00:00"
+  },
+  {
+    "clip": "renamed_15s.mp4",
+    "duration": 15,
+    "angle": "body-drop",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-15T08:25:45.505125+00:00"
+  },
+  {
+    "clip": "renamed_28s.mp4",
+    "duration": 28,
+    "angle": "identity",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-15T08:25:58.239431+00:00"
+  },
+  {
+    "clip": "robert-jan-mastenbroek--lucid---fire-in-our-hands_7s.mp4",
+    "duration": 7,
+    "angle": "contrast",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-15T21:11:42.125105+00:00"
+  },
+  {
+    "clip": "robert-jan-mastenbroek--lucid---fire-in-our-hands_15s.mp4",
+    "duration": 15,
+    "angle": "body-drop",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-15T21:12:04.918313+00:00"
+  },
+  {
+    "clip": "robert-jan-mastenbroek--lucid---fire-in-our-hands_28s.mp4",
+    "duration": 28,
+    "angle": "identity",
+    "passed": true,
+    "reason": "",
+    "checked_at": "2026-04-15T21:12:31.545235+00:00"
+  }
+]

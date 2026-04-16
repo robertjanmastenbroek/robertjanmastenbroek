@@ -200,7 +200,9 @@ def _generate_captions(track_title: str, hooks_by_length: dict, brief: TrendBrie
     import generator as gen
     def _hook_str(val) -> str:
         if isinstance(val, dict):
-            return val.get("a", val.get("text", ""))
+            # New shape: {'hook': str, 'mechanism': str}
+            # Legacy shape: {'a': str, 'b': str, 'c': str}
+            return val.get("hook", val.get("a", val.get("text", "")))
         return val or ""
 
     clips_data = [
@@ -218,6 +220,36 @@ def _extract_caption(captions_by_length: dict, clip_length: int, platform: str) 
     if isinstance(platform_data, dict):
         return platform_data.get("caption", platform_data.get("title", ""))
     return str(platform_data)
+
+
+_VISUAL_ARMS = ["performance", "b_roll", "phone", "ai_generated"]
+
+
+def _pick_daily_visual_arms(bandit: dict, n: int = 3) -> list[str]:
+    """
+    Sample `n` distinct visual_type arms for today's batch so each clip gets
+    a different visual category. Mirrors the hook_mechanism diversity rule
+    — 3 clips × 3 distinct arms = 3× sample rate per day.
+
+    Falls back to uniform random when no bandit weights exist.
+    """
+    try:
+        from content_engine import learning_loop as _ll
+    except Exception:
+        _ll = None
+
+    picks: list[str] = []
+    used: set = set()
+    for _ in range(n):
+        pool = [v for v in _VISUAL_ARMS if v not in used] or list(_VISUAL_ARMS)
+        if _ll is not None and (bandit or {}).get("visual_type"):
+            chosen, _ex = _ll.sample_arm("visual_type", pool, bandit)
+        else:
+            import random as _r
+            chosen = _r.choice(pool)
+        picks.append(chosen)
+        used.add(chosen)
+    return picks
 
 
 def run_assembly(
@@ -239,13 +271,26 @@ def run_assembly(
     hooks_by_length    = _generate_hooks(track_title)
     captions_by_length = _generate_captions(track_title, hooks_by_length, brief)
 
+    # Load bandit weights once per run and pre-sample 3 diverse visual arms.
+    try:
+        from content_engine import learning_loop as _ll
+        bandit_weights = _ll.load_latest_weights()
+    except Exception:
+        bandit_weights = {}
+    visual_arms = _pick_daily_visual_arms(bandit_weights, n=3)
+    logger.info(f"[assembler] Visual arms for today: {visual_arms}")
+
     results = []
     ts = datetime.now().strftime("%H%M")
     used_sources: set = set()  # prevents duplicate opening footage across clips
 
     for clip_idx in range(3):
         clip_length   = CLIP_LENGTHS[clip_idx]
-        opening_frame = visual_engine.pick_opening_frame(brief, clip_idx, video_dirs, exclude=used_sources)
+        opening_frame = visual_engine.pick_opening_frame(
+            brief, clip_idx, video_dirs,
+            exclude=used_sources,
+            preferred_category=visual_arms[clip_idx],
+        )
         opening_frame.clip_index = clip_idx
         if opening_frame.source_file:
             used_sources.add(opening_frame.source_file)
@@ -253,11 +298,21 @@ def run_assembly(
                     f"{opening_frame.source} — {opening_frame.source_file}")
 
         _raw_hooks = hooks_by_length.get(clip_length, {})
-        # generate_run_hooks returns plain strings; normalise to dict for variant lookup
+        # generate_run_hooks returns {'hook': str, 'mechanism': str, 'exploration': bool}.
+        # Capture the mechanism so it flows into the post registry — previously
+        # this was hard-coded to "tension" and poisoned every learning sample.
+        hook_mechanism = "other"
+        hook_exploration = False
         if isinstance(_raw_hooks, str):
-            clip_hooks = {"a": _raw_hooks, "b": _raw_hooks}
+            clip_hooks = {"a": _raw_hooks, "b": _raw_hooks, "c": _raw_hooks}
+        elif isinstance(_raw_hooks, dict) and "hook" in _raw_hooks:
+            _h = _raw_hooks.get("hook", "")
+            hook_mechanism   = _raw_hooks.get("mechanism", "other") or "other"
+            hook_exploration = bool(_raw_hooks.get("exploration", False))
+            clip_hooks = {"a": _h, "b": _h, "c": _h}
         else:
-            clip_hooks = _raw_hooks
+            # Legacy {'a': str, 'b': str, 'c': str} shape — no mechanism info available.
+            clip_hooks = _raw_hooks or {}
 
         for platform in PLATFORMS:
             variant   = VARIANT_MAP[clip_idx][platform]
@@ -267,7 +322,7 @@ def run_assembly(
             fname       = f"clip{clip_idx}_{platform}_{variant}_{ts}.mp4"
             output_path = str(Path(output_dir) / fname)
 
-            logger.info(f"[assembler]   → {platform} variant={variant}")
+            logger.info(f"[assembler]   → {platform} variant={variant} mechanism={hook_mechanism}")
             build_clip(
                 opening_frame=opening_frame,
                 audio_path=audio_path,
@@ -284,7 +339,8 @@ def run_assembly(
                 "path":           output_path,
                 "hook_text":      hook_text,
                 "caption":        caption,
-                "hook_mechanism": "tension",  # updated by learning loop after analysis
+                "hook_mechanism": hook_mechanism,
+                "exploration":    hook_exploration,
                 "visual_type":    opening_frame.visual_category,
                 "clip_length":    clip_length,
                 "track_title":    track_title,

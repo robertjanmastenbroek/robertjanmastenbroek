@@ -218,3 +218,166 @@ New track out Friday. Link in bio.
 
 #testimony #faithjourney #tenerife #psytrance #djproducer
 ```
+
+---
+
+## BATCH 3 — Added 2026-04-15
+
+### Caption 16 — The Atlantic Drop
+```
+The Atlantic is 3 kilometres deep at this point off the Tenerife coast.
+
+Living Water runs at 124 BPM.
+
+John 4:14 — "Whoever drinks the water I give them will never thirst again."
+
+I didn't plan for those two things to connect. They just did.
+
+🎧 Link in bio.
+
+#livingwater #tenerife #psytrance #john4 #producerlife
+```
+
+### Caption 17 — The Silence Before
+```
+Every track starts before the kick drum.
+
+There's a silence — 8 bars, sometimes 16 — where nothing happens.
+That silence is doing something.
+
+The people who wait through it hear everything after differently.
+
+🎧 Jericho — 140 BPM. Link in bio.
+
+#psytrance #tribaltechno #electronicmusic #tenerife #producer
+```
+
+### Caption 18 — The Collab Invite
+```
+If you make tribal techno, organic house, or psytrance — and you're independent:
+
+I want to collaborate.
+
+Not for exposure. Not for a feature credit.
+I want to make one track that neither of us could make alone.
+
+DM me. Let's see what happens.
+
+#collab #psytrance #tribaltechno #melodictechno #producer
+```
+
+### Caption 19 — The Old Testament Rhythm
+```
+The book of Joshua describes the battle of Jericho in exact detail:
+7 priests, 7 trumpets, 7 days, 7 times on day 7.
+
+That's not a miracle story. That's a rhythm structure.
+
+I built a 140 BPM track around it. The walls still fall.
+
+🎧 Jericho — link in bio.
+
+#jericho #bible #psytrance #tribaltechno #bibleinspired
+```
+
+### Caption 20 — The Friday Rule
+```
+Every Friday. New track.
+
+Not because the algorithm wants it.
+Because that's what happens when you show up every week.
+
+30+ originals on Spotify. All independent. All made in Tenerife.
+
+Follow so you don't miss the next one. 🎧
+
+#newmusicfriday #independentartist #psytrance #tribaltechno #tenerife
+```
+
+---
+
+## BATCH 4 — Added 2026-04-15
+
+### Caption 21 — The Busking Floor
+```
+3 years ago I was busking on a street in Tenerife.
+€10 an hour. A guitar. No plan.
+
+That same street is now my favourite audience.
+
+Not because the money went up — eventually it did.
+Because that's where the music stopped being performance
+and started being honest.
+
+🎧 Link in bio.
+
+#producer #tenerife #independentartist #psytrance #backstory
+```
+
+### Caption 22 — Fire In Our Hands
+```
+Fire In Our Hands — 130 BPM.
+
+Matthew 5:14: "You are the light of the world."
+
+Not a metaphor. Not a lyric.
+A direct instruction.
+
+This track was written for the people who already know.
+
+🎧 Link in bio.
+
+#fireinourhands #melodictechno #130bpm #tenerife #bibleinspired
+```
+
+### Caption 23 — The Gap
+```
+290,000 Instagram followers.
+325 Spotify listeners.
+
+I'm not hiding that number — I'm working on it.
+
+If you've been here for the music and haven't gone to Spotify yet,
+today's the day.
+
+Save one track. That's it.
+
+🎧 Link in bio → Robert-Jan Mastenbroek on Spotify.
+
+#spotifygrowth #independentartist #psytrance #tribaltechno
+```
+
+### Caption 24 — Ancient Truth
+```
+The oldest music in the world was temple music.
+
+Drums for prayer. Horns for war. Strings for lament.
+
+I make techno for the same reason.
+"Ancient Truth. Future Sound."
+
+Every track is a continuation of something that never stopped.
+
+🎧 Link in bio.
+
+#ancienttruth #futuresound #psytrance #tribaltechno #tenerife
+```
+
+### Caption 25 — He Is The Light
+```
+John 8:12 — "I am the light of the world."
+
+He Is The Light started as a phrase I wrote down at 3am.
+I didn't know it was a track until I played the first chord.
+
+Some things write themselves.
+
+🎧 He Is The Light — link in bio.
+
+#heisthelight #john8 #psytrance #melodictechno #bibleinspired
+```
+
+---
+
+*Never use: blessed / anointed / spiritual journey / elevated consciousness / manifestation / worship music / Christian music / sober rave.*
+*Always use: specific, visual, falsifiable language. One Mississippi test on every subject line.*

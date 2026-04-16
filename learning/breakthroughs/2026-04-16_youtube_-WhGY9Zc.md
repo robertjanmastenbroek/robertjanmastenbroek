@@ -1,0 +1,5 @@
+# Breakthrough: Youtube — 2026-04-16
+
+**Views:** 411  **Completion:** 76.3%  **Hook:** tension  **Visual:** b_roll  **Length:** 9s
+
+_(no analysis — claude CLI unavailable)_

@@ -7,6 +7,8 @@ content/images/
 # Secrets
 .env
 *client_secrets.json
+client_secret.json
+client_secret*.json
 *token.json
 credentials.json
 
@@ -33,3 +35,10 @@ logs/
 
 # Lock files
 *.lock
+
+# Runtime-generated outreach artefacts
+outreach_agent/drafts/
+outreach_agent/.claude_subprocess_home/
+
+# Claude Code local launch config
+.claude/launch.json

@@ -515,8 +515,33 @@ def main():
     _sep("STEP 2 / 4 — Source videos + beat-sync")
     clip_lengths = list(processor.CLIP_LENGTHS)   # [5, 9, 15]
 
-    per_clip = {}   # clip_len → {video_sources, angle, n_segs}
+    per_clip = {}   # clip_len → {video_sources, angle, n_segs, lead_cat, lead_exploration}
     all_used = set()
+
+    # Load learned lead_category weights once per run. When the loop is cold
+    # (zero data), weights are uniform and we fall back to the hard-coded
+    # angle → lead_cat map. Once we have 5+ posts per category, the weights
+    # start biasing toward whatever actually drives completion + saves.
+    #
+    # Prefer content_engine.learning_loop (canonical bandit since 2026-04);
+    # fall back to the legacy outreach_agent weights_learner for safety.
+    _wl = None
+    _learned_weights: dict = {}
+    try:
+        import sys as _sys
+        from pathlib import Path as _Path
+        _proj = _Path(__file__).parent.parent
+        if str(_proj) not in _sys.path:
+            _sys.path.insert(0, str(_proj))
+        from content_engine import learning_loop as _wl  # type: ignore
+        _learned_weights = _wl.load_latest_weights()
+    except Exception:
+        try:
+            import weights_learner as _wl  # type: ignore
+            _learned_weights = _wl.load_latest_weights()
+        except Exception:
+            _wl = None
+            _learned_weights = {}
 
     for clip_len in clip_lengths:
         angle  = CLIP_ANGLE_MAP.get(clip_len, "emotional")
@@ -534,7 +559,26 @@ def main():
         #   emotional (5s) → phone-footage first (raw/intimate)
         #   signal (9s)    → b-roll first (atmospheric/landscape)
         #   energy (15s)   → performances first (crowd energy)
-        lead_cat = {'emotional': 'phone', 'signal': 'broll', 'energy': 'perf'}.get(angle, 'perf')
+        default_lead = {
+            'emotional': 'phone', 'signal': 'broll', 'energy': 'perf',
+            'contrast':  'phone', 'body-drop': 'perf', 'identity': 'phone',
+        }.get(angle, 'perf')
+
+        # Learning-loop override — epsilon-greedy over [phone, broll, perf]
+        lead_exploring = False
+        if _wl is not None and _learned_weights.get("lead_category"):
+            lead_cat, lead_exploring = _wl.sample_arm(
+                "lead_category",
+                ["phone", "broll", "perf"],
+                _learned_weights,
+            )
+            if lead_exploring:
+                print(f"    ↯ exploring lead_cat={lead_cat} (ε-greedy)")
+            else:
+                print(f"    ✨ learned lead_cat={lead_cat} (was default {default_lead})")
+        else:
+            lead_cat = default_lead
+
         sources_raw = pick_source_videos(n_segs, exclude=all_used, lead_cat=lead_cat)
         sources     = []
         categories  = []
@@ -575,8 +619,10 @@ def main():
         per_clip[clip_len] = {
             "video_sources":     sources,
             "source_categories": categories,
-            "angle":  angle,
-            "n_segs": n_segs,
+            "angle":             angle,
+            "n_segs":            n_segs,
+            "lead_cat":          lead_cat,
+            "lead_exploration":  lead_exploring,
         }
 
     # ── 3. Hooks + captions — single Claude call each ─────────────────────────
@@ -589,15 +635,27 @@ def main():
 
     print("  Generating hooks (all 3 angles — 1 call)…")
     run_hooks = generator.generate_run_hooks(track_title, clips_config)
+    # run_hooks is {length: {'hook': str, 'mechanism': str}} — helper for safe access
+    def _hook_text(cl: int) -> str:
+        meta = run_hooks.get(cl)
+        if isinstance(meta, dict):
+            return meta.get("hook", "")
+        return meta or ""
+    def _hook_mech(cl: int) -> str:
+        meta = run_hooks.get(cl)
+        if isinstance(meta, dict):
+            return meta.get("mechanism", "other")
+        return "other"
+
     for cl in clip_lengths:
-        print(f"    {cl}s [{per_clip[cl]['angle']}]  \"{run_hooks.get(cl, '')}\"")
+        print(f"    {cl}s [{per_clip[cl]['angle']}] ({_hook_mech(cl)})  \"{_hook_text(cl)}\"")
 
     print("\n  Generating captions (all 3 clips — 1 call)…")
     clips_data = [
         {
             "length": cl,
             "angle":  per_clip[cl]["angle"],
-            "hook":   run_hooks.get(cl, ""),
+            "hook":   _hook_text(cl),
         }
         for cl in clip_lengths
     ]
@@ -621,7 +679,7 @@ def main():
         angle      = clip_data["angle"]
         sources    = clip_data["video_sources"]
         cat_list   = clip_data.get("source_categories", [])
-        hook       = run_hooks.get(clip_len, "")
+        hook       = _hook_text(clip_len)
 
         print(f"  → {clip_len}s [{angle}]  {len(sources)} segments")
         out_file = run_dir / f"{safe_track}_{clip_len}s.mp4"
@@ -643,7 +701,7 @@ def main():
     # ── Captions file ─────────────────────────────────────────────────────────
     caption_lines = []
     for cl in clip_lengths:
-        hook  = run_hooks.get(cl, "")
+        hook  = _hook_text(cl)
         caps  = run_captions.get(cl, {})
         angle = per_clip[cl]["angle"]
 
@@ -698,6 +756,11 @@ def main():
         _sep("BUFFER — Queuing to TikTok / Instagram Reels / Instagram Story / YouTube")
         from buffer_poster import upload_video_and_queue
         from datetime import timezone
+        import uuid as _uuid
+
+        # Single batch ID for the whole run — lets the learning loop group
+        # the 3 clips produced together and compare them as a cohort.
+        batch_id = datetime.now().strftime("%Y%m%d_%H%M") + "_" + _uuid.uuid4().hex[:6]
 
         # Fixed CET posting slots: 08:30 / 13:00 / 21:30 (Tenerife time)
         # 08:30 beats 09:00 — catches EU pre-commute before feed congestion peaks.
@@ -710,12 +773,19 @@ def main():
             from datetime import timedelta as _td
             _tz_cet = timezone(_td(hours=1))
 
+        from datetime import timedelta as _td
+        _now_cet = datetime.now(_tz_cet)
         schedule_times = []
+        _next_future = _now_cet + _td(minutes=15)  # earliest allowed slot
         for _i in range(len(output_files)):
             _slot = _POST_SLOTS_CET[_i % len(_POST_SLOTS_CET)]
             _h, _m = int(_slot.split(":")[0]), int(_slot.split(":")[1])
-            _today_cet = datetime.now(_tz_cet).replace(hour=_h, minute=_m, second=0, microsecond=0)
-            schedule_times.append(_today_cet.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+            _candidate = _now_cet.replace(hour=_h, minute=_m, second=0, microsecond=0)
+            # If the fixed slot is in the past, use _next_future instead
+            if _candidate <= _next_future:
+                _candidate = _next_future
+            _next_future = _candidate + _td(minutes=30)  # keep slots 30 min apart
+            schedule_times.append(_candidate.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
         for i, (clip_len, clip_path) in enumerate(zip(clip_lengths, output_files)):
             caps  = run_captions.get(clip_len, {})
@@ -754,9 +824,46 @@ def main():
                     print(f"    ⚠ Failed platforms (will retry next run): {', '.join(failed_platforms)}")
 
                 # ── Cross-platform content state log ─────────────────────────
+                # Persist FULL creative metadata so the learning loop can
+                # correlate "what we did" with "what worked" (metrics_fetcher
+                # populates content_metrics; weights_learner reads both).
                 try:
                     from content_signal import log_content_post as _log_content_post
-                    hook_text = run_hooks.get(clip_len, "")
+                    hook_text   = _hook_text(clip_len)
+                    hook_mech   = _hook_mech(clip_len)
+                    _hook_meta  = run_hooks.get(clip_len) or {}
+                    hook_explore = bool(
+                        _hook_meta.get("exploration", False)
+                        if isinstance(_hook_meta, dict) else False
+                    )
+                    clip_data   = per_clip[clip_len]
+                    source_vids = [
+                        {"path": str(_p), "category": _cat, "start_s": _start}
+                        for (_p, _start), _cat in zip(
+                            clip_data.get("video_sources", []),
+                            clip_data.get("source_categories", []),
+                        )
+                    ]
+                    # lead_cat chosen by the learning loop (or angle default
+                    # when the loop is still cold). lead_exploration is True
+                    # when the learner picked via ε-greedy exploration rather
+                    # than exploitation — we log BOTH flags so we can filter
+                    # later: was this a learner-driven win or a lucky explore?
+                    lead_cat        = clip_data.get("lead_cat", "perf")
+                    lead_explore    = bool(clip_data.get("lead_exploration", False))
+                    exploration_row = hook_explore or lead_explore
+
+                    # Per-platform caption text (what the learner will
+                    # correlate against completion / saves / shares)
+                    _tt_cap = (caps.get("tiktok", {}) or {}).get("caption", "")
+                    _ig_cap = (caps.get("instagram", {}) or {}).get("caption", "")
+                    _yt_title = (caps.get("youtube", {}) or {}).get("title", "")
+                    _yt_desc  = (caps.get("youtube", {}) or {}).get("description", "")
+
+                    # Cloudinary URL for post-hoc inspection (if available in
+                    # the Buffer result payload; currently unknown → None)
+                    _cloud_url = None
+
                     for _platform, _result in results.items():
                         if not _result.get("success"):
                             continue
@@ -769,6 +876,22 @@ def main():
                             hook=hook_text,
                             buffer_id=_result.get("id"),
                             filename=str(clip_path),
+                            # ─── Learning loop fields ──────────────────
+                            hook_mechanism=hook_mech,
+                            bpm=float(bpm),
+                            bar_duration=float(bar_dur),
+                            clip_length=int(clip_len),
+                            segment_count=int(clip_data.get("n_segs", 0)),
+                            source_videos=source_vids,
+                            lead_category=lead_cat,
+                            cloudinary_url=_cloud_url,
+                            scheduled_at=sched,
+                            tiktok_caption=_tt_cap,
+                            instagram_caption=_ig_cap,
+                            youtube_title=_yt_title,
+                            youtube_desc=_yt_desc,
+                            exploration=exploration_row,
+                            batch_id=batch_id,
                         )
                 except ImportError:
                     pass
@@ -821,7 +944,7 @@ def main():
             angle = per_clip[cl]["angle"]
             caps  = run_captions.get(cl, {})
             print(f"── {cl}s [{angle}] ──────────────────────────────")
-            print(f"  Hook:      {run_hooks.get(cl, '')}")
+            print(f"  Hook:      {_hook_text(cl)}  (mech: {_hook_mech(cl)})")
             print(f"  TikTok:    {caps.get('tiktok', {}).get('caption', '')}")
             print(f"  Instagram: {caps.get('instagram', {}).get('caption', '')}")
             print(f"  YT title:  {caps.get('youtube', {}).get('title', '')}")

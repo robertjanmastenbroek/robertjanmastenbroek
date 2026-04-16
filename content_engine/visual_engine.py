@@ -113,19 +113,86 @@ def _infer_category(path: str) -> str:
     return "b_roll"
 
 
-def pick_opening_frame(brief: TrendBrief, clip_index: int, video_dirs: list, exclude: set = None) -> OpeningFrame:
+# Map bandit arm values → footage_scorer `category` (which is the directory name)
+_VISUAL_ARM_TO_DIR = {
+    "performance":  "performances",
+    "b_roll":       "b-roll",
+    "phone":        "phone-footage",
+    "ai_generated": None,   # triggers Runway path
+}
+
+
+def pick_opening_frame(
+    brief: TrendBrief,
+    clip_index: int,
+    video_dirs: list,
+    exclude: set = None,
+    preferred_category: str | None = None,
+) -> OpeningFrame:
     """
     Decide: use existing footage (score >= threshold) OR generate with Runway.
     Returns OpeningFrame. Never fails silently — raises if both paths fail.
-    exclude: set of source_file paths already used in this run — ensures each clip is unique.
+
+    exclude: set of source_file paths already used in this run — ensures
+             each clip is unique.
+    preferred_category: bandit-selected visual_type arm. Valid values match
+             the keys in _VISUAL_ARM_TO_DIR. If set to "ai_generated" we
+             skip footage scoring and go straight to Runway. Otherwise we
+             filter the candidate pool to the matching category directory
+             before scoring; if that pool is empty we fall back to the full
+             candidate list so the pipeline never starves.
     """
+    # AI path — bandit requested an AI-generated opening frame
+    if preferred_category == "ai_generated":
+        logger.info(f"[visual_engine] clip {clip_index}: bandit → ai_generated")
+        prompt = build_prompt(brief, clip_index)
+        try:
+            generated_path = generate_clip(prompt, brief.date, clip_index)
+        except RuntimeError as exc:
+            logger.warning(
+                f"[visual_engine] clip {clip_index}: Runway unavailable ({exc}) "
+                "— writing stub"
+            )
+            generated_path = ""
+        return OpeningFrame(
+            clip_index=clip_index,
+            source="ai_generated",
+            source_file=generated_path,
+            emotion_tag=brief.dominant_emotion,
+            visual_category="ai_generated",
+            footage_score=0.0,
+        )
+
+    # Footage path — optionally filtered by bandit-preferred category
     candidates = footage_scorer.build_candidate_list(video_dirs)
-    best_path, best_score = footage_scorer.pick_best_opening_frame(candidates, brief.dominant_emotion, exclude=exclude)
+    if preferred_category:
+        target_dir = _VISUAL_ARM_TO_DIR.get(preferred_category)
+        if target_dir:
+            filtered = [c for c in candidates if c.get("category") == target_dir]
+            if filtered:
+                logger.info(
+                    f"[visual_engine] clip {clip_index}: bandit → {preferred_category} "
+                    f"({len(filtered)} candidates in {target_dir})"
+                )
+                candidates = filtered
+            else:
+                logger.info(
+                    f"[visual_engine] clip {clip_index}: no footage in preferred "
+                    f"{preferred_category} — falling back to all categories"
+                )
 
-    logger.info(f"[visual_engine] clip {clip_index}: footage score={best_score:.2f} "
-                f"(threshold={SCORE_THRESHOLD}) — {'USE FOOTAGE' if best_score >= SCORE_THRESHOLD and best_path else 'GENERATE AI'}")
+    best_path, best_score = footage_scorer.pick_best_opening_frame(
+        candidates, brief.dominant_emotion, exclude=exclude
+    )
 
-    if best_score >= SCORE_THRESHOLD and best_path:
+    use_footage = best_score >= SCORE_THRESHOLD and best_path
+    logger.info(
+        f"[visual_engine] clip {clip_index}: footage score={best_score:.2f} "
+        f"(threshold={SCORE_THRESHOLD}) — "
+        f"{'USE FOOTAGE' if use_footage else 'GENERATE AI'}"
+    )
+
+    if use_footage:
         return OpeningFrame(
             clip_index=clip_index,
             source="footage",
@@ -135,12 +202,15 @@ def pick_opening_frame(brief: TrendBrief, clip_index: int, video_dirs: list, exc
             footage_score=best_score,
         )
 
-    # Generate with Runway
+    # Generate with Runway (fallback path when no footage meets threshold)
     prompt = build_prompt(brief, clip_index)
     try:
         generated_path = generate_clip(prompt, brief.date, clip_index)
     except RuntimeError as exc:
-        logger.warning(f"[visual_engine] clip {clip_index}: Runway unavailable ({exc}) — using placeholder")
+        logger.warning(
+            f"[visual_engine] clip {clip_index}: Runway unavailable ({exc}) "
+            "— using placeholder"
+        )
         generated_path = ""  # assembler build_clip will skip ffmpeg and write a stub
     return OpeningFrame(
         clip_index=clip_index,

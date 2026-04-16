@@ -11,6 +11,9 @@ Usage:
   python3 rjm.py outreach [cmd]           # Outreach agent (run, status, verify, add, ...)
   python3 rjm.py master [cmd]             # Master agent (dashboard, gaps, weekly, run, ...)
   python3 rjm.py contacts [cmd]           # Contact manager (status, queue, sync, add, ...)
+  python3 rjm.py learning                 # Show learning-loop weights + top/bottom hooks
+  python3 rjm.py learning fetch           # Pull fresh IG + YouTube metrics
+  python3 rjm.py learning recompute       # Recompute arm weights from rolling 28-day window
   python3 rjm.py content [--dry-run]      # Holy Rave daily content run (legacy, 3 clips → Buffer)
   python3 rjm.py content viral            # Viral pipeline: trend→visual→assemble→distribute
   python3 rjm.py content viral --dry-run  # Viral pipeline dry-run (no posting)
@@ -142,6 +145,134 @@ def cmd_briefing():
     sys.exit(_run([_OUTREACH_PYTHON, str(MASTER_PY), "briefing"], cwd=str(OUTREACH_DIR)))
 
 
+def cmd_learning(args: list[str]):
+    """
+    Content learning-loop inspector — delegates to content_engine.learning_loop.
+
+    Usage:
+      python3 rjm.py learning                # Show current arm weights + top/bottom clips
+      python3 rjm.py learning fetch          # Pull fresh metrics + recompute (one pass)
+      python3 rjm.py learning recompute      # Same as fetch — runs the full loop
+      python3 rjm.py learning recompute --window 14
+      python3 rjm.py learning recompute --dry-run
+      python3 rjm.py learning show           # Raw JSON snapshot from weights_snapshot.json
+      python3 rjm.py learning top            # Top / bottom 5 clips by reward
+    """
+    sub = args[0].lower() if args else "report"
+    loop_py = PROJECT_ROOT / "content_engine" / "learning_loop.py"
+    if not loop_py.exists():
+        print(f"✗ {loop_py} not found")
+        sys.exit(1)
+
+    # fetch + recompute are the same pass now — learning_loop.run() fetches
+    # IG/YT/Spotify metrics then computes weights in one shot.
+    if sub in ("fetch", "recompute"):
+        extra: list[str] = []
+        if "--dry-run" in args[1:]:
+            extra.append("--dry-run")
+        if "--window" in args[1:]:
+            i = args.index("--window")
+            if i + 1 < len(args):
+                extra += ["--window", args[i + 1]]
+        sys.exit(_run([_BASE_PYTHON, str(loop_py)] + extra, cwd=str(PROJECT_ROOT)))
+
+    if sub == "show":
+        sys.exit(_run([_BASE_PYTHON, str(loop_py), "--show"], cwd=str(PROJECT_ROOT)))
+
+    if sub in ("report", "top", ""):
+        # Full human-readable report: current weights, best/worst clips,
+        # arm sample sizes, exploration rate, breakthroughs (top 10%).
+        sys.path.insert(0, str(PROJECT_ROOT))
+        try:
+            from content_engine import learning_loop as _ll
+        except Exception as e:
+            print(f"✗ Could not load content_engine.learning_loop: {e}")
+            sys.exit(1)
+
+        import json as _json
+
+        w = _ll.load_latest_weights()
+        if not w:
+            print("No weight snapshot yet. Run: python3 rjm.py learning recompute")
+            sys.exit(0)
+
+        print("═══════════════════════════════════════════════════════")
+        print("  Content Learning Loop — Report")
+        print("═══════════════════════════════════════════════════════")
+        print(f"  Latest snapshot: {w.get('_updated')}")
+        print(f"  Window:          {w.get('_window_days')} days")
+        print(f"  Sample size:     {w.get('_sample_size')}")
+        print(f"  Exploration ε:   {w.get('_exploration_eps')}")
+        print(f"  Pooled reward:   {w.get('_pooled_reward')}")
+        print()
+
+        for arm in _ll.ARMS:
+            arm_w = w.get(arm) or {}
+            samples = (w.get("_by_arm_samples") or {}).get(arm, {})
+            raw = (w.get("_by_arm_raw_means") or {}).get(arm, {})
+            if not arm_w:
+                continue
+            print(f"─── {arm} ───")
+            for k in sorted(arm_w, key=lambda x: arm_w[x], reverse=True):
+                n = samples.get(k, 0)
+                rm = raw.get(k, 0.0)
+                print(f"   {str(k):14} w={arm_w[k]:.3f}  raw_mean={rm:.3f}  n={n}")
+            print()
+
+        # Top / bottom clips by reward — read latest metrics file if present
+        metrics_dir = PROJECT_ROOT / "data" / "performance"
+        metric_files = sorted(metrics_dir.glob("*_metrics.json"))
+        rows: list[dict] = []
+        if metric_files:
+            try:
+                rows = _json.loads(metric_files[-1].read_text() or "[]")
+            except Exception:
+                rows = []
+
+        if not rows:
+            # Fallback — re-join registries in memory so the report still shows
+            # something useful even before the first fetch.
+            try:
+                rows = _ll.load_registries(window_days=int(w.get("_window_days") or 28))
+            except Exception:
+                rows = []
+
+        scored = [(r, _ll.composite_reward(r)) for r in rows]
+        scored.sort(key=lambda kv: kv[1], reverse=True)
+
+        def _short(s: str, n: int = 60) -> str:
+            s = s or ""
+            return s[: n - 1] + "…" if len(s) > n else s
+
+        if scored:
+            print("─── TOP 5 clips (by composite reward) ────────────────")
+            for r, rw in scored[:5]:
+                hook = _short((r.get("hook_text") or r.get("hook") or ""), 55)
+                print(f"  {rw:.3f}  [{str(r.get('platform','?')):9}] "
+                      f"{str(r.get('hook_mechanism','?')):8} "
+                      f"{str(r.get('visual_type','?')):14} "
+                      f"{str(r.get('clip_length','?')):>3}s  {hook}")
+            print()
+            print("─── BOTTOM 5 clips (by composite reward) ─────────────")
+            for r, rw in scored[-5:]:
+                hook = _short((r.get("hook_text") or r.get("hook") or ""), 55)
+                print(f"  {rw:.3f}  [{str(r.get('platform','?')):9}] "
+                      f"{str(r.get('hook_mechanism','?')):8} "
+                      f"{str(r.get('visual_type','?')):14} "
+                      f"{str(r.get('clip_length','?')):>3}s  {hook}")
+            print()
+            cutoff = max(1, len(scored) // 10)
+            print(f"─── BREAKTHROUGHS (top 10% — {cutoff} clips) ─────────")
+            for r, rw in scored[:cutoff]:
+                print(f"  ★ {rw:.3f}  {_short(r.get('hook_text') or r.get('hook') or '', 70)}")
+        else:
+            print("(No joined rows yet — run: python3 rjm.py learning recompute)")
+        sys.exit(0)
+
+    print(cmd_learning.__doc__)
+    sys.exit(1)
+
+
 def cmd_content(args: list[str]):
     """Run the Holy Rave daily content engine."""
     subcommand = args[0].lower() if args else ""
@@ -175,7 +306,13 @@ def cmd_content(args: list[str]):
         logging.basicConfig(level=logging.INFO)
         from content_engine.learning_loop import run as learning_run
         weights = learning_run()
-        print(json.dumps(weights.__dict__, indent=2))
+        # learning_run() returns a plain dict — serialise directly.
+        print(json.dumps({
+            "sample_size":     weights.get("_sample_size", 0),
+            "exploration_eps": weights.get("_exploration_eps"),
+            "pooled_reward":   weights.get("_pooled_reward"),
+            "updated":         weights.get("_updated"),
+        }, indent=2, default=str))
         sys.exit(0)
 
     else:
@@ -607,6 +744,8 @@ def main():
         cmd_token(rest)
     elif cmd == "schedule":
         cmd_schedule(rest)
+    elif cmd == "learning":
+        cmd_learning(rest)
     elif cmd in ("skills", "skill"):
         cmd_skills()
     elif cmd in ("help", "--help", "-h"):

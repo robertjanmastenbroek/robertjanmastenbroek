@@ -89,6 +89,13 @@ def _gql(query: str, variables: dict = None) -> dict:
             time.sleep(wait)
             continue
 
+        if resp.status_code == 400:
+            try:
+                body = resp.json()
+            except Exception:
+                body = resp.text[:300]
+            raise RuntimeError(f"Buffer 400 Bad Request: {body}")
+
         if resp.status_code >= 500:
             wait = backoff[attempt]
             if attempt < max_attempts - 1:
@@ -235,7 +242,8 @@ def _create_video_post(
 ) -> str:
     """Queue a video post to one Buffer channel. Returns the Buffer post ID.
     Buffer's GraphQL API takes a public video URL in assets.videos[].url.
-    If scheduled_at is provided (ISO-8601 UTC string), posts at that exact time today.
+    scheduled_at is accepted for API compatibility but ignored — Buffer's queue
+    handles timing automatically ("automatic" mode).
     """
     channel_id = CHANNELS.get(channel)
     if not channel_id:
@@ -258,13 +266,13 @@ def _create_video_post(
         inp = {
             "channelId": channel_id,
             "text": caption,
-            "schedulingType": "scheduled" if scheduled_at else "automatic",
-            "mode": "addToQueue",
+            "schedulingType": "automatic",
+            "mode": "customScheduled" if scheduled_at else "addToQueue",
             "metadata": metadata,
             "assets": {"videos": [{"url": video_url}]},
         }
         if scheduled_at:
-            inp["scheduledAt"] = scheduled_at
+            inp["dueAt"] = scheduled_at
 
         result = _gql(_VIDEO_POST_MUTATION, {"input": inp})
         payload = result["createPost"]
@@ -303,13 +311,13 @@ def _create_video_story_post(channel: str, video_url: str, scheduled_at: str = N
         inp = {
             "channelId": channel_id,
             "text": "",
-            "schedulingType": "scheduled" if scheduled_at else "automatic",
-            "mode": "addToQueue",
-            "metadata": {"instagram": {"type": "story"}},
+            "schedulingType": "automatic",
+            "mode": "customScheduled" if scheduled_at else "addToQueue",
+            "metadata": {"instagram": {"type": "story", "shouldShareToFeed": False}},
             "assets": {"videos": [{"url": video_url}]},
         }
         if scheduled_at:
-            inp["scheduledAt"] = scheduled_at
+            inp["dueAt"] = scheduled_at
 
         result = _gql(_VIDEO_POST_MUTATION, {"input": inp})
         payload = result["createPost"]

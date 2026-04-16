@@ -431,7 +431,12 @@ def post_youtube_short(video_path: str, title: str, description: str,
 
 
 def _buffer_fallback(clip: dict, scheduled_at: str = "") -> dict:
-    """Fall back to existing buffer_poster.py if native API unavailable."""
+    """Fall back to existing buffer_poster.py if native API unavailable.
+
+    Extracts the real per-platform Buffer update ID so the learning loop
+    can later look the post up (previously returned the literal string
+    'buffer' which made downstream metrics impossible).
+    """
     try:
         import buffer_poster
         result = buffer_poster.upload_video_and_queue(
@@ -442,9 +447,30 @@ def _buffer_fallback(clip: dict, scheduled_at: str = "") -> dict:
             youtube_desc=clip.get("caption", ""),
             scheduled_at=scheduled_at or None,
         )
-        success = any(v.get("success") for v in (result or {}).values())
-        return {"success": success, "post_id": "buffer", "platform": clip["platform"],
-                "via": "buffer_fallback"}
+        # Map clip platform → buffer_poster result key
+        platform = clip["platform"]
+        buffer_key = {
+            "instagram": "instagram_reel",
+            "youtube":   "youtube",
+            "tiktok":    "tiktok",
+        }.get(platform)
+
+        post_id  = None
+        success  = False
+        if buffer_key and buffer_key in (result or {}):
+            entry = result[buffer_key]
+            post_id = entry.get("id")
+            success = bool(entry.get("success"))
+        else:
+            # Facebook or unknown platform — Buffer can't route it; mark failure
+            success = False
+
+        return {
+            "success":  success,
+            "post_id":  post_id or "",
+            "platform": platform,
+            "via":      "buffer_fallback",
+        }
     except Exception as e:
         return {"success": False, "platform": clip["platform"],
                 "error": f"Buffer fallback failed: {e}"}

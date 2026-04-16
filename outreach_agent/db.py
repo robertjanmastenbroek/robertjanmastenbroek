@@ -148,17 +148,64 @@ CREATE TABLE IF NOT EXISTS fleet_state (
 );
 
 CREATE TABLE IF NOT EXISTS content_log (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    posted_at   TEXT    NOT NULL,
-    platform    TEXT    NOT NULL,
-    format      TEXT    NOT NULL,
-    track       TEXT,
-    angle       TEXT,
-    hook        TEXT,
-    buffer_id   TEXT,
-    filename    TEXT
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    posted_at       TEXT    NOT NULL,
+    platform        TEXT    NOT NULL,    -- tiktok | instagram | instagram_story | youtube
+    format          TEXT    NOT NULL,    -- reels | short | story
+    track           TEXT,
+    angle           TEXT,                -- contrast | body-drop | identity
+    hook            TEXT,                -- full hook text as displayed
+    hook_mechanism  TEXT,                -- tension | identity | scene | claim | rupture | dare | question
+    buffer_id       TEXT,                -- Buffer's internal post id
+    filename        TEXT,                -- path to produced clip
+    bpm             REAL,                -- detected BPM of source track
+    bar_duration    REAL,                -- seconds per 4/4 bar
+    clip_length     INTEGER,             -- 7 | 15 | 28
+    segment_count   INTEGER,             -- number of beat-synced segments
+    source_videos   TEXT,                -- JSON array of {path, category, start_s}
+    lead_category   TEXT,                -- perf | broll | phone — which category led the clip
+    cloudinary_url  TEXT,                -- public video URL used for Buffer upload
+    scheduled_at    TEXT,                -- ISO UTC time Buffer was asked to post
+    tiktok_caption  TEXT,
+    instagram_caption TEXT,
+    youtube_title   TEXT,
+    youtube_desc    TEXT,
+    exploration     INTEGER DEFAULT 0,   -- 1 if this post was an explore (random) pick, 0 if exploit (best arm)
+    batch_id        TEXT                 -- groups the 3 clips from one run together
 );
 CREATE INDEX IF NOT EXISTS idx_content_log_date ON content_log(posted_at);
+
+CREATE TABLE IF NOT EXISTS content_metrics (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    buffer_id       TEXT    NOT NULL,    -- joins to content_log.buffer_id
+    platform        TEXT    NOT NULL,
+    fetched_at      TEXT    NOT NULL,
+    platform_post_id TEXT,               -- platform-native post id (IG media id, YT video id)
+    views           INTEGER,
+    likes           INTEGER,
+    comments        INTEGER,
+    shares          INTEGER,
+    saves           INTEGER,
+    reach           INTEGER,
+    completion_rate REAL,                -- 0.0 to 1.0
+    avg_watch_s     REAL,                -- seconds
+    follows_from    INTEGER,             -- follows attributed to this post (if exposed)
+    raw             TEXT                 -- full JSON of API response for later re-parsing
+);
+CREATE INDEX IF NOT EXISTS idx_metrics_buffer_id ON content_metrics(buffer_id);
+CREATE INDEX IF NOT EXISTS idx_metrics_fetched ON content_metrics(fetched_at);
+CREATE INDEX IF NOT EXISTS idx_metrics_platform ON content_metrics(platform);
+
+CREATE TABLE IF NOT EXISTS content_weights_history (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    computed_at     TEXT    NOT NULL,
+    window_days     INTEGER NOT NULL,
+    sample_size     INTEGER NOT NULL,
+    weights_json    TEXT    NOT NULL,   -- full PromptWeights as JSON
+    exploration_eps REAL    NOT NULL,   -- epsilon used when these weights were computed
+    notes           TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_weights_computed ON content_weights_history(computed_at);
 
 CREATE TABLE IF NOT EXISTS release_calendar (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -231,6 +278,40 @@ def init_db():
                 log.info("Migrated: added %s column", col)
             except Exception:
                 pass  # column already exists
+
+        # content_log migrations — learning loop fields
+        for col, definition in [
+            ("hook_mechanism",    "TEXT"),
+            ("bpm",               "REAL"),
+            ("bar_duration",      "REAL"),
+            ("clip_length",       "INTEGER"),
+            ("segment_count",     "INTEGER"),
+            ("source_videos",     "TEXT"),
+            ("lead_category",     "TEXT"),
+            ("cloudinary_url",    "TEXT"),
+            ("scheduled_at",      "TEXT"),
+            ("tiktok_caption",    "TEXT"),
+            ("instagram_caption", "TEXT"),
+            ("youtube_title",     "TEXT"),
+            ("youtube_desc",      "TEXT"),
+            ("exploration",       "INTEGER DEFAULT 0"),
+            ("batch_id",          "TEXT"),
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE content_log ADD COLUMN {col} {definition}")
+                log.info("Migrated content_log: added %s column", col)
+            except Exception:
+                pass  # column already exists
+
+        # Indexes that depend on migrated columns — safe to create now
+        for idx_sql in [
+            "CREATE INDEX IF NOT EXISTS idx_content_log_buffer_id ON content_log(buffer_id)",
+            "CREATE INDEX IF NOT EXISTS idx_content_log_batch ON content_log(batch_id)",
+        ]:
+            try:
+                conn.execute(idx_sql)
+            except Exception as _exc:
+                log.debug("Index create skipped: %s", _exc)
     log.info("Database initialised at %s", DB_PATH)
 
 

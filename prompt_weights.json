@@ -1,7 +1,7 @@
 {
   "hook_weights": {
     "tension": 1.0,
-    "identity": 1.0,
+    "identity": 0.6,
     "scene": 1.0,
     "claim": 1.0,
     "rupture": 1.0
@@ -12,7 +12,7 @@
     "b_roll": 1.0,
     "phone": 1.0
   },
-  "best_clip_length": 15,
-  "best_platform": "instagram",
-  "updated": ""
+  "best_clip_length": 5,
+  "best_platform": "youtube",
+  "updated": "2026-04-16T00:03:58.736791"
 }
