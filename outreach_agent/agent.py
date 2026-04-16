@@ -42,6 +42,7 @@ log = logging.getLogger("outreach.agent")
 
 import db
 import bounce
+import events
 import gmail_client
 import template_engine
 import scheduler
@@ -50,6 +51,33 @@ import reply_classifier
 import reply_responder
 import followup_engine
 import learning
+
+
+def _run_step(step_name: str, fn, *args, **kwargs):
+    """Run a non-fatal cycle step with structured logging + event on failure.
+
+    Replaces the silent ``try/except log.warning`` pattern that hid recurring
+    problems (Gmail OAuth expiry, rate limits, schema drift). Every failure is
+    now published to the event bus as ``agent.step_failed`` so rjm.py status
+    and the master agent can surface it.
+    """
+    try:
+        return fn(*args, **kwargs)
+    except Exception as exc:
+        log.warning("Cycle step '%s' failed (non-fatal): %s", step_name, exc, exc_info=True)
+        try:
+            events.publish(
+                "agent.step_failed",
+                source="outreach_agent.cmd_run",
+                payload={
+                    "step": step_name,
+                    "error": str(exc)[:500],
+                    "error_type": type(exc).__name__,
+                },
+            )
+        except Exception as pub_exc:
+            log.warning("Could not publish agent.step_failed event: %s", pub_exc)
+        return None
 
 
 # ─── Core send pipeline ───────────────────────────────────────────────────────
@@ -267,34 +295,22 @@ def cmd_run():
     _verify_pending_contacts()
 
     # 4. Scan inbox for replies + bounces (non-fatal — Gmail OAuth may be temporarily unavailable)
-    try:
-        inbox_result = reply_detector.run_full_inbox_check()
+    inbox_result = _run_step("inbox_check", reply_detector.run_full_inbox_check)
+    if inbox_result is not None:
         log.info("Inbox check: %s", inbox_result)
-    except Exception as exc:
-        log.warning("Inbox check failed (non-fatal — check Gmail OAuth credentials): %s", exc)
-        inbox_result = None
 
     # 5. Classify any unclassified replies (catches backlog + anything from step 4)
-    try:
-        classify_result = reply_classifier.classify_pending()
-        if classify_result.get("classified", 0) > 0:
-            log.info("Reply classification: %s", classify_result)
-    except Exception as exc:
-        log.warning("Reply classification failed (non-fatal): %s", exc)
+    classify_result = _run_step("reply_classify", reply_classifier.classify_pending)
+    if classify_result and classify_result.get("classified", 0) > 0:
+        log.info("Reply classification: %s", classify_result)
 
     # 5b. Auto-reply to warm leads (positive, question, booking_intent)
-    try:
-        reply_result = reply_responder.run(dry_run=DRAFT_MODE)
-        if reply_result.get("sent", 0) > 0:
-            log.info("Auto-replies sent: %s", reply_result)
-    except Exception as exc:
-        log.warning("Auto-reply step failed (non-fatal): %s", exc)
+    reply_result = _run_step("reply_responder", reply_responder.run, dry_run=DRAFT_MODE)
+    if reply_result and reply_result.get("sent", 0) > 0:
+        log.info("Auto-replies sent: %s", reply_result)
 
     # 6. Maybe generate learning insights (only if enough data)
-    try:
-        learning.maybe_generate_insights()
-    except Exception as exc:
-        log.warning("Learning step failed (non-fatal): %s", exc)
+    _run_step("learning_insights", learning.maybe_generate_insights)
 
     # 7. Send follow-ups (they count toward daily quota)
     followup_quota = min(10, scheduler.remaining_quota_today() // 3)
