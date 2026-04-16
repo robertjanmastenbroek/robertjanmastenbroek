@@ -618,15 +618,26 @@ def cmd_content(args: list[str]):
         logging.basicConfig(level=logging.INFO)
         from content_engine.learning_loop import run as learning_run
         weights = learning_run()
-        # learning_run() returns a UnifiedWeights dataclass.
-        top = lambda d: max(d, key=d.get) if d else "n/a"
+        # learning_run() returns a UnifiedWeights dataclass. Defensive top()
+        # handles: None, empty dict, non-dict (post-refactor: some fields may
+        # be dataclasses too). The prior `max(d, key=d.get)` blew up with
+        # AttributeError on any non-dict field since defaultdict doesn't have
+        # .get-as-a-key-lookup once hydrated from JSON load path.
+        def _top_key(d):
+            if not isinstance(d, dict) or not d:
+                return "n/a"
+            try:
+                return max(d, key=d.get)
+            except Exception:
+                return "n/a"
+
         print(json.dumps({
             "best_platform":    weights.best_platform,
             "best_clip_length": weights.best_clip_length,
-            "top_hook":         top(weights.hook_weights),
-            "top_format":       top(weights.format_weights),
-            "top_visual":       top(weights.visual_weights),
-            "top_platform_wt":  top(weights.platform_weights),
+            "top_hook":         _top_key(weights.hook_weights),
+            "top_format":       _top_key(weights.format_weights),
+            "top_visual":       _top_key(weights.visual_weights),
+            "top_platform_wt":  _top_key(weights.platform_weights),
             "updated":          weights.updated,
         }, indent=2, default=str))
         sys.exit(0)
@@ -674,6 +685,64 @@ def cmd_playlist(args: list[str]):
         print(f"✗ {PLAYLIST_RUN_PY} not found")
         sys.exit(1)
     sys.exit(_run([_OUTREACH_PYTHON, str(PLAYLIST_RUN_PY)] + args, cwd=str(OUTREACH_DIR)))
+
+
+def cmd_discover(args: list[str]):
+    """
+    Discovery pipeline management — high-quality lead generation.
+
+    Usage:
+      python3 rjm.py discover playlists         # Promote playlist contacts → outreach queue
+      python3 rjm.py discover playlists --dry-run
+      python3 rjm.py discover playlists --status
+      python3 rjm.py discover soundplate        # Mine Soundplate for curator emails
+      python3 rjm.py discover soundplate --limit 30
+      python3 rjm.py discover learn             # Show discovery learning report
+      python3 rjm.py discover find-contacts     # Run find_contacts.py on verified playlists
+      python3 rjm.py discover find-contacts --limit 10
+    """
+    sub = args[0].lower() if args else "help"
+    rest = args[1:]
+
+    if sub in ("playlists", "playlist-contacts", "promote"):
+        py = OUTREACH_DIR / "playlist_to_contacts.py"
+        if not py.exists():
+            print(f"✗ {py} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(py)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif sub == "soundplate":
+        py = OUTREACH_DIR / "soundplate_miner.py"
+        if not py.exists():
+            print(f"✗ {py} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(py)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif sub == "learn":
+        py = OUTREACH_DIR / "discovery_learner.py"
+        if not py.exists():
+            print(f"✗ {py} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(py)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif sub in ("find-contacts", "find_contacts", "contacts"):
+        py = OUTREACH_DIR / "find_contacts.py"
+        if not py.exists():
+            print(f"✗ {py} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(py)] + rest, cwd=str(OUTREACH_DIR)))
+
+    else:
+        print(__doc_discover__)
+        sys.exit(0)
+
+
+__doc_discover__ = """\
+python3 rjm.py discover playlists       # Promote playlist contacts → outreach queue
+python3 rjm.py discover soundplate      # Mine Soundplate for curator emails
+python3 rjm.py discover learn           # Show discovery learning report
+python3 rjm.py discover find-contacts   # Research verified playlists
+"""
 
 
 def cmd_spotify(args: list[str]):
@@ -1294,6 +1363,8 @@ def main():
         cmd_master(["auto_weights"])
     elif cmd == "contacts":
         cmd_contacts(rest)
+    elif cmd == "discover":
+        cmd_discover(rest)
     elif cmd in ("content", "post"):
         cmd_content(rest)
     elif cmd == "playlist":

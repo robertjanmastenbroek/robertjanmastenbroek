@@ -430,6 +430,19 @@ def main():
     print(f"  Total new contacts: {cross_ref_count + found_count}")
     print(f"{'='*50}\n")
 
+    # Auto-promote: push any newly contact_found playlists into the contacts table
+    # so they get emailed on the next outreach cycle. Non-fatal if it fails.
+    if not args.dry_run and (cross_ref_count + found_count) > 0:
+        try:
+            import playlist_to_contacts
+            promoted = playlist_to_contacts.promote_playlist_contacts()
+            if promoted.get("promoted", 0):
+                log.info("Auto-promoted %d playlist contacts to outreach queue",
+                         promoted["promoted"])
+                print(f"  Auto-promoted to outreach: {promoted['promoted']} contacts")
+        except Exception as e:
+            log.debug("Auto-promote failed (non-fatal): %s", e)
+
 
 if __name__ == '__main__':
     main()
