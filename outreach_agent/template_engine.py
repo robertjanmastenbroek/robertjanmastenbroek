@@ -509,10 +509,27 @@ def _parse_response_with_hooks(raw: str) -> tuple[str, str, list[str]]:
 
 # ─── Public API ───────────────────────────────────────────────────────────────
 
+
+class BrandGateRejected(Exception):
+    """Raised when generate_email produces content that fails the brand gate
+    twice in a row (first draft + one retry with feedback).
+
+    Callers in the send path must catch this, skip the send, and leave the
+    contact in 'verified' so the stale-queue rescue can retry it later.
+    """
+
+
 def generate_email(contact: dict, learning_context: str = "") -> tuple[str, str]:
     """
     Generate a personalised email for a contact using Claude CLI.
-    Returns (subject, body). Raises on failure.
+
+    Lake 5 contract: the brand gate is now BLOCKING with exactly one retry.
+    If the first draft fails `brand_gate.validate_content`, we rebuild the
+    prompt with the gate's feedback (suggestion + flags) and call Claude
+    once more. If the retry also fails, we raise `BrandGateRejected` — the
+    batch loop must catch that and skip the send.
+
+    Returns (subject, body). Raises on failure or brand-gate rejection.
     """
     # Use best-performing template type if enough data exists
     contact_type = contact.get("type", "curator")
@@ -525,27 +542,82 @@ def generate_email(contact: dict, learning_context: str = "") -> tuple[str, str]
         )
         contact = {**contact, "template_type": best_template}
 
-    prompt = _build_prompt(contact, learning_context)
+    base_prompt = _build_prompt(contact, learning_context)
 
     log.info("Generating email for %s (%s)...",
              contact.get("email"), contact.get("type"))
 
-    raw = _call_claude(prompt)
+    # ── Draft 1 ────────────────────────────────────────────────────────────
+    raw = _call_claude(base_prompt)
     subject, body, model_hooks = _parse_response_with_hooks(raw)
-
-    log.info("Generated — subject: %r", subject)
+    log.info("Draft 1 for %s — subject: %r", contact.get("email"), subject)
 
     gate_issues: list[str] = []
     gate_passed = True
+    first_validation: dict = {}
     if _BRAND_GATE_AVAILABLE:
         try:
-            validation = _brand_gate.validate_content(body)
-            gate_passed = bool(validation.get("passes", True))
-            gate_issues = list(validation.get("flags", []) or [])
+            first_validation = _brand_gate.validate_content(body) or {}
+            gate_passed = bool(first_validation.get("passes", True))
+            gate_issues = list(first_validation.get("flags", []) or [])
         except Exception as exc:
             log.warning("brand_gate.validate_content failed: %s", exc)
-        # Keep the existing non-blocking behaviour for now (Lake 5 flips this).
-        _brand_gate.gate_or_warn(body, context="template_engine.generate_email")
+            first_validation = {}
+            gate_passed = True  # fail-open on gate errors — never block sends on our bug
+
+    # ── Draft 2 (retry) — only if the first failed the gate ────────────────
+    if _BRAND_GATE_AVAILABLE and not gate_passed:
+        flags_text = ", ".join(gate_issues) or "unspecified"
+        suggestion = (first_validation.get("suggestion") or "").strip()
+        retry_prompt = (
+            base_prompt
+            + "\n\n---\n"
+            + "BRAND GATE FEEDBACK — the previous draft failed validation.\n"
+            + f"Flags: {flags_text}\n"
+            + (f"Fix: {suggestion}\n" if suggestion else "")
+            + "Rewrite from scratch. Lead with a concrete, visual detail "
+              "(BPM, track name, physical scene). Every claim must be "
+              "falsifiable. No boilerplate, no vague enthusiasm. Return the "
+              "SAME JSON schema as before."
+        )
+        log.warning(
+            "Brand gate failed for %s (flags=%s) — retrying once",
+            contact.get("email"), gate_issues,
+        )
+        raw2 = _call_claude(retry_prompt)
+        subject, body, model_hooks = _parse_response_with_hooks(raw2)
+        try:
+            second = _brand_gate.validate_content(body) or {}
+            gate_passed = bool(second.get("passes", True))
+            gate_issues = list(second.get("flags", []) or [])
+        except Exception as exc:
+            log.warning("brand_gate.validate_content retry failed: %s", exc)
+            gate_passed = True
+
+        if not gate_passed:
+            # Record the failed retry in the audit table before raising so
+            # learning can see the attempt. Then refuse to ship.
+            try:
+                from db import log_personalization_audit
+                from config import CLAUDE_MODEL_EMAIL
+                log_personalization_audit(
+                    email=contact.get("email", ""),
+                    contact_type=contact.get("type", "curator"),
+                    subject=subject,
+                    body=body,
+                    hooks_used=model_hooks or _extract_hooks_from_prompt(contact),
+                    research_used=bool(contact.get("research_notes")),
+                    model=CLAUDE_MODEL_EMAIL,
+                    learning_applied=bool(learning_context),
+                    brand_gate_passed=False,
+                    brand_gate_issues=gate_issues,
+                )
+            except Exception as exc:
+                log.warning("audit-on-reject failed: %s", exc)
+            raise BrandGateRejected(
+                f"brand gate rejected two drafts for {contact.get('email')} "
+                f"— flags={gate_issues}"
+            )
 
     try:
         from db import log_personalization_audit

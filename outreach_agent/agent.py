@@ -189,6 +189,24 @@ def _send_batch(batch_size: int) -> dict:
         # Generate personalised email
         try:
             subject, body = template_engine.generate_email(contact, learn_ctx)
+        except template_engine.BrandGateRejected as exc:
+            # Brand gate refused two drafts in a row — do NOT ship, do NOT
+            # dead_letter, do NOT bump attempts. This is a content problem,
+            # not a contact problem. Put the row back to 'verified' so the
+            # next cycle can try again (by then, learning may have shifted).
+            log.warning("Brand gate rejected %s: %s", email, exc)
+            db.update_contact(email, status="verified")
+            try:
+                import events as _events
+                _events.publish(
+                    "template.brand_gate_rejected",
+                    source="agent._send_batch",
+                    payload={"email": email, "reason": str(exc)},
+                )
+            except Exception:
+                pass
+            skipped += 1
+            continue
         except Exception as exc:
             log.error("Email generation failed for %s: %s", email, exc)
             attempts = db.get_send_attempts(email)
