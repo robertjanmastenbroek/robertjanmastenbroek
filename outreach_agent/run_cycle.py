@@ -585,6 +585,25 @@ def cmd_add_contact(email, name, ctype, genre="", notes="", website="", playlist
         print(f"⚠️  log_discovery failed: {exc}")
 
 
+def cmd_check_search(query: str, within_hours: int = 48) -> int:
+    """Dedup guard for the rjm-discover skill.
+
+    The discover agent calls `run_cycle.py check_search "<query>"` before
+    running each Google search. If the same query was already run inside
+    `within_hours`, we exit 1 so the skill can skip and try a fresher angle.
+    Clean queries print a one-line "proceed" hint and exit 0.
+    """
+    db.init_db()
+    if not query:
+        print("⚠️  check_search: empty query — proceed (nothing to dedup)")
+        return 0
+    if db.recently_searched(query, within_hours=within_hours):
+        print(f"⏭  skip (duplicate within {within_hours}h): {query}")
+        return 1
+    print(f"✅ proceed: {query}")
+    return 0
+
+
 def cmd_set_playlist_size(email, size):
     db.init_db()
     if size not in ("small", "medium", "large"):
@@ -808,6 +827,8 @@ def main():
                         args[6] if len(args) > 6 else "",
                         args[7] if len(args) > 7 else "",
                         args[8] if len(args) > 8 else "")
+    elif args[0] == "check_search" and len(args) >= 2:
+        sys.exit(cmd_check_search(args[1]))
     elif args[0] == "set_playlist_size" and len(args) >= 3:
         cmd_set_playlist_size(args[1], args[2])
     elif args[0] == "store_research" and len(args) >= 3:
