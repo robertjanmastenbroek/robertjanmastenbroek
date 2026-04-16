@@ -498,6 +498,32 @@ def mark_bounced_full(email, reason="", bounce_type="pre-check"):
         """, (bounce_type, new_notes, str(date.today()), email.lower()))
 
 
+def mark_dead_letter(email: str, reason: str = ""):
+    """Move a contact to 'dead_letter' — stops further send attempts permanently.
+
+    Used after MAX_SEND_ATTEMPTS consecutive failures (smtp errors, brand gate
+    repeated rejection, template generation crashes). Dead-lettered contacts
+    are excluded from all send queues but preserved for forensic review.
+    """
+    with get_conn() as conn:
+        row = conn.execute("SELECT notes FROM contacts WHERE email = ?", (email.lower(),)).fetchone()
+        existing_notes = row["notes"] if row else ""
+        new_notes = (existing_notes or "") + f" | DEAD_LETTER: {reason[:200]}"
+        conn.execute(
+            "UPDATE contacts SET status='dead_letter', notes=? WHERE email=?",
+            (new_notes, email.lower()),
+        )
+
+
+def get_send_attempts(email: str) -> int:
+    """Return current send_attempts count for a contact. Zero if unknown."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT send_attempts FROM contacts WHERE email = ?", (email.lower(),)
+        ).fetchone()
+        return (row["send_attempts"] or 0) if row else 0
+
+
 def mark_queued(email):
     with get_conn() as conn:
         conn.execute("""

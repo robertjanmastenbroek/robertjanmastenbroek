@@ -28,7 +28,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ─── Logging setup (file + console) ──────────────────────────────────────────
-from config import LOG_PATH, DRAFT_MODE, BATCH_SIZE, WARM_UP_DAILY_CAP
+from config import LOG_PATH, DRAFT_MODE, BATCH_SIZE, WARM_UP_DAILY_CAP, MAX_SEND_ATTEMPTS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -163,7 +163,15 @@ def _send_batch(batch_size: int) -> dict:
             subject, body = template_engine.generate_email(contact, learn_ctx)
         except Exception as exc:
             log.error("Email generation failed for %s: %s", email, exc)
-            db.update_contact(email, status="verified")   # put back in queue
+            attempts = db.get_send_attempts(email)
+            if attempts >= MAX_SEND_ATTEMPTS:
+                log.warning(
+                    "Dead-lettering %s after %d failed attempts (last: template crash)",
+                    email, attempts,
+                )
+                db.mark_dead_letter(email, reason=f"template crash: {exc}")
+            else:
+                db.update_contact(email, status="verified")   # put back in queue
             failed += 1
             continue
 
@@ -212,7 +220,15 @@ def _send_batch(batch_size: int) -> dict:
 
         except Exception as exc:
             log.error("Send failed for %s: %s", email, exc)
-            db.update_contact(email, status="verified")   # put back in queue
+            attempts = db.get_send_attempts(email)
+            if attempts >= MAX_SEND_ATTEMPTS:
+                log.warning(
+                    "Dead-lettering %s after %d failed attempts (last: %s)",
+                    email, attempts, exc,
+                )
+                db.mark_dead_letter(email, reason=f"send error: {exc}")
+            else:
+                db.update_contact(email, status="verified")   # put back in queue
             failed += 1
 
     return {"sent": sent, "failed": failed, "skipped": skipped}
