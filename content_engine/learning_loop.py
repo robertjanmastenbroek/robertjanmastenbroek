@@ -22,7 +22,10 @@ LEARNING_DIR    = PROJECT_DIR / "learning"
 
 logger = logging.getLogger(__name__)
 
-INSTAGRAM_GRAPH_BASE = "https://graph.instagram.com/v21.0"
+# Use graph.facebook.com (business IG accounts go through the Facebook Graph API,
+# not the deprecated graph.instagram.com subdomain). Fix re-applied from
+# commit 8746606 after the 2026-04-15 full-rewrite of this module regressed it.
+INSTAGRAM_GRAPH_BASE = "https://graph.facebook.com/v21.0"
 YOUTUBE_ANALYTICS    = "https://youtubeanalytics.googleapis.com/v2/reports"
 
 # How aggressively weights shift each day. 0 = no change, 1 = full replacement.
@@ -43,10 +46,15 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
         if not post_id:
             continue
         try:
+            # `plays` was removed in Graph API v22+. Request `views` alongside
+            # it so the call still works on both v21 and v22, and fall back to
+            # whichever the API actually returns. A single unsupported metric
+            # in the comma-separated list will 400 the whole response, so we
+            # include both rather than branching on API version.
             resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{post_id}/insights",
                 params={
-                    "metric": "plays,reach,saved,shares,total_interactions",
+                    "metric": "views,plays,reach,saved,shares,total_interactions",
                     "period": "lifetime",
                     "access_token": access_token,
                 },
@@ -59,7 +67,8 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
             raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
                    for d in resp.json().get("data", [])}
 
-            plays  = raw.get("plays", 0)
+            # views is the v22+ name; plays is the v21 fallback.
+            plays  = raw.get("views", 0) or raw.get("plays", 0)
             reach  = raw.get("reach", 1)
             saved  = raw.get("saved", 0)
             shares = raw.get("shares", 0)
