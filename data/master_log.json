@@ -464,5 +464,11 @@
     "summary": "outreach: 0 emails sent, 4 replies detected (3 bounces, 1 classified: Charybdis Records negative fit)",
     "contacts_added": 0,
     "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-16T11:50:00.551207",
+    "summary": "master: playlist-curator-shortlist \u2014 10 new curators added across psytrance/melodic techno/tribal/organic genres (Daniel Lesden, Profound Records, Iono Music, widerberg, Nova Collective, Melodic Techno Lovers, Mind Field Records, Tanzgemeinschaft, Sacred Earth Records, Ektoplazm)",
+    "contacts_added": 10,
+    "strategy_worked": "rjm-master-creative"
   }
 ]
