@@ -1,5 +1,669 @@
 [
   {
+    "file": "nature/1448735.mp4",
+    "category": "nature",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855029.mp4",
+    "category": "nature",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855030.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855113.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855278.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855380.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855411.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855554.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855565.mp4",
+    "category": "nature",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855576.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855582.mp4",
+    "category": "nature",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855633.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855851.mp4",
+    "category": "nature",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855857.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855867.mp4",
+    "category": "nature",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855926.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855946.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/855973.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/856003.mp4",
+    "category": "nature",
+    "duration_s": 6.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/856006.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/856030.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/856294.mp4",
+    "category": "nature",
+    "duration_s": 5.18,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/856902.mp4",
+    "category": "nature",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/856973.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/856987.mp4",
+    "category": "nature",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/857005.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/857188.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/857195.mp4",
+    "category": "nature",
+    "duration_s": 6.72,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "nature/857251.mp4",
+    "category": "nature",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855117.mp4",
+    "category": "satisfying",
+    "duration_s": 5.61,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855236.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855397.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855416.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855709.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855732.mp4",
+    "category": "satisfying",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855782.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855798.mp4",
+    "category": "satisfying",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/855854.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/856014.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/856298.mp4",
+    "category": "satisfying",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/856640.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/856882.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/856933.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/856951.mp4",
+    "category": "satisfying",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "satisfying/857045.mp4",
+    "category": "satisfying",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/1093662.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855381.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855432.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855502.mp4",
+    "category": "elemental",
+    "duration_s": 5.5,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855697.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/855965.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/856171.mp4",
+    "category": "elemental",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/856193.mp4",
+    "category": "elemental",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/856295.mp4",
+    "category": "elemental",
+    "duration_s": 5.88,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/856380.mp4",
+    "category": "elemental",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "elemental/857032.mp4",
+    "category": "elemental",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "sports/1093667.mp4",
+    "category": "sports",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "sports/855704.mp4",
+    "category": "sports",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "sports/856657.mp4",
+    "category": "sports",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "sports/856974.mp4",
+    "category": "sports",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "sports/857070.mp4",
+    "category": "sports",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "sports/857078.mp4",
+    "category": "sports",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "sports/857180.mp4",
+    "category": "sports",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855255.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855271.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855469.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855634.mp4",
+    "category": "craftsmanship",
+    "duration_s": 6.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/855859.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "craftsmanship/856350.mp4",
+    "category": "craftsmanship",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/855449.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/855617.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/855770.mp4",
+    "category": "illusion",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856142.mp4",
+    "category": "illusion",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856257.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856356.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856528.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856662.mp4",
+    "category": "illusion",
+    "duration_s": 6.63,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856831.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/856857.mp4",
+    "category": "illusion",
+    "duration_s": 7.01,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/857040.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/857134.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/857136.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
+    "file": "illusion/857146.mp4",
+    "category": "illusion",
+    "duration_s": 7.0,
+    "last_used": null,
+    "performance_score": 1.0,
+    "times_used": 0
+  },
+  {
     "file": "viral/Wrap-It-LOL.mp4",
     "category": "viral",
     "duration_s": 4.1,
@@ -11,9 +675,9 @@
     "file": "viral/Snake-Bite-Hook.mp4",
     "category": "viral",
     "duration_s": 5.066667,
-    "last_used": "2026-04-16",
+    "last_used": null,
     "performance_score": 1.0,
-    "times_used": 1
+    "times_used": 0
   },
   {
     "file": "viral/Sandal-Throw.mp4",
