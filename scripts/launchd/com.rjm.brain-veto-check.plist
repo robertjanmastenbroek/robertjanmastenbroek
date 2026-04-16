@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.rjm.brain-veto-check</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/scripts/run_agent.sh</string>
+    <string>brain-veto-check</string>
+  </array>
+
+  <!-- BTL veto check — executes proposals whose veto window has passed.
+       Hourly (3600s): with BTL_VETO_WINDOW_HOURS=24, this bounds
+       post-window execution latency to ≤1h. Idempotent thanks to the
+       atomic-claim guard in veto_system.execute_proposal. -->
+  <key>StartInterval</key>
+  <integer>3600</integer>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_brain-veto-check.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_brain-veto-check.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/motomoto</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>

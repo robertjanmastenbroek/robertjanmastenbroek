@@ -120,6 +120,55 @@ case "$AGENT" in
     /opt/homebrew/bin/python3.13 rjm.py content learning 2>&1 | tee -a "$LOG"
     log "Viral learning loop finished (exit $?)"
     ;;
+  metrics-fetch|weights-learn|learning)
+    # Single unified pass: fetch IG + YouTube + Spotify metrics and recompute
+    # arm weights from a rolling 28-day window. The new content_engine
+    # learning loop does fetch + recompute in one shot — the old split
+    # (metrics_fetcher + weights_learner) has been quarantined.
+    # Generator + assembler read the new snapshot (data/weights_snapshot.json)
+    # on their next run via content_engine.learning_loop.load_latest_weights().
+    log "Starting content_engine.learning_loop ($AGENT)"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 content_engine/learning_loop.py 2>&1 | tee -a "$LOG"
+    log "learning_loop finished (exit $?)"
+    ;;
+  brain-l1)
+    # BTL Layer 1 — tactical pass: refresh bandits, breakthrough scan.
+    # Cadence: 4×/day per config.BTL_L1_RUNS_PER_DAY. Cheap operation.
+    log "Starting BTL brain L1 (bandit refresh + breakthrough scan)"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 rjm.py brain l1 2>&1 | tee -a "$LOG"
+    log "BTL brain L1 finished (exit $?)"
+    ;;
+  brain-l2)
+    # BTL Layer 2 — strategic pass: channel weight reallocation based on LEI.
+    # Cadence: weekly (Sunday 20:00 CET per config.BTL_L2_DAY/HOUR_CET).
+    # Moves % allocation across outreach/content/email channels — higher
+    # blast radius than L1, so less frequent.
+    log "Starting BTL brain L2 (channel reallocation)"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 rjm.py brain l2 2>&1 | tee -a "$LOG"
+    log "BTL brain L2 finished (exit $?)"
+    ;;
+  brain-veto-check)
+    # BTL veto check — executes proposals whose 24h veto window has passed.
+    # Cadence: hourly. With a 24h BTL_VETO_WINDOW_HOURS, running hourly
+    # bounds post-window execution latency to ≤1h. Idempotent thanks to
+    # the atomic-claim fix in veto_system.execute_proposal.
+    log "Starting BTL veto check"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 rjm.py brain veto_check 2>&1 | tee -a "$LOG"
+    log "BTL veto check finished (exit $?)"
+    ;;
+  brain-assess)
+    # BTL Growth Health Score — daily snapshot of listener trajectory vs.
+    # the 1M target. Fires at 08:00 CET alongside the veto digest so the
+    # score is fresh when the morning review happens.
+    log "Starting BTL brain assess (Growth Health Score)"
+    cd "$PROJECT_ROOT"
+    /opt/homebrew/bin/python3.13 rjm.py brain assess 2>&1 | tee -a "$LOG"
+    log "BTL brain assess finished (exit $?)"
+    ;;
   *)
     log "ERROR: unknown agent '$AGENT'"
     exit 1

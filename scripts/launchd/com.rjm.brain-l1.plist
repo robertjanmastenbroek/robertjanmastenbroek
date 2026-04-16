@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.rjm.brain-l1</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/scripts/run_agent.sh</string>
+    <string>brain-l1</string>
+  </array>
+
+  <!-- BTL Layer 1 — tactical pass: every 6 hours = 4×/day (matches
+       config.BTL_L1_RUNS_PER_DAY). Refreshes bandits + scans for
+       breakthroughs. Cheap, idempotent. -->
+  <key>StartInterval</key>
+  <integer>21600</integer>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_brain-l1.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/logs/launchd_brain-l1.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/motomoto</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>
