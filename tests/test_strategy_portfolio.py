@@ -91,6 +91,18 @@ def setup_module():
     btl_db.init_btl_tables()
 
 
+def setup_function():
+    """Re-pin the channel-registry env var per-test.
+
+    Pytest imports every test module during collection. Sibling modules
+    (test_growth_brain, test_btl_integration) mutate ``BTL_CHANNEL_REGISTRY_PATH``
+    at import time. By the time our tests run, the env var may point at a
+    neighbour's empty registry rather than our seeded one. Restoring it here
+    keeps this module hermetic.
+    """
+    os.environ["BTL_CHANNEL_REGISTRY_PATH"] = str(_REGISTRY_PATH)
+
+
 def teardown_module():
     shutil.rmtree(tmpdir, ignore_errors=True)
 
