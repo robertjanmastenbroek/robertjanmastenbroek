@@ -315,6 +315,142 @@ def run(date_str: str = None, post_registry: list = None) -> "PromptWeights":
     return new_weights
 
 
+# ---------------------------------------------------------------------------
+# Multi-dimensional learning (unified pipeline)
+# ---------------------------------------------------------------------------
+
+def calculate_unified_weights(
+    records: list,
+    old_weights: "UnifiedWeights",
+    learning_rate: float = 0.3,
+) -> "UnifiedWeights":
+    """Calculate new unified weights from today's performance records.
+
+    Updates per: format, platform, template, visual, track, transitional category.
+    Signal = completion_rate * 0.5 + save_rate * 0.3 + scroll_stop_rate * 0.2
+    """
+    from content_engine.types import UnifiedWeights
+
+    new = UnifiedWeights(
+        hook_weights=dict(old_weights.hook_weights),
+        visual_weights=dict(old_weights.visual_weights),
+        format_weights=dict(old_weights.format_weights),
+        platform_weights=dict(old_weights.platform_weights),
+        transitional_category_weights=dict(old_weights.transitional_category_weights),
+        track_weights=dict(old_weights.track_weights),
+        best_clip_length=old_weights.best_clip_length,
+        best_platform=old_weights.best_platform,
+        updated=datetime.now().isoformat(),
+    )
+
+    if not records:
+        return new
+
+    # Compute signal per record
+    signals = []
+    for r in records:
+        signal = (
+            r.get("completion_rate", 0) * 0.5
+            + r.get("save_rate", 0) * 0.3
+            + r.get("scroll_stop_rate", 0) * 0.2
+        )
+        signals.append((r, signal))
+
+    # Group signals by dimension and update via EMA
+    _ema_update(new.format_weights, signals, "format_type", learning_rate)
+    _ema_update(new.platform_weights, signals, "platform", learning_rate)
+    _ema_update(new.hook_weights, signals, "hook_template_id", learning_rate)
+    _ema_update(new.visual_weights, signals, "visual_type", learning_rate)
+    _ema_update(new.track_weights, signals, "track_title", learning_rate)
+    _ema_update(new.transitional_category_weights, signals, "transitional_category", learning_rate)
+
+    # Update best_platform
+    if new.platform_weights:
+        new.best_platform = max(new.platform_weights, key=new.platform_weights.get)
+
+    return new
+
+
+def _ema_update(weights: dict, signals: list, key: str, lr: float):
+    """EMA update for a single dimension."""
+    group_signals = defaultdict(list)
+    for record, signal in signals:
+        val = record.get(key, "")
+        if val:
+            group_signals[val].append(signal)
+
+    for name, sigs in group_signals.items():
+        avg_signal = sum(sigs) / len(sigs)
+        # Normalize to 0-2 range (assuming signal is 0-1, multiply by 2)
+        normalized = min(avg_signal * 2.0, 2.0)
+        old = weights.get(name, 1.0)
+        weights[name] = old * (1 - lr) + normalized * lr
+
+
+def track_rotation_vote(
+    pool: list,
+    new_release: dict = None,
+    min_days: int = 7,
+) -> dict:
+    """Vote on track rotation.
+
+    Composite score: spotify_popularity * 0.004 + video_save_rate * 0.6
+    (popularity is 0-100, scale 0.004 keeps it at most 0.4)
+    """
+    if not pool:
+        return {"action": "keep", "reason": "pool empty"}
+
+    scored = []
+    for t in pool:
+        score = t.get("spotify_popularity", 0) * 0.004 + t.get("video_save_rate", 0) * 0.6
+        scored.append((t["title"], score))
+    scored.sort(key=lambda x: x[1])
+    bottom = scored[0]
+
+    if new_release:
+        new_score = new_release.get("spotify_popularity", 0) * 0.004 + new_release.get("video_save_rate", 0) * 0.6
+        if new_score > bottom[1]:
+            return {
+                "action": "swap",
+                "remove": bottom[0],
+                "add": new_release["title"],
+                "reason": f"{new_release['title']} ({new_score:.3f}) > {bottom[0]} ({bottom[1]:.3f})",
+            }
+        return {"action": "keep", "reason": f"{new_release['title']} score too low"}
+
+    if len(pool) < 4:
+        return {"action": "add", "reason": "pool below minimum"}
+
+    return {"action": "keep", "reason": "no change needed"}
+
+
+def update_template_lifecycle(
+    template_scores: dict,
+    days_active: int = 14,
+) -> dict:
+    """Update template priorities based on EMA scores.
+
+    - <14d           -> status=learning,        priority=1.0
+    - score > 1.5    -> status=boosted,         priority=2.0
+    - score < 0.3 + 30d+ -> status=deprecated,  priority=0.0
+    - score < 0.5    -> status=deprioritized,   priority=0.3
+    - else           -> status=active,          priority=1.0
+    """
+    result = {}
+    for template_id, score in template_scores.items():
+        if days_active < 14:
+            result[template_id] = {"priority": 1.0, "status": "learning"}
+        elif score > 1.5:
+            result[template_id] = {"priority": 2.0, "status": "boosted"}
+        elif score < 0.3 and days_active >= 30:
+            result[template_id] = {"priority": 0.0, "status": "deprecated"}
+        elif score < 0.5:
+            result[template_id] = {"priority": 0.3, "status": "deprioritized"}
+        else:
+            result[template_id] = {"priority": 1.0, "status": "active"}
+    return result
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     w = run()
