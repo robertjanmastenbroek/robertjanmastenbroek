@@ -134,3 +134,45 @@ def test_execute_proposal():
     # Proposal should be marked executed.
     proposals = list_proposals(status="executed")
     assert len(proposals) == 1
+
+
+def test_execute_proposal_second_call_does_not_double_spawn():
+    """Second caller must see the row already claimed.
+
+    Regression guard for the atomic-claim fix: two callers racing on the
+    same proposal row should each spawn the experiment at most once. We
+    simulate the race sequentially — the first call succeeds, the second
+    must return ``executed=False`` because the row is no longer
+    'pending'.
+    """
+    pid = create_proposal(
+        proposal_type="new_experiment",
+        title="Reddit experiment",
+        description="test",
+        hypothesis="claim race",
+    )
+    with db.get_conn() as conn:
+        past = (datetime.utcnow() - timedelta(hours=1)).isoformat()
+        conn.execute(
+            "UPDATE proposals SET execute_after=? WHERE id=?", (past, pid)
+        )
+
+    first = execute_proposal(pid)
+    second = execute_proposal(pid)
+
+    assert first["executed"] is True
+    assert second["executed"] is False
+    # The row is now 'executed' — the disambiguation branch should surface that.
+    assert "executed" in second["reason"]
+
+    # Exactly one experiment was spawned.
+    with db.get_conn() as conn:
+        rows = conn.execute("SELECT * FROM experiments").fetchall()
+    assert len(rows) == 1
+
+
+def test_execute_proposal_missing_id_returns_not_found():
+    """Unknown proposal IDs must return a clean not-found result, not raise."""
+    result = execute_proposal("nonexistent_id")
+    assert result["executed"] is False
+    assert result["reason"] == "Not found"

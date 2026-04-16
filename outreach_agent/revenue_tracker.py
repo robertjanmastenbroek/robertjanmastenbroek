@@ -159,46 +159,119 @@ def get_daily_spend(on_date: Optional[str] = None) -> float:
     return round(abs(float(row["s"])), 2)
 
 
+def _check_spend_gates(balance: float, daily: float, amount: float) -> Optional[str]:
+    """Shared gate logic for can_auto_spend + try_auto_spend.
+
+    Returns ``None`` if all caps hold, otherwise a short reason string.
+    """
+    if amount <= 0:
+        return "amount must be > 0"
+    if amount > config.BTL_AUTO_SPEND_MAX_EUR:
+        return (
+            f"amount {amount:.2f} > per-action max "
+            f"{config.BTL_AUTO_SPEND_MAX_EUR:.2f}"
+        )
+    if balance - amount < config.BTL_RESERVE_MIN_EUR:
+        return (
+            f"balance {balance:.2f} − {amount:.2f} < reserve "
+            f"{config.BTL_RESERVE_MIN_EUR:.2f}"
+        )
+    pct_cap = balance * config.BTL_DAILY_SPEND_CAP_PCT
+    daily_cap = min(config.BTL_DAILY_SPEND_CAP_EUR, pct_cap)
+    if daily + amount > daily_cap + 1e-9:
+        return (
+            f"daily {daily:.2f} + {amount:.2f} > cap {daily_cap:.2f} "
+            f"(eur={config.BTL_DAILY_SPEND_CAP_EUR:.2f}, pct={pct_cap:.2f})"
+        )
+    return None
+
+
 def can_auto_spend(amount: float) -> bool:
     """
-    Auto-spend gate. Returns True only if ALL caps hold:
+    Read-only advisory check: would all caps hold for a spend of ``amount``?
 
+    Auto-spend gates (must ALL pass):
       1. amount ≤ BTL_AUTO_SPEND_MAX_EUR
       2. balance − amount ≥ BTL_RESERVE_MIN_EUR
       3. daily_spend + amount ≤ min(BTL_DAILY_SPEND_CAP_EUR,
                                     balance × BTL_DAILY_SPEND_CAP_PCT)
+
+    **Caveat:** the result is advisory only. By the time you act on it,
+    another caller may have spent against the same budget. Production
+    callers that intend to spend MUST use ``try_auto_spend`` instead —
+    it atomically re-checks the gates while holding a write lock and
+    records the spend in the same transaction.
     """
     amount = float(amount)
-    if amount <= 0:
-        return False
-
-    # Gate 1 — per-action ceiling
-    if amount > config.BTL_AUTO_SPEND_MAX_EUR:
-        log.info("can_auto_spend BLOCK: amount %.2f > per-action max %.2f",
-                 amount, config.BTL_AUTO_SPEND_MAX_EUR)
-        return False
-
     summary = get_budget_summary()
     balance = summary["available_balance"]
-
-    # Gate 2 — reserve floor
-    if balance - amount < config.BTL_RESERVE_MIN_EUR:
-        log.info("can_auto_spend BLOCK: balance %.2f − %.2f < reserve %.2f",
-                 balance, amount, config.BTL_RESERVE_MIN_EUR)
-        return False
-
-    # Gate 3 — daily cap (lesser of EUR cap and pct-of-balance cap)
     daily = get_daily_spend()
-    pct_cap = balance * config.BTL_DAILY_SPEND_CAP_PCT
-    daily_cap = min(config.BTL_DAILY_SPEND_CAP_EUR, pct_cap)
-    if daily + amount > daily_cap + 1e-9:  # tiny epsilon for FP equality
-        log.info(
-            "can_auto_spend BLOCK: daily %.2f + %.2f > cap %.2f (eur=%.2f, pct=%.2f)",
-            daily, amount, daily_cap, config.BTL_DAILY_SPEND_CAP_EUR, pct_cap,
-        )
+    reason = _check_spend_gates(balance, daily, amount)
+    if reason:
+        log.info("can_auto_spend BLOCK: %s", reason)
         return False
-
     return True
+
+
+def try_auto_spend(
+    amount: float,
+    *,
+    channel: str = "",
+    experiment_id: str = "",
+    note: str = "",
+) -> dict:
+    """
+    Atomic check-and-spend. The production-safe primitive.
+
+    Holds a write lock across the aggregate SELECTs and the INSERT so two
+    concurrent callers cannot both pass the same gate check against the
+    same budget (TOCTOU fix for :func:`can_auto_spend`).
+
+    Returns ``{"spent": True,  "spend_id": int}`` on success,
+            ``{"spent": False, "reason": str}`` if any gate blocks.
+    """
+    amount = float(amount)
+    signed = -abs(round(amount, 2))
+    target_day = _today()
+
+    with db.get_conn() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        # Collapse balance + daily-spend into a single scan.
+        row = conn.execute(
+            """SELECT
+                 COALESCE(SUM(CASE WHEN type='allocation' THEN amount END), 0) AS allocated,
+                 COALESCE(SUM(CASE WHEN type='spend'      THEN amount END), 0) AS spent_signed,
+                 COALESCE(SUM(CASE WHEN type='spend' AND date=?
+                                   THEN amount END), 0)                        AS daily_signed
+               FROM growth_budget""",
+            (target_day,),
+        ).fetchone()
+        allocated = round(float(row["allocated"]), 2)
+        spent = round(abs(float(row["spent_signed"])), 2)
+        daily = round(abs(float(row["daily_signed"])), 2)
+        balance = round(allocated - spent, 2)
+
+        reason = _check_spend_gates(balance, daily, amount)
+        if reason:
+            log.info("try_auto_spend BLOCK: %s", reason)
+            # Exit the ``with`` block with no data change; commit is fine.
+            return {"spent": False, "reason": reason}
+
+        spend_id = _insert(
+            conn,
+            type_="spend",
+            amount=signed,
+            channel=channel,
+            experiment_id=experiment_id,
+            note=note,
+            on_date=target_day,
+        )
+
+    log.info(
+        "try_auto_spend OK: %.2f EUR (channel=%s exp=%s) → id=%d",
+        signed, channel, experiment_id, spend_id,
+    )
+    return {"spent": True, "spend_id": spend_id}
 
 
 def poll_stripe() -> list[dict]:

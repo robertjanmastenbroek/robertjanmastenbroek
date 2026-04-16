@@ -212,3 +212,49 @@ def test_poll_stripe_no_stripe_module_returns_empty(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
     result = revenue_tracker.poll_stripe()
     assert result == []
+
+
+# ─── try_auto_spend (atomic check+spend) ────────────────────────────────────
+
+def test_try_auto_spend_records_row_when_gates_pass():
+    revenue_tracker.record_donation(100.0)  # 50 EUR allocated
+    result = revenue_tracker.try_auto_spend(3.0, channel="reddit", experiment_id="exp_001")
+    assert result["spent"] is True
+    assert "spend_id" in result
+    # Balance reflects the spend immediately — no second call required.
+    assert revenue_tracker.get_budget_summary()["available_balance"] == 47.0
+
+
+def test_try_auto_spend_blocks_and_does_not_record_when_gate_fails():
+    revenue_tracker.record_donation(100.0)
+    # 6 EUR exceeds BTL_AUTO_SPEND_MAX_EUR=5.0 — gate 1 blocks.
+    result = revenue_tracker.try_auto_spend(6.0)
+    assert result["spent"] is False
+    assert "reason" in result
+    assert "per-action max" in result["reason"]
+    # No spend row was inserted.
+    with db.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM growth_budget WHERE type='spend'"
+        ).fetchall()
+    assert len(rows) == 0
+
+
+def test_try_auto_spend_consecutive_calls_see_fresh_daily_total():
+    """Sequential calls must each see the other's spend — proves the
+    aggregate SELECT inside the transaction reads uncommitted state
+    correctly and that we aren't caching stale totals across calls."""
+    # 30 EUR donation → 15 EUR allocated. Daily cap = min(10, 30%*15=4.5) = 4.5.
+    revenue_tracker.record_donation(30.0)
+    first = revenue_tracker.try_auto_spend(4.5)
+    assert first["spent"] is True
+    # Second call: daily total already 4.5 — any additional spend exceeds cap.
+    second = revenue_tracker.try_auto_spend(1.0)
+    assert second["spent"] is False
+    assert "daily" in second["reason"]
+
+
+def test_try_auto_spend_rejects_zero_or_negative():
+    revenue_tracker.record_donation(100.0)
+    assert revenue_tracker.try_auto_spend(0.0)["spent"] is False
+    assert revenue_tracker.try_auto_spend(-1.0)["spent"] is False

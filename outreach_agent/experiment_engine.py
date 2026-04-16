@@ -216,8 +216,16 @@ def log_metric(exp_id: str, metric: dict) -> None:
     """Append a metric observation (dict) to an experiment's metrics_log.
 
     Silently no-ops if the experiment ID is unknown.
+
+    Concurrency: the metrics_log column is a JSON blob we read, mutate,
+    and write back. Without a write lock, two concurrent callers can
+    both SELECT the same blob and one UPDATE silently overwrites the
+    other's append. We issue ``BEGIN IMMEDIATE`` so the write lock is
+    held across the SELECT+UPDATE — the second caller waits on the lock
+    rather than racing.
     """
     with db.get_conn() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
             "SELECT metrics_log FROM experiments WHERE id=?", (exp_id,)
         ).fetchone()

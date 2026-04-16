@@ -28,10 +28,39 @@ import random
 from datetime import datetime
 from typing import Any
 
-import numpy as np
+# numpy is declared in requirements.txt and should always be present in
+# deployed environments. The soft import lets the module load in stripped
+# contexts (CI smoke, lightweight Railway images) without crashing every
+# BTL entrypoint that imports bandit_framework transitively. The fallback
+# uses stdlib ``random.betavariate`` — statistically equivalent to
+# ``np.random.beta`` for Thompson Sampling draws — and plain Python
+# argmax.
+try:
+    import numpy as np  # type: ignore
+    _HAS_NUMPY = True
+except ImportError:  # pragma: no cover — exercised only when numpy is absent
+    np = None  # type: ignore[assignment]
+    _HAS_NUMPY = False
+    logging.getLogger("bandit").warning(
+        "numpy not available — falling back to random.betavariate (slower but correct)"
+    )
 
 import db
 import config
+
+
+def _beta_draw(alpha: float, beta: float) -> float:
+    """Sample from a Beta(alpha, beta) — numpy if available, else stdlib."""
+    if _HAS_NUMPY:
+        return float(np.random.beta(alpha, beta))
+    return random.betavariate(alpha, beta)
+
+
+def _argmax(values: list[float]) -> int:
+    """Index of the max value — numpy if available, else stdlib."""
+    if _HAS_NUMPY:
+        return int(np.argmax(values))
+    return max(range(len(values)), key=values.__getitem__)
 
 log = logging.getLogger("bandit")
 
@@ -111,9 +140,9 @@ class Bandit:
             row = state.get((arm_name, v))
             alpha = float(row["alpha"]) if row else 1.0
             beta = float(row["beta"]) if row else 1.0
-            draws.append(np.random.beta(alpha, beta))
+            draws.append(_beta_draw(alpha, beta))
 
-        best_idx = int(np.argmax(draws))
+        best_idx = _argmax(draws)
         return values[best_idx]
 
     # ─── Recording outcomes ───────────────────────────────────────────────────

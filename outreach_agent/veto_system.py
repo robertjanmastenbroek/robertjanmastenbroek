@@ -188,17 +188,38 @@ def execute_proposal(proposal_id: str) -> dict:
     Returns ``{"executed": bool, "experiment_id": str|None}``. Returns
     ``{"executed": False, "reason": ...}`` if the proposal is missing or no
     longer pending.
+
+    Concurrency: claims the row atomically via
+    ``UPDATE ... WHERE status='pending'`` and guards on ``rowcount`` so two
+    concurrent callers (e.g. scheduler + manual CLI run) cannot double-spawn
+    the same experiment. The intermediate ``status='executing'`` state means
+    a crash during experiment spawn leaves the row visible as stuck
+    executing rather than silently rolling back to pending.
     """
+    # Atomic claim: only the caller whose UPDATE affects a row proceeds.
+    # The second caller sees rowcount==0 and exits cleanly.
+    with db.get_conn() as conn:
+        cursor = conn.execute(
+            "UPDATE proposals SET status='executing' "
+            "WHERE id=? AND status='pending'",
+            (proposal_id,),
+        )
+        claimed = cursor.rowcount == 1
+
+    if not claimed:
+        # Disambiguate: missing row vs. already-claimed row.
+        with db.get_conn() as conn:
+            row = conn.execute(
+                "SELECT status FROM proposals WHERE id=?", (proposal_id,)
+            ).fetchone()
+        if not row:
+            return {"executed": False, "reason": "Not found"}
+        return {"executed": False, "reason": f"Status is {row['status']}"}
+
     with db.get_conn() as conn:
         row = conn.execute(
             "SELECT * FROM proposals WHERE id=?", (proposal_id,)
         ).fetchone()
-
-    if not row:
-        return {"executed": False, "reason": "Not found"}
-    if row["status"] != "pending":
-        return {"executed": False, "reason": f"Status is {row['status']}"}
-
     proposal = dict(row)
     result: dict = {"executed": True, "experiment_id": None}
 
