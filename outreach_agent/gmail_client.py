@@ -12,7 +12,9 @@ Auth flow:
 import base64
 import email as email_lib
 import logging
+import random
 import re
+import time
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -29,6 +31,55 @@ from config import CREDS_PATH, TOKEN_PATH, GMAIL_SCOPES, FROM_EMAIL, FROM_NAME
 log = logging.getLogger("outreach.gmail")
 
 _service = None   # Module-level singleton
+
+# Retry tuning for transient Gmail API failures (5xx, 429, network flakes).
+# Non-transient errors (401/403/404) bubble up immediately — no point retrying.
+SEND_RETRY_MAX_ATTEMPTS = 3
+SEND_RETRY_BASE_SECONDS = 2.0   # 2s, 4s, 8s with full jitter
+
+
+def _is_transient_http_error(exc: Exception) -> bool:
+    """True if an exception looks like a transient Gmail API failure worth retrying."""
+    if isinstance(exc, HttpError):
+        status = getattr(exc.resp, "status", None)
+        try:
+            status = int(status) if status is not None else None
+        except (TypeError, ValueError):
+            status = None
+        return status is not None and (status == 429 or 500 <= status < 600)
+    # Network-level flakes (connection reset, DNS hiccup, timeout) — retry.
+    if isinstance(exc, (ConnectionError, TimeoutError)):
+        return True
+    # googleapiclient raises raw socket.timeout / ssl.SSLError sometimes —
+    # fall back to string sniffing to avoid importing half of stdlib.
+    msg = str(exc).lower()
+    return any(tok in msg for tok in ("timed out", "timeout", "connection reset",
+                                      "connection aborted", "temporarily"))
+
+
+def _execute_with_retry(request, label: str):
+    """Call request.execute() with exponential backoff on transient errors.
+
+    Non-transient errors raise immediately. After SEND_RETRY_MAX_ATTEMPTS the
+    last exception propagates to the caller (which handles dead-lettering).
+    """
+    last_exc: Exception | None = None
+    for attempt in range(1, SEND_RETRY_MAX_ATTEMPTS + 1):
+        try:
+            return request.execute()
+        except Exception as exc:
+            if not _is_transient_http_error(exc) or attempt == SEND_RETRY_MAX_ATTEMPTS:
+                raise
+            delay = SEND_RETRY_BASE_SECONDS * (2 ** (attempt - 1))
+            delay = delay * (0.5 + random.random())   # full jitter
+            log.warning(
+                "Transient error on %s (attempt %d/%d): %s — retrying in %.1fs",
+                label, attempt, SEND_RETRY_MAX_ATTEMPTS, exc, delay,
+            )
+            time.sleep(delay)
+            last_exc = exc
+    # Unreachable — loop either returns or raises above.
+    raise last_exc  # pragma: no cover
 
 
 def get_service():
@@ -99,7 +150,8 @@ def send_email(to_email: str, to_name: str, subject: str, body: str,
     svc = get_service()
     payload = _build_mime(to_email, to_name, subject, body,
                           reply_to_thread_id, in_reply_to_message_id)
-    result = svc.users().messages().send(userId="me", body=payload).execute()
+    request = svc.users().messages().send(userId="me", body=payload)
+    result = _execute_with_retry(request, label=f"send_email({to_email})")
     log.info("Sent email to %s — message_id=%s thread=%s", to_email, result["id"], result.get("threadId"))
     return result
 
