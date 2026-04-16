@@ -73,7 +73,7 @@ def _reply_rate_score(contact_type: str) -> float:
                 SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN status='responded' THEN 1 ELSE 0 END) as replies
-                FROM contacts WHERE contact_type = ? AND status IN ('sent','responded','followup_sent')
+                FROM contacts WHERE type = ? AND status IN ('sent','responded','followup_sent')
             """, (contact_type,)).fetchone()
             if not row or row["total"] < 3:
                 return 0.5  # not enough data — neutral
@@ -163,16 +163,17 @@ def _insights_boost(contact_type: str) -> float:
 
 def score(contact: dict) -> float:
     """
-    Score a single contact dict (keys: email, contact_type, status, research_notes).
+    Score a single contact dict (keys: email, type, status, research_notes).
     Returns float 0.0–10.0.
     """
     s = 0.0
-    s += _type_score(contact.get("contact_type", ""))
+    ctype = contact.get("type", "") or contact.get("contact_type", "")
+    s += _type_score(ctype)
     s += _research_score(contact.get("research_notes", "") or "")
-    s += _reply_rate_score(contact.get("contact_type", ""))
+    s += _reply_rate_score(ctype)
     s += _spotify_momentum()
     s += _schedule_fit_score(contact.get("email", ""))
-    s += _insights_boost(contact.get("contact_type", ""))
+    s += _insights_boost(ctype)
     return round(min(s, 10.0), 3)
 
 

@@ -761,6 +761,7 @@ def generate_emails_batch(contacts, learning_contexts=None):
         return {}
 
     result = {}
+    rejected = 0
     for item in items:
         email   = item.get("email", "").strip()
         subject = item.get("subject", "").strip()
@@ -769,12 +770,22 @@ def generate_emails_batch(contacts, learning_contexts=None):
             continue
         body = _inject_spotify_links(body)
         body = _ensure_signature(body)
+        if _BRAND_GATE_AVAILABLE:
+            try:
+                validation = _brand_gate.validate_content(body) or {}
+            except Exception as exc:
+                log.warning("brand_gate.validate_content failed for %s: %s", email, exc)
+                validation = {}
+            if not validation.get("passes", True):
+                log.warning("Brand gate rejected batch email for %s (score %s): %s",
+                            email, validation.get("score"), validation.get("flags"))
+                rejected += 1
+                continue
         result[email] = (subject, body)
         log.info("Batch generated — %s subject: %r", email, subject)
-        if _BRAND_GATE_AVAILABLE:
-            _brand_gate.gate_or_warn(body, context="template_engine.batch")
 
-    log.info("Batch complete: %d/%d emails generated", len(result), n)
+    log.info("Batch complete: %d/%d emails generated (%d brand-gate rejected)",
+             len(result), n, rejected)
     return result
 
 
