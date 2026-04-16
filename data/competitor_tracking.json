@@ -1,1 +1,30 @@
-{"artists": [], "snapshots": []}
+{
+  "artists": [
+    {
+      "name": "Anyma",
+      "genre": "Melodic Techno",
+      "reason": "Visual scale reference"
+    },
+    {
+      "name": "Argy",
+      "genre": "Tribal/Techno",
+      "reason": "Tribal texture overlap"
+    },
+    {
+      "name": "Agents Of Time",
+      "genre": "Melodic Techno",
+      "reason": "Similar production style"
+    },
+    {
+      "name": "Colyn",
+      "genre": "Melodic Techno",
+      "reason": "Independent growth trajectory"
+    },
+    {
+      "name": "Innellea",
+      "genre": "Melodic Techno",
+      "reason": "Similar visual aesthetic"
+    }
+  ],
+  "snapshots": []
+}
