@@ -107,6 +107,14 @@ CREATE TABLE IF NOT EXISTS dead_addresses (
     reason      TEXT
 );
 
+-- YouTube Data API v3 quota tracking — resets at midnight Pacific time
+CREATE TABLE IF NOT EXISTS api_budget (
+    date        TEXT    NOT NULL,       -- YYYY-MM-DD (Pacific) for YouTube
+    service     TEXT    NOT NULL,       -- 'youtube' | 'spotify' | ...
+    units_used  INTEGER DEFAULT 0,
+    PRIMARY KEY (date, service)
+);
+
 CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts(status);
 CREATE INDEX IF NOT EXISTS idx_contacts_type   ON contacts(type);
 CREATE INDEX IF NOT EXISTS idx_contacts_date_sent ON contacts(date_sent);
@@ -217,6 +225,24 @@ CREATE TABLE IF NOT EXISTS release_calendar (
     notes           TEXT
 );
 
+CREATE TABLE IF NOT EXISTS personalization_audit (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    email           TEXT    NOT NULL,
+    contact_type    TEXT    NOT NULL,
+    generated_at    TEXT    NOT NULL,
+    subject         TEXT,
+    body_snippet    TEXT,
+    hooks_used      TEXT,   -- JSON list of hook keys the template engine reported
+    research_used   INTEGER DEFAULT 0,  -- 1 if research_notes were non-empty
+    model           TEXT,
+    learning_applied INTEGER DEFAULT 0, -- 1 if a learning insight was fed in
+    brand_gate_passed INTEGER DEFAULT 1,-- 0 if validator found issues
+    brand_gate_issues TEXT   -- JSON list of issue strings (if any)
+);
+CREATE INDEX IF NOT EXISTS idx_personalization_email ON personalization_audit(email);
+CREATE INDEX IF NOT EXISTS idx_personalization_type ON personalization_audit(contact_type);
+CREATE INDEX IF NOT EXISTS idx_personalization_at ON personalization_audit(generated_at);
+
 CREATE TABLE IF NOT EXISTS form_submissions (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     playlist_id     TEXT    NOT NULL,
@@ -272,6 +298,14 @@ def init_db():
             ("reply_intent",           "TEXT DEFAULT NULL"),  # classified intent
             ("reply_action",           "TEXT DEFAULT NULL"),  # suggested action from classifier
             ("reply_classified_at",    "TEXT DEFAULT NULL"),  # when classification ran
+            # YouTube outreach branch — per-channel metadata used by youtube_discover.py
+            ("youtube_channel_id",          "TEXT DEFAULT NULL"),  # UC... unique channel ID
+            ("youtube_channel_url",         "TEXT DEFAULT NULL"),  # public channel URL
+            ("youtube_subs",                "INTEGER DEFAULT NULL"),# subscribers at discovery time
+            ("youtube_video_count",         "INTEGER DEFAULT NULL"),# total uploads at discovery
+            ("youtube_last_upload_at",      "TEXT DEFAULT NULL"),   # ISO date of latest upload
+            ("youtube_genre_match_score",   "REAL DEFAULT NULL"),   # 0.0–1.0 keyword density
+            ("youtube_recent_upload_title", "TEXT DEFAULT NULL"),   # latest title for personalization
         ]:
             try:
                 conn.execute(f"ALTER TABLE contacts ADD COLUMN {col} {definition}")
@@ -312,7 +346,118 @@ def init_db():
                 conn.execute(idx_sql)
             except Exception as _exc:
                 log.debug("Index create skipped: %s", _exc)
+
+        # Unique index on youtube_channel_id (NULL-safe: NULL values don't collide in SQLite)
+        try:
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_yt_channel_id "
+                "ON contacts(youtube_channel_id) WHERE youtube_channel_id IS NOT NULL"
+            )
+        except Exception:
+            pass
     log.info("Database initialised at %s", DB_PATH)
+
+
+# ─── YouTube Data API v3 quota tracking ───────────────────────────────────────
+
+def record_api_units(service: str, units: int, today: str | None = None) -> None:
+    """Increment today's API unit counter for a service."""
+    if today is None:
+        today = date.today().isoformat()
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO api_budget (date, service, units_used) VALUES (?, ?, ?) "
+            "ON CONFLICT(date, service) DO UPDATE SET units_used = units_used + excluded.units_used",
+            (today, service, units),
+        )
+
+
+def get_api_units_today(service: str, today: str | None = None) -> int:
+    """Return units used today for a service (0 if no row)."""
+    if today is None:
+        today = date.today().isoformat()
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT units_used FROM api_budget WHERE date = ? AND service = ?",
+            (today, service),
+        ).fetchone()
+        return int(row["units_used"]) if row else 0
+
+
+def add_youtube_contact(
+    email: str,
+    name: str,
+    channel_id: str,
+    channel_url: str = "",
+    subs: int | None = None,
+    video_count: int | None = None,
+    last_upload_at: str | None = None,
+    genre_match_score: float | None = None,
+    recent_upload_title: str = "",
+    genre: str = "",
+    notes: str = "",
+    # NOTE: uses 'youtube_discover' (not 'agent_discovered') so new channels
+    # bypass the WARM_UP_DAILY_CAP = 10 gate in agent.py:79. YouTube is RJM's
+    # primary growth channel — discovered contacts go directly into the active
+    # send queue as trusted. The gate still applies to curator/podcast
+    # agent-discovery, which remains protected.
+    source: str = "youtube_discover",
+) -> tuple[bool, str]:
+    """
+    Insert a YouTube channel as a contact with all youtube_* metadata populated.
+    Returns (success, reason). Idempotent on youtube_channel_id — refreshes
+    subs/recent_upload if the channel already exists.
+    """
+    email = email.strip().lower()
+    with get_conn() as conn:
+        # Dedup first on channel_id (authoritative for YouTube)
+        existing = conn.execute(
+            "SELECT id, email, status FROM contacts WHERE youtube_channel_id = ?",
+            (channel_id,),
+        ).fetchone()
+        if existing:
+            # Refresh volatile fields (subs, last upload, recent title)
+            conn.execute(
+                "UPDATE contacts SET youtube_subs = COALESCE(?, youtube_subs),"
+                " youtube_video_count = COALESCE(?, youtube_video_count),"
+                " youtube_last_upload_at = COALESCE(?, youtube_last_upload_at),"
+                " youtube_recent_upload_title = COALESCE(?, youtube_recent_upload_title)"
+                " WHERE id = ?",
+                (subs, video_count, last_upload_at, recent_upload_title, existing["id"]),
+            )
+            return False, f"duplicate — channel already in DB as status={existing['status']}"
+
+        # Fall through to email-level dedup (channel's email might be reused across channels)
+        if email:
+            email_existing = conn.execute(
+                "SELECT id, status FROM contacts WHERE email = ?", (email,)
+            ).fetchone()
+            if email_existing:
+                # Attach youtube metadata to the existing contact without flipping type
+                conn.execute(
+                    "UPDATE contacts SET youtube_channel_id = ?, youtube_channel_url = ?,"
+                    " youtube_subs = ?, youtube_video_count = ?, youtube_last_upload_at = ?,"
+                    " youtube_genre_match_score = ?, youtube_recent_upload_title = ?"
+                    " WHERE id = ?",
+                    (channel_id, channel_url, subs, video_count, last_upload_at,
+                     genre_match_score, recent_upload_title, email_existing["id"]),
+                )
+                return False, f"email already in DB as status={email_existing['status']} — yt metadata attached"
+
+        # New row
+        now = datetime.now().isoformat()
+        status = "new" if email else "skip"  # no email = tracked-but-not-sendable
+        conn.execute(
+            "INSERT INTO contacts ("
+            "  email, name, type, genre, notes, status, date_added, source,"
+            "  youtube_channel_id, youtube_channel_url, youtube_subs, youtube_video_count,"
+            "  youtube_last_upload_at, youtube_genre_match_score, youtube_recent_upload_title"
+            ") VALUES (?, ?, 'youtube', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (email or f"no-email-{channel_id}@placeholder.invalid", name, genre, notes,
+             status, now, source, channel_id, channel_url, subs, video_count,
+             last_upload_at, genre_match_score, recent_upload_title),
+        )
+        return True, "inserted"
 
 
 def get_verified_by_playlist_size(size: str, limit: int = 10) -> list[dict]:
@@ -450,6 +595,32 @@ def mark_bounced_full(email, reason="", bounce_type="pre-check"):
             UPDATE contacts SET status='bounced', bounce=?, notes=?, date_verified=?
             WHERE email=?
         """, (bounce_type, new_notes, str(date.today()), email.lower()))
+
+
+def mark_dead_letter(email: str, reason: str = ""):
+    """Move a contact to 'dead_letter' — stops further send attempts permanently.
+
+    Used after MAX_SEND_ATTEMPTS consecutive failures (smtp errors, brand gate
+    repeated rejection, template generation crashes). Dead-lettered contacts
+    are excluded from all send queues but preserved for forensic review.
+    """
+    with get_conn() as conn:
+        row = conn.execute("SELECT notes FROM contacts WHERE email = ?", (email.lower(),)).fetchone()
+        existing_notes = row["notes"] if row else ""
+        new_notes = (existing_notes or "") + f" | DEAD_LETTER: {reason[:200]}"
+        conn.execute(
+            "UPDATE contacts SET status='dead_letter', notes=? WHERE email=?",
+            (new_notes, email.lower()),
+        )
+
+
+def get_send_attempts(email: str) -> int:
+    """Return current send_attempts count for a contact. Zero if unknown."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT send_attempts FROM contacts WHERE email = ?", (email.lower(),)
+        ).fetchone()
+        return (row["send_attempts"] or 0) if row else 0
 
 
 def mark_queued(email):
@@ -845,6 +1016,62 @@ def get_unresearched_verified(limit: int = 10) -> list:
             WHERE status = 'verified' AND (research_done IS NULL OR research_done = 0)
             ORDER BY date_added ASC LIMIT ?
         """, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def log_personalization_audit(
+    email: str,
+    contact_type: str,
+    subject: str = "",
+    body: str = "",
+    hooks_used: list[str] | None = None,
+    research_used: bool = False,
+    model: str = "",
+    learning_applied: bool = False,
+    brand_gate_passed: bool = True,
+    brand_gate_issues: list[str] | None = None,
+) -> None:
+    """Record every generated email for forensic review and learning.
+
+    Never raises — failures log a warning so the send pipeline is unaffected.
+    Lake 1 Task 5 of the outreach completeness plan.
+    """
+    import json as _json
+    try:
+        snippet = (body or "")[:400]
+        hooks_json  = _json.dumps(hooks_used or [])
+        issues_json = _json.dumps(brand_gate_issues or [])
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO personalization_audit
+                    (email, contact_type, generated_at, subject, body_snippet,
+                     hooks_used, research_used, model, learning_applied,
+                     brand_gate_passed, brand_gate_issues)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    email.lower(), contact_type, datetime.now().isoformat(),
+                    subject, snippet, hooks_json, int(bool(research_used)),
+                    model, int(bool(learning_applied)),
+                    int(bool(brand_gate_passed)), issues_json,
+                ),
+            )
+    except Exception as exc:
+        log.warning("personalization_audit insert failed for %s: %s", email, exc)
+
+
+def get_personalization_audit(email: str, limit: int = 5) -> list[dict]:
+    """Return most-recent personalization audit rows for a contact."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM personalization_audit
+            WHERE email = ?
+            ORDER BY generated_at DESC LIMIT ?
+            """,
+            (email.lower(), limit),
+        ).fetchall()
         return [dict(r) for r in rows]
 
 

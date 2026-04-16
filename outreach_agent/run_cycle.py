@@ -50,7 +50,13 @@ try:
 except ImportError:
     _ENRICHER_AVAILABLE = False
 
-from config import MAX_EMAILS_PER_DAY, FOLLOWUP_DAYS, FOLLOWUP2_DAYS, CONTACT_TYPE_WEIGHTS, SMALL_PLAYLIST_PER_CYCLE
+from config import (
+    MAX_EMAILS_PER_DAY, FOLLOWUP_DAYS, FOLLOWUP2_DAYS,
+    CONTACT_TYPE_WEIGHTS, SMALL_PLAYLIST_PER_CYCLE,
+    YOUTUBE_SHARE_FLOOR,
+)
+
+import random as _random
 
 try:
     import events as _events
@@ -60,27 +66,201 @@ except ImportError:
     _HIVE_AVAILABLE = False
 
 
+def _weighted_order_with_youtube_floor(contacts, youtube_share: float = YOUTUBE_SHARE_FLOOR):
+    """
+    Weighted-order a batch of contacts, with a guaranteed floor for type='youtube'.
+
+    Semantics:
+      - Sort non-YouTube contacts by their type's weight (higher weight first),
+        shuffled within a type.
+      - YouTube contacts are interleaved so they reach `youtube_share` of the
+        output whenever supply allows.
+      - If YouTube supply is short, others fill the slot (overflow DOWN).
+      - If only YouTube supply is present, the whole batch is YouTube (overflow UP).
+
+    The goal is a per-batch floor, not just a per-day floor — even small batches
+    of 7 get ~3–4 YouTube contacts when the queue has supply.
+    """
+    yt = [c for c in contacts if c.get("type") == "youtube"]
+    others = [c for c in contacts if c.get("type") != "youtube"]
+    # Sort YouTube contacts by genre_match_score DESC so psytrance/progressive
+    # channels (primary focus, higher scores) dispatch before Christian EDM /
+    # organic house / melodic techno (secondary). Ties are randomized via a
+    # secondary shuffle key for fairness within the same score band.
+    import random as _r
+    yt.sort(
+        key=lambda c: (
+            -(c.get("youtube_genre_match_score") or 0.0),
+            _r.random(),
+        )
+    )
+
+    # Weighted order for non-YouTube types
+    by_type: dict[str, list] = {}
+    for c in others:
+        by_type.setdefault(c.get("type", ""), []).append(c)
+    types_sorted = sorted(
+        by_type.keys(),
+        key=lambda t: CONTACT_TYPE_WEIGHTS.get(t, 1),
+        reverse=True,
+    )
+    ordered_others: list = []
+    for t in types_sorted:
+        bucket = by_type[t]
+        _random.shuffle(bucket)
+        ordered_others.extend(bucket)
+
+    # Interleave to hit the floor
+    result: list = []
+    total = len(yt) + len(ordered_others)
+    yt_used = other_used = 0
+    for i in range(total):
+        yt_remaining = len(yt) - yt_used
+        other_remaining = len(ordered_others) - other_used
+
+        if yt_remaining == 0:
+            result.append(ordered_others[other_used]); other_used += 1
+            continue
+        if other_remaining == 0:
+            result.append(yt[yt_used]); yt_used += 1
+            continue
+
+        # Are we ahead or behind on the YouTube target after this pick?
+        yt_target_so_far = int((i + 1) * youtube_share + 0.5)
+        if yt_used < yt_target_so_far:
+            result.append(yt[yt_used]); yt_used += 1
+        else:
+            result.append(ordered_others[other_used]); other_used += 1
+    return result
+
+
 def _rescue_stale_queued():
     """
     Contacts stuck in 'queued' for > 2 hours were likely abandoned by a crashed task.
-    Reset them to 'verified' so they can be retried — unless they've hit 3 attempts,
-    in which case mark as 'skip' to stop pestering the same address.
+    Reset them to 'verified' so they can be retried — unless they've hit
+    MAX_SEND_ATTEMPTS, in which case dead-letter them to stop consuming quota.
     """
+    from config import MAX_SEND_ATTEMPTS
     cutoff = (datetime.now() - timedelta(hours=2)).isoformat()
+    rescued = 0
+    dead_lettered = 0
     with db.get_conn() as conn:
         stale = conn.execute("""
             SELECT email, send_attempts FROM contacts
             WHERE status = 'queued' AND date_queued < ?
         """, (cutoff,)).fetchall()
         for row in stale:
-            if (row["send_attempts"] or 0) >= 3:
+            attempts = row["send_attempts"] or 0
+            if attempts >= MAX_SEND_ATTEMPTS:
                 conn.execute(
-                    "UPDATE contacts SET status='skip' WHERE email=?", (row["email"],)
+                    "UPDATE contacts SET status='dead_letter',"
+                    " notes = COALESCE(notes, '') || ' | DEAD_LETTER: stale_queued' "
+                    "WHERE email=?",
+                    (row["email"],),
                 )
+                dead_lettered += 1
             else:
                 conn.execute(
                     "UPDATE contacts SET status='verified' WHERE email=?", (row["email"],)
                 )
+                rescued += 1
+    if rescued or dead_lettered:
+        try:
+            import events as _events
+            _events.publish(
+                "pipeline.stale_queued",
+                source="run_cycle._rescue_stale_queued",
+                payload={"rescued": rescued, "dead_lettered": dead_lettered},
+            )
+        except Exception:
+            pass
+
+
+def _detect_stale_research(max_age_days: int = 3) -> int:
+    """Publish an event if contacts have been waiting for research too long.
+
+    Returns the count of stale contacts. Does NOT change state — unresearched
+    contacts are still eligible for sending, just ranked lower. Purpose is
+    telemetry: if this number grows, rjm-research is likely broken.
+    """
+    cutoff = (datetime.now() - timedelta(days=max_age_days)).date().isoformat()
+    with db.get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n FROM contacts
+            WHERE status = 'verified'
+              AND (research_done IS NULL OR research_done = 0)
+              AND date_verified IS NOT NULL
+              AND date_verified < ?
+            """,
+            (cutoff,),
+        ).fetchone()
+    count = int(row["n"]) if row else 0
+    if count:
+        try:
+            import events as _events
+            _events.publish(
+                "pipeline.stale_research",
+                source="run_cycle._detect_stale_research",
+                payload={"count": count, "max_age_days": max_age_days},
+            )
+        except Exception:
+            pass
+    return count
+
+
+def _publish_plan_gaps(plan: dict) -> None:
+    """Emit a `pipeline.gap_detected` event when the plan has nothing to do.
+
+    Called by `cmd_plan` after the plan is built. Silence is the steady state:
+    we only publish when something is wrong (empty queue, closed window,
+    exhausted quota, or a plan that somehow produced zero actions despite
+    having capacity). The master dashboard listens for these events to show
+    *why* the fleet is idle.
+    """
+    actions = plan.get("actions", [])
+    action_count = len(actions)
+    if action_count > 0:
+        return  # plan is healthy — say nothing
+
+    reasons = []
+    if not plan.get("window_open", False):
+        reasons.append("window_closed")
+    if (plan.get("quota_remaining") or 0) <= 0:
+        reasons.append("quota_exhausted")
+
+    verified_count = 0
+    try:
+        with db.get_conn() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM contacts WHERE status='verified'"
+            ).fetchone()
+            verified_count = int(row["n"]) if row else 0
+    except Exception:
+        pass
+
+    if verified_count == 0:
+        reasons.append("no_sendable_contacts")
+    if not reasons:
+        # Window open, quota OK, verified contacts exist, yet the plan is
+        # empty. Something upstream (template gen, scoring) is eating work.
+        reasons.append("empty_plan_unexplained")
+
+    try:
+        import events as _events
+        _events.publish(
+            "pipeline.gap_detected",
+            source="run_cycle.cmd_plan",
+            payload={
+                "reasons": reasons,
+                "verified_count": verified_count,
+                "action_count": action_count,
+                "window_open": bool(plan.get("window_open", False)),
+                "quota_remaining": int(plan.get("quota_remaining") or 0),
+            },
+        )
+    except Exception:
+        pass
 
 
 def cmd_plan():
@@ -90,6 +270,7 @@ def cmd_plan():
     """
     db.init_db()
     _rescue_stale_queued()
+    _detect_stale_research()
 
     plan = {
         "window_open":    scheduler.is_within_active_window(),
@@ -159,11 +340,9 @@ def cmd_plan():
                 "gmail_url": gmail_url,
             })
 
-    # --- Initial sends (weighted by contact type priority) ---
+    # --- Initial sends (YouTube-floor enforced + type-weighted) ---
     batch_size = scheduler.compute_batch_size()
     if scheduler.is_within_active_window() and batch_size > 0:
-        import random
-
         _active_types = {t for t, w in CONTACT_TYPE_WEIGHTS.items() if w > 0}
         verified_all = db.get_contacts_by_status("verified", limit=100)
         verified_all = [c for c in verified_all if c.get("type") in _active_types]
@@ -172,32 +351,23 @@ def cmd_plan():
         researched   = [c for c in verified_all if c.get("research_done") == 1]
         unresearched = [c for c in verified_all if c.get("research_done") != 1]
 
-        def _weighted_order(contacts):
-            """Sort contacts by type weight (desc), shuffled within same weight."""
-            by_type = {}
-            for c in contacts:
-                by_type.setdefault(c["type"], []).append(c)
-            types_sorted = sorted(by_type.keys(),
-                                  key=lambda t: CONTACT_TYPE_WEIGHTS.get(t, 1),
-                                  reverse=True)
-            ordered = []
-            for t in types_sorted:
-                bucket = by_type[t]
-                random.shuffle(bucket)
-                ordered.extend(bucket)
-            return ordered
-
         # Step 1: Small-tagged contacts (500–10k) — prioritise researched first
         small_researched   = [c for c in researched   if c.get("playlist_size") == "small"]
         small_unresearched = [c for c in unresearched if c.get("playlist_size") == "small"]
-        small_pool = _weighted_order(small_researched) + _weighted_order(small_unresearched)
+        small_pool = (
+            _weighted_order_with_youtube_floor(small_researched)
+            + _weighted_order_with_youtube_floor(small_unresearched)
+        )
         small_contacts = small_pool[:SMALL_PLAYLIST_PER_CYCLE]
         small_emails   = {c["email"] for c in small_contacts}
 
         # Step 2: Fill remaining slots — researched first, then unresearched
         rest_researched   = [c for c in researched   if c["email"] not in small_emails]
         rest_unresearched = [c for c in unresearched if c["email"] not in small_emails]
-        rest_pool = _weighted_order(rest_researched) + _weighted_order(rest_unresearched)
+        rest_pool = (
+            _weighted_order_with_youtube_floor(rest_researched)
+            + _weighted_order_with_youtube_floor(rest_unresearched)
+        )
 
         ordered = small_contacts + rest_pool
 
@@ -273,6 +443,11 @@ def cmd_plan():
         """).fetchall()
 
     plan["threads_to_check"] = [dict(r) for r in open_threads]
+
+    # --- Pipeline gap telemetry ---
+    # Emit a single `pipeline.gap_detected` event if this plan has nothing to
+    # do, so the master/health view can surface why the fleet is idle.
+    _publish_plan_gaps(plan)
 
     if _HIVE_AVAILABLE:
         _fleet_state.heartbeat("run_cycle", status="ok", result={
@@ -377,7 +552,7 @@ def cmd_mark_followup2_sent(email, subject):
     print(f"✅ Marked followup2 sent: {email}")
 
 
-def cmd_add_contact(email, name, ctype, genre="", notes="", website="", playlist_size=""):
+def cmd_add_contact(email, name, ctype, genre="", notes="", website="", playlist_size="", search_query=""):
     db.init_db()
     ok, reason = db.add_contact(email, name, ctype, genre, notes, source="agent_discovered")
     if ok:
@@ -399,6 +574,34 @@ def cmd_add_contact(email, name, ctype, genre="", notes="", website="", playlist
             print(f"✅ Added + verified{size_tag}: {email}")
     else:
         print(f"⏭  Skipped ({reason}): {email}")
+
+    # Lake 2 Task 9: always record the discovery attempt so rjm-discover's
+    # search-dedup guard (recently_searched) has ground truth. Query falls back
+    # to "manual_add:<type>" when no explicit search context was passed.
+    try:
+        query = search_query or f"manual_add:{ctype}"
+        db.log_discovery(query, ctype, 1 if ok else 0)
+    except Exception as exc:
+        print(f"⚠️  log_discovery failed: {exc}")
+
+
+def cmd_check_search(query: str, within_hours: int = 48) -> int:
+    """Dedup guard for the rjm-discover skill.
+
+    The discover agent calls `run_cycle.py check_search "<query>"` before
+    running each Google search. If the same query was already run inside
+    `within_hours`, we exit 1 so the skill can skip and try a fresher angle.
+    Clean queries print a one-line "proceed" hint and exit 0.
+    """
+    db.init_db()
+    if not query:
+        print("⚠️  check_search: empty query — proceed (nothing to dedup)")
+        return 0
+    if db.recently_searched(query, within_hours=within_hours):
+        print(f"⏭  skip (duplicate within {within_hours}h): {query}")
+        return 1
+    print(f"✅ proceed: {query}")
+    return 0
 
 
 def cmd_set_playlist_size(email, size):
@@ -489,11 +692,9 @@ def cmd_contacts():
                 "followup_num": 1,
             })
 
-    # --- Initial sends ---
+    # --- Initial sends (YouTube-floor enforced + type-weighted) ---
     batch_size = scheduler.compute_batch_size()
     if batch_size > 0:
-        import random
-
         _active_types = {t for t, w in CONTACT_TYPE_WEIGHTS.items() if w > 0}
         verified_all  = db.get_contacts_by_status("verified", limit=100)
         verified_all  = [c for c in verified_all if c.get("type") in _active_types]
@@ -501,29 +702,21 @@ def cmd_contacts():
         researched   = [c for c in verified_all if c.get("research_done") == 1]
         unresearched = [c for c in verified_all if c.get("research_done") != 1]
 
-        def _weighted_order(contacts):
-            by_type = {}
-            for c in contacts:
-                by_type.setdefault(c["type"], []).append(c)
-            types_sorted = sorted(by_type.keys(),
-                                  key=lambda t: CONTACT_TYPE_WEIGHTS.get(t, 1),
-                                  reverse=True)
-            ordered = []
-            for t in types_sorted:
-                bucket = by_type[t]
-                random.shuffle(bucket)
-                ordered.extend(bucket)
-            return ordered
-
         small_researched   = [c for c in researched   if c.get("playlist_size") == "small"]
         small_unresearched = [c for c in unresearched if c.get("playlist_size") == "small"]
-        small_pool = _weighted_order(small_researched) + _weighted_order(small_unresearched)
+        small_pool = (
+            _weighted_order_with_youtube_floor(small_researched)
+            + _weighted_order_with_youtube_floor(small_unresearched)
+        )
         small_contacts = small_pool[:SMALL_PLAYLIST_PER_CYCLE]
         small_emails   = {c["email"] for c in small_contacts}
 
         rest_researched   = [c for c in researched   if c["email"] not in small_emails]
         rest_unresearched = [c for c in unresearched if c["email"] not in small_emails]
-        rest_pool = _weighted_order(rest_researched) + _weighted_order(rest_unresearched)
+        rest_pool = (
+            _weighted_order_with_youtube_floor(rest_researched)
+            + _weighted_order_with_youtube_floor(rest_unresearched)
+        )
 
         ordered = small_contacts + rest_pool
         batch_contacts = ordered[:batch_size]
@@ -632,7 +825,10 @@ def main():
         cmd_add_contact(args[1], args[2], args[3], args[4],
                         args[5] if len(args) > 5 else "",
                         args[6] if len(args) > 6 else "",
-                        args[7] if len(args) > 7 else "")
+                        args[7] if len(args) > 7 else "",
+                        args[8] if len(args) > 8 else "")
+    elif args[0] == "check_search" and len(args) >= 2:
+        sys.exit(cmd_check_search(args[1]))
     elif args[0] == "set_playlist_size" and len(args) >= 3:
         cmd_set_playlist_size(args[1], args[2])
     elif args[0] == "store_research" and len(args) >= 3:

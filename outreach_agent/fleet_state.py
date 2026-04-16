@@ -16,6 +16,7 @@ log = logging.getLogger("outreach.fleet_state")
 # Expected cadence in minutes per agent — used to determine staleness (2× = stale)
 EXPECTED_CADENCE = {
     "run_cycle":        30,
+    "outreach_cycle":   30,   # agent.py cmd_run (cron target)
     "master_agent":     60,
     "discover_agent":   60,
     "research_agent":   60,

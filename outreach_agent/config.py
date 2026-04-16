@@ -25,6 +25,13 @@ GMAIL_SCOPES = [
 FROM_EMAIL     = os.getenv("RJM_FROM_EMAIL", "motomotosings@gmail.com")
 FROM_NAME      = "Robert-Jan Mastenbroek"
 
+# ─── Safety Net ───────────────────────────────────────────────────────────────
+# Maximum send attempts before a contact is moved to 'dead_letter' and stops
+# consuming quota. Set in Lake 1 of the outreach-completeness plan to prevent
+# transient errors (Gmail 5xx, brand-gate repeated rejection) from infinite-retrying
+# against the same address.
+MAX_SEND_ATTEMPTS    = 3
+
 # ─── Rate Limits ──────────────────────────────────────────────────────────────
 MAX_EMAILS_PER_DAY   = 150          # Daily cap — safe for warmed personal Gmail doing targeted cold outreach
 MAX_CONTENT_POSTS_PER_DAY = 3       # Daily cap for Buffer video posts (TikTok + IG Reels + YouTube count as 1 batch)
@@ -78,14 +85,137 @@ CONTACT_TYPES = {
 # ─── Outreach Priority Weights ────────────────────────────────────────────────
 # Controls how the batch planner picks contact types each cycle.
 # Goal: build streams + live bookings + press first. Labels come later.
+#
+# NOTE: The YouTube branch uses a *hard floor* (YOUTUBE_SHARE_FLOOR below) enforced
+# by _weighted_order_with_youtube_floor() in run_cycle.py — the weight below is
+# only used to sort YouTube relative to other types when the floor is already met.
 CONTACT_TYPE_WEIGHTS = {
     "curator":        40,   # auto-adjusted by auto_weights (neutral growth state)
     "podcast":        60,   # auto-adjusted by auto_weights (neutral growth state)
-    "youtube":        0,    # Paused
+    "youtube":        50,   # ACTIVATED — hard-floor allocator enforces ≥50% share
     "sync":           0,    # Paused
     "booking_agent":  0,    # Paused
     "wellness":       0,    # Paused
 }
+
+# ─── YouTube Outreach Branch ─────────────────────────────────────────────────
+# PRE-REQUISITE: Content ID must be DISABLED in BandLab Music on the 5 psytrance
+# tracks used for YouTube outreach (Halleluyah, Kavod, Jericho, Renamed, Fire In
+# Our Hands). Otherwise the email template's "keep 100% ad rev" promise is a lie.
+# See docs/superpowers/specs/2026-04-14-youtube-outreach-branch-design.md
+YOUTUBE_SHARE_FLOOR      = 0.5       # 50% of each batch reserved for YouTube (overflow when supply short)
+YOUTUBE_API_DAILY_UNITS_CAP = 8000   # abort discovery if > this many units used today (YT quota = 10K)
+# Lowered from 10K→2K after first discovery run rejected 437/498 channels for subs<10K.
+# Many real promo channels live at 2K–10K subs and post weekly; the original floor
+# was too tight given RJM's aggressive-growth stance on YouTube as a Spotify driver.
+YOUTUBE_MIN_SUBS         = 2_000
+# Tightened from 500K → 80K: YouTube rate-limits "View email address" to ~10/day,
+# so every unlock must go to a channel that might actually respond. Big artist-
+# owned channels (Captain Hook, Astrix, etc.) will never upload someone else's
+# track regardless of pitch quality — don't waste unlocks on them. Small/mid-tier
+# promo channels in the 2K-80K range are the sweet spot.
+YOUTUBE_MAX_SUBS         = 80_000
+YOUTUBE_MIN_TOTAL_VIEWS  = 30_000
+YOUTUBE_MIN_VIDEO_COUNT  = 20        # still signals active channel, not brand-new
+YOUTUBE_MAX_UPLOAD_AGE_DAYS = 30
+
+# Discovery seed queries — primary focus is (progressive) psytrance, with
+# secondary melodic techno / progressive house and tertiary Christian EDM /
+# organic house coverage. Ordered by priority; search budget = 100 units per
+# query × ~25 queries = 2500 units per discovery run (well under 8K cap).
+YOUTUBE_DISCOVERY_QUERIES = [
+    # ── PRIMARY: psytrance / progressive psytrance ──
+    "progressive psytrance mix 2026",
+    "tribal psytrance mix",
+    "psytrance promo channel",
+    "psytrance 2026",
+    "progressive psytrance 2026",
+    # Psytrance sound-reference artists (from story.py:31 sound_refs)
+    "Vini Vici",
+    "Astrix",
+    "Symphonix",
+    "Ranji",
+    "Ace Ventura",
+
+    # ── SECONDARY: melodic techno / progressive house ──
+    "melodic techno mix 2026",
+    "melodic house mix 2026",
+    "progressive house mix 2026",
+    "Afterlife melodic techno",
+    # Melodic/progressive artists
+    "Colyn",
+    "Massano",
+    "Argy",
+    "Anyma",
+
+    # ── TERTIARY: Christian EDM ──
+    "christian edm mix",
+    "worship edm",
+    "christian electronic music",
+
+    # ── TERTIARY: organic house ──
+    "organic house mix",
+    "all day i dream mix",
+    "afro house mix",
+]
+
+# Channel titles that match these names exactly are rejected as artist-owned
+# (they won't upload our music regardless of how good the pitch is).
+YOUTUBE_ARTIST_CHANNEL_BLOCKLIST = {
+    "vini vici", "astrix", "symphonix", "ranji", "ace ventura",
+    "colyn", "massano", "argy", "anyma", "rufus du sol",
+    "robert-jan mastenbroek",  # don't re-discover RJM's own channel
+}
+# Regex OR'd into the reject heuristic for channel descriptions
+YOUTUBE_ARTIST_CHANNEL_MARKERS = [
+    "official artist channel",
+    "verified artist",
+    "official music videos",
+    "official youtube channel",
+    "Topic",  # YouTube auto-generated artist pages end in "- Topic"
+    "my official",
+    "booking:",
+    "management:",
+    "my music",
+    "my debut",
+    "my latest release",
+    "my upcoming",
+    "solo project",
+    "solo artist",
+    "live performances",
+    "sign my",
+]
+# Channel titles ending in these tokens are almost always artist-owned
+# (Captain Hook Official, Astrix Official, Robert-Jan Mastenbroek Official)
+# — reject as artist channel regardless of subs/genre fit.
+YOUTUBE_ARTIST_CHANNEL_NAME_SUFFIXES = (
+    " official",
+    " music",
+    " records",  # wait — labels ARE promo channels — remove this
+)
+# Actually labels ARE who we want to pitch. Only reject on " official" suffix.
+YOUTUBE_ARTIST_CHANNEL_NAME_SUFFIXES = (
+    " official",
+)
+# Keywords that must appear in a channel's description/title to pass the genre
+# filter. PRIMARY keywords (psytrance focus) are weighted 2x in _genre_score
+# so psytrance channels outrank secondary/tertiary genres in the send queue.
+YOUTUBE_GENRE_KEYWORDS_PRIMARY = [
+    "psytrance", "psy-trance", "psy trance", "progressive psytrance",
+    "tribal psytrance", "psy",
+]
+YOUTUBE_GENRE_KEYWORDS_SECONDARY = [
+    # Melodic techno / progressive / Christian EDM / organic house — all welcome
+    # but these score lower than primary psytrance keywords.
+    "progressive", "tribal", "melodic techno", "melodic house",
+    "progressive house", "techno", "trance", "melodic",
+    "christian", "worship", "gospel", "christian edm",
+    "organic house", "afro house", "deep house",
+    # Channel-type indicators (not genre per se, but signal promo intent)
+    "mix", "promo", "compilation", "set", "dj set",
+]
+# Backwards-compatible flat list (still referenced for regex/search operations)
+YOUTUBE_GENRE_KEYWORDS = YOUTUBE_GENRE_KEYWORDS_PRIMARY + YOUTUBE_GENRE_KEYWORDS_SECONDARY
 
 # ─── Spotify Growth Velocity → Weight Adjustment ──────────────────────────────
 # auto_weights command reads listener velocity and rewrites CONTACT_TYPE_WEIGHTS.

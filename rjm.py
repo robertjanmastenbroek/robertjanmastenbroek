@@ -22,6 +22,10 @@ Usage:
   python3 rjm.py content retry            # Retry all failed posts in queue
   python3 rjm.py playlist [cmd]           # Playlist DB (status, add, pending_contact, list)
   python3 rjm.py spotify [cmd]            # Spotify growth tracker (status, log <n>, history)
+  python3 rjm.py youtube discover         # Find YouTube promo channels → contacts DB
+  python3 rjm.py youtube review           # Interactive: click-through to find emails
+  python3 rjm.py youtube status           # YouTube-type pipeline counts
+  python3 rjm.py youtube budget           # Today's YouTube API unit usage vs cap
   python3 rjm.py run <agent>              # Trigger a sub-agent directly
   python3 rjm.py fleet                    # Live fleet health — all agents + recent events
   python3 rjm.py release list             # Pending track releases
@@ -83,17 +87,35 @@ if _env_path.exists():
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT    = Path(__file__).parent
-OUTREACH_DIR    = PROJECT_ROOT / "outreach_agent"
-AGENT_PY        = OUTREACH_DIR / "agent.py"
-MASTER_PY       = OUTREACH_DIR / "master_agent.py"
+OUTREACH_DIR     = PROJECT_ROOT / "outreach_agent"
+AGENT_PY         = OUTREACH_DIR / "agent.py"
+MASTER_PY        = OUTREACH_DIR / "master_agent.py"
+YT_DISCOVER_PY   = OUTREACH_DIR / "youtube_discover.py"
+YT_REVIEW_PY     = OUTREACH_DIR / "youtube_manual_review.py"
+YT_REVIEW_AUTO_PY = OUTREACH_DIR / "youtube_review_auto.py"
+YT_REVIEW_PW_PY  = OUTREACH_DIR / "youtube_review_pw.py"
+
+# When running from a git worktree, the venv lives in the main project's
+# outreach_agent/venv/, not inside the worktree. Walk up to find it.
+_MAIN_PROJECT_VENV = Path(
+    "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/outreach_agent/venv/bin/python3"
+)
 CONTACT_MGR_PY  = PROJECT_ROOT / "contact_manager.py"
 POST_TODAY_PY   = OUTREACH_DIR / "post_today.py"
 PLAYLIST_RUN_PY = OUTREACH_DIR / "playlist_run.py"
 SPOTIFY_PY      = OUTREACH_DIR / "spotify_tracker.py"
 VENV_PYTHON     = OUTREACH_DIR / "venv" / "bin" / "python3"
 
-# Use venv python for outreach_agent scripts if available, else system python
-_OUTREACH_PYTHON = str(VENV_PYTHON) if VENV_PYTHON.exists() else sys.executable
+# Use venv python for outreach_agent scripts — prefer the worktree's venv if
+# it exists, fall back to the main-project venv (worktrees often don't carry
+# their own venv — they run against the main project's installed deps), and
+# finally fall back to sys.executable as the last resort.
+if VENV_PYTHON.exists():
+    _OUTREACH_PYTHON = str(VENV_PYTHON)
+elif _MAIN_PROJECT_VENV.exists():
+    _OUTREACH_PYTHON = str(_MAIN_PROJECT_VENV)
+else:
+    _OUTREACH_PYTHON = sys.executable
 _BASE_PYTHON     = sys.executable
 
 
@@ -271,6 +293,273 @@ def cmd_learning(args: list[str]):
 
     print(cmd_learning.__doc__)
     sys.exit(1)
+
+
+_DAILY_LAUNCHD_LABEL = "com.rjm.youtube-review"
+_DAILY_LAUNCHD_PLIST = Path("/Users/motomoto/Library/LaunchAgents/com.rjm.youtube-review.plist")
+_DAILY_RUNNER       = Path("/Users/motomoto/bin/rjm-youtube-review-daily.sh")
+
+
+def _youtube_daily_status() -> None:
+    """Show whether the daily review task is scheduled + its fire time."""
+    if not _DAILY_LAUNCHD_PLIST.exists():
+        print("  Daily review task: NOT INSTALLED")
+        print(f"  Install with: python3 rjm.py youtube daily on [HH:MM]")
+        return
+    try:
+        out = subprocess.run(
+            ["launchctl", "list"], capture_output=True, text=True
+        ).stdout
+    except Exception:
+        out = ""
+    loaded = _DAILY_LAUNCHD_LABEL in out
+    print(f"  Daily review task: {'LOADED' if loaded else 'installed but not loaded'}")
+    print(f"  Plist:   {_DAILY_LAUNCHD_PLIST}")
+    print(f"  Runner:  {_DAILY_RUNNER}")
+    # Extract the fire hour/minute from the plist
+    try:
+        p = subprocess.run(
+            ["plutil", "-extract", "StartCalendarInterval.Hour", "raw",
+             str(_DAILY_LAUNCHD_PLIST)],
+            capture_output=True, text=True,
+        )
+        hour = p.stdout.strip()
+        p2 = subprocess.run(
+            ["plutil", "-extract", "StartCalendarInterval.Minute", "raw",
+             str(_DAILY_LAUNCHD_PLIST)],
+            capture_output=True, text=True,
+        )
+        minute = p2.stdout.strip()
+        print(f"  Fires:   daily at {hour.zfill(2)}:{minute.zfill(2)} local time")
+    except Exception:
+        pass
+    print(f"  Log:     ~/Library/Logs/rjm-youtube-review-daily.log")
+
+
+def _youtube_daily_set_time(time_str: str) -> None:
+    """Update the plist's fire time (HH:MM) and reload the agent."""
+    try:
+        hh, mm = time_str.split(":")
+        hour = int(hh)
+        minute = int(mm)
+        if not (0 <= hour < 24 and 0 <= minute < 60):
+            raise ValueError
+    except ValueError:
+        print(f"✗ invalid time '{time_str}' — use HH:MM format (e.g. 10:00, 18:30)")
+        sys.exit(1)
+
+    if not _DAILY_LAUNCHD_PLIST.exists():
+        print(f"✗ plist not installed. Run: python3 rjm.py youtube daily on")
+        sys.exit(1)
+
+    # Use plutil to edit the plist in place (safer than rewriting)
+    try:
+        subprocess.run(
+            ["plutil", "-replace", "StartCalendarInterval.Hour", "-integer",
+             str(hour), str(_DAILY_LAUNCHD_PLIST)],
+            check=True,
+        )
+        subprocess.run(
+            ["plutil", "-replace", "StartCalendarInterval.Minute", "-integer",
+             str(minute), str(_DAILY_LAUNCHD_PLIST)],
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"✗ plutil edit failed: {e}")
+        sys.exit(1)
+
+    # Reload so the new time takes effect immediately
+    subprocess.run(["launchctl", "unload", str(_DAILY_LAUNCHD_PLIST)],
+                   capture_output=True)
+    r = subprocess.run(["launchctl", "load", str(_DAILY_LAUNCHD_PLIST)],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print(f"✗ launchctl load failed: {r.stderr}")
+        sys.exit(1)
+    print(f"✓ daily fire time updated to {hour:02d}:{minute:02d}")
+
+
+def _youtube_daily_disable() -> None:
+    """Unload and remove the daily launchd agent."""
+    if not _DAILY_LAUNCHD_PLIST.exists():
+        print("daily task is not installed")
+        return
+    subprocess.run(["launchctl", "unload", str(_DAILY_LAUNCHD_PLIST)],
+                   capture_output=True)
+    _DAILY_LAUNCHD_PLIST.unlink()
+    print(f"✓ daily task removed from {_DAILY_LAUNCHD_PLIST}")
+    print(f"  (Runner script at {_DAILY_RUNNER} left in place — rerun 'daily on' to re-install)")
+
+
+def _youtube_daily_enable(time_str: str = "10:00") -> None:
+    """Install and load the daily launchd agent."""
+    try:
+        hh, mm = time_str.split(":")
+        hour, minute = int(hh), int(mm)
+        if not (0 <= hour < 24 and 0 <= minute < 60):
+            raise ValueError
+    except ValueError:
+        print(f"✗ invalid time '{time_str}' — use HH:MM")
+        sys.exit(1)
+
+    if not _DAILY_RUNNER.exists():
+        print(f"✗ runner script not found at {_DAILY_RUNNER}")
+        print(f"  This should have been installed when the review tool was first set up.")
+        sys.exit(1)
+
+    plist_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{_DAILY_LAUNCHD_LABEL}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{_DAILY_RUNNER}</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>{hour}</integer>
+        <key>Minute</key>
+        <integer>{minute}</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/Users/motomoto/Library/Logs/rjm-youtube-review-daily.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/motomoto/Library/Logs/rjm-youtube-review-daily.err.log</string>
+</dict>
+</plist>
+"""
+    _DAILY_LAUNCHD_PLIST.parent.mkdir(parents=True, exist_ok=True)
+    _DAILY_LAUNCHD_PLIST.write_text(plist_xml)
+
+    subprocess.run(["launchctl", "unload", str(_DAILY_LAUNCHD_PLIST)],
+                   capture_output=True)
+    r = subprocess.run(["launchctl", "load", str(_DAILY_LAUNCHD_PLIST)],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print(f"✗ launchctl load failed: {r.stderr}")
+        sys.exit(1)
+    print(f"✓ daily review task enabled, fires at {hour:02d}:{minute:02d} local time")
+
+
+def cmd_youtube(args: list[str]):
+    """YouTube outreach branch — discover channels, show pipeline status, show API budget."""
+    if not args:
+        print("Usage:")
+        print("  python3 rjm.py youtube discover [--dry-run] [--per-query N]")
+        print("  python3 rjm.py youtube review [--limit 50]  # manual email click-through")
+        print("  python3 rjm.py youtube requalify  # re-filter queue with current rules")
+        print("  python3 rjm.py youtube status     # pipeline counts by status")
+        print("  python3 rjm.py youtube budget     # today's YouTube API unit usage vs cap")
+        print("  python3 rjm.py youtube daily on [HH:MM]   # schedule daily review task")
+        print("  python3 rjm.py youtube daily off          # remove daily review task")
+        print("  python3 rjm.py youtube daily status       # show daily task state")
+        print("  python3 rjm.py youtube daily time HH:MM   # change fire time")
+        sys.exit(1)
+
+    action = args[0].lower()
+    rest = args[1:]
+
+    if action == "discover":
+        if not YT_DISCOVER_PY.exists():
+            print(f"✗ {YT_DISCOVER_PY} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif action == "requalify":
+        # Re-apply current qualification rules (sub caps, artist heuristic) to
+        # existing skip-status youtube contacts. Blocklists channels that no
+        # longer qualify. Run this after tightening thresholds in config.py.
+        if not YT_DISCOVER_PY.exists():
+            print(f"✗ {YT_DISCOVER_PY} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(YT_DISCOVER_PY), "--requalify"], cwd=str(OUTREACH_DIR)))
+
+    elif action == "daily":
+        # Manage the daily review reminder launchd agent
+        sub = rest[0].lower() if rest else "status"
+        if sub == "status":
+            _youtube_daily_status()
+        elif sub in ("on", "enable"):
+            time_str = rest[1] if len(rest) > 1 else "10:00"
+            _youtube_daily_enable(time_str)
+        elif sub in ("off", "disable"):
+            _youtube_daily_disable()
+        elif sub == "time":
+            if len(rest) < 2:
+                print("✗ usage: python3 rjm.py youtube daily time HH:MM")
+                sys.exit(1)
+            _youtube_daily_set_time(rest[1])
+        else:
+            print(f"✗ unknown daily action: {sub!r}")
+            print("  Valid: status, on [HH:MM], off, time HH:MM")
+            sys.exit(1)
+        sys.exit(0)
+
+    elif action == "review":
+        # Default: Playwright-driven Chromium (most reliable — no AppleScript
+        # headaches, no macOS permission prompts, reuses a single tab).
+        # Falls through to the AppleScript version if Playwright is missing,
+        # then to the basic manual-paste tool as the last resort.
+        for candidate in (YT_REVIEW_PW_PY, YT_REVIEW_AUTO_PY, YT_REVIEW_PY):
+            if candidate.exists():
+                sys.exit(_run([_OUTREACH_PYTHON, str(candidate)] + rest, cwd=str(OUTREACH_DIR)))
+        print("✗ no review tool found")
+        sys.exit(1)
+
+    elif action in ("review-applescript", "review_applescript"):
+        # Force the AppleScript-driven version (controls user's main Chrome)
+        if not YT_REVIEW_AUTO_PY.exists():
+            print(f"✗ {YT_REVIEW_AUTO_PY} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(YT_REVIEW_AUTO_PY)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif action in ("review-manual", "review_manual"):
+        # Force the basic manual-paste version (no browser automation at all)
+        if not YT_REVIEW_PY.exists():
+            print(f"✗ {YT_REVIEW_PY} not found")
+            sys.exit(1)
+        sys.exit(_run([_OUTREACH_PYTHON, str(YT_REVIEW_PY)] + rest, cwd=str(OUTREACH_DIR)))
+
+    elif action == "status":
+        # Pipeline counts by status for type='youtube'
+        code = (
+            "import db, sqlite3;"
+            "db.init_db();"
+            "c = sqlite3.connect(str(db.DB_PATH));"
+            "c.row_factory = sqlite3.Row;"
+            "rows = c.execute(\"SELECT status, COUNT(*) AS n FROM contacts WHERE type='youtube' GROUP BY status ORDER BY n DESC\").fetchall();"
+            "total = c.execute(\"SELECT COUNT(*) FROM contacts WHERE type='youtube'\").fetchone()[0];"
+            "print('\\n=== YouTube Pipeline ===');"
+            "[print(f\"  {r['status']:<18} {r['n']}\") for r in rows];"
+            "print(f\"  {'TOTAL':<18} {total}\");"
+            "w = c.execute(\"SELECT COUNT(*) FROM contacts WHERE type='youtube' AND youtube_channel_id IS NOT NULL AND (email IS NULL OR email LIKE 'no-email-%')\").fetchone()[0];"
+            "print(f\"\\n  tracked-without-email: {w}  (phase-2 manual enrichment)\")"
+        )
+        sys.exit(_run([_OUTREACH_PYTHON, "-c", code], cwd=str(OUTREACH_DIR)))
+
+    elif action == "budget":
+        code = (
+            "import db;"
+            "from config import YOUTUBE_API_DAILY_UNITS_CAP;"
+            "used = db.get_api_units_today('youtube');"
+            "remaining = YOUTUBE_API_DAILY_UNITS_CAP - used;"
+            "pct = (used / YOUTUBE_API_DAILY_UNITS_CAP) * 100;"
+            "print('\\n=== YouTube API Budget (today) ===');"
+            "print(f\"  Used      {used} units\");"
+            "print(f\"  Cap       {YOUTUBE_API_DAILY_UNITS_CAP} units\");"
+            "print(f\"  Remaining {remaining} units ({100-pct:.0f}% free)\")"
+        )
+        sys.exit(_run([_OUTREACH_PYTHON, "-c", code], cwd=str(OUTREACH_DIR)))
+
+    else:
+        print(f"Unknown youtube action: {action!r}")
+        print("Valid: discover, status, budget")
+        sys.exit(1)
 
 
 def cmd_content(args: list[str]):
@@ -645,6 +934,43 @@ def cmd_status():
     except Exception as _e:
         print(f"\n[ Rate Limits ]\n  (unavailable: {_e})")
 
+    # ── Fleet heartbeats (agent liveness) ────────────────────────────────────
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
+        import fleet_state as _fleet  # type: ignore
+        import events as _events      # type: ignore
+        agents = _fleet.get_all()
+        stale_names = {a["agent_name"] for a in _fleet.get_stale()}
+        print("\n[ Fleet Heartbeats ]\n")
+        if not agents:
+            print("  (no heartbeats recorded yet)")
+        else:
+            for a in agents[:10]:
+                icon = "⏸ " if a["agent_name"] in stale_names else ("✓ " if a["status"] == "ok" else "✗ ")
+                print(
+                    f"  {icon} {a['agent_name']:<18} last={a['last_heartbeat'][:16]}  "
+                    f"runs={a['run_count']}  err={a['error_count']}"
+                )
+
+        # Surface recent cycle-step failures + rate-limit events for visibility
+        recent_failures = _events.recent(event_type="agent.step_failed", limit=3)
+        recent_rate_hits = _events.recent(event_type="rate_limit.hit", limit=3)
+        if recent_failures:
+            print("\n  Recent cycle failures:")
+            for ev in recent_failures:
+                import json as _json
+                p = _json.loads(ev["payload"])
+                print(f"    ⚠ {p.get('step','?')} — {p.get('error','')[:80]} ({ev['created_at'][:16]})")
+        if recent_rate_hits:
+            print("\n  Recent rate-limit hits:")
+            for ev in recent_rate_hits:
+                import json as _json
+                p = _json.loads(ev["payload"])
+                print(f"    ⏸  {p.get('reason','?')} ({ev['created_at'][:16]})")
+    except Exception as _e:
+        print(f"\n[ Fleet Heartbeats ]\n  (unavailable: {_e})")
+
     # 1. Master health check
     print("\n[ Master Agent Health ]\n")
     _run([_OUTREACH_PYTHON, str(MASTER_PY), "health"], cwd=str(OUTREACH_DIR))
@@ -720,6 +1046,8 @@ def main():
         cmd_playlist(rest)
     elif cmd == "spotify":
         cmd_spotify(rest)
+    elif cmd == "youtube":
+        cmd_youtube(rest)
     elif cmd == "run":
         agent = rest[0] if rest else ""
         if not agent:
