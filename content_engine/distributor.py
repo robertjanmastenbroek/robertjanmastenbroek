@@ -140,7 +140,7 @@ def _atomic_env_update(updates: dict[str, str]) -> bool:
             else:
                 if text and not text.endswith("\n"):
                     text += "\n"
-                text += f"{key}={value}\n"
+                text += f"{key}={safe_value}\n"
 
         # Write to temp file in same directory (so os.replace is atomic on same FS),
         # then atomically swap into place. NamedTemporaryFile with delete=False so
