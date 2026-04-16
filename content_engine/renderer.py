@@ -116,12 +116,28 @@ def validate_output(path: str, target_duration: float) -> dict:
     return {"valid": len(errors) == 0, "errors": errors}
 
 
-def _crop_to_vertical(input_path: str, output_path: str) -> str:
-    """Crop any video to 9:16 vertical (1080x1920)."""
-    cmd = [
-        "ffmpeg", "-y", "-i", input_path,
+def _crop_to_vertical(input_path: str, output_path: str, max_duration: float | None = None) -> str:
+    """Crop any video to 9:16 vertical (1080x1920).
+
+    ``max_duration`` limits how much of the input is decoded — pass it when
+    working with large phone footage files (multi-GB MOV/MP4) to keep the
+    operation well under the 120s timeout. The flag is placed before ``-i``
+    so ffmpeg stops reading the input stream after that many seconds, which
+    is far faster than an output-side ``-t``.
+
+    Uses ``ultrafast`` preset for intermediate crops so even large sources
+    complete quickly. Quality is slightly lower (crf 26) but this is an
+    intermediate file that will be re-encoded by the color-grade step anyway.
+    """
+    cmd = ["ffmpeg", "-y"]
+    if max_duration is not None:
+        cmd += ["-t", str(max_duration)]  # input duration limit — must be before -i
+    cmd += [
+        "-i", input_path,
+        "-r", "30",  # normalize to 30fps — without this, mixed-rate sources (24/30/60fps)
+        # produce frame drops when concatenated via the concat demuxer
         "-vf", f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase,crop={OUTPUT_W}:{OUTPUT_H}",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
         "-an", output_path,
     ]
     subprocess.run(cmd, check=True, capture_output=True, timeout=120)
@@ -329,18 +345,22 @@ def render_transitional(
     content_duration = target_duration - bait_duration
 
     # 1. Crop bait to vertical, strip audio
+    # Bait clips are short by design — add 1s headroom and cap source reading.
     bait_vert = str(work_dir / "_bait_vert.mp4")
-    _crop_to_vertical(bait_clip, bait_vert)
+    _crop_to_vertical(bait_clip, bait_vert, max_duration=bait_duration + 1.0)
 
     # 2. Prepare content segments -- concat and trim to content_duration
+    # Limit each source read to its share of content_duration + 2s headroom so
+    # large phone footage files complete within the 120s timeout.
     if len(content_segments) == 1:
         content_vert = str(work_dir / "_content_vert.mp4")
-        _crop_to_vertical(content_segments[0], content_vert)
+        _crop_to_vertical(content_segments[0], content_vert, max_duration=content_duration + 2.0)
     else:
+        per_seg_max = content_duration / len(content_segments) + 2.0
         seg_files = []
         for i, seg in enumerate(content_segments):
             seg_path = str(work_dir / f"_seg_{i}.mp4")
-            _crop_to_vertical(seg, seg_path)
+            _crop_to_vertical(seg, seg_path, max_duration=per_seg_max)
             seg_files.append(seg_path)
 
         concat_list = str(work_dir / "_concat.txt")
@@ -353,6 +373,7 @@ def render_transitional(
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",
             "-i", concat_list,
             "-t", str(content_duration),
+            "-r", "30",  # defensive: enforce 30fps across mixed-rate sources
             "-c:v", "libx264", "-preset", "fast", "-crf", "22",
             "-an", content_vert,
         ]
@@ -368,6 +389,7 @@ def render_transitional(
     cmd = [
         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
         "-i", concat_final,
+        "-r", "30",  # enforce 30fps for bait→content hard-cut concat
         "-c:v", "libx264", "-preset", "fast", "-crf", "22",
         "-an", raw_video,
     ]
@@ -414,14 +436,18 @@ def render_emotional(
     work_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Prepare content (single segment or concat)
+    # Limit each source read to its share of target_duration + 2s headroom.
+    # The stream_loop -1 in the trim step handles any remaining gap if the
+    # source is shorter than needed.
     if len(content_segments) == 1:
         content_vert = str(work_dir / "_emo_vert.mp4")
-        _crop_to_vertical(content_segments[0], content_vert)
+        _crop_to_vertical(content_segments[0], content_vert, max_duration=target_duration + 2.0)
     else:
+        per_seg_max = target_duration / len(content_segments) + 2.0
         seg_files = []
         for i, seg in enumerate(content_segments):
             sp = str(work_dir / f"_emo_seg_{i}.mp4")
-            _crop_to_vertical(seg, sp)
+            _crop_to_vertical(seg, sp, max_duration=per_seg_max)
             seg_files.append(sp)
         concat_list = str(work_dir / "_emo_concat.txt")
         with open(concat_list, "w") as f:
@@ -431,6 +457,7 @@ def render_emotional(
         cmd = [
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",
             "-i", concat_list, "-t", str(target_duration),
+            "-r", "30",  # defensive: enforce 30fps across mixed-rate sources
             "-c:v", "libx264", "-preset", "fast", "-crf", "22",
             "-an", content_vert,
         ]
@@ -479,19 +506,39 @@ def render_performance(
     work_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Crop + concat all segments
+    # Two-step: first transcode source (potentially large MOV/RAW) to a small MP4,
+    # then loop that MP4 if it's shorter than seg_duration. Avoids the extreme
+    # slowness of stream_loop -1 on multi-GB phone footage files.
     seg_files = []
     seg_duration = target_duration / max(len(content_segments), 1)
     for i, seg in enumerate(content_segments):
         sp = str(work_dir / f"_perf_seg_{i}.mp4")
-        # -stream_loop -1 loops short clips so they fill the full seg_duration.
-        cmd = [
-            "ffmpeg", "-y", "-stream_loop", "-1", "-i", seg,
+        tmp_cropped = str(work_dir / f"_perf_src_{i}.mp4")
+
+        # Step A: transcode + crop to vertical (trim to seg_duration to bound output size)
+        cmd_a = [
+            "ffmpeg", "-y", "-i", seg,
             "-t", str(seg_duration),
             "-vf", f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase,crop={OUTPUT_W}:{OUTPUT_H}",
-            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-            "-an", sp,
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+            "-an", tmp_cropped,
         ]
-        subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+        subprocess.run(cmd_a, check=True, capture_output=True, timeout=120)
+
+        # Step B: if the cropped clip is shorter than seg_duration, loop the small MP4
+        src_info = _get_video_info(tmp_cropped)
+        if src_info["duration"] >= seg_duration - 0.2:
+            import shutil as _shutil
+            _shutil.copy2(tmp_cropped, sp)
+        else:
+            cmd_b = [
+                "ffmpeg", "-y", "-stream_loop", "-1", "-i", tmp_cropped,
+                "-t", str(seg_duration),
+                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                "-an", sp,
+            ]
+            subprocess.run(cmd_b, check=True, capture_output=True, timeout=60)
+
         seg_files.append(sp)
 
     if len(seg_files) == 1:
@@ -505,6 +552,7 @@ def render_performance(
         cmd = [
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",
             "-i", concat_list, "-t", str(target_duration),
+            "-r", "30",  # defensive: enforce 30fps even if crops somehow differ
             "-c:v", "libx264", "-preset", "fast", "-crf", "22",
             "-an", concat_out,
         ]
