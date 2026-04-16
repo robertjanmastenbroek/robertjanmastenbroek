@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -23,24 +24,6 @@ OUTPUT_W, OUTPUT_H = 1080, 1920
 SCROLL_STOP_DURATION = 0.3
 SCROLL_STOP_BRIGHTNESS = 0.08    # +0.08 (scale 0-1) for first 300ms
 SCROLL_STOP_SATURATION = 1.25    # 25% saturation boost for first 300ms
-
-
-def _escape_drawtext(text: str) -> str:
-    """Escape a string for safe inclusion in ffmpeg drawtext filter.
-
-    ffmpeg drawtext treats these as syntax: backslash, colon, single quote,
-    percent, and the curly braces used in expression evaluation. Without full
-    escaping, a hook containing a colon (common — "Ever felt like: ...") or
-    a percent sign silently breaks the entire filter graph, returning the
-    un-overlaid video at best or crashing ffmpeg at worst.
-    """
-    # Order matters: escape backslash FIRST so later escapes don't get
-    # double-escaped.
-    out = text.replace("\\", "\\\\")
-    out = out.replace("'", "\\'")
-    out = out.replace(":", "\\:")
-    out = out.replace("%", "\\%")
-    return out
 
 
 def _escape_concat(path: str) -> str:
@@ -67,8 +50,9 @@ PLATFORM_GRADES = {
 
 HOOK_STYLES = {
     "transitional": {"font_size": 68, "y_pct": 0.78, "wrap": 16},
-    "emotional": {"font_size": 68, "y_pct": 0.78, "wrap": 16},
-    "performance": {"font_size": 52, "y_pct": 0.85, "wrap": 20},
+    "emotional":    {"font_size": 68, "y_pct": 0.78, "wrap": 16},
+    "performance":  {"font_size": 52, "y_pct": 0.85, "wrap": 20},
+    "story":        {"font_size": 42, "y_pct": 0.88, "wrap": 24},
 }
 
 
@@ -156,14 +140,8 @@ def _apply_color_grade(input_path: str, output_path: str, platform: str,
     """
     grade = get_platform_color_grade(platform)
     if scroll_stop:
-        # Time-windowed eq: boost brightness+saturation for the first
-        # SCROLL_STOP_DURATION seconds, then settle to the platform grade.
-        # ``enable`` applies the first filter only when t < threshold.
         b_boost = grade["brightness"] + SCROLL_STOP_BRIGHTNESS
         s_boost = grade["saturation"] * SCROLL_STOP_SATURATION
-        # Use a single eq filter whose params are ffmpeg expressions so
-        # brightness/saturation ramp down from the boost to the normal grade
-        # across SCROLL_STOP_DURATION. Smooth ramp avoids a visible "pop".
         b_expr = (
             f"if(lt(t,{SCROLL_STOP_DURATION}),"
             f"{b_boost}-((t/{SCROLL_STOP_DURATION})*{SCROLL_STOP_BRIGHTNESS}),"
@@ -197,13 +175,8 @@ def _apply_color_grade(input_path: str, output_path: str, platform: str,
         return output_path
     except subprocess.CalledProcessError as e:
         logger.warning(f"Color grade failed for {platform}: {e.stderr.decode()[:200] if e.stderr else ''}")
-        # Fall back to simple grade without scroll-stop ramp
         if scroll_stop:
             return _apply_color_grade(input_path, output_path, platform, scroll_stop=False)
-        # Copy input to output so the pipeline can continue without color grade.
-        # Previously returned `input_path`, which meant downstream stages read from
-        # a file that didn't match `output_path` — the next stage then tried to
-        # read the (non-existent) output and failed the whole clip.
         import shutil
         shutil.copy2(input_path, output_path)
         return output_path
@@ -217,64 +190,114 @@ def _burn_text_overlay(
     start_time: float = 0.0,
     end_time: float | None = None,
 ) -> str:
-    """Burn text overlay onto video using ffmpeg drawtext.
+    """Burn text overlay using Pillow (PNG) + ffmpeg overlay filter.
 
-    Uses Bebas Neue font with white text + black shadow.
+    Replaces the drawtext approach which requires --enable-libfreetype in
+    ffmpeg. Pillow renders the text to a transparent RGBA PNG sized to the
+    full frame (1080×1920), positioned correctly, then ffmpeg composites it
+    using the overlay filter with alpha fade in/out.
+
+    Returns output_path on success, input_path on failure so that callers
+    can safely chain: ``next_input = _burn_text_overlay(...)``
     """
+    from PIL import Image, ImageDraw, ImageFont
+
     s = HOOK_STYLES.get(style, HOOK_STYLES["emotional"])
     font_size = s["font_size"]
-    y_pos = int(OUTPUT_H * s["y_pct"])
-
-    # Escape text for ffmpeg drawtext (handles : % \ ' safely)
-    escaped = _escape_drawtext(text)
+    y_pct = s["y_pct"]
+    wrap_chars = s["wrap"]
 
     info = _get_video_info(input_path)
     if end_time is None:
-        end_time = info["duration"] - 1.0 if info["duration"] > 1 else info["duration"]
+        end_time = max(start_time + 0.5, info["duration"] - 1.0) if info["duration"] > 1 else info["duration"]
 
-    # Fade in at start_time, fade out at end_time
-    alpha_expr = (
-        f"if(lt(t,{start_time}),0,"
-        f"if(lt(t,{start_time + 0.3}),(t-{start_time})/0.3,"
-        f"if(lt(t,{end_time}),1,"
-        f"if(lt(t,{end_time + 0.5}),1-(t-{end_time})/0.5,0))))"
-    )
+    # --- Word-wrap ---
+    words = text.split()
+    lines: list[str] = []
+    current: list[str] = []
+    for word in words:
+        line_len = sum(len(w) for w in current) + len(current) + len(word)
+        if line_len <= wrap_chars:
+            current.append(word)
+        else:
+            if current:
+                lines.append(" ".join(current))
+            current = [word]
+    if current:
+        lines.append(" ".join(current))
 
-    # Try Bebas Neue, fall back to Helvetica, then default
-    font = "/System/Library/Fonts/Helvetica.ttc"
+    # --- Load font ---
+    font = None
     for candidate in [
         os.path.expanduser("~/.fonts/BebasNeue-Regular.ttf"),
         "/Library/Fonts/BebasNeue-Regular.ttf",
         "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/HelveticaNeue.ttc",
     ]:
         if os.path.exists(candidate):
-            font = candidate
-            break
+            try:
+                font = ImageFont.truetype(candidate, font_size)
+                break
+            except Exception:
+                continue
+    if font is None:
+        font = ImageFont.load_default()
 
-    escaped_font = _escape_drawtext(font)
-    drawtext = (
-        f"drawtext=text='{escaped}'"
-        f":fontfile='{escaped_font}'"
-        f":fontsize={font_size}"
-        f":fontcolor=white"
-        f":shadowcolor=black@0.6:shadowx=3:shadowy=3"
-        f":x=(w-text_w)/2:y={y_pos}"
-        f":alpha='{alpha_expr}'"
-    )
+    # --- Create RGBA frame ---
+    canvas = Image.new("RGBA", (OUTPUT_W, OUTPUT_H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(canvas)
 
-    cmd = [
-        "ffmpeg", "-y", "-i", input_path,
-        "-vf", drawtext,
-        "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-        "-c:a", "copy",
-        output_path,
-    ]
+    line_height = font_size + 8
+    total_height = len(lines) * line_height
+    y_start = int(OUTPUT_H * y_pct) - total_height // 2
+
+    for i, line in enumerate(lines):
+        bbox = draw.textbbox((0, 0), line, font=font)
+        text_w = bbox[2] - bbox[0]
+        x = (OUTPUT_W - text_w) // 2
+        y = y_start + i * line_height
+        draw.text((x + 3, y + 3), line, font=font, fill=(0, 0, 0, 180))   # shadow
+        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))      # text
+
+    # --- Write PNG to temp file, composite with ffmpeg overlay ---
+    overlay_png = None
     try:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            overlay_png = tmp.name
+        canvas.save(overlay_png, "PNG")
+
+        fade_out_start = max(start_time + 0.3, end_time - 0.5)
+        fade_filter = (
+            f"[1:v]format=rgba,"
+            f"fade=t=in:st={start_time}:d=0.3:alpha=1,"
+            f"fade=t=out:st={fade_out_start}:d=0.5:alpha=1[txt];"
+            f"[0:v][txt]overlay=0:0"
+        )
+
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", input_path,
+            "-i", overlay_png,
+            "-filter_complex", fade_filter,
+            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            "-c:a", "copy",
+            output_path,
+        ]
         subprocess.run(cmd, check=True, capture_output=True, timeout=120)
         return output_path
+
     except subprocess.CalledProcessError as e:
-        logger.error(f"Text overlay failed: {e.stderr.decode()[:300]}")
-        return input_path  # return without overlay rather than crash
+        logger.error(f"Text overlay failed: {e.stderr.decode()[:300] if e.stderr else ''}")
+        return input_path
+    except Exception as e:
+        logger.error(f"Text overlay error: {e}")
+        return input_path
+    finally:
+        if overlay_png:
+            try:
+                os.unlink(overlay_png)
+            except Exception:
+                pass
 
 
 def render_transitional(
@@ -314,7 +337,6 @@ def render_transitional(
         content_vert = str(work_dir / "_content_vert.mp4")
         _crop_to_vertical(content_segments[0], content_vert)
     else:
-        # Concat multiple segments
         seg_files = []
         for i, seg in enumerate(content_segments):
             seg_path = str(work_dir / f"_seg_{i}.mp4")
@@ -357,12 +379,17 @@ def render_transitional(
     mix_audio_onto_video(raw_video, audio_path, audio_start, target_duration, with_audio)
 
     # 5. Burn hook text on bait portion (0s to bait_duration)
-    with_hook = str(work_dir / "_with_hook.mp4")
-    _burn_text_overlay(with_audio, with_hook, hook_text, "transitional", 0.0, bait_duration - 0.3)
+    #    Use return value — if overlay fails, with_hook is with_audio (exists).
+    with_hook = _burn_text_overlay(
+        with_audio, str(work_dir / "_with_hook.mp4"),
+        hook_text, "transitional", 0.0, bait_duration - 0.3,
+    )
 
     # 6. Burn track label on content portion
-    with_label = str(work_dir / "_with_label.mp4")
-    _burn_text_overlay(with_hook, with_label, track_label, "performance", bait_duration + 0.5)
+    with_label = _burn_text_overlay(
+        with_hook, str(work_dir / "_with_label.mp4"),
+        track_label, "performance", bait_duration + 0.5,
+    )
 
     # 7. Platform color grade
     _apply_color_grade(with_label, output_path, platform)
@@ -423,8 +450,10 @@ def render_emotional(
     mix_audio_onto_video(trimmed, audio_path, audio_start, target_duration, with_audio)
 
     # 4. Burn prominent hook text
-    with_hook = str(work_dir / "_emo_hook.mp4")
-    _burn_text_overlay(with_audio, with_hook, hook_text, "emotional")
+    #    Use return value — if overlay fails, with_hook is with_audio (exists).
+    with_hook = _burn_text_overlay(
+        with_audio, str(work_dir / "_emo_hook.mp4"), hook_text, "emotional",
+    )
 
     # 5. Color grade
     _apply_color_grade(with_hook, output_path, platform)
@@ -453,7 +482,6 @@ def render_performance(
     seg_duration = target_duration / max(len(content_segments), 1)
     for i, seg in enumerate(content_segments):
         sp = str(work_dir / f"_perf_seg_{i}.mp4")
-        # Crop to vertical and trim to segment duration
         cmd = [
             "ffmpeg", "-y", "-i", seg,
             "-t", str(seg_duration),
@@ -486,8 +514,10 @@ def render_performance(
     mix_audio_onto_video(concat_out, audio_path, audio_start, target_duration, with_audio)
 
     # 3. Minimal text overlay
-    with_text = str(work_dir / "_perf_text.mp4")
-    _burn_text_overlay(with_audio, with_text, hook_text, "performance")
+    #    Use return value — if overlay fails, with_text is with_audio (exists).
+    with_text = _burn_text_overlay(
+        with_audio, str(work_dir / "_perf_text.mp4"), hook_text, "performance",
+    )
 
     # 4. Color grade
     _apply_color_grade(with_text, output_path, platform)
@@ -504,42 +534,13 @@ def render_story_variant(
     """Render a Stories variant with Spotify CTA overlay.
 
     Takes an already-rendered clip and adds "Listen on Spotify" + track title
-    in the bottom 15%.
+    in the bottom 12% using the Pillow overlay approach.
     """
     cta_text = f"Listen on Spotify: {track_title}"
-    y_pos = int(OUTPUT_H * 0.88)  # bottom 12%
-
-    escaped = _escape_drawtext(cta_text)
-
-    font = "/System/Library/Fonts/Helvetica.ttc"
-    for candidate in [
-        os.path.expanduser("~/.fonts/BebasNeue-Regular.ttf"),
-        "/Library/Fonts/BebasNeue-Regular.ttf",
-    ]:
-        if os.path.exists(candidate):
-            font = candidate
-            break
-
-    escaped_font = _escape_drawtext(font)
-    drawtext = (
-        f"drawtext=text='{escaped}'"
-        f":fontfile='{escaped_font}':fontsize=42"
-        f":fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2"
-        f":x=(w-text_w)/2:y={y_pos}"
-    )
-
-    cmd = [
-        "ffmpeg", "-y", "-i", source_clip,
-        "-vf", drawtext,
-        "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-        "-c:a", "copy",
-        output_path,
-    ]
-    try:
-        subprocess.run(cmd, check=True, capture_output=True, timeout=120)
-        return output_path
-    except subprocess.CalledProcessError:
-        logger.warning("Story CTA overlay failed, using original clip")
+    result = _burn_text_overlay(source_clip, output_path, cta_text, "story")
+    if result == source_clip:
+        # Overlay failed — copy source as fallback
         import shutil
+        logger.warning("Story CTA overlay failed, using original clip")
         shutil.copy2(source_clip, output_path)
-        return output_path
+    return output_path

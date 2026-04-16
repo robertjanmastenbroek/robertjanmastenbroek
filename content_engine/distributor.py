@@ -373,11 +373,17 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
             time.sleep(5)
             status_resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{creation_id}",
-                params={"fields": "status_code", "access_token": access_token},
+                params={"fields": "status_code,error_message", "access_token": access_token},
                 timeout=15,
             )
-            if status_resp.json().get("status_code") == "FINISHED":
+            status_data = status_resp.json()
+            ig_status = status_data.get("status_code", "")
+            if ig_status == "FINISHED":
                 break
+            if ig_status == "ERROR":
+                err = status_data.get("error_message", "unknown processing error")
+                logger.error(f"Instagram Reel container ERROR: {err}")
+                return {"success": False, "platform": "instagram", "error": f"container ERROR: {err}"}
 
         # 3. Publish
         pub_resp = requests.post(

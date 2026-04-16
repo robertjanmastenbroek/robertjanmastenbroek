@@ -7,6 +7,7 @@ Migrated from outreach_agent/generator.py. Key changes:
 - Uses content_engine.hook_library for template selection
 - Uses content_engine.brand_gate for validation
 """
+import glob as _glob
 import json
 import logging
 import os
@@ -50,15 +51,39 @@ def pick_sub_mode(angle: str) -> str:
     return random.choice(modes)
 
 
+def _find_claude_cli() -> str:
+    """Locate the Claude CLI binary. Checks fixed paths then the desktop app bundle.
+
+    The Claude Code desktop app ships a versioned binary at:
+        ~/Library/Application Support/Claude/claude-code/<version>/claude.app/Contents/MacOS/claude
+
+    We glob for the latest version so this survives app updates.
+    Returns a resolved path string, or 'claude' as a last-resort PATH fallback.
+    """
+    fixed = [
+        "/usr/local/bin/claude",
+        "/opt/homebrew/bin/claude",
+        os.path.expanduser("~/.claude/local/claude"),
+    ]
+    for p in fixed:
+        if os.path.exists(p):
+            return p
+
+    # Desktop app bundle — glob across all installed versions, pick latest
+    pattern = os.path.expanduser(
+        "~/Library/Application Support/Claude/claude-code/*/claude.app/Contents/MacOS/claude"
+    )
+    candidates = sorted(_glob.glob(pattern), reverse=True)  # descending = newest first
+    for c in candidates:
+        if os.path.isfile(c) and os.access(c, os.X_OK):
+            return c
+
+    return "claude"  # system PATH last resort
+
+
 def _call_claude(prompt: str, system: str = "", timeout: int = 120) -> Optional[str]:
     """Call Claude CLI (haiku model). Returns response text or None on failure."""
-    claude_path = "/usr/local/bin/claude"
-    if not os.path.exists(claude_path):
-        # Try common locations
-        for p in ["/opt/homebrew/bin/claude", os.path.expanduser("~/.claude/local/claude")]:
-            if os.path.exists(p):
-                claude_path = p
-                break
+    claude_path = _find_claude_cli()
 
     cmd = [
         claude_path, "--print",

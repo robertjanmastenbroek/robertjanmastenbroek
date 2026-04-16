@@ -132,6 +132,16 @@ def run_full_day(dry_run: bool = False, config: Optional[DailyPipelineConfig] = 
         failures = [r for r in results if not r.get("success")]
         if failures:
             logger.warning(f"[pipeline] {len(failures)} distribution failures")
+            failed_posts_path = PROJECT_DIR / "data" / "failed_posts.json"
+            existing: list = []
+            if failed_posts_path.exists():
+                try:
+                    existing = json.loads(failed_posts_path.read_text())
+                except Exception:
+                    existing = []
+            existing.extend(failures)
+            failed_posts_path.write_text(json.dumps(existing, indent=2))
+            logger.info(f"[pipeline] Wrote {len(failures)} failures → {failed_posts_path}")
         registry_dir = PERFORMANCE_DIR
 
     # 8. Save post registry
@@ -286,22 +296,22 @@ def build_daily_clips(
                         audio_start=audio_start,
                         hook_text=hook_data["hook"],
                         track_label=f"{track.title} — Robert-Jan Mastenbroek",
-                        platform="instagram",
+                        platform="youtube",   # neutral grade; distributor applies per-platform
                         output_path=output_path,
                         target_duration=duration,
                     )
                 else:
                     logger.warning("[pipeline] No transitional hooks available, falling back to emotional format")
                     render_emotional(segments, track.file_path, audio_start, hook_data["hook"],
-                                     "instagram", output_path, duration)
+                                     "youtube", output_path, duration)
 
             elif fmt == ClipFormat.EMOTIONAL:
                 render_emotional(segments, track.file_path, audio_start, hook_data["hook"],
-                                 "instagram", output_path, duration)
+                                 "youtube", output_path, duration)
 
             elif fmt == ClipFormat.PERFORMANCE:
                 render_performance(segments, track.file_path, audio_start, hook_data["hook"],
-                                   "instagram", output_path, duration)
+                                   "youtube", output_path, duration)
 
             # Render Story variant
             render_story_variant(output_path, track.title, clip_meta["spotify_url"], story_path)
