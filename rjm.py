@@ -784,42 +784,68 @@ def _fleet_status():
 
 
 def cmd_content_retry():
-    """Retry all posts in data/failed_posts.json."""
+    """Retry all posts in data/failed_posts.json using distribute_clip."""
+    import json as _json
     import sys as _sys
     _sys.path.insert(0, str(Path(__file__).parent / "outreach_agent"))
-    from post_queue import load_failed_posts, clear_failed_post, queue_depth
-    from buffer_poster import upload_video_and_queue
+    from content_engine.distributor import distribute_clip
 
-    posts = load_failed_posts()
+    failed_posts_path = PROJECT_ROOT / "data" / "failed_posts.json"
+    if not failed_posts_path.exists():
+        print("✓ No failed posts in queue.")
+        return
+
+    try:
+        posts = _json.loads(failed_posts_path.read_text())
+    except Exception:
+        posts = []
+
     if not posts:
         print("✓ No failed posts in queue.")
         return
 
     print(f"Retrying {len(posts)} failed post(s)…\n")
-    for i in range(len(posts) - 1, -1, -1):
-        post = posts[i]
-        clip_name = Path(post["clip_path"]).name
-        print(f"  [{i+1}/{len(posts)}] {clip_name} — originally failed: {post['error'][:60]}")
-        try:
-            results = upload_video_and_queue(
-                clip_path         = post["clip_path"],
-                tiktok_caption    = post["tiktok_caption"],
-                instagram_caption = post["instagram_caption"],
-                youtube_title     = post["youtube_title"],
-                youtube_desc      = post["youtube_desc"],
-                scheduled_at      = None,
-            )
-            failed = [p for p, r in results.items() if not r["success"]]
-            if not failed:
-                clear_failed_post(i)
-                print(f"    ✓ Retried successfully — removed from queue")
-            else:
-                print(f"    ⚠ Still failing on: {', '.join(failed)}")
-        except Exception as exc:
-            print(f"    ✗ Still failing: {exc}")
+    still_failing = []
+    for i, post in enumerate(posts):
+        platform   = post.get("platform", "unknown")
+        clip_path  = post.get("clip_path", "")
+        clip_index = post.get("clip_index", 0)
+        clip_name  = Path(clip_path).name if clip_path else f"clip_{clip_index}"
+        orig_error = (post.get("error") or "unknown")[:60]
+        print(f"  [{i+1}/{len(posts)}] {platform}/{clip_name} — was: {orig_error}")
 
-    remaining = queue_depth()
-    print(f"\nDone. {remaining} post(s) still in queue.")
+        if not clip_path or not Path(clip_path).exists():
+            print(f"    ✗ clip_path missing or file not found: {clip_path!r}")
+            still_failing.append(post)
+            continue
+
+        clip_dict = {
+            "platform":    platform,
+            "path":        clip_path,
+            "story_path":  post.get("story_path", ""),
+            "caption":     post.get("caption", ""),
+            "hook_text":   post.get("hook_text", ""),
+            "track_title": post.get("track_title", "RJM"),
+            "clip_index":  clip_index,
+            "variant":     post.get("variant"),
+            "spotify_url": post.get("spotify_url", ""),
+        }
+
+        try:
+            result = distribute_clip(clip_dict)
+            if result.get("success"):
+                print(f"    ✓ Posted ({result.get('post_id', 'no id')})")
+            else:
+                print(f"    ⚠ Still failing: {result.get('error', '')[:80]}")
+                still_failing.append({**post, "error": result.get("error", "")})
+        except Exception as exc:
+            print(f"    ✗ Exception: {exc}")
+            still_failing.append(post)
+
+    # Overwrite with only still-failing posts
+    failed_posts_path.write_text(_json.dumps(still_failing, indent=2))
+    cleared = len(posts) - len(still_failing)
+    print(f"\nDone. {cleared} cleared, {len(still_failing)} still in queue.")
 
 
 def cmd_swarm(args: list[str]):

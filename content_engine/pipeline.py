@@ -132,6 +132,21 @@ def run_full_day(dry_run: bool = False, config: Optional[DailyPipelineConfig] = 
         failures = [r for r in results if not r.get("success")]
         if failures:
             logger.warning(f"[pipeline] {len(failures)} distribution failures")
+            # Build a lookup so each failure record carries the clip metadata the
+            # retry command needs: clip_path, story_path, caption, track_title, etc.
+            clip_by_index = {c["clip_index"]: c for c in valid_clips}
+            enriched_failures = []
+            for f in failures:
+                src = clip_by_index.get(f.get("clip_index"), {})
+                enriched_failures.append({
+                    **f,
+                    "clip_path":   src.get("path", ""),
+                    "story_path":  src.get("story_path", ""),
+                    "caption":     src.get("caption", ""),
+                    "hook_text":   src.get("hook_text", ""),
+                    "track_title": src.get("track_title", ""),
+                    "spotify_url": src.get("spotify_url", ""),
+                })
             failed_posts_path = PROJECT_DIR / "data" / "failed_posts.json"
             existing: list = []
             if failed_posts_path.exists():
@@ -139,7 +154,7 @@ def run_full_day(dry_run: bool = False, config: Optional[DailyPipelineConfig] = 
                     existing = json.loads(failed_posts_path.read_text())
                 except Exception:
                     existing = []
-            existing.extend(failures)
+            existing.extend(enriched_failures)
             failed_posts_path.write_text(json.dumps(existing, indent=2))
             logger.info(f"[pipeline] Wrote {len(failures)} failures → {failed_posts_path}")
         registry_dir = PERFORMANCE_DIR
