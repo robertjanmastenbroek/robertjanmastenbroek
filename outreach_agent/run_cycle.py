@@ -440,7 +440,7 @@ def cmd_mark_followup2_sent(email, subject):
     print(f"✅ Marked followup2 sent: {email}")
 
 
-def cmd_add_contact(email, name, ctype, genre="", notes="", website="", playlist_size=""):
+def cmd_add_contact(email, name, ctype, genre="", notes="", website="", playlist_size="", search_query=""):
     db.init_db()
     ok, reason = db.add_contact(email, name, ctype, genre, notes, source="agent_discovered")
     if ok:
@@ -462,6 +462,15 @@ def cmd_add_contact(email, name, ctype, genre="", notes="", website="", playlist
             print(f"✅ Added + verified{size_tag}: {email}")
     else:
         print(f"⏭  Skipped ({reason}): {email}")
+
+    # Lake 2 Task 9: always record the discovery attempt so rjm-discover's
+    # search-dedup guard (recently_searched) has ground truth. Query falls back
+    # to "manual_add:<type>" when no explicit search context was passed.
+    try:
+        query = search_query or f"manual_add:{ctype}"
+        db.log_discovery(query, ctype, 1 if ok else 0)
+    except Exception as exc:
+        print(f"⚠️  log_discovery failed: {exc}")
 
 
 def cmd_set_playlist_size(email, size):
@@ -685,7 +694,8 @@ def main():
         cmd_add_contact(args[1], args[2], args[3], args[4],
                         args[5] if len(args) > 5 else "",
                         args[6] if len(args) > 6 else "",
-                        args[7] if len(args) > 7 else "")
+                        args[7] if len(args) > 7 else "",
+                        args[8] if len(args) > 8 else "")
     elif args[0] == "set_playlist_size" and len(args) >= 3:
         cmd_set_playlist_size(args[1], args[2])
     elif args[0] == "store_research" and len(args) >= 3:
