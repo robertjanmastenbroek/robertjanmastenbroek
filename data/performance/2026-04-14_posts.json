@@ -1,0 +1,58 @@
+[
+  {
+    "post_id": "18174708052392379",
+    "platform": "instagram",
+    "clip_index": 0,
+    "variant": "a",
+    "hook_mechanism": "tension",
+    "visual_type": "b_roll",
+    "clip_length": 5,
+    "posted_at": "2026-04-14T18:00:19"
+  },
+  {
+    "post_id": "WusI9e7GxFY",
+    "platform": "youtube",
+    "clip_index": 0,
+    "variant": "b",
+    "hook_mechanism": "tension",
+    "visual_type": "b_roll",
+    "clip_length": 5
+  },
+  {
+    "post_id": "18158569900449742",
+    "platform": "instagram",
+    "clip_index": 1,
+    "variant": "b",
+    "hook_mechanism": "tension",
+    "visual_type": "b_roll",
+    "clip_length": 9,
+    "posted_at": "2026-04-14T21:21:12"
+  },
+  {
+    "post_id": "bhikTMnScDw",
+    "platform": "youtube",
+    "clip_index": 1,
+    "variant": "a",
+    "hook_mechanism": "tension",
+    "visual_type": "b_roll",
+    "clip_length": 9
+  },
+  {
+    "post_id": "buffer",
+    "platform": "instagram",
+    "clip_index": 2,
+    "variant": "a",
+    "hook_mechanism": "tension",
+    "visual_type": "b_roll",
+    "clip_length": 15
+  },
+  {
+    "post_id": "yGzbbRLI6SE",
+    "platform": "youtube",
+    "clip_index": 2,
+    "variant": "b",
+    "hook_mechanism": "tension",
+    "visual_type": "b_roll",
+    "clip_length": 15
+  }
+]
