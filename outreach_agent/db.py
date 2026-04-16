@@ -274,6 +274,13 @@ def init_db():
             )
         except Exception:
             pass
+    # BTL protocol tables
+    try:
+        import btl_db
+        btl_db.init_btl_tables()
+    except ImportError:
+        pass
+
     log.info("Database initialised at %s", DB_PATH)
 
 
