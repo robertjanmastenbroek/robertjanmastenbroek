@@ -618,12 +618,16 @@ def cmd_content(args: list[str]):
         logging.basicConfig(level=logging.INFO)
         from content_engine.learning_loop import run as learning_run
         weights = learning_run()
-        # learning_run() returns a plain dict — serialise directly.
+        # learning_run() returns a UnifiedWeights dataclass.
+        top = lambda d: max(d, key=d.get) if d else "n/a"
         print(json.dumps({
-            "sample_size":     weights.get("_sample_size", 0),
-            "exploration_eps": weights.get("_exploration_eps"),
-            "pooled_reward":   weights.get("_pooled_reward"),
-            "updated":         weights.get("_updated"),
+            "best_platform":    weights.best_platform,
+            "best_clip_length": weights.best_clip_length,
+            "top_hook":         top(weights.hook_weights),
+            "top_format":       top(weights.format_weights),
+            "top_visual":       top(weights.visual_weights),
+            "top_platform_wt":  top(weights.platform_weights),
+            "updated":          weights.updated,
         }, indent=2, default=str))
         sys.exit(0)
 
