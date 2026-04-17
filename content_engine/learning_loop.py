@@ -27,9 +27,214 @@ logger = logging.getLogger(__name__)
 # commit 8746606 after the 2026-04-15 full-rewrite of this module regressed it.
 INSTAGRAM_GRAPH_BASE = "https://graph.facebook.com/v21.0"
 YOUTUBE_ANALYTICS    = "https://youtubeanalytics.googleapis.com/v2/reports"
+YOUTUBE_TOKEN_URL    = "https://oauth2.googleapis.com/token"
 
 # How aggressively weights shift each day. 0 = no change, 1 = full replacement.
 LEARNING_RATE = 0.3
+
+# Buffer post IDs are 24-char lowercase hex strings (e.g. "69e1dc17bf79a8a2f2e4c743").
+# Real IG media IDs are long numeric strings (e.g. "18179953573388740").
+import re as _re
+_BUFFER_ID_RE = _re.compile(r'^[0-9a-f]{24}$')
+
+
+def _is_buffer_id(post_id: str) -> bool:
+    """Return True if post_id looks like a Buffer internal ID (not a real IG media ID)."""
+    return bool(_BUFFER_ID_RE.match(post_id.strip()))
+
+
+def _refresh_youtube_token() -> str:
+    """Refresh the YouTube OAuth access token using the refresh token in .env.
+
+    Updates YOUTUBE_OAUTH_TOKEN in os.environ so the rest of this process
+    uses the fresh token, and writes it back to .env so the next process
+    also picks it up without manual intervention.
+    Returns the new access token, or the existing one on failure.
+    """
+    refresh_token  = os.environ.get("YOUTUBE_REFRESH_TOKEN", "")
+    client_id      = os.environ.get("YOUTUBE_CLIENT_ID", "")
+    client_secret  = os.environ.get("YOUTUBE_CLIENT_SECRET", "")
+    if not (refresh_token and client_id and client_secret):
+        logger.warning("[learning_loop] YouTube refresh: missing credentials in env — skipping")
+        return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
+    try:
+        resp = requests.post(
+            YOUTUBE_TOKEN_URL,
+            data={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+            },
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            logger.warning(f"[learning_loop] YouTube token refresh failed: {resp.status_code} {resp.text}")
+            return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
+        new_token = resp.json()["access_token"]
+        os.environ["YOUTUBE_OAUTH_TOKEN"] = new_token
+        # Persist to .env so future processes don't need an immediate re-auth
+        _write_env_token("YOUTUBE_OAUTH_TOKEN", new_token)
+        logger.info("[learning_loop] YouTube token refreshed successfully")
+        return new_token
+    except Exception as e:
+        logger.warning(f"[learning_loop] YouTube token refresh error: {e}")
+        return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
+
+
+def _write_env_token(key: str, value: str):
+    """Overwrite a single key=value line in .env (no quotes). Safe for tokens."""
+    env_path = PROJECT_DIR / ".env"
+    if not env_path.exists():
+        return
+    lines = env_path.read_text().splitlines()
+    new_lines = []
+    replaced = False
+    for line in lines:
+        if line.startswith(f"{key}=") or line.startswith(f"{key}=\""):
+            new_lines.append(f"{key}={value}")
+            replaced = True
+        else:
+            new_lines.append(line)
+    if not replaced:
+        new_lines.append(f"{key}={value}")
+    env_path.write_text("\n".join(new_lines) + "\n")
+
+
+def _resolve_ig_media_ids(posts: list, access_token: str, user_id: str) -> list:
+    """Replace Buffer post IDs with real IG media IDs.
+
+    Queries /me/media for the last 50 posts and matches by closest timestamp.
+    Posts that cannot be resolved (too old, no match) are returned with their
+    original ID — the caller will see a 400 and skip them, which is correct.
+    """
+    buffer_posts = [p for p in posts if _is_buffer_id(p.get("post_id", ""))]
+    if not buffer_posts:
+        return posts
+
+    try:
+        resp = requests.get(
+            f"{INSTAGRAM_GRAPH_BASE}/{user_id}/media",
+            params={"fields": "id,timestamp", "limit": 50, "access_token": access_token},
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            logger.warning(f"[learning_loop] IG media list failed: {resp.status_code}")
+            return posts
+        media_items = resp.json().get("data", [])
+    except Exception as e:
+        logger.warning(f"[learning_loop] IG media list error: {e}")
+        return posts
+
+    # Build a list of (datetime, media_id) sorted newest-first
+    media_by_ts = []
+    for m in media_items:
+        try:
+            ts = datetime.fromisoformat(m["timestamp"].replace("Z", "+00:00"))
+            media_by_ts.append((ts, m["id"]))
+        except Exception:
+            pass
+    if not media_by_ts:
+        return posts
+
+    # For each Buffer post, find the IG media item closest in time
+    resolved = {p["post_id"]: p["post_id"] for p in posts}
+    used_media_ids: set = set()
+    for p in sorted(buffer_posts, key=lambda x: x.get("posted_at", "")):
+        posted_at_str = p.get("posted_at", "")
+        if not posted_at_str:
+            continue
+        try:
+            posted_dt = datetime.fromisoformat(posted_at_str.replace("Z", "+00:00"))
+        except Exception:
+            continue
+        # Find the closest IG media within ±2 hours that hasn't been used yet
+        best_id, best_delta = None, None
+        for ts, mid in media_by_ts:
+            if mid in used_media_ids:
+                continue
+            delta = abs((ts - posted_dt).total_seconds())
+            if delta <= 7200 and (best_delta is None or delta < best_delta):
+                best_id, best_delta = mid, delta
+        if best_id:
+            resolved[p["post_id"]] = best_id
+            used_media_ids.add(best_id)
+            logger.info(f"[learning_loop] Resolved Buffer ID {p['post_id']} → IG media {best_id} (Δ{best_delta:.0f}s)")
+
+    # Apply resolutions
+    result = []
+    for p in posts:
+        orig_id = p.get("post_id", "")
+        new_id = resolved.get(orig_id, orig_id)
+        if new_id != orig_id:
+            p = dict(p)
+            p["post_id"] = new_id
+        result.append(p)
+    return result
+
+
+def _resolve_ig_story_ids(posts: list, access_token: str, user_id: str) -> list:
+    """Replace Buffer story IDs with real IG story media IDs.
+
+    Stories are only live for 24h but the /stories endpoint lists them.
+    """
+    buffer_posts = [p for p in posts if _is_buffer_id(p.get("post_id", ""))]
+    if not buffer_posts:
+        return posts
+
+    try:
+        resp = requests.get(
+            f"{INSTAGRAM_GRAPH_BASE}/{user_id}/stories",
+            params={"fields": "id,timestamp", "access_token": access_token},
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            logger.warning(f"[learning_loop] IG stories list failed: {resp.status_code}")
+            return posts
+        stories = resp.json().get("data", [])
+    except Exception as e:
+        logger.warning(f"[learning_loop] IG stories list error: {e}")
+        return posts
+
+    story_by_ts = []
+    for s in stories:
+        try:
+            ts = datetime.fromisoformat(s["timestamp"].replace("Z", "+00:00"))
+            story_by_ts.append((ts, s["id"]))
+        except Exception:
+            pass
+
+    resolved = {p["post_id"]: p["post_id"] for p in posts}
+    used_ids: set = set()
+    for p in sorted(buffer_posts, key=lambda x: x.get("posted_at", "")):
+        posted_at_str = p.get("posted_at", "")
+        if not posted_at_str:
+            continue
+        try:
+            posted_dt = datetime.fromisoformat(posted_at_str.replace("Z", "+00:00"))
+        except Exception:
+            continue
+        best_id, best_delta = None, None
+        for ts, sid in story_by_ts:
+            if sid in used_ids:
+                continue
+            delta = abs((ts - posted_dt).total_seconds())
+            if delta <= 7200 and (best_delta is None or delta < best_delta):
+                best_id, best_delta = sid, delta
+        if best_id:
+            resolved[p["post_id"]] = best_id
+            used_ids.add(best_id)
+            logger.info(f"[learning_loop] Resolved Buffer story ID {p['post_id']} → IG story {best_id} (Δ{best_delta:.0f}s)")
+
+    result = []
+    for p in posts:
+        orig_id = p.get("post_id", "")
+        new_id = resolved.get(orig_id, orig_id)
+        if new_id != orig_id:
+            p = dict(p)
+            p["post_id"] = new_id
+        result.append(p)
+    return result
 
 
 def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
@@ -46,15 +251,13 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
         if not post_id:
             continue
         try:
-            # `plays` was removed in Graph API v22+. Request `views` alongside
-            # it so the call still works on both v21 and v22, and fall back to
-            # whichever the API actually returns. A single unsupported metric
-            # in the comma-separated list will 400 the whole response, so we
-            # include both rather than branching on API version.
+            # `plays` was removed in Graph API v22+. Use `views` only — Facebook
+            # serves v22+ metric validation even on v21 requests, so including
+            # `plays` alongside `views` causes a 400 for the whole call.
             resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{post_id}/insights",
                 params={
-                    "metric": "views,plays,reach,saved,shares,total_interactions",
+                    "metric": "views,reach,saved,shares,total_interactions",
                     "period": "lifetime",
                     "access_token": access_token,
                 },
@@ -67,8 +270,7 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
             raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
                    for d in resp.json().get("data", [])}
 
-            # views is the v22+ name; plays is the v21 fallback.
-            plays  = raw.get("views", 0) or raw.get("plays", 0)
+            plays  = raw.get("views", 0) or 0
             reach  = raw.get("reach", 1)
             saved  = raw.get("saved", 0)
             shares = raw.get("shares", 0)
@@ -164,8 +366,12 @@ def fetch_facebook_metrics(post_ids: list, page_token: str) -> list:
 def fetch_instagram_story_metrics(post_ids: list, access_token: str) -> list:
     """
     Fetch per-story insights from Instagram Graph API.
-    Stories only live 24h — this only works same-day. Metrics:
-      reach, replies, impressions, profile_visits (taps), exits
+    Stories only live 24h — this only works same-day.
+
+    Supported metrics as of Graph API v22+:
+      reach, replies, views, navigation
+    (impressions, taps_forward, taps_back, exits were removed in v22+)
+    navigation = total skip/exit actions (forward + back + exit + next_story).
     """
     from content_engine.types import PerformanceRecord
     records = []
@@ -178,7 +384,7 @@ def fetch_instagram_story_metrics(post_ids: list, access_token: str) -> list:
             resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{post_id}/insights",
                 params={
-                    "metric": "reach,replies,impressions,taps_forward,taps_back,exits",
+                    "metric": "reach,replies,views,navigation",
                     "access_token": access_token,
                 },
                 timeout=15,
@@ -190,17 +396,16 @@ def fetch_instagram_story_metrics(post_ids: list, access_token: str) -> list:
             raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
                    for d in resp.json().get("data", [])}
 
-            reach = raw.get("reach", 1)
-            impressions = raw.get("impressions", 1)
-            replies = raw.get("replies", 0)
-            taps_forward = raw.get("taps_forward", 0)
-            exits = raw.get("exits", 0)
+            reach      = raw.get("reach", 1)
+            views      = raw.get("views", 1)
+            replies    = raw.get("replies", 0)
+            navigation = raw.get("navigation", 0)  # total skip/exit actions
 
-            # For stories, "completion" ≈ (impressions - exits - taps_forward) / impressions
-            # since taps_forward = user skipped before end. Exits = user bailed from
-            # the whole story set.
-            completed = max(0, impressions - exits - taps_forward)
-            completion_rate = completed / max(impressions, 1)
+            # Completion ≈ 1 - (navigation / views). navigation includes all
+            # skip/exit interactions; dividing by views gives a skip rate, and
+            # clamping keeps the signal in [0, 1].
+            skip_rate       = min(1.0, navigation / max(views, 1))
+            completion_rate = round(1.0 - skip_rate, 4)
 
             records.append(PerformanceRecord(
                 post_id=post_id,
@@ -210,10 +415,10 @@ def fetch_instagram_story_metrics(post_ids: list, access_token: str) -> list:
                 hook_mechanism=meta.get("hook_mechanism", "tension"),
                 visual_type=meta.get("visual_type", "b_roll"),
                 clip_length=meta.get("clip_length", 15),
-                views=int(impressions),
-                completion_rate=round(completion_rate, 4),
-                scroll_stop_rate=round(impressions / max(reach, 1), 4),
-                share_rate=round(replies / max(impressions, 1), 4),
+                views=int(views),
+                completion_rate=completion_rate,
+                scroll_stop_rate=round(views / max(reach, 1), 4),
+                share_rate=round(replies / max(views, 1), 4),
                 save_rate=0.0,
                 recorded_at=datetime.now().isoformat(),
             ))
@@ -427,9 +632,22 @@ def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
     fb_posts = [p for p in post_registry if p.get("platform") == "facebook"]
     ig_story_posts = [p for p in post_registry if p.get("platform") == "instagram_story"]
 
-    ig_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
-    yt_token = os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
+    ig_token     = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "").strip('"')
     fb_page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "") or ig_token
+
+    # Always refresh YouTube token before use — access tokens expire in ~1h.
+    yt_token = _refresh_youtube_token()
+
+    # Resolve Buffer post IDs to real IG media IDs before querying insights.
+    # Buffer returns its own 24-char hex IDs; IG Graph API only accepts native
+    # numeric media IDs. Resolution runs against the /media and /stories
+    # endpoints which list the last 50 items — more than enough for daily runs.
+    if ig_token and ig_user_id:
+        if ig_posts:
+            ig_posts = _resolve_ig_media_ids(ig_posts, ig_token, ig_user_id)
+        if ig_story_posts:
+            ig_story_posts = _resolve_ig_story_ids(ig_story_posts, ig_token, ig_user_id)
 
     records = []
     if ig_posts and ig_token:

@@ -3,5 +3,20 @@
     "template_id": "contrast.pov_collision",
     "date": "2026-04-16",
     "format": "emotional"
+  },
+  {
+    "template_id": "save.about_to_blow",
+    "date": "2026-04-17",
+    "format": "transitional"
+  },
+  {
+    "template_id": "bodydrop.played_at_place",
+    "date": "2026-04-17",
+    "format": "transitional"
+  },
+  {
+    "template_id": "identity.this_is_what_sounds_like",
+    "date": "2026-04-17",
+    "format": "performance"
   }
 ]

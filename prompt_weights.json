@@ -9,10 +9,56 @@
   "visual_weights": {
     "ai_generated": 1.0,
     "performance": 1.0,
-    "b_roll": 1.0,
+    "b_roll": 0.906373,
     "phone": 1.0
   },
+  "format_weights": {
+    "transitional": 1.0,
+    "emotional": 1.0,
+    "performance": 1.0
+  },
+  "platform_weights": {
+    "instagram": 0.866224,
+    "youtube": 1.0,
+    "facebook": 1.0,
+    "tiktok": 1.0,
+    "instagram_story": 0.946522,
+    "facebook_story": 1.0
+  },
+  "transitional_category_weights": {
+    "nature": 1.0,
+    "satisfying": 1.0,
+    "elemental": 1.0,
+    "sports": 1.0,
+    "craftsmanship": 1.0,
+    "illusion": 1.0
+  },
+  "track_weights": {},
   "best_clip_length": 5,
   "best_platform": "youtube",
-  "updated": "2026-04-16T00:03:58.736791"
+  "updated": "2026-04-17T10:34:13.290413",
+  "sub_mode_weights": {
+    "COST": 1.0,
+    "NAMING": 1.0,
+    "DOUBT": 1.0,
+    "DEVOTION": 1.0,
+    "RUPTURE": 1.0,
+    "FINDER": 1.0,
+    "PERMISSION": 1.0,
+    "RECOGNITION": 1.0,
+    "SEASON": 1.0,
+    "UNSAID": 1.0,
+    "BODY": 1.0,
+    "TIME": 1.0,
+    "GEOGRAPHY": 1.0,
+    "THRESHOLD": 1.0,
+    "DISSOLUTION": 1.0
+  },
+  "time_of_day_weights": {
+    "morning": 0.906373,
+    "midday": 1.0,
+    "evening": 1.0,
+    "late": 1.0
+  },
+  "best_time_of_day": "midday"
 }

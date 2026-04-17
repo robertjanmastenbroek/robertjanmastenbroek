@@ -5,7 +5,9 @@
     "spotify_url": "https://open.spotify.com/playlist/0aUHXLjLoyw0cfDTayFVg9",
     "curator_name": "widerberg",
     "follower_count": 250900,
-    "genre_tags": ["melodic-techno"],
+    "genre_tags": [
+      "melodic-techno"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -17,7 +19,10 @@
     "spotify_url": "https://open.spotify.com/playlist/370YtLfVc3bwtUp3uhyyAO",
     "curator_name": "House Music Radar",
     "follower_count": 82500,
-    "genre_tags": ["melodic-house", "melodic-techno"],
+    "genre_tags": [
+      "melodic-house",
+      "melodic-techno"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -25,11 +30,15 @@
   },
   {
     "playlist_id": "5Ob9EjYpTvbmNGxhdQe5JM",
-    "playlist_name": "Flow State — Productivity and Work Music",
+    "playlist_name": "Flow State \u2014 Productivity and Work Music",
     "spotify_url": "https://open.spotify.com/playlist/5Ob9EjYpTvbmNGxhdQe5JM",
     "curator_name": "jeremylim.ca",
     "follower_count": 56900,
-    "genre_tags": ["electronic", "ambient", "flow-state"],
+    "genre_tags": [
+      "electronic",
+      "ambient",
+      "flow-state"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -37,11 +46,14 @@
   },
   {
     "playlist_id": "5tS60kao8racJYRscFsLfv",
-    "playlist_name": "PSYTRANCE / TRANCE - SÓ AS MELHORES",
+    "playlist_name": "PSYTRANCE / TRANCE - S\u00d3 AS MELHORES",
     "spotify_url": "https://open.spotify.com/playlist/5tS60kao8racJYRscFsLfv",
     "curator_name": "PRINSH Music Group",
     "follower_count": 46600,
-    "genre_tags": ["psytrance", "trance"],
+    "genre_tags": [
+      "psytrance",
+      "trance"
+    ],
     "audience_type": "seeker",
     "priority": "high",
     "curator_contact": null,
@@ -53,7 +65,10 @@
     "spotify_url": "https://open.spotify.com/playlist/50I0wvRN1sYIejUGnOEmWM",
     "curator_name": "Area Verde Music",
     "follower_count": 42600,
-    "genre_tags": ["melodic-techno", "progressive-house"],
+    "genre_tags": [
+      "melodic-techno",
+      "progressive-house"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -65,7 +80,10 @@
     "spotify_url": "https://open.spotify.com/playlist/3gH0PoKC5oBmLtM1z3mtyH",
     "curator_name": "KSHMR",
     "follower_count": 38200,
-    "genre_tags": ["ethnic-electronic", "edm"],
+    "genre_tags": [
+      "ethnic-electronic",
+      "edm"
+    ],
     "audience_type": "seeker",
     "priority": "high",
     "curator_contact": null,
@@ -77,7 +95,9 @@
     "spotify_url": "https://open.spotify.com/playlist/5TWl2Roe7w31Rpu2IYGyi4",
     "curator_name": "Black Box",
     "follower_count": 30800,
-    "genre_tags": ["melodic-techno"],
+    "genre_tags": [
+      "melodic-techno"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -89,7 +109,11 @@
     "spotify_url": "https://open.spotify.com/playlist/6vcnm2ksrLpEGKMk9Kzuyp",
     "curator_name": "Klangspot Recordings",
     "follower_count": 10500,
-    "genre_tags": ["melodic-techno", "melodic-house", "deep-house"],
+    "genre_tags": [
+      "melodic-techno",
+      "melodic-house",
+      "deep-house"
+    ],
     "audience_type": "music-first",
     "priority": "medium",
     "curator_contact": null,
@@ -101,7 +125,10 @@
     "spotify_url": "https://open.spotify.com/playlist/1KJlLjn2XYWCmZG3coodak",
     "curator_name": "ENTELU",
     "follower_count": 9800,
-    "genre_tags": ["melodic-techno", "electronic"],
+    "genre_tags": [
+      "melodic-techno",
+      "electronic"
+    ],
     "audience_type": "music-first",
     "priority": "medium",
     "curator_contact": null,
@@ -113,7 +140,9 @@
     "spotify_url": "https://open.spotify.com/playlist/3aRJXa0RsHzsWjwtcGKis3",
     "curator_name": "Resident Advisor",
     "follower_count": null,
-    "genre_tags": ["melodic-techno"],
+    "genre_tags": [
+      "melodic-techno"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -125,7 +154,12 @@
     "spotify_url": "https://open.spotify.com/playlist/2sMrT5R4bt05SCGScL3e5B",
     "curator_name": "unknown",
     "follower_count": 6500,
-    "genre_tags": ["tribal", "psytrance", "ethnic", "shamanic"],
+    "genre_tags": [
+      "tribal",
+      "psytrance",
+      "ethnic",
+      "shamanic"
+    ],
     "audience_type": "seeker",
     "priority": "low",
     "curator_contact": null,
@@ -137,7 +171,10 @@
     "spotify_url": "https://open.spotify.com/playlist/2nPr5dukHHeX1a2ckNOOdD",
     "curator_name": "HIGHTKK MUSIC",
     "follower_count": 7600,
-    "genre_tags": ["psytrance", "goa"],
+    "genre_tags": [
+      "psytrance",
+      "goa"
+    ],
     "audience_type": "seeker",
     "priority": "low",
     "curator_contact": null,
@@ -145,11 +182,13 @@
   },
   {
     "playlist_id": "3trwmrgLd7b5Clh3YwuILu",
-    "playlist_name": "Melodic Techno 2026 🌙",
+    "playlist_name": "Melodic Techno 2026 \ud83c\udf19",
     "spotify_url": "https://open.spotify.com/playlist/3trwmrgLd7b5Clh3YwuILu",
     "curator_name": "unique playlists",
     "follower_count": 79000,
-    "genre_tags": ["melodic-techno"],
+    "genre_tags": [
+      "melodic-techno"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -161,7 +200,11 @@
     "spotify_url": "https://open.spotify.com/playlist/1gR7WD5uRTxRz22ZlzzCXG",
     "curator_name": "Gobi Desert Collective",
     "follower_count": 71300,
-    "genre_tags": ["ethnic-electronic", "world-electronic", "middle-eastern"],
+    "genre_tags": [
+      "ethnic-electronic",
+      "world-electronic",
+      "middle-eastern"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -173,7 +216,10 @@
     "spotify_url": "https://open.spotify.com/playlist/7cdoMVDdFQafB1bryHLgvb",
     "curator_name": "Dharma Worldwide",
     "follower_count": 7000,
-    "genre_tags": ["ethnic-house", "world-electronic"],
+    "genre_tags": [
+      "ethnic-house",
+      "world-electronic"
+    ],
     "audience_type": "music-first",
     "priority": "medium",
     "curator_contact": null,
@@ -185,7 +231,9 @@
     "spotify_url": "https://open.spotify.com/playlist/5ZKjK9KzSsYkpaV85ZaS4o",
     "curator_name": "Revised Records",
     "follower_count": 5700,
-    "genre_tags": ["melodic-techno"],
+    "genre_tags": [
+      "melodic-techno"
+    ],
     "audience_type": "music-first",
     "priority": "low",
     "curator_contact": null,
@@ -197,7 +245,11 @@
     "spotify_url": "https://open.spotify.com/playlist/2D5V1KXktxswlmCpeSRrq5",
     "curator_name": "Idanhertz",
     "follower_count": 10300,
-    "genre_tags": ["electronic", "flow-state", "ambient"],
+    "genre_tags": [
+      "electronic",
+      "flow-state",
+      "ambient"
+    ],
     "audience_type": "music-first",
     "priority": "medium",
     "curator_contact": null,
@@ -209,7 +261,11 @@
     "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1E4nwcdphiQ3xQ",
     "curator_name": "Spotify Editorial",
     "follower_count": null,
-    "genre_tags": ["electronic", "flow-state", "ambient"],
+    "genre_tags": [
+      "electronic",
+      "flow-state",
+      "ambient"
+    ],
     "audience_type": "music-first",
     "priority": "high",
     "curator_contact": null,
@@ -221,7 +277,10 @@
     "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1E4D3wNZ9tVQIK",
     "curator_name": "Spotify Editorial",
     "follower_count": null,
-    "genre_tags": ["ethnic-electronic", "world-electronic"],
+    "genre_tags": [
+      "ethnic-electronic",
+      "world-electronic"
+    ],
     "audience_type": "faith-adjacent",
     "priority": "high",
     "curator_contact": null,
@@ -229,11 +288,15 @@
   },
   {
     "playlist_id": "6ZNqBjtmRBjXBG2BW0QYCA",
-    "playlist_name": "Psytrance -🕉- Full On Progressive",
+    "playlist_name": "Psytrance -\ud83d\udd49- Full On Progressive",
     "spotify_url": "https://open.spotify.com/playlist/6ZNqBjtmRBjXBG2BW0QYCA",
     "curator_name": "Yves Vrancken",
     "follower_count": 110900,
-    "genre_tags": ["psytrance", "progressive-psytrance", "full-on"],
+    "genre_tags": [
+      "psytrance",
+      "progressive-psytrance",
+      "full-on"
+    ],
     "audience_type": "seeker",
     "priority": "high",
     "curator_contact": null,
@@ -241,11 +304,14 @@
   },
   {
     "playlist_id": "0iJEh2BsvSw8V3lDTkiUK7",
-    "playlist_name": "Psytrance 2026 🌀 Psy Trance - Goatrance",
+    "playlist_name": "Psytrance 2026 \ud83c\udf00 Psy Trance - Goatrance",
     "spotify_url": "https://open.spotify.com/playlist/0iJEh2BsvSw8V3lDTkiUK7",
     "curator_name": "Revealed Recordings",
     "follower_count": 222100,
-    "genre_tags": ["psytrance", "goa-trance"],
+    "genre_tags": [
+      "psytrance",
+      "goa-trance"
+    ],
     "audience_type": "seeker",
     "priority": "high",
     "curator_contact": null,
@@ -257,7 +323,9 @@
     "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DWXWbLEOaHnU3",
     "curator_name": "Spotify Editorial",
     "follower_count": 596600,
-    "genre_tags": ["psytrance"],
+    "genre_tags": [
+      "psytrance"
+    ],
     "audience_type": "seeker",
     "priority": "high",
     "curator_contact": null,
@@ -265,11 +333,14 @@
   },
   {
     "playlist_id": "0CBjqMf8vZfndoXw91G5T5",
-    "playlist_name": "Psytrance -🕉- 50 Progressive Masterpieces",
+    "playlist_name": "Psytrance -\ud83d\udd49- 50 Progressive Masterpieces",
     "spotify_url": "https://open.spotify.com/playlist/0CBjqMf8vZfndoXw91G5T5",
     "curator_name": "Yves Vrancken",
     "follower_count": 6800,
-    "genre_tags": ["psytrance", "progressive-psytrance"],
+    "genre_tags": [
+      "psytrance",
+      "progressive-psytrance"
+    ],
     "audience_type": "seeker",
     "priority": "medium",
     "curator_contact": null,
@@ -281,7 +352,12 @@
     "spotify_url": "https://open.spotify.com/playlist/641acX8PXmKJebFZI2BpwV",
     "curator_name": "The Playlist Factory",
     "follower_count": 5400,
-    "genre_tags": ["ethnic-electronic", "tribal", "arabic-house", "world-electronic"],
+    "genre_tags": [
+      "ethnic-electronic",
+      "tribal",
+      "arabic-house",
+      "world-electronic"
+    ],
     "audience_type": "faith-adjacent",
     "priority": "medium",
     "curator_contact": null,
@@ -293,10 +369,45 @@
     "spotify_url": "https://open.spotify.com/playlist/2xaiaEMr3drIoAsn397mtX",
     "curator_name": "Spotify Editorial",
     "follower_count": null,
-    "genre_tags": ["psytrance", "psychedelic"],
+    "genre_tags": [
+      "psytrance",
+      "psychedelic"
+    ],
     "audience_type": "seeker",
     "priority": "high",
     "curator_contact": null,
     "added_at": "2026-04-16"
+  },
+  {
+    "playlist_id": "60sYmkhPrItDzimoyFyoJB",
+    "playlist_name": "Organica 2026 (Organic House, Oriental House, Downtempo, Ethnotronica)",
+    "spotify_url": "https://open.spotify.com/playlist/60sYmkhPrItDzimoyFyoJB",
+    "curator_name": "Slow Nomaden",
+    "follower_count": 2400,
+    "genre_tags": [
+      "organic-house",
+      "ethnic-electronic",
+      "downtempo",
+      "ethnotronica"
+    ],
+    "audience_type": "music-first",
+    "priority": "low",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "3LrNpJEJZy1Cvv8vVIHjaE",
+    "playlist_name": "Ethnic Electronic",
+    "spotify_url": "https://open.spotify.com/playlist/3LrNpJEJZy1Cvv8vVIHjaE",
+    "curator_name": "\u00d6zge Y\u0131ld\u0131r\u0131m",
+    "follower_count": 2700,
+    "genre_tags": [
+      "ethnic-electronic",
+      "world-electronic"
+    ],
+    "audience_type": "music-first",
+    "priority": "low",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
   }
 ]

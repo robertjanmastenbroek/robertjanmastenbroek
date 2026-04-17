@@ -1,1 +1,86 @@
-[]
+[
+  {
+    "success": false,
+    "platform": "facebook",
+    "error": "Buffer fallback failed: Buffer channel 'facebook' is locked (plan tier / disconnected) \u2014 upgrade plan or reconnect at buffer.com to enable posting",
+    "via": "buffer_fallback",
+    "clip_index": 0,
+    "variant": null,
+    "clip_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/transitional_jericho.mp4",
+    "story_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/transitional_jericho_story.mp4",
+    "caption": "Jericho \u2014 Robert-Jan Mastenbroek\n136 BPM melodic techno \u00b7 Holy Rave\n\nJoshua 6 \u2014 ancient truth, future sound.\n\nSave this. Full track on Spotify (link in bio).\n\n#melodictechno #psytrance #holyrave #tenerife #RobertJanMastenbroek",
+    "hook_text": "This artist is about to blow up and you heard it here first",
+    "track_title": "jericho",
+    "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
+  },
+  {
+    "success": false,
+    "platform": "facebook_story",
+    "error": "Buffer fallback failed: Buffer channel 'facebook' is locked (plan tier / disconnected) \u2014 upgrade plan or reconnect at buffer.com to enable posting",
+    "via": "buffer_fallback",
+    "clip_index": 0,
+    "variant": null,
+    "clip_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/transitional_jericho.mp4",
+    "story_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/transitional_jericho_story.mp4",
+    "caption": "Jericho \u2014 Robert-Jan Mastenbroek\n136 BPM melodic techno \u00b7 Holy Rave\n\nJoshua 6 \u2014 ancient truth, future sound.\n\nSave this. Full track on Spotify (link in bio).\n\n#melodictechno #psytrance #holyrave #tenerife #RobertJanMastenbroek",
+    "hook_text": "This artist is about to blow up and you heard it here first",
+    "track_title": "jericho",
+    "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
+  },
+  {
+    "success": false,
+    "platform": "facebook",
+    "error": "Buffer fallback failed: Buffer channel 'facebook' is locked (plan tier / disconnected) \u2014 upgrade plan or reconnect at buffer.com to enable posting",
+    "via": "buffer_fallback",
+    "clip_index": 1,
+    "variant": null,
+    "clip_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/transitional_jericho.mp4",
+    "story_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/transitional_jericho_story.mp4",
+    "caption": "Jericho \u2014 Robert-Jan Mastenbroek\n136 BPM melodic techno \u00b7 Holy Rave\n\nJoshua 6 \u2014 ancient truth, future sound.\n\nSave this. Full track on Spotify (link in bio).\n\n#melodictechno #psytrance #holyrave #tenerife #RobertJanMastenbroek",
+    "hook_text": "Not logged in \u00b7 Please run /login",
+    "track_title": "jericho",
+    "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
+  },
+  {
+    "success": false,
+    "platform": "facebook_story",
+    "error": "Buffer fallback failed: Buffer channel 'facebook' is locked (plan tier / disconnected) \u2014 upgrade plan or reconnect at buffer.com to enable posting",
+    "via": "buffer_fallback",
+    "clip_index": 1,
+    "variant": null,
+    "clip_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/transitional_jericho.mp4",
+    "story_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/transitional_jericho_story.mp4",
+    "caption": "Jericho \u2014 Robert-Jan Mastenbroek\n136 BPM melodic techno \u00b7 Holy Rave\n\nJoshua 6 \u2014 ancient truth, future sound.\n\nSave this. Full track on Spotify (link in bio).\n\n#melodictechno #psytrance #holyrave #tenerife #RobertJanMastenbroek",
+    "hook_text": "Not logged in \u00b7 Please run /login",
+    "track_title": "jericho",
+    "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
+  },
+  {
+    "success": false,
+    "platform": "facebook",
+    "error": "Buffer fallback failed: Buffer channel 'facebook' is locked (plan tier / disconnected) \u2014 upgrade plan or reconnect at buffer.com to enable posting",
+    "via": "buffer_fallback",
+    "clip_index": 2,
+    "variant": null,
+    "clip_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/performance_jericho.mp4",
+    "story_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/performance_jericho_story.mp4",
+    "caption": "Jericho \u2014 Robert-Jan Mastenbroek\n136 BPM melodic techno \u00b7 Holy Rave\n\nJoshua 6 \u2014 ancient truth, future sound.\n\nSave this. Full track on Spotify (link in bio).\n\n#melodictechno #psytrance #holyrave #tenerife #RobertJanMastenbroek",
+    "hook_text": "Not logged in \u00b7 Please run /login",
+    "track_title": "jericho",
+    "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
+  },
+  {
+    "success": false,
+    "platform": "facebook_story",
+    "error": "Buffer fallback failed: Buffer channel 'facebook' is locked (plan tier / disconnected) \u2014 upgrade plan or reconnect at buffer.com to enable posting",
+    "via": "buffer_fallback",
+    "clip_index": 2,
+    "variant": null,
+    "clip_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/performance_jericho.mp4",
+    "story_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/content/output/2026-04-17/performance_jericho_story.mp4",
+    "caption": "Jericho \u2014 Robert-Jan Mastenbroek\n136 BPM melodic techno \u00b7 Holy Rave\n\nJoshua 6 \u2014 ancient truth, future sound.\n\nSave this. Full track on Spotify (link in bio).\n\n#melodictechno #psytrance #holyrave #tenerife #RobertJanMastenbroek",
+    "hook_text": "Not logged in \u00b7 Please run /login",
+    "track_title": "jericho",
+    "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
+  }
+]
