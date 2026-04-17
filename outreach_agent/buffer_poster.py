@@ -23,6 +23,7 @@ import sys
 import json
 import time
 from pathlib import Path
+from typing import Optional
 
 import requests
 from video_host import upload_video
@@ -39,15 +40,104 @@ except ImportError:
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 
-BUFFER_API_KEY = os.environ.get("BUFFER_API_KEY", "131Alg-sjqKP6XuUZj3KOvMvoI8UmWGV8v2th47JQRf")
 BUFFER_ENDPOINT = "https://api.buffer.com/graphql"
 
-# Channel IDs (fetched via --list-channels)
-CHANNELS = {
+# Fallback Buffer API key used only when BUFFER_API_KEY env var is unset.
+# The project's real key lives in .env — do NOT change this constant.
+_BUFFER_API_KEY_FALLBACK = "131Alg-sjqKP6XuUZj3KOvMvoI8UmWGV8v2th47JQRf"
+
+
+def _get_buffer_api_key() -> str:
+    """Read BUFFER_API_KEY lazily on every request.
+
+    The pipeline loads .env AFTER this module is imported (the pipeline is
+    the import entry point). Reading via a function call means each request
+    gets the latest env value, not the one present at import time.
+    """
+    return os.environ.get("BUFFER_API_KEY") or _BUFFER_API_KEY_FALLBACK
+
+
+# Back-compat shim: modules that imported BUFFER_API_KEY as a module-level
+# constant still get a value, but it may be the pre-.env-load value. New
+# code should call _get_buffer_api_key() instead.
+BUFFER_API_KEY = _get_buffer_api_key()
+
+
+def _channel_id(platform: str, default: str) -> str:
+    """Read BUFFER_CHANNEL_<PLATFORM> lazily — same rationale as the API key."""
+    return os.environ.get(f"BUFFER_CHANNEL_{platform.upper()}", default)
+
+
+# Channel IDs (fetched via --list-channels). Override via BUFFER_CHANNEL_<PLATFORM>
+# environment variables — useful if a channel is rotated without redeploying.
+# These are the import-time defaults; _resolve_channel() picks up env overrides
+# at request time.
+_CHANNEL_DEFAULTS = {
     "instagram": "69d6376c031bfa423ce00756",
     "tiktok":    "69d63784031bfa423ce007e4",
     "youtube":   "69d63798031bfa423ce0084e",
+    "facebook":  "69deaee9031bfa423c0403f9",
 }
+CHANNELS = {p: _channel_id(p, d) for p, d in _CHANNEL_DEFAULTS.items()}
+
+
+def _resolve_channel(platform: str) -> Optional[str]:  # noqa: F821 - defined below if needed
+    """Return the current channel id for a platform, with env override."""
+    default = _CHANNEL_DEFAULTS.get(platform, "")
+    if not default:
+        return None
+    return _channel_id(platform, default)
+
+
+# Cache of locked channel services (Buffer's free plan locks channels after
+# trial; `createPost` rejects locked channels with a generic "Channel not
+# found" message which would otherwise burn three retry cycles + 65s of
+# backoff per platform). Populated lazily on first access.
+_LOCKED_CHANNELS: set[str] = set()
+_LOCK_PROBE_DONE: bool = False
+
+
+def _probe_locked_channels() -> set[str]:
+    """Query Buffer once per run to learn which channels are locked.
+
+    Buffer's `isLocked: true` flag indicates the channel exists on the
+    account but can't be posted to (plan tier / trial expiration). Returns
+    a set of service strings (e.g. {"facebook"}).
+    """
+    global _LOCK_PROBE_DONE
+    if _LOCK_PROBE_DONE:
+        return _LOCKED_CHANNELS
+    try:
+        data = _gql("query { account { organizations { id } } }")
+        org_id = data["account"]["organizations"][0]["id"]
+        channels = _gql(
+            "query($o: OrganizationId!) { channels(input:{organizationId:$o}) "
+            "{ id service isLocked isDisconnected } }",
+            {"o": org_id},
+        )["channels"]
+        for ch in channels:
+            if ch.get("isLocked") or ch.get("isDisconnected"):
+                _LOCKED_CHANNELS.add(ch["service"])
+    except Exception as exc:
+        # If the probe fails we don't mark anything locked — better to try
+        # posting and surface the real error than to silently skip.
+        print(f"    [Buffer] channel-lock probe failed (non-fatal): {exc}")
+    finally:
+        _LOCK_PROBE_DONE = True
+    return _LOCKED_CHANNELS
+
+
+def _channel_service(channel: str) -> str:
+    """Map our internal channel name to Buffer's `service` string.
+
+    Stories share the parent service (facebook_story → facebook, etc.).
+    """
+    return channel.split("_")[0] if "_" in channel else channel
+
+
+class BufferChannelLocked(RuntimeError):
+    """Raised when a target Buffer channel is locked (plan-tier restriction)."""
+
 
 # Imgur anonymous client ID (public, rate-limited to 1250 uploads/day)
 IMGUR_CLIENT_ID = "546c25a59c58ad7"
@@ -66,7 +156,7 @@ def _gql(query: str, variables: dict = None) -> dict:
         payload["variables"] = variables
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {BUFFER_API_KEY}",
+        "Authorization": f"Bearer {_get_buffer_api_key()}",
     }
 
     max_attempts = 3
@@ -199,6 +289,13 @@ def _create_post(channel: str, post_type: str, image_urls: list[str], caption: s
         post_id = payload["post"]["id"]
         status = payload["post"]["status"]
         print(f"  → Post queued: {post_id} ({status})")
+    except BufferChannelLocked as e:
+        # Known-state: account plan tier doesn't allow this channel (e.g. free
+        # tier blocks Facebook). Not a poster failure — heartbeat "ok" with a
+        # descriptive skip result so the fleet error count stays clean.
+        if _HIVE_AVAILABLE:
+            _fleet_state.heartbeat("buffer_poster", status="ok", result=f"skipped:locked:{channel}")
+        raise
     except Exception as e:
         if _HIVE_AVAILABLE:
             _fleet_state.heartbeat("buffer_poster", status="error", result=str(e))
@@ -249,6 +346,13 @@ def _create_video_post(
     if not channel_id:
         raise ValueError(f"Unknown channel '{channel}'. Valid: {list(CHANNELS.keys())}")
 
+    service = _channel_service(channel)
+    if service in _probe_locked_channels():
+        raise BufferChannelLocked(
+            f"Buffer channel '{channel}' is locked (plan tier / disconnected) — "
+            f"upgrade plan or reconnect at buffer.com to enable posting"
+        )
+
     try:
         if channel == "instagram":
             metadata = {"instagram": {"type": "reel", "shouldShareToFeed": True}}
@@ -260,6 +364,11 @@ def _create_video_post(
                     "categoryId": "10",  # Music
                 }
             }
+        elif channel == "facebook":
+            # Facebook Reels via Buffer — "reel" type publishes to the Page Reel tray,
+            # "post" falls back to a regular video post. We use "post" for maximum
+            # compatibility since Buffer's Facebook Reel surface is newer.
+            metadata = {"facebook": {"type": "post"}}
         else:
             metadata = {}
 
@@ -282,6 +391,13 @@ def _create_video_post(
         post_id = payload["post"]["id"]
         status  = payload["post"]["status"]
         print(f"    → {channel} queued: {post_id} ({status})")
+    except BufferChannelLocked as e:
+        # Known-state: account plan tier doesn't allow this channel (e.g. free
+        # tier blocks Facebook). Not a poster failure — heartbeat "ok" with a
+        # descriptive skip result so the fleet error count stays clean.
+        if _HIVE_AVAILABLE:
+            _fleet_state.heartbeat("buffer_poster", status="ok", result=f"skipped:locked:{channel}")
+        raise
     except Exception as e:
         if _HIVE_AVAILABLE:
             _fleet_state.heartbeat("buffer_poster", status="error", result=str(e))
@@ -302,10 +418,24 @@ def _create_video_post(
 
 
 def _create_video_story_post(channel: str, video_url: str, scheduled_at: str = None) -> str:
-    """Queue a video as an Instagram Story via Buffer."""
+    """Queue a video as a Story via Buffer (Instagram or Facebook)."""
     channel_id = CHANNELS.get(channel)
     if not channel_id:
         raise ValueError(f"Unknown channel '{channel}'. Valid: {list(CHANNELS.keys())}")
+
+    service = _channel_service(channel)
+    if service in _probe_locked_channels():
+        raise BufferChannelLocked(
+            f"Buffer channel '{channel}' is locked (plan tier / disconnected) — "
+            f"upgrade plan or reconnect at buffer.com to enable posting"
+        )
+
+    if channel == "instagram":
+        story_meta = {"instagram": {"type": "story", "shouldShareToFeed": False}}
+    elif channel == "facebook":
+        story_meta = {"facebook": {"type": "story"}}
+    else:
+        raise ValueError(f"Stories not supported for channel '{channel}'")
 
     try:
         inp = {
@@ -313,7 +443,7 @@ def _create_video_story_post(channel: str, video_url: str, scheduled_at: str = N
             "text": "",
             "schedulingType": "automatic",
             "mode": "customScheduled" if scheduled_at else "addToQueue",
-            "metadata": {"instagram": {"type": "story", "shouldShareToFeed": False}},
+            "metadata": story_meta,
             "assets": {"videos": [{"url": video_url}]},
         }
         if scheduled_at:
@@ -327,6 +457,13 @@ def _create_video_story_post(channel: str, video_url: str, scheduled_at: str = N
         post_id = payload["post"]["id"]
         status  = payload["post"]["status"]
         print(f"    → {channel} story queued: {post_id} ({status})")
+    except BufferChannelLocked as e:
+        # Known-state: account plan tier doesn't allow this channel (e.g. free
+        # tier blocks Facebook). Not a poster failure — heartbeat "ok" with a
+        # descriptive skip result so the fleet error count stays clean.
+        if _HIVE_AVAILABLE:
+            _fleet_state.heartbeat("buffer_poster", status="ok", result=f"skipped:locked:{channel}")
+        raise
     except Exception as e:
         if _HIVE_AVAILABLE:
             _fleet_state.heartbeat("buffer_poster", status="error", result=str(e))
@@ -410,8 +547,9 @@ def post_instagram_single(image_path: str, caption: str, dry_run: bool = False) 
 def list_channels() -> None:
     data = _gql("query { account { organizations { id name } } }")
     org_id = data["account"]["organizations"][0]["id"]
+    # Buffer's GraphQL schema types $orgId as OrganizationId!, not String!
     channels = _gql(
-        'query GetChannels($orgId: String!) { channels(input: { organizationId: $orgId }) { id name service } }',
+        'query GetChannels($orgId: OrganizationId!) { channels(input: { organizationId: $orgId }) { id name service } }',
         {"orgId": org_id}
     )["channels"]
     print("\nConnected Buffer channels:")

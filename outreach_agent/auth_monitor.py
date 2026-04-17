@@ -17,8 +17,34 @@ import sys
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, os.path.dirname(__file__))
+
+
+def _load_env() -> None:
+    """Load repo-root .env into os.environ (idempotent).
+
+    The monitor is invoked directly by schedulers and by rjm.py — neither of
+    which source .env into the shell. Without this, INSTAGRAM_ACCESS_TOKEN /
+    BUFFER_API_KEY come back "missing" even though they're configured.
+    Mirrors the pattern in metrics_fetcher._load_env so the behaviour is
+    consistent across the fleet.
+    """
+    env_file = Path(__file__).parent.parent / ".env"
+    if not env_file.exists():
+        return
+    for line in env_file.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        # Strip surrounding quotes so `INSTAGRAM_USER_ID="123"` → `123`.
+        v = v.strip().strip('"').strip("'")
+        os.environ.setdefault(k.strip(), v)
+
+
+_load_env()
 
 try:
     from config import TOKEN_PATH, CREDS_PATH
@@ -39,8 +65,44 @@ except ImportError:
     _FLEET_AVAILABLE = False
 
 
+def _try_refresh_gmail_token(token_path: Path) -> Optional[str]:
+    """Attempt to refresh an expired Gmail token in place.
+
+    Returns the new ISO expiry string on success, or None on failure (caller
+    should treat as still-expired). Silent if google-auth libs aren't available
+    — we log and fall through to the original "expired" signal.
+    """
+    try:
+        from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
+    except ImportError:
+        return None
+
+    try:
+        tok = json.loads(token_path.read_text())
+        scopes = tok.get("scopes") or None
+        creds = Credentials.from_authorized_user_file(str(token_path), scopes)
+        if not creds.refresh_token:
+            return None
+        creds.refresh(Request())
+        token_path.write_text(creds.to_json())
+        refreshed = json.loads(token_path.read_text())
+        return refreshed.get("expiry")
+    except Exception:
+        return None
+
+
 def _check_gmail() -> dict:
-    """Check Gmail OAuth token status."""
+    """Check Gmail OAuth token status.
+
+    Behaviour: if the token is expired AND a refresh_token is available, we
+    refresh it in place (same thing the real outreach agent does lazily at send
+    time, see gmail_client.get_service). The monitor keeps the token warm on
+    its own schedule instead of waiting for the 30-min scheduler to try sending
+    and fail. That eliminates the false-positive "auth.health: expired" signal
+    that was fired every 30 minutes whenever nothing had been sent in the last
+    hour (since tokens expire after 60 min).
+    """
     result = {"status": "ok", "detail": ""}
 
     if not Path(CREDS_PATH).exists():
@@ -52,12 +114,17 @@ def _check_gmail() -> dict:
 
     try:
         token_data = json.loads(token_path.read_text())
+        has_refresh = bool(token_data.get("refresh_token"))
         expiry_str = token_data.get("expiry") or token_data.get("token_expiry") or ""
         if expiry_str:
             try:
                 expiry = datetime.fromisoformat(expiry_str.replace("Z", "+00:00"))
                 now = datetime.now(timezone.utc)
                 if expiry < now:
+                    if has_refresh:
+                        new_expiry = _try_refresh_gmail_token(token_path)
+                        if new_expiry:
+                            return {"status": "ok", "detail": f"refreshed — valid until {new_expiry}"}
                     return {"status": "expired", "detail": f"token expired at {expiry_str} — re-run auth"}
                 result["detail"] = f"valid until {expiry_str}"
             except ValueError:
@@ -110,10 +177,15 @@ def run_check() -> dict:
             pass
 
     if _FLEET_AVAILABLE:
+        # The monitor ran successfully — it correctly observed the auth state.
+        # Broken downstream credentials belong in auth.health (consumed by the
+        # dashboard), not in the monitor's own error_count. Previously every
+        # expired-token check was counted as a monitor failure, inflating the
+        # fleet error count (15/18) when the monitor itself was fine.
         try:
             _fleet_state.heartbeat(
                 "auth_monitor",
-                status="ok" if overall == "ok" else "error",
+                status="ok",
                 result=overall,
             )
         except Exception:
