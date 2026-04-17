@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Press Kit — Robert-Jan Mastenbroek</title>
+    <meta name="description" content="Electronic Press Kit for Robert-Jan Mastenbroek — DJ, singer, and creator of Holy Rave. Melodic techno and tribal psytrance from Tenerife.">
+    <meta property="og:title" content="Press Kit — Robert-Jan Mastenbroek">
+    <meta property="og:description" content="Ancient truth. Future sound. EPK for booking, press, and podcast inquiries.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --dark-bg: #0a0a0a;
+            --secondary-bg: #111111;
+            --card-bg: #161616;
+            --accent-gold: #d4af37;
+            --accent-gold-dim: rgba(212, 175, 55, 0.12);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-gold: rgba(212, 175, 55, 0.25);
+            --font-serif: 'Cormorant Garamond', Georgia, serif;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        /* ── Layout ── */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ── Header ── */
+        .epk-header {
+            padding: 80px 0 60px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .epk-label {
+            font-family: var(--font-sans);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+        }
+
+        .epk-name {
+            font-family: var(--font-serif);
+            font-size: clamp(42px, 8vw, 72px);
+            font-weight: 500;
+            line-height: 1.05;
+            letter-spacing: -0.01em;
+            margin-bottom: 12px;
+        }
+
+        .epk-tagline {
+            font-family: var(--font-serif);
+            font-size: 20px;
+            font-style: italic;
+            color: var(--accent-gold);
+            margin-bottom: 28px;
+        }
+
+        .epk-roles {
+            font-size: 13px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 36px;
+        }
+
+        .epk-contact-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .epk-contact-bar a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+
+        .epk-contact-bar a:hover { color: var(--accent-gold); }
+
+        .epk-contact-bar .divider {
+            width: 1px;
+            height: 16px;
+            background: var(--border-subtle);
+        }
+
+        /* ── Sections ── */
+        .section {
+            padding: 56px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .section:last-child { border-bottom: none; }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            font-family: var(--font-serif);
+            font-size: 32px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        p {
+            color: rgba(255,255,255,0.82);
+            margin-bottom: 16px;
+            line-height: 1.8;
+        }
+
+        p:last-child { margin-bottom: 0; }
+
+        /* ── Quote block ── */
+        blockquote {
+            border-left: 2px solid var(--accent-gold);
+            padding: 4px 0 4px 24px;
+            margin: 32px 0;
+            font-family: var(--font-serif);
+            font-size: 20px;
+            font-style: italic;
+            color: rgba(255,255,255,0.9);
+            line-height: 1.5;
+        }
+
+        /* ── Stats bar ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2px;
+            margin-top: 8px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: var(--font-serif);
+            font-size: 36px;
+            font-weight: 600;
+            color: var(--accent-gold);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        /* ── Track table ── */
+        .track-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        .track-table th {
+            text-align: left;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .track-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            vertical-align: middle;
+        }
+
+        .track-table tr:last-child td { border-bottom: none; }
+
+        .track-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .track-name {
+            font-family: var(--font-serif);
+            font-size: 17px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .bpm-badge {
+            display: inline-block;
+            background: var(--accent-gold-dim);
+            border: 1px solid var(--border-gold);
+            color: var(--accent-gold);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 2px;
+            letter-spacing: 0.05em;
+        }
+
+        .scripture {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* ── Holy Rave comparison table ── */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        .comparison-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .comparison-table th.highlight {
+            color: var(--accent-gold);
+        }
+
+        .comparison-table td {
+            padding: 13px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.7);
+            vertical-align: middle;
+        }
+
+        .comparison-table td.highlight {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .comparison-table td:first-child {
+            color: var(--text-secondary);
+            font-size: 12px;
+            letter-spacing: 0.05em;
+        }
+
+        .check { color: var(--accent-gold); }
+        .no    { color: #444; }
+
+        /* ── Interview slots ── */
+        .slots {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .slot {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            font-size: 14px;
+        }
+
+        .slot-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            flex-shrink: 0;
+        }
+
+        /* ── CTA buttons ── */
+        .cta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 24px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--accent-gold);
+            color: #000;
+            border: 1px solid var(--accent-gold);
+        }
+
+        .btn-primary:hover {
+            background: #c9a227;
+            border-color: #c9a227;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        /* ── Footer ── */
+        .epk-footer {
+            padding: 48px 0;
+            text-align: center;
+        }
+
+        .epk-footer-name {
+            font-family: var(--font-serif);
+            font-size: 22px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .epk-footer-quote {
+            font-size: 13px;
+            color: #444;
+            font-style: italic;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .epk-header { padding: 48px 0 40px; }
+            .section { padding: 40px 0; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .epk-contact-bar .divider { display: none; }
+            .track-table { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ── HEADER ────────────────────────────────────────────── -->
+    <header class="epk-header">
+        <div class="epk-label">Electronic Press Kit — 2026</div>
+        <h1 class="epk-name">Robert-Jan<br>Mastenbroek</h1>
+        <div class="epk-tagline">Ancient Truth. Future Sound.</div>
+        <div class="epk-roles">DJ &nbsp;·&nbsp; Singer &nbsp;·&nbsp; Producer &nbsp;·&nbsp; Creator of Holy Rave</div>
+        <div class="epk-contact-bar">
+            <a href="mailto:motomotosings@gmail.com">motomotosings@gmail.com</a>
+            <div class="divider"></div>
+            <a href="https://instagram.com/holyraveofficial" target="_blank">@holyraveofficial</a>
+            <div class="divider"></div>
+            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank">Spotify</a>
+            <div class="divider"></div>
+            <span style="color:var(--text-secondary);font-size:13px;">Tenerife, Spain (CET)</span>
+        </div>
+    </header>
+
+    <!-- ── ONE LINE ───────────────────────────────────────────── -->
+    <section class="section">
+        <div class="section-label">In One Sentence</div>
+        <h2 style="font-size:clamp(22px,4vw,30px); line-height:1.4; color:rgba(255,255,255,0.92);">
+            DJ, singer, and creator of Holy Rave — proving that Jesus shows up even where you'd least expect Him.
+        </h2>
+    </section>
+
+    <!-- ── STATS ─────────────────────────────────────────────── -->
+    <section class="section">
+        <div class="section-label">By the Numbers</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">290K</div>
+                <div class="stat-label">Instagram Followers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1.9M</div>
+                <div class="stat-label">IG Views (single post)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">500K</div>
+                <div class="stat-label">TikTok Views</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">30+</div>
+                <div class="stat-label">Original Tracks</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── BIO ───────────────────────────────────────────────── -->
+    <section class="section">
+        <div class="section-label">Biography</div>
+
+        <p>Robert-Jan Mastenbroek has walked away from a record deal, a million-dollar business, and a spiritual school with 1,200 students — each time for the same reason: it wasn't how it was supposed to be.</p>
+
+        <p>He built Dream or Donate, the largest Dutch/Belgian crowdfunding platform — €6 million raised. Walked away from a major record deal at 21 because it meant becoming "a monkey on a stage." Became a millionaire. Then lost it. Six years in a campervan across Europe and Tenerife, building himself back from nothing — busking in the streets at 10€/hour, working his way to 750€/hour for private business events. Peak earning. Still not happy.</p>
+
+        <p>He got on his knees on a beach and asked Jesus to make him happy again — the way he was as a child, before the money, the status, and the noise.</p>
+
+        <p>What emerged was <strong style="color:var(--text-primary);">Holy Rave</strong>.</p>
+
+        <blockquote>
+            "I feel happy as a child all day, every day now. Because I know I have a father in heaven who loves me. When I walk. When I'm drinking coffee. When I'm doing my shows. A lot. A lot."
+        </blockquote>
+
+        <p>His sets combine 130–140 BPM tribal psytrance and melodic techno with live vocals, Hebrew prayer mantras, and biblical lyrics. Between tracks: a short prayer — never a sermon, always specific, always under 30 seconds. Then the next track drops.</p>
+
+        <p>He plays preferably for free. Because the people who might need this most are usually the ones who can't afford a ticket.</p>
+
+        <blockquote style="font-size:17px;">"Man — you just should have been there."</blockquote>
+    </section>
+
+    <!-- ── HOLY RAVE ──────────────────────────────────────────── -->
+    <section class="section">
+        <div class="section-label">Holy Rave — The Show</div>
+        <h2>Wherever He Plays, the Rave Becomes Holy</h2>
+
+        <p>Holy Rave is not a church event. It is not a sober rave. It is wherever Robert-Jan plays. The sacred energy travels with him — into clubs, caves, beaches, living rooms, and rooftops — because the music carries it, not the venue.</p>
+
+        <p>The dancefloor is where people who have been searching in all the wrong places sometimes find what they were looking for — without knowing that's what happened. The cognitive dissonance is the point: 140 BPM tribal beats and a man quietly, unperformatively rooted in Jesus. People who've never set foot in a church stand on a dancefloor and feel something they can't name. Something that stays after the night ends.</p>
+
+        <table class="comparison-table" style="margin-top:32px;">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Church Worship</th>
+                    <th>Regular Rave</th>
+                    <th class="highlight">Holy Rave</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Chairs</td>
+                    <td><span class="check">Yes</span></td>
+                    <td><span class="no">No</span></td>
+                    <td class="highlight"><span class="no">No</span></td>
+                </tr>
+                <tr>
+                    <td>Long talks</td>
+                    <td><span class="check">Yes</span></td>
+                    <td><span class="no">No</span></td>
+                    <td class="highlight"><span class="no">No</span></td>
+                </tr>
+                <tr>
+                    <td>Alcohol</td>
+                    <td><span class="no">No</span></td>
+                    <td><span class="check">Yes</span></td>
+                    <td class="highlight">Present, not required</td>
+                </tr>
+                <tr>
+                    <td>Who it's for</td>
+                    <td>Believers</td>
+                    <td>Escapers</td>
+                    <td class="highlight">Seekers</td>
+                </tr>
+                <tr>
+                    <td>What stays after</td>
+                    <td>Expected</td>
+                    <td>Nothing</td>
+                    <td class="highlight">Something they can't name</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ── MUSIC ──────────────────────────────────────────────── -->
+    <section class="section">
+        <div class="section-label">Music</div>
+        <h2>Selected Catalogue</h2>
+        <p style="margin-bottom:28px;">All tracks written and produced in Tenerife. 30+ originals released independently — no label, no manager.</p>
+
+        <table class="track-table">
+            <thead>
+                <tr>
+                    <th>Track</th>
+                    <th>BPM</th>
+                    <th>Style</th>
+                    <th>Scripture</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="track-name">Renamed</span></td>
+                    <td><span class="bpm-badge">128</span></td>
+                    <td>Melodic Techno</td>
+                    <td><span class="scripture">Isaiah 62</span></td>
+                </tr>
+                <tr>
+                    <td><span class="track-name">Halleluyah</span></td>
+                    <td><span class="bpm-badge">140</span></td>
+                    <td>Psytrance</td>
+                    <td><span class="scripture">—</span></td>
+                </tr>
+                <tr>
+                    <td><span class="track-name">Jericho</span></td>
+                    <td><span class="bpm-badge">140</span></td>
+                    <td>Psytrance</td>
+                    <td><span class="scripture">Joshua 6</span></td>
+                </tr>
+                <tr>
+                    <td><span class="track-name">Fire In Our Hands</span></td>
+                    <td><span class="bpm-badge">130</span></td>
+                    <td>Melodic Techno</td>
+                    <td><span class="scripture">—</span></td>
+                </tr>
+                <tr>
+                    <td><span class="track-name">Selah</span></td>
+                    <td><span class="bpm-badge">130</span></td>
+                    <td>Handpan / Oud / Middle Eastern</td>
+                    <td><span class="scripture">Psalm 46</span></td>
+                </tr>
+                <tr>
+                    <td><span class="track-name">Living Water</span></td>
+                    <td><span class="bpm-badge">124</span></td>
+                    <td>Organic House</td>
+                    <td><span class="scripture">John 4</span></td>
+                </tr>
+                <tr>
+                    <td><span class="track-name">He Is The Light</span></td>
+                    <td><span class="bpm-badge">128</span></td>
+                    <td>Melodic Techno</td>
+                    <td><span class="scripture">John 8</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="cta-row">
+            <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-primary">
+                Listen on Spotify
+            </a>
+            <a href="https://instagram.com/holyraveofficial" target="_blank" class="btn btn-ghost">
+                Watch Live Footage
+            </a>
+        </div>
+    </section>
+
+    <!-- ── PODCAST / INTERVIEW ────────────────────────────────── -->
+    <section class="section">
+        <div class="section-label">For Podcasts &amp; Interviews</div>
+        <h2>What He Talks About Well</h2>
+
+        <p>Robert-Jan is an open book. His story — the €6M platform, the campervan, the busking, the beach baptism — is one of the more unusual origin stories in electronic music. Subjects he speaks to directly:</p>
+
+        <ul style="list-style:none; margin:24px 0; display:flex; flex-direction:column; gap:12px;">
+            <li style="display:flex; gap:12px; color:rgba(255,255,255,0.8);">
+                <span style="color:var(--accent-gold); flex-shrink:0; margin-top:2px;">—</span>
+                How his music career emerged <em>from</em> losing everything, not building toward something
+            </li>
+            <li style="display:flex; gap:12px; color:rgba(255,255,255,0.8);">
+                <span style="color:var(--accent-gold); flex-shrink:0; margin-top:2px;">—</span>
+                The difference between spiritual performance and actual faith — and why that distinction shapes everything he makes
+            </li>
+            <li style="display:flex; gap:12px; color:rgba(255,255,255,0.8);">
+                <span style="color:var(--accent-gold); flex-shrink:0; margin-top:2px;">—</span>
+                Why he plays free shows — and what happens in the room when the barrier comes down
+            </li>
+            <li style="display:flex; gap:12px; color:rgba(255,255,255,0.8);">
+                <span style="color:var(--accent-gold); flex-shrink:0; margin-top:2px;">—</span>
+                Encoding biblical meaning into 140 BPM tribal beats without announcing it
+            </li>
+            <li style="display:flex; gap:12px; color:rgba(255,255,255,0.8);">
+                <span style="color:var(--accent-gold); flex-shrink:0; margin-top:2px;">—</span>
+                What it feels like to watch a secular crowd encounter something sacred without knowing what hit them
+            </li>
+        </ul>
+
+        <p><strong style="color:var(--text-primary);">Available for interview:</strong> Tuesday, Wednesday, Thursday — 11:00–17:00 CET (Tenerife, Spain — UTC+1)</p>
+        <p style="margin-top:4px;"><strong style="color:var(--text-primary);">Format:</strong> Zoom, phone, or in-person in Tenerife</p>
+
+        <div class="cta-row">
+            <a href="mailto:motomotosings@gmail.com?subject=Interview%20Request%20—%20Robert-Jan%20Mastenbroek" class="btn btn-primary">
+                Book an Interview
+            </a>
+        </div>
+    </section>
+
+    <!-- ── PHOTOS & ASSETS ────────────────────────────────────── -->
+    <section class="section">
+        <div class="section-label">Photos &amp; Assets</div>
+        <h2>Press Images</h2>
+        <p>High-resolution photos, track artwork, and video footage available on request.</p>
+        <p style="margin-top:8px;">
+            <strong style="color:var(--text-primary);">Email:</strong>
+            <a href="mailto:motomotosings@gmail.com" style="color:var(--accent-gold); text-decoration:none;">motomotosings@gmail.com</a>
+        </p>
+        <p style="margin-top:4px;">
+            <strong style="color:var(--text-primary);">Live footage:</strong>
+            <a href="https://instagram.com/holyraveofficial" target="_blank" style="color:var(--accent-gold); text-decoration:none;">@holyraveofficial</a> on Instagram (1.9M views on best-performing post)
+        </p>
+    </section>
+
+    <!-- ── CONTACT ────────────────────────────────────────────── -->
+    <section class="section">
+        <div class="section-label">Contact</div>
+        <h2>Get in Touch</h2>
+        <p>For booking, press inquiries, interview requests, and playlist placement:</p>
+
+        <div style="margin:28px 0; display:flex; flex-direction:column; gap:16px;">
+            <div>
+                <div style="font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-secondary); margin-bottom:4px;">Email</div>
+                <a href="mailto:motomotosings@gmail.com" style="color:var(--accent-gold); text-decoration:none; font-size:16px;">motomotosings@gmail.com</a>
+            </div>
+            <div>
+                <div style="font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-secondary); margin-bottom:4px;">Instagram</div>
+                <a href="https://instagram.com/holyraveofficial" target="_blank" style="color:var(--accent-gold); text-decoration:none; font-size:16px;">@holyraveofficial</a>
+            </div>
+            <div>
+                <div style="font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-secondary); margin-bottom:4px;">Location</div>
+                <span style="font-size:15px; color:rgba(255,255,255,0.8);">Tenerife, Spain (CET — UTC+1)</span>
+            </div>
+            <div>
+                <div style="font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-secondary); margin-bottom:4px;">Spotify</div>
+                <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" style="color:var(--accent-gold); text-decoration:none; font-size:15px;">open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds</a>
+            </div>
+        </div>
+
+        <div class="cta-row">
+            <a href="mailto:motomotosings@gmail.com" class="btn btn-primary">Send a Message</a>
+            <a href="https://robertjanmastenbroek.com" class="btn btn-ghost">Main Website</a>
+        </div>
+    </section>
+
+    <!-- ── FOOTER ─────────────────────────────────────────────── -->
+    <footer class="epk-footer">
+        <div class="epk-footer-name">Robert-Jan Mastenbroek</div>
+        <div class="epk-footer-quote">"Nobody knows the truth until we die. But I believe."</div>
+    </footer>
+
+</div>
+
+</body>
+</html>
