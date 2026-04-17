@@ -243,13 +243,44 @@ def run_discovery(
 
     all_urls = list(dict.fromkeys(all_urls))
     summary["pages_found"] = len(all_urls)
-    log.info("Total unique submission pages: %d", len(all_urls))
+
+    # Filter out pages already in contacts (via notes) or already attempted (via discovery_log)
+    with db.get_conn() as conn:
+        notes_rows = conn.execute(
+            "SELECT notes FROM contacts WHERE notes LIKE '%soundplate%'"
+        ).fetchall()
+        log_rows = conn.execute(
+            "SELECT search_query FROM discovery_log WHERE search_query LIKE 'soundplate:page:%'"
+        ).fetchall()
+
+    already_processed: set[str] = set()
+    for (notes,) in notes_rows:
+        if notes:
+            for word in notes.split():
+                if "soundplate.com" in word:
+                    already_processed.add(word.strip(".,;\"'"))
+    for (sq,) in log_rows:
+        already_processed.add(sq.removeprefix("soundplate:page:"))
+
+    before = len(all_urls)
+    all_urls = [u for u in all_urls if u not in already_processed]
+    skipped = before - len(all_urls)
+    if skipped:
+        log.info("Skipped %d pages already attempted. %d remaining.", skipped, len(all_urls))
+    log.info("Total unique submission pages to process: %d", len(all_urls))
 
     if limit:
         all_urls = all_urls[:limit]
 
     for url in all_urls:
         summary["pages_processed"] += 1
+        # Mark this page as attempted so future runs skip it
+        if not dry_run:
+            with db.get_conn() as conn:
+                conn.execute(
+                    "INSERT OR IGNORE INTO discovery_log (search_query, contact_type, results_found, searched_at) VALUES (?, 'curator', 0, datetime('now'))",
+                    (f"soundplate:page:{url}",),
+                )
         try:
             html = _fetch(url)
             if not html:
