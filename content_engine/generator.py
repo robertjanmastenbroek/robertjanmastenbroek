@@ -46,10 +46,21 @@ FORMAT_TO_ANGLE = {
 }
 
 
-def pick_sub_mode(angle: str) -> str:
-    """Pick a random sub-mode for the given angle."""
+def pick_sub_mode(angle: str, sub_mode_weights: dict | None = None) -> str:
+    """Pick a sub-mode for the given angle, weighted by learned performance."""
     modes = ANGLE_SUB_MODES.get(angle, ANGLE_SUB_MODES["emotional"])
-    return random.choice(modes)
+    w = sub_mode_weights or {}
+    scores = [(m, max(w.get(m, 1.0), 0.0)) for m in modes]
+    total = sum(s for _, s in scores)
+    if total == 0:
+        return random.choice(modes)
+    r = random.random() * total
+    cumulative = 0.0
+    for m, s in scores:
+        cumulative += s
+        if r <= cumulative:
+            return m
+    return scores[-1][0]
 
 
 # ─── Sub-mode register guidance (forces Claude toward specific emotional tones) ──
@@ -222,6 +233,7 @@ def generate_hooks_for_format(
     weights: dict | None = None,
     exclude_ids: set | None = None,
     visual_context: dict | None = None,
+    sub_mode_weights: dict | None = None,
 ) -> dict:
     """Generate a hook for a specific clip format.
 
@@ -233,7 +245,7 @@ def generate_hooks_for_format(
 
     # 2. Pick sub-mode
     angle = FORMAT_TO_ANGLE.get(fmt, "emotional")
-    sub_mode = pick_sub_mode(angle)
+    sub_mode = pick_sub_mode(angle, sub_mode_weights)
 
     # 3. Fill template slots with Claude (or use example_fill as fallback)
     if template.slots:

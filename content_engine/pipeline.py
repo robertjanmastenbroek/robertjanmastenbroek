@@ -434,6 +434,7 @@ def build_daily_clips(
         hook_data = generate_hooks_for_format(
             fmt, track.title, track_facts, weights.hook_weights, used_ids,
             visual_context=visual_context,
+            sub_mode_weights=weights.sub_mode_weights,
         )
         used_ids.add(hook_data["template_id"])
 

@@ -45,3 +45,27 @@ def test_trend_brief_save_load(tmp_path, monkeypatch):
     loaded = TrendBrief.load("2026-04-12")
     assert loaded.dominant_emotion == "joy"
     assert loaded.trend_confidence == 0.75
+
+
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from content_engine.generator import pick_sub_mode
+
+def test_pick_sub_mode_no_weights_returns_valid_mode():
+    result = pick_sub_mode("emotional", {})
+    assert result in ["COST", "NAMING", "DOUBT", "DEVOTION", "RUPTURE"]
+
+def test_pick_sub_mode_weighted_favors_high_weight():
+    weights = {"COST": 0.001, "NAMING": 0.001, "DOUBT": 0.001, "DEVOTION": 100.0, "RUPTURE": 0.001}
+    results = [pick_sub_mode("emotional", weights) for _ in range(200)]
+    assert results.count("DEVOTION") > 160, f"Expected DEVOTION to dominate, got {results.count('DEVOTION')}/200"
+
+def test_pick_sub_mode_zero_weights_still_returns_valid():
+    weights = {"COST": 0.0, "NAMING": 0.0, "DOUBT": 0.0, "DEVOTION": 0.0, "RUPTURE": 0.0}
+    result = pick_sub_mode("emotional", weights)
+    assert result in ["COST", "NAMING", "DOUBT", "DEVOTION", "RUPTURE"]
+
+def test_pick_sub_mode_unknown_angle_uses_emotional_modes():
+    result = pick_sub_mode("nonexistent_angle", {})
+    assert result in ["COST", "NAMING", "DOUBT", "DEVOTION", "RUPTURE"]
