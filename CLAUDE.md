@@ -48,12 +48,13 @@ If an agent (rjm-master, frontend-design, or any other) is about to touch these 
 ## Track Catalogue
 | Track | BPM | Style | Scripture anchor |
 |-------|-----|-------|-----------------|
-| Renamed | — | — | Isaiah 62 |
+| Renamed | 128 | Melodic Techno | Isaiah 62 |
 | Halleluyah | 140 | Psytrance | — |
 | Jericho | 140 | Psytrance | Joshua 6 |
 | Fire In Our Hands | 130 | — | — |
+| Selah | 130 | Handpan / Oud / Middle Eastern | Psalm 46 |
 | Living Water | 124 | — | John 4 |
-| He Is The Light | — | — | John 8 |
+| He Is The Light | 128 | — | John 8 |
 
 When promoting a specific track, find its scripture anchor and lead with it — subtly.
 

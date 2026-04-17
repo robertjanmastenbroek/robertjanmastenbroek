@@ -68,5 +68,6 @@ def test_seed_track_bpms_hardcoded():
     assert by_title["halleluyah"].bpm == 140, f"Expected 140, got {by_title['halleluyah'].bpm}"
     assert by_title["jericho"].bpm == 140, f"Expected 140, got {by_title['jericho'].bpm}"
     assert by_title["fire in our hands"].bpm == 130, f"Expected 130, got {by_title['fire in our hands'].bpm}"
+    assert by_title["selah"].bpm == 130, f"Expected 130, got {by_title['selah'].bpm}"
     for t in pool.tracks:
         assert t.bpm > 0, f"Track '{t.title}' still has bpm=0"

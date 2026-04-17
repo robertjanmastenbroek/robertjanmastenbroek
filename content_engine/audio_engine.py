@@ -31,11 +31,12 @@ SCRIPTURE_ANCHORS = {
     "he is the light": "John 8",
     "exodus": "Exodus 14",
     "abba": "Romans 8:15",
+    "selah": "Psalm 46",
 }
 
 # ─── Active track seed (top 4 by save rate) ─────────────────────────────────
 
-SEED_TRACKS = ["halleluyah", "renamed", "jericho", "fire in our hands"]
+SEED_TRACKS = ["halleluyah", "renamed", "jericho", "fire in our hands", "selah"]
 
 # Artist-verified BPMs — never rely on librosa for these (librosa doubles psytrance
 # BPMs: half-time detection reports ~92 BPM → doubled to 185 for a 140 BPM track).
@@ -44,6 +45,7 @@ TRACK_BPMS: dict[str, int] = {
     "renamed":           128,
     "jericho":           140,
     "fire in our hands": 130,
+    "selah":             130,
     "living water":      124,
     "he is the light":   128,
     "exodus":            138,
