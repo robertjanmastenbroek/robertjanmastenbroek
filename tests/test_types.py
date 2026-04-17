@@ -99,3 +99,19 @@ def test_derive_format_mix_caps_at_two_per_format():
 def test_derive_format_mix_returns_three_clips():
     weights = {"transitional": 1.0, "emotional": 1.0, "performance": 1.0}
     assert len(derive_format_mix(weights)) == 3
+
+
+from content_engine.pipeline import emotional_duration_from_weights
+
+def test_emotional_duration_returns_best_clip_length_clamped():
+    assert emotional_duration_from_weights(5) == 5
+    assert emotional_duration_from_weights(7) == 7
+    assert emotional_duration_from_weights(15) == 15
+
+def test_emotional_duration_clamps_below_minimum():
+    assert emotional_duration_from_weights(2) == 5
+    assert emotional_duration_from_weights(0) == 5
+
+def test_emotional_duration_clamps_above_maximum():
+    assert emotional_duration_from_weights(30) == 15
+    assert emotional_duration_from_weights(60) == 15

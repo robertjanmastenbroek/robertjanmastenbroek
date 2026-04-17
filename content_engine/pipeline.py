@@ -69,6 +69,16 @@ def _load_project_env() -> None:
 _load_project_env()
 
 
+def emotional_duration_from_weights(best_clip_length: int, min_s: int = 5, max_s: int = 15) -> int:
+    """Clamp emotional clip duration to [5, 15] seconds.
+
+    The viral learning loop computes best_clip_length from real viewer retention
+    data. This function prevents extreme values while respecting the learned
+    preference when it falls within the valid range.
+    """
+    return max(min_s, min(max_s, best_clip_length))
+
+
 def derive_format_mix(format_weights: dict, n_clips: int = 3) -> list:
     """Derive a clip format mix from learned weights.
 
@@ -230,6 +240,11 @@ def run_full_day(
     if config is None:
         config = DailyPipelineConfig(
             formats=derive_format_mix(weights.format_weights),
+            durations={
+                ClipFormat.TRANSITIONAL: 22,
+                ClipFormat.EMOTIONAL: emotional_duration_from_weights(weights.best_clip_length),
+                ClipFormat.PERFORMANCE: 28,
+            },
         )
 
     # 3. Select track
