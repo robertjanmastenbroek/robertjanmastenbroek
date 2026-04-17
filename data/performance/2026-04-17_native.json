@@ -1,0 +1,23 @@
+[
+  {
+    "platform": "instagram",
+    "clip_index": 0,
+    "post_id": "ig1",
+    "success": true,
+    "posted_at": "2026-04-17T12:49:42.452991+00:00"
+  },
+  {
+    "platform": "youtube",
+    "clip_index": 0,
+    "post_id": "yt1",
+    "success": true,
+    "posted_at": "2026-04-17T12:49:42.518041+00:00"
+  },
+  {
+    "platform": "facebook",
+    "clip_index": 0,
+    "post_id": "fb1",
+    "success": true,
+    "posted_at": "2026-04-17T12:49:42.519899+00:00"
+  }
+]

@@ -33,5 +33,35 @@
     "template_id": "perf.wait_drop",
     "date": "2026-04-17",
     "format": "performance"
+  },
+  {
+    "template_id": "save.song_name_go",
+    "date": "2026-04-17",
+    "format": "transitional"
+  },
+  {
+    "template_id": "save.wait_for_drop",
+    "date": "2026-04-17",
+    "format": "transitional"
+  },
+  {
+    "template_id": "bodydrop.bassline_warning",
+    "date": "2026-04-17",
+    "format": "performance"
+  },
+  {
+    "template_id": "save.turn_up_11",
+    "date": "2026-04-17",
+    "format": "transitional"
+  },
+  {
+    "template_id": "save.pov_discovered",
+    "date": "2026-04-17",
+    "format": "transitional"
+  },
+  {
+    "template_id": "perf.turn_volume",
+    "date": "2026-04-17",
+    "format": "performance"
   }
 ]

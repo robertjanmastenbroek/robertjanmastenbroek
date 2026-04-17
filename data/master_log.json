@@ -614,5 +614,101 @@
     "summary": "discover: 0 contacts added (US/CA run \u2014 top 5 US outlets already in DB: Dancing Astronaut, Magnetic Mag, Your EDM, DJ Sessions, Festy Hub; secondary outlets blocked 403 or form-only; 4 YouTube contacts reactivated warm_up separately) + 0 playlists (PSYTRANCE DOMINANCE candidate, follower count unverified) + 0 playlist contacts promoted",
     "contacts_added": 0,
     "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-17T12:04:29.423543",
+    "summary": "discover: 0 contacts added (Italy/Scandinavia/LatAm explored, contacts saturated) + 5 playlists added (Burning Man high-priority cluster 7K-106K followers) + 0 playlist contacts promoted",
+    "contacts_added": 5,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-17T12:10:20.883347",
+    "summary": "discover: 1 contact added (1 podcast) + 4 playlists + 0 playlist contacts promoted",
+    "contacts_added": 5,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-17T12:14:14.811004",
+    "summary": "outreach: 1 emails sent, 0 replies detected",
+    "contacts_added": 1,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T13:05:17.654069",
+    "summary": "research: 0 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-17T13:11:37.030164",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T13:39:32.804730",
+    "summary": "discover: 4 contacts added (lifestyle_creator:1 Tenerife, digital_nomad:1 Tenerife, retreat:2 Tenerife+NL) + 0 playlists + 0 promoted",
+    "contacts_added": 4,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-17T14:04:32.518246",
+    "summary": "outreach: 3 emails sent, 0 replies detected",
+    "contacts_added": 3,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T14:06:37.988593",
+    "summary": "outreach: 4 emails sent, 0 replies detected",
+    "contacts_added": 4,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T14:07:08.141961",
+    "summary": "outreach: 0 emails sent, 1 reply detected (bounce: twinfinsurfcamp.com)",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T15:12:06.827447",
+    "summary": "outreach: 1 emails sent, 1 replies detected",
+    "contacts_added": 1,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T16:11:39.184261",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T17:11:38.426052",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T18:23:22.972121",
+    "summary": "outreach: 4 emails sent, 0 replies detected",
+    "contacts_added": 4,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T19:04:07.279039",
+    "summary": "research: 1 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-17T19:12:06.097788",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T20:18:08.188630",
+    "summary": "outreach: 5 emails sent, 0 replies detected",
+    "contacts_added": 5,
+    "strategy_worked": "rjm-outreach-agent"
   }
 ]

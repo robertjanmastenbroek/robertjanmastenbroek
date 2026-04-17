@@ -194,5 +194,24 @@
     "playlists_evaluated": 15,
     "playlists_added": 4,
     "database_total": 36
+  },
+  {
+    "ts": "2026-04-17T12:39:41Z",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 20,
+    "contacts_added": 4,
+    "webfetch_visits": 5,
+    "skipped_no_email": 1,
+    "personas_found": {
+      "faith_creator": 0,
+      "ecstatic_dance": 0,
+      "church": 0,
+      "rave_photographer": 0,
+      "digital_nomad": 1,
+      "lifestyle_creator": 1,
+      "retreat": 2
+    }
   }
 ]
