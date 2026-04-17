@@ -4,19 +4,60 @@ Native API uploads: Instagram Graph API + Facebook Page + YouTube Data API v3.
 Falls back to existing buffer_poster.py if native API unavailable or credentials missing.
 Posts 3 clips × 3 platforms = 9 posts/day on staggered schedule.
 """
+import json
 import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import date as _date, datetime, timezone, timedelta
 from pathlib import Path
 
 import requests
 
 PROJECT_DIR = Path(__file__).parent.parent
+PERFORMANCE_DIR = PROJECT_DIR / "data" / "performance"
 sys.path.insert(0, str(PROJECT_DIR / "outreach_agent"))
 
 logger = logging.getLogger(__name__)
+
+
+# ─── Native-post dedup ────────────────────────────────────────────────────────
+# Separate from _posts.json so it survives manual registry deletion.
+# Prevents native double-posts when a user clears the idempotency guard
+# to force a re-run after deleting Buffer scheduled videos.
+
+def _native_dedup_path(date_str: str = "") -> Path:
+    return PERFORMANCE_DIR / f"{date_str or _date.today().isoformat()}_native.json"
+
+
+def _load_native_registry(date_str: str = "") -> set:
+    """Return set of (platform, clip_index) already posted natively today."""
+    path = _native_dedup_path(date_str)
+    if not path.exists():
+        return set()
+    try:
+        data = json.loads(path.read_text())
+        return {(r["platform"], r["clip_index"]) for r in data if r.get("success")}
+    except Exception:
+        return set()
+
+
+def _record_native_post(platform: str, clip_index: int, post_id: str, date_str: str = "") -> None:
+    """Append a successful native post to the dedup registry."""
+    path = _native_dedup_path(date_str)
+    PERFORMANCE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        data = json.loads(path.read_text()) if path.exists() else []
+        data.append({
+            "platform": platform,
+            "clip_index": clip_index,
+            "post_id": post_id,
+            "success": True,
+            "posted_at": datetime.now(timezone.utc).isoformat(),
+        })
+        path.write_text(json.dumps(data, indent=2))
+    except Exception as e:
+        logger.warning(f"[distributor] native dedup write failed: {e}")
 
 # IG publishing is now routed through graph.facebook.com — that's the
 # endpoint that accepts the Facebook User/Page access token we get via the
@@ -510,8 +551,9 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
 
         creation_id = resp.json()["id"]
 
-        # 2. Wait for FINISHED (up to 2 minutes)
-        for _ in range(24):
+        # 2. Wait for FINISHED (up to 3 minutes — Reels can take > 2 min to transcode)
+        finished = False
+        for _ in range(36):
             time.sleep(5)
             status_resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{creation_id}",
@@ -521,11 +563,19 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
             status_data = status_resp.json()
             ig_status = status_data.get("status_code", "")
             if ig_status == "FINISHED":
+                finished = True
                 break
             if ig_status == "ERROR":
                 err = status_data.get("error_message", "unknown processing error")
                 logger.error(f"Instagram Reel container ERROR: {err}")
                 return {"success": False, "platform": "instagram", "error": f"container ERROR: {err}"}
+
+        if not finished:
+            logger.error(
+                f"[distributor] Instagram Reel container {creation_id} timed out before FINISHED — "
+                "not publishing to avoid storing an invalid media ID"
+            )
+            return {"success": False, "platform": "instagram", "error": "container timed out before FINISHED"}
 
         # 3. Publish
         pub_resp = requests.post(
@@ -828,12 +878,32 @@ def distribute_clip(clip: dict) -> dict:
 
     logger.info(f"[distributor] {platform} clip {clip_index} → scheduled {scheduled_at}")
 
+    # Native-post dedup: skip platforms already posted natively today, even if
+    # the main _posts.json registry was deleted to force a re-run. This is what
+    # prevents double-posts when the user clears Buffer and re-runs the pipeline.
+    _native_already_posted = _load_native_registry()
+    if (platform, clip_index) in _native_already_posted:
+        logger.warning(
+            f"[distributor] DEDUP: {platform} clip {clip_index} was already posted "
+            f"natively today — skipping to prevent double-post"
+        )
+        return {
+            "success": True,
+            "post_id": "dedup_skipped",
+            "platform": platform,
+            "clip_index": clip_index,
+            "variant": clip.get("variant"),
+            "via": "native_dedup",
+        }
+
     if platform == "instagram":
         if _instagram_native_available():
             ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "")
             access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
             result = post_instagram_reel(path, caption, ig_user_id, access_token)
-            if not result.get("success"):
+            if result.get("success"):
+                _record_native_post(platform, clip_index, result.get("post_id", ""))
+            else:
                 _log_native_failure("instagram", result)
                 if not _is_auth_error(result):
                     result = _buffer_fallback(clip, scheduled_at)
@@ -850,7 +920,9 @@ def distribute_clip(clip: dict) -> dict:
         page_id    = os.environ.get("FACEBOOK_PAGE_ID", "")
         if page_token and page_id:
             result = post_facebook_reel(path, caption, page_id, page_token)
-            if not result.get("success"):
+            if result.get("success"):
+                _record_native_post(platform, clip_index, result.get("post_id", ""))
+            else:
                 _log_native_failure("facebook", result)
                 if not _is_auth_error(result):
                     result = _buffer_fallback(clip, scheduled_at)
@@ -860,7 +932,7 @@ def distribute_clip(clip: dict) -> dict:
                 "check FACEBOOK_PAGE_TOKEN / FACEBOOK_PAGE_ID in .env"
             )
             result = {"success": False, "platform": "facebook",
-                      "error": "native unavailable after pre-flight", "via": "native"}
+                      "error": "native unavailable after pre-fight", "via": "native"}
 
     elif platform == "youtube":
         api_key     = os.environ.get("YOUTUBE_API_KEY", "")
@@ -869,7 +941,9 @@ def distribute_clip(clip: dict) -> dict:
         if api_key and oauth_token:
             result = post_youtube_short(path, title, caption, api_key, oauth_token,
                                         publish_at=scheduled_at)
-            if not result.get("success"):
+            if result.get("success"):
+                _record_native_post(platform, clip_index, result.get("post_id", ""))
+            else:
                 _log_native_failure("youtube", result)
                 if not _is_auth_error(result):
                     result = _buffer_fallback(clip, scheduled_at)
@@ -894,7 +968,9 @@ def distribute_clip(clip: dict) -> dict:
             result = post_instagram_story(
                 story_path, caption, ig_user_id, access_token, spotify_url,
             )
-            if not result.get("success"):
+            if result.get("success"):
+                _record_native_post(platform, clip_index, result.get("post_id", ""))
+            else:
                 _log_native_failure("instagram_story", result)
                 if not _is_auth_error(result):
                     result = _buffer_fallback(clip, scheduled_at)
@@ -912,7 +988,9 @@ def distribute_clip(clip: dict) -> dict:
         if page_id and page_token:
             story_path = clip.get("story_path", clip.get("path", ""))
             result = post_facebook_story(story_path, page_id, page_token)
-            if not result.get("success"):
+            if result.get("success"):
+                _record_native_post(platform, clip_index, result.get("post_id", ""))
+            else:
                 _log_native_failure("facebook_story", result)
                 if not _is_auth_error(result):
                     result = _buffer_fallback(clip, scheduled_at)
@@ -974,8 +1052,9 @@ def post_instagram_story(video_path: str, caption: str, ig_user_id: str,
             return {"success": False, "platform": "instagram_story",
                     "error": f"container creation failed: {data}"}
 
-        # 2. Poll for FINISHED (up to 2 minutes)
-        for _ in range(24):
+        # 2. Poll for FINISHED (up to 3 minutes)
+        finished = False
+        for _ in range(36):
             time.sleep(5)
             status_resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{container_id}",
@@ -984,10 +1063,18 @@ def post_instagram_story(video_path: str, caption: str, ig_user_id: str,
             )
             status = status_resp.json().get("status_code", "")
             if status == "FINISHED":
+                finished = True
                 break
             if status == "ERROR":
                 return {"success": False, "platform": "instagram_story",
                         "error": "container processing error"}
+
+        if not finished:
+            logger.error(
+                f"[distributor] Instagram Story container {container_id} timed out before FINISHED — "
+                "not publishing to avoid storing an invalid media ID"
+            )
+            return {"success": False, "platform": "instagram_story", "error": "container timed out before FINISHED"}
 
         # 3. Publish
         pub_resp = requests.post(
@@ -995,9 +1082,19 @@ def post_instagram_story(video_path: str, caption: str, ig_user_id: str,
             data={"creation_id": container_id, "access_token": access_token},
             timeout=30,
         )
+        if pub_resp.status_code != 200:
+            return {"success": False, "platform": "instagram_story",
+                    "error": pub_resp.json().get("error", {}).get("message", pub_resp.text[:200])}
         pub_data = pub_resp.json()
-        return {"success": True, "platform": "instagram_story",
-                "post_id": pub_data.get("id", container_id)}
+        media_id = pub_data.get("id", "")
+        if not media_id or media_id == container_id:
+            logger.error(
+                f"[distributor] Instagram Story media_publish returned container_id as media_id — "
+                "post ID is not queryable; treating as failure"
+            )
+            return {"success": False, "platform": "instagram_story",
+                    "error": "media_publish did not return a distinct media ID"}
+        return {"success": True, "platform": "instagram_story", "post_id": media_id}
 
     except Exception as e:
         return {"success": False, "platform": "instagram_story", "error": str(e)}

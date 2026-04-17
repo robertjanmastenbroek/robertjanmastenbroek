@@ -170,7 +170,7 @@ class UnifiedWeights:
             },
             platform_weights={
                 "instagram": 1.0, "youtube": 1.0, "facebook": 1.0,
-                "tiktok": 1.0, "instagram_story": 1.0, "facebook_story": 1.0,
+                "instagram_story": 1.0, "facebook_story": 1.0,
             },
             transitional_category_weights={
                 "nature": 1.0, "satisfying": 1.0, "elemental": 1.0,

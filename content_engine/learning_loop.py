@@ -547,7 +547,8 @@ def fetch_instagram_story_metrics(post_ids: list, access_token: str) -> list:
                 timeout=15,
             )
             if resp.status_code != 200:
-                logger.warning(f"[learning_loop] IG Story insights {post_id}: {resp.status_code}")
+                err = resp.json().get("error", {}).get("message", resp.text[:200])
+                logger.warning(f"[learning_loop] IG Story insights {post_id}: {resp.status_code} — {err}")
                 continue
 
             raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
