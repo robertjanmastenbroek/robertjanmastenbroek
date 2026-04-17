@@ -25,6 +25,8 @@ import tempfile
 from pathlib import Path
 from typing import List, Tuple
 
+from content_engine.video_codec import video_codec_args
+
 logger = logging.getLogger(__name__)
 
 # Pillow-equivalent visual tokens, translated to ASS tag values.
@@ -224,7 +226,7 @@ def burn_captions(
             "ffmpeg", "-y",
             "-i", input_path,
             "-vf", filter_expr,
-            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            *video_codec_args(22, "fast"),
             "-pix_fmt", "yuv420p",
             "-c:a", "copy",
             output_path,

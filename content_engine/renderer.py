@@ -13,6 +13,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
+from content_engine.video_codec import video_codec_args
+
 PROJECT_DIR = Path(__file__).parent.parent
 logger = logging.getLogger(__name__)
 
@@ -175,7 +177,7 @@ def _crop_to_vertical(input_path: str, output_path: str, max_duration: float | N
         "-r", "30",  # normalize to 30fps — without this, mixed-rate sources (24/30/60fps)
         # produce frame drops when concatenated via the concat demuxer
         "-vf", f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase,crop={OUTPUT_W}:{OUTPUT_H}",
-        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+        *video_codec_args(26, "ultrafast"),
         *COMMON_VIDEO_FLAGS,
         "-an", output_path,
     ]
@@ -227,7 +229,7 @@ def _apply_color_grade(input_path: str, output_path: str, platform: str,
     cmd = [
         "ffmpeg", "-y", "-i", input_path,
         "-vf", eq_filter,
-        "-c:v", "libx264", "-preset", "fast", "-crf", crf,
+        *video_codec_args(crf, "fast"),
         "-profile:v", "high", "-level", "4.1",
         "-force_key_frames", "0",
         *COMMON_VIDEO_FLAGS,
@@ -246,7 +248,7 @@ def _apply_color_grade(input_path: str, output_path: str, platform: str,
         try:
             fallback_cmd = [
                 "ffmpeg", "-y", "-i", input_path,
-                "-c:v", "libx264", "-preset", "fast", "-crf", crf,
+                *video_codec_args(crf, "fast"),
                 "-force_key_frames", "0",
                 *COMMON_VIDEO_FLAGS,
                 "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
@@ -407,7 +409,7 @@ def _burn_text_overlay(
             "-i", input_path,
             "-i", overlay_png,
             "-filter_complex", fade_filter,
-            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            *video_codec_args(22, "fast"),
             *COMMON_VIDEO_FLAGS,
             "-c:a", "copy",
             output_path,
@@ -503,7 +505,7 @@ def render_transitional(
             "-i", concat_list,
             "-t", str(content_duration),
             "-r", "30",  # defensive: enforce 30fps across mixed-rate sources
-            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            *video_codec_args(22, "fast"),
             *COMMON_VIDEO_FLAGS,
             "-an", content_vert,
         ]
@@ -520,7 +522,7 @@ def render_transitional(
         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
         "-i", concat_final,
         "-r", "30",  # enforce 30fps for bait→content hard-cut concat
-        "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+        *video_codec_args(22, "fast"),
         *COMMON_VIDEO_FLAGS,
         "-an", raw_video,
     ]
@@ -598,7 +600,7 @@ def render_emotional(
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",
             "-i", concat_list, "-t", str(target_duration),
             "-r", "30",  # defensive: enforce 30fps across mixed-rate sources
-            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            *video_codec_args(22, "fast"),
             *COMMON_VIDEO_FLAGS,
             "-an", content_vert,
         ]
@@ -609,7 +611,7 @@ def render_emotional(
     cmd = [
         "ffmpeg", "-y", "-stream_loop", "-1", "-i", content_vert,
         "-t", str(target_duration),
-        "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+        *video_codec_args(22, "fast"),
         *COMMON_VIDEO_FLAGS,
         "-an", trimmed,
     ]
@@ -699,7 +701,7 @@ def render_performance(
             "-t", str(seg_duration),
             "-r", "30",
             "-vf", f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase,crop={OUTPUT_W}:{OUTPUT_H}",
-            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+            *video_codec_args(26, "ultrafast"),
             *COMMON_VIDEO_FLAGS,
             "-an", tmp_cropped,
         ]
@@ -714,7 +716,7 @@ def render_performance(
             cmd_b = [
                 "ffmpeg", "-y", "-stream_loop", "-1", "-i", tmp_cropped,
                 "-t", str(seg_duration),
-                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                *video_codec_args(22, "fast"),
                 *COMMON_VIDEO_FLAGS,
                 "-an", sp,
             ]
@@ -734,7 +736,7 @@ def render_performance(
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",
             "-i", concat_list, "-t", str(target_duration),
             "-r", "30",  # defensive: enforce 30fps even if crops somehow differ
-            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            *video_codec_args(22, "fast"),
             *COMMON_VIDEO_FLAGS,
             "-an", concat_out,
         ]

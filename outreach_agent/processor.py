@@ -9,8 +9,16 @@ import os
 import json
 import logging
 import subprocess
+import sys
 import tempfile
 import textwrap
+
+# Hardware-first ffmpeg codec helper lives in content_engine (canonical module).
+# outreach_agent has no __init__.py, so extend sys.path to the project root.
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+from content_engine.video_codec import video_codec_args  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -333,7 +341,7 @@ def format_to_vertical(video_path: str, output_path: str,
                 '-filter_complex', vf,
                 '-map', '[out]',
                 '-map', '0:a?',
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+                *video_codec_args(22, 'fast'),
                 '-c:a', 'aac', '-b:a', '128k',
                 '-movflags', '+faststart',
                 output_path,
@@ -347,7 +355,7 @@ def format_to_vertical(video_path: str, output_path: str,
                 '-vf', crop_filter,
                 '-map', '0:v:0',
                 '-map', '0:a?',
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+                *video_codec_args(22, 'fast'),
                 '-c:a', 'aac', '-b:a', '128k',
                 '-movflags', '+faststart',
                 output_path,
@@ -450,7 +458,7 @@ def format_to_vertical_multiclip(
                 '-t', str(seg_dur),
                 '-vf', vf,
                 '-an',
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+                *video_codec_args(22, 'fast'),
                 tmp.name,
             ]
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
@@ -534,7 +542,7 @@ def format_to_vertical_multiclip(
                 '-filter_complex', fc,
                 '-map', '[out]',
                 '-t', str(clip_duration),
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+                *video_codec_args(22, 'fast'),
                 '-movflags', '+faststart',
                 output_path,
             ]
@@ -553,7 +561,7 @@ def format_to_vertical_multiclip(
                 '-filter_complex', fc,
                 '-map', '[out]',
                 '-t', str(clip_duration),
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+                *video_codec_args(22, 'fast'),
                 '-movflags', '+faststart',
                 output_path,
             ]
@@ -561,7 +569,7 @@ def format_to_vertical_multiclip(
             cmd = [
                 'ffmpeg', '-y',
                 '-i', concat_path,
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+                *video_codec_args(22, 'fast'),
                 '-movflags', '+faststart',
                 output_path,
             ]
