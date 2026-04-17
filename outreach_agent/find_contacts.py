@@ -28,6 +28,7 @@ import random
 import logging
 import argparse
 import urllib.request
+from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(__file__))
 import db
@@ -370,8 +371,20 @@ def main():
 
     playlists = playlist_db.get_playlists_by_status('verified', limit=200)
 
-    # Skip playlists already searched
-    playlists = [p for p in playlists if '[contact_search:' not in (p.get('notes') or '')]
+    # Skip playlists already searched — but allow retry after 30 days
+    _thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+
+    def _needs_contact_search(p):
+        notes = p.get('notes') or ''
+        if '[contact_search:' not in notes:
+            return True  # Never searched — always include
+        # Parse search dates — allow retry if latest search was > 30 days ago
+        dates = re.findall(r'\[contact_search: no results (\d{4}-\d{2}-\d{2})\]', notes)
+        if not dates:
+            return True  # Tag present but no parseable date — retry
+        return max(dates) < _thirty_days_ago  # True = retry allowed
+
+    playlists = [p for p in playlists if _needs_contact_search(p)]
 
     log.info(f"Found {len(playlists)} verified playlists needing contacts")
     if args.dry_run:

@@ -9,7 +9,7 @@
   "visual_weights": {
     "ai_generated": 1.0,
     "performance": 1.0,
-    "b_roll": 0.7990921,
+    "b_roll": 0.6489022063252091,
     "phone": 1.0
   },
   "format_weights": {
@@ -18,11 +18,11 @@
     "performance": 1.0
   },
   "platform_weights": {
-    "instagram": 0.7650807999999999,
-    "youtube": 1.0,
+    "instagram": 0.5938509543999999,
+    "youtube": 0.8095154015748032,
     "facebook": 1.0,
     "tiktok": 1.0,
-    "instagram_story": 0.8331033999999999,
+    "instagram_story": 0.6872313661999999,
     "facebook_story": 1.0
   },
   "transitional_category_weights": {
@@ -35,8 +35,8 @@
   },
   "track_weights": {},
   "best_clip_length": 5,
-  "best_platform": "youtube",
-  "updated": "2026-04-17T11:02:22.413617",
+  "best_platform": "facebook",
+  "updated": "2026-04-17T11:23:21.645994",
   "sub_mode_weights": {
     "COST": 1.0,
     "NAMING": 1.0,
@@ -56,7 +56,7 @@
   },
   "time_of_day_weights": {
     "morning": 0.906373,
-    "midday": 0.8646309999999999,
+    "midday": 0.6646380962152092,
     "evening": 1.0,
     "late": 1.0
   },

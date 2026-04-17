@@ -18,5 +18,20 @@
     "template_id": "identity.this_is_what_sounds_like",
     "date": "2026-04-17",
     "format": "performance"
+  },
+  {
+    "template_id": "save.your_sign",
+    "date": "2026-04-17",
+    "format": "transitional"
+  },
+  {
+    "template_id": "bodydrop.watch_at_timestamp",
+    "date": "2026-04-17",
+    "format": "transitional"
+  },
+  {
+    "template_id": "perf.wait_drop",
+    "date": "2026-04-17",
+    "format": "performance"
   }
 ]

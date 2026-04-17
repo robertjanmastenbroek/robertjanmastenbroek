@@ -596,5 +596,23 @@
     "summary": "master: press_release \u2014 fire_in_our_hands press release (300 words, Acts 2 salt, 76% completion stat, Tenerife dateline)",
     "contacts_added": 0,
     "strategy_worked": "rjm-master-creative"
+  },
+  {
+    "ts": "2026-04-17T11:06:44.904548",
+    "summary": "discover: 0 contacts added (all top candidates already in DB; 8 queries fired, all 4 found contacts pre-existing) + 0 playlists (27 total, all quality playlists already tracked) + 0 playlist contacts promoted",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-17T11:28:20.045346",
+    "summary": "outreach: 8 emails sent, 0 replies detected",
+    "contacts_added": 8,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T11:29:09.881399",
+    "summary": "discover: 0 contacts added (US/CA run \u2014 top 5 US outlets already in DB: Dancing Astronaut, Magnetic Mag, Your EDM, DJ Sessions, Festy Hub; secondary outlets blocked 403 or form-only; 4 YouTube contacts reactivated warm_up separately) + 0 playlists (PSYTRANCE DOMINANCE candidate, follower count unverified) + 0 playlist contacts promoted",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-discover"
   }
 ]
