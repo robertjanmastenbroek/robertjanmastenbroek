@@ -44,3 +44,28 @@ def test_generate_caption():
     )
     assert isinstance(caption, str)
     assert len(caption) > 0
+
+
+def test_generate_hooks_accepts_visual_context():
+    """visual_context kwarg must be accepted without error."""
+    result = generate_hooks_for_format(
+        fmt=ClipFormat.TRANSITIONAL,
+        track_title="Jericho",
+        track_facts={"bpm": 140, "scripture_anchor": "Joshua 6"},
+        visual_context={"category": "nature", "file": "nature/855278.mp4"},
+    )
+    assert "hook" in result
+    assert len(result["hook"]) > 0
+
+
+def test_generate_caption_accepts_visual_context():
+    """visual_context kwarg must be accepted without error."""
+    caption = generate_caption(
+        track_title="Jericho",
+        hook_text="The walls fall when you stop holding them up.",
+        platform="instagram",
+        track_facts={"bpm": 140},
+        visual_context={"category": "satisfying", "file": "satisfying/855416.mp4"},
+    )
+    assert isinstance(caption, str)
+    assert len(caption) > 0

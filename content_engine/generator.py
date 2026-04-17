@@ -221,6 +221,7 @@ def generate_hooks_for_format(
     track_facts: dict,
     weights: dict | None = None,
     exclude_ids: set | None = None,
+    visual_context: dict | None = None,
 ) -> dict:
     """Generate a hook for a specific clip format.
 
@@ -236,7 +237,9 @@ def generate_hooks_for_format(
 
     # 3. Fill template slots with Claude (or use example_fill as fallback)
     if template.slots:
-        filled = _fill_template_with_claude(template, track_title, track_facts, sub_mode)
+        filled = _fill_template_with_claude(
+            template, track_title, track_facts, sub_mode, visual_context=visual_context
+        )
     else:
         filled = template.template  # no slots to fill
 
@@ -266,11 +269,31 @@ def generate_hooks_for_format(
     }
 
 
+_VISUAL_DESCRIPTIONS = {
+    "satisfying":   "slow satisfying process footage (sand art, precision machines, fluid motion)",
+    "nature":       "outdoor nature footage (forest, ocean, sky, mountains)",
+    "urban":        "city / street scene footage",
+    "performance":  "live DJ or crowd performance footage",
+    "emotional":    "moody atmospheric b-roll (candlelight, long shadows, slow motion)",
+    "abstract":     "abstract visual / light patterns",
+}
+
+
+def _visual_block(visual_context: dict | None) -> str:
+    """Return a prompt line describing on-screen visuals, or empty string."""
+    if not visual_context:
+        return ""
+    cat = visual_context.get("category", "")
+    desc = _VISUAL_DESCRIPTIONS.get(cat, cat) if cat else "unspecified b-roll"
+    return f"\nVisuals on screen: {desc}\nThe hook must be coherent with — or work as contrast to — this visual.\n"
+
+
 def _fill_template_with_claude(
     template: HookTemplate,
     track_title: str,
     track_facts: dict,
     sub_mode: str,
+    visual_context: dict | None = None,
 ) -> Optional[str]:
     """Fill a single template's slots using Claude."""
     slots_desc = "\n".join(f"  {k}: {v}" for k, v in template.slots.items())
@@ -293,7 +316,7 @@ Track facts:
 - Style: melodic techno / tribal psytrance
 - Artist: Robert-Jan Mastenbroek (Dutch, 36, Tenerife)
 - Energy: {track_facts.get('energy', 'high')}
-
+{_visual_block(visual_context)}
 Register: {sub_mode} — {register_guidance}
 {trend_ctx}
 Rules:
@@ -386,6 +409,7 @@ def generate_caption(
     hook_text: str,
     platform: str,
     track_facts: dict | None = None,
+    visual_context: dict | None = None,
 ) -> str:
     """Generate a platform-specific caption for a clip.
 
@@ -430,13 +454,15 @@ def generate_caption(
     else:
         tiktok_rules = ""
 
+    visual_line = _visual_block(visual_context)
+
     prompt = f"""Write a {platform} caption for a short music video.
 
 Track: {display_title} by Robert-Jan Mastenbroek (RJM / Holy Rave).
 BPM: {int(bpm) if bpm else 'unknown'}
 Genre: melodic techno / tribal psytrance
 Hook shown on-screen: {hook_text or 'none'}
-Scripture anchor (subtle, optional): {scripture or 'none'}
+{visual_line}Scripture anchor (REQUIRED — weave in subtly, do not quote chapter:verse literally): {scripture or 'none'}
 Spotify link to include verbatim: {SPOTIFY_ARTIST_URL}
 
 Caption voice:

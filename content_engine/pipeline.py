@@ -410,20 +410,44 @@ def build_daily_clips(
         duration = config.durations[fmt]
         audio_start = peak_sections[clip_idx] if clip_idx < len(peak_sections) else 30.0
 
-        # Generate hook
-        hook_data = generate_hooks_for_format(fmt, track.title, track_facts, weights.hook_weights, used_ids)
+        # ── Step 1: Determine visual context BEFORE generating hook text ──────
+        # Hook and caption quality depend on knowing what's on screen. Picking
+        # the bait clip here means Claude can write for nature footage vs
+        # satisfying footage vs performance footage specifically.
+        visual_context: dict = {}
+        bait = None
+        bait_path = None
+
+        if fmt == ClipFormat.TRANSITIONAL:
+            tm = TransitionalManager()
+            bait = tm.pick()
+            if bait:
+                bait_path = str(tm.full_path(bait["file"]))
+                tm.mark_used(bait["file"])
+                visual_context = {"category": bait["category"], "file": bait["file"]}
+        elif fmt == ClipFormat.PERFORMANCE:
+            visual_context = {"category": "performance"}
+        elif fmt == ClipFormat.EMOTIONAL:
+            visual_context = {"category": "emotional"}
+
+        # ── Step 2: Generate hook with visual context ─────────────────────────
+        hook_data = generate_hooks_for_format(
+            fmt, track.title, track_facts, weights.hook_weights, used_ids,
+            visual_context=visual_context,
+        )
         used_ids.add(hook_data["template_id"])
 
-        # Generate caption per platform so each surface gets the right voice
-        # (Instagram vs YouTube SEO vs TikTok casual vs Stories short-form).
-        # The distributor consumes ``caption_by_platform`` when available and
-        # falls back to the ``caption`` field for older callers.
+        # ── Step 3: Generate captions with visual context ─────────────────────
+        # Each platform gets its own voice; distributor picks per-target.
         caption_platforms = [
             "instagram", "youtube", "tiktok", "facebook",
             "instagram_story", "facebook_story",
         ]
         caption_by_platform = {
-            p: generate_caption(track.title, hook_data["hook"], p, track_facts)
+            p: generate_caption(
+                track.title, hook_data["hook"], p, track_facts,
+                visual_context=visual_context,
+            )
             for p in caption_platforms
         }
         caption = caption_by_platform.get("instagram", "")
@@ -433,11 +457,9 @@ def build_daily_clips(
         # on small screens. Bump transitional content to 3 cuts, emotional
         # to 2 (so there's always motion even in a 7s beat), performance to 5.
         n_segments = {"transitional": 3, "emotional": 2, "performance": 5}.get(fmt.value, 3)
-        # Avoid repeating segments across the day's three clips — use the
-        # video exclusion set from prior iterations.
         available = [v for v in all_videos if v not in used_segments]
         if len(available) < n_segments:
-            available = list(all_videos)  # reset if we've used too many
+            available = list(all_videos)
         segments = random.sample(available, min(n_segments, len(available)))
         used_segments.update(segments)
 
@@ -450,27 +472,19 @@ def build_daily_clips(
             "hook_template_id": hook_data["template_id"],
             "hook_sub_mode": hook_data["sub_mode"],
             "hook_text": hook_data["hook"],
-            "caption": caption,                           # default IG-tuned caption
-            "caption_by_platform": caption_by_platform,   # distributor picks per-target
+            "caption": caption,
+            "caption_by_platform": caption_by_platform,
             "track_title": track.title,
             "clip_length": duration,
-            "visual_type": "b_roll",  # categorize based on actual segments
-            "transitional_category": "",
-            "transitional_file": "",
+            "visual_type": "b_roll",
+            "transitional_category": visual_context.get("category", ""),
+            "transitional_file": visual_context.get("file", ""),
             "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds",
         }
 
         try:
             if fmt == ClipFormat.TRANSITIONAL:
-                # Pick transitional bait clip
-                tm = TransitionalManager()
-                bait = tm.pick()
-                if bait:
-                    bait_path = str(tm.full_path(bait["file"]))
-                    clip_meta["transitional_category"] = bait["category"]
-                    clip_meta["transitional_file"] = bait["file"]
-                    tm.mark_used(bait["file"])
-
+                if bait_path:
                     render_transitional(
                         bait_clip=bait_path,
                         content_segments=segments,
@@ -478,12 +492,12 @@ def build_daily_clips(
                         audio_start=audio_start,
                         hook_text=hook_data["hook"],
                         track_label=f"{track.title} — Robert-Jan Mastenbroek",
-                        platform="youtube",   # neutral grade; distributor applies per-platform
+                        platform="youtube",
                         output_path=output_path,
                         target_duration=duration,
                     )
                 else:
-                    logger.warning("[pipeline] No transitional hooks available, falling back to emotional format")
+                    logger.warning("[pipeline] No transitional bait available, falling back to emotional")
                     render_emotional(segments, track.file_path, audio_start, hook_data["hook"],
                                      "youtube", output_path, duration)
 
