@@ -1,0 +1,27 @@
+# Explicitly pin the Railway build to Node.js 20.
+#
+# Why this exists:
+#   The repo is a mixed Node (server.js + package.json at root) + Python
+#   (content_engine/, outreach_agent/) project. Nixpacks' auto-detection has
+#   picked Node so far, but as the Python surface grew (535 .py files, +3k
+#   lines in the last push) the detection started selecting the wrong
+#   provider and the build failed (deployment 4395123843, SHA eedbc8e).
+#   This file removes the ambiguity.
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm-10_x"]
+
+[phases.install]
+# package.json has no devDependencies, so a plain `npm ci` is production-only
+# and reproducible from package-lock.json.
+cmds = ["npm ci"]
+
+[phases.build]
+# Nothing to build — server.js runs directly from source.
+cmds = ["echo 'no build step — Node server runs from source'"]
+
+[start]
+cmd = "node server.js"
+
+[variables]
+NODE_ENV = "production"

@@ -1,0 +1,72 @@
+# Railway (nixpacks) ignore — keep the deployed image lean.
+# The Node web server (server.js) only needs:
+#   package.json, package-lock.json, server.js, and the static HTML/CSS/JS +
+#   /offering, /links, /story, /images, /docs, privacy.html, terms.html, selah.html, index.html
+# Everything else in this repo is the Python content + outreach fleet that runs
+# locally / on cron boxes — it has no business in the Railway container.
+
+# ── Python content engine & outreach fleet ──────────────────────────────────
+content_engine/
+outreach_agent/
+agents/
+tests/
+ruflo/
+continuous-claude/
+graphify-out/
+learning/
+scripts/
+tools/
+admin/
+*.py
+*.pyc
+__pycache__/
+
+# ── Heavy ML / ONNX models (not used by the web tier) ───────────────────────
+*.onnx
+*.onnx.data
+*.pt
+*.bin
+*.safetensors
+
+# ── Content pipeline media (not served by the Node app) ─────────────────────
+content/hooks/
+content/audio/
+content/videos/
+content/output/
+content/images/
+
+# ── Runtime state, DBs, logs ────────────────────────────────────────────────
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+.content_library.db
+
+# ── Docs, plans, spreadsheets, CSVs ─────────────────────────────────────────
+*.md
+*.docx
+*.xlsx
+*.csv
+*.txt
+
+# Keep the TikTok site-verification text files (required for platform verification)
+!tiktok*.txt
+
+# ── Secrets / local config ──────────────────────────────────────────────────
+.env
+.env.*
+client_secret.json
+token.json
+credentials.json
+
+# ── Editor / OS cruft ───────────────────────────────────────────────────────
+.claude/
+.DS_Store
+.~lock.*
+.vscode/
+.idea/
+
+# ── Git internals not needed at runtime ─────────────────────────────────────
+.git/
+.gitignore
