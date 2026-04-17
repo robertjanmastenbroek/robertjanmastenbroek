@@ -22,7 +22,7 @@ def _rec(**kwargs) -> PerformanceRecord:
 def test_fetch_instagram_metrics_returns_records():
     mock_resp = MagicMock(status_code=200)
     mock_resp.json.return_value = {"data": [
-        {"name": "plays",  "values": [{"value": 5000}]},
+        {"name": "views",  "values": [{"value": 5000}]},
         {"name": "saved",  "values": [{"value": 250}]},
         {"name": "shares", "values": [{"value": 100}]},
         {"name": "reach",  "values": [{"value": 62500}]},
