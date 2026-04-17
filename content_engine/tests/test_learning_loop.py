@@ -227,3 +227,133 @@ class TestInstagramStoryMetricsApiCall:
         assert "impressions" not in metric_str
         assert "navigation" in metric_str
         assert "views" in metric_str
+
+
+# ─── Unresolved Buffer IDs skipped cleanly ────────────────────────────────────
+
+class TestBufferIdSkip:
+    """Unresolved Buffer IDs must be skipped before making an insights API call."""
+
+    def test_ig_metrics_skips_buffer_id(self):
+        from content_engine.learning_loop import fetch_instagram_metrics
+        posts = [{"post_id": "69e1dc88ae36470f58bac9d0", "clip_index": 0, "variant": "a",
+                  "hook_mechanism": "tension", "visual_type": "b_roll", "clip_length": 22}]
+        with patch("content_engine.learning_loop.requests.get") as mock_get:
+            result = fetch_instagram_metrics(posts, "EAAtoken")
+        mock_get.assert_not_called()
+        assert result == []
+
+    def test_ig_story_metrics_skips_buffer_id(self):
+        from content_engine.learning_loop import fetch_instagram_story_metrics
+        posts = [{"post_id": "69e1dccebf79a8a2f2e4ca0f", "clip_index": 0, "variant": "a",
+                  "hook_mechanism": "tension", "visual_type": "b_roll", "clip_length": 15}]
+        with patch("content_engine.learning_loop.requests.get") as mock_get:
+            result = fetch_instagram_story_metrics(posts, "EAAtoken")
+        mock_get.assert_not_called()
+        assert result == []
+
+    def test_ig_metrics_real_id_still_called(self):
+        """Real IG numeric IDs should still trigger an API call."""
+        from content_engine.learning_loop import fetch_instagram_metrics
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"data": [
+            {"name": "views", "values": [{"value": 500}]},
+            {"name": "reach", "values": [{"value": 400}]},
+            {"name": "saved", "values": [{"value": 10}]},
+            {"name": "shares", "values": [{"value": 5}]},
+            {"name": "total_interactions", "values": [{"value": 20}]},
+        ]}
+        posts = [{"post_id": "18179953573388740", "clip_index": 0, "variant": "a",
+                  "hook_mechanism": "tension", "visual_type": "b_roll", "clip_length": 22}]
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp) as mock_get:
+            result = fetch_instagram_metrics(posts, "EAAtoken")
+        mock_get.assert_called_once()
+        assert len(result) == 1
+
+
+# ─── YouTube bulk channel fetch ───────────────────────────────────────────────
+
+class TestYouTubeChannelBulkFetch:
+    """fetch_youtube_channel_metrics_bulk should query all videos, 28-day window."""
+
+    def test_bulk_returns_records_for_all_rows(self):
+        from content_engine.learning_loop import fetch_youtube_channel_metrics_bulk
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "rows": [
+                ["p8NtdfXEtNM", 1018, 85, 10, 66.6],
+                ["EnOqG14A-9g", 946, 96, 13, 50.5],
+            ]
+        }
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp):
+            records = fetch_youtube_channel_metrics_bulk("ya29.token", days_back=28)
+        assert len(records) == 2
+        assert records[0].post_id == "p8NtdfXEtNM"
+        assert records[0].views == 1018
+        assert records[0].platform == "youtube"
+        assert records[0].completion_rate == round(66.6 / 100, 4)
+
+    def test_bulk_uses_no_filter(self):
+        """Must not include a 'filters' param so all channel videos are returned."""
+        from content_engine.learning_loop import fetch_youtube_channel_metrics_bulk
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"rows": []}
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp) as mock_get:
+            fetch_youtube_channel_metrics_bulk("ya29.token", days_back=28)
+        params = mock_get.call_args.kwargs.get("params", {}) or {}
+        assert "filters" not in params or params.get("filters", "") == ""
+
+    def test_bulk_enriches_with_registry_metadata(self):
+        """Videos in registry_lookup should get hook/format metadata attached."""
+        from content_engine.learning_loop import fetch_youtube_channel_metrics_bulk
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "rows": [["Qgv-PYZ35iE", 50, 5, 22, 80.0]]
+        }
+        registry = {
+            "Qgv-PYZ35iE": {
+                "hook_mechanism": "tension", "visual_type": "b_roll",
+                "clip_length": 22, "format_type": "transitional",
+            }
+        }
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp):
+            records = fetch_youtube_channel_metrics_bulk("ya29.token", registry_lookup=registry)
+        assert records[0].hook_mechanism == "tension"
+        assert records[0].clip_length == 22
+
+    def test_bulk_api_error_returns_empty(self):
+        from content_engine.learning_loop import fetch_youtube_channel_metrics_bulk
+        mock_resp = MagicMock()
+        mock_resp.status_code = 401
+        mock_resp.text = "Unauthorized"
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp):
+            records = fetch_youtube_channel_metrics_bulk("ya29.stale")
+        assert records == []
+
+
+# ─── YouTube per-ID batch uses 28-day window ─────────────────────────────────
+
+class TestYouTubeMetricsBatchWindow:
+    """fetch_youtube_metrics must use a 28-day window, not today-only."""
+
+    def test_start_date_is_not_today(self):
+        from content_engine.learning_loop import fetch_youtube_metrics
+        from datetime import date, timedelta
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"rows": []}
+        posts = [{"post_id": "Qgv-PYZ35iE", "clip_index": 0, "variant": "a",
+                  "hook_mechanism": "tension", "visual_type": "b_roll", "clip_length": 22}]
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp) as mock_get:
+            fetch_youtube_metrics(posts, "ya29.token")
+        params = mock_get.call_args.kwargs.get("params", {}) or {}
+        start = params.get("startDate", "")
+        assert start != date.today().isoformat(), "startDate must not be today-only"
+        # Should be roughly 28 days back
+        start_dt = date.fromisoformat(start)
+        delta = (date.today() - start_dt).days
+        assert 25 <= delta <= 31, f"Expected ~28 day window, got {delta}d"

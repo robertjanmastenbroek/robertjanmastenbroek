@@ -650,6 +650,23 @@ def cmd_content(args: list[str]):
         }, indent=2, default=str))
         sys.exit(0)
 
+    elif subcommand == "backfill":
+        # Pull full analytics history for all channel videos (last 28 days by default).
+        # Useful after token fixes, fresh installs, or any time the performance DB is sparse.
+        sys.path.insert(0, str(PROJECT_ROOT))
+        import logging, json
+        logging.basicConfig(level=logging.INFO)
+        days_back = 28
+        if len(args) > 1:
+            try:
+                days_back = int(args[1])
+            except ValueError:
+                pass
+        from content_engine.learning_loop import backfill as learning_backfill
+        result = learning_backfill(days_back=days_back)
+        print(json.dumps(result, indent=2, default=str))
+        sys.exit(0)
+
     elif subcommand == "retry":
         # Retry all failed posts in queue
         cmd_content_retry()
@@ -683,7 +700,7 @@ def cmd_content(args: list[str]):
 
     else:
         print(f"✗ Unknown content subcommand: {subcommand!r}")
-        print("  Valid: viral (default), trend-scan, learning, retry, reset-platform <platform>")
+        print("  Valid: viral (default), trend-scan, learning, backfill [days], retry, reset-platform <platform>")
         sys.exit(1)
 
 

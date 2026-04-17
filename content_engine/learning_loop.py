@@ -294,6 +294,12 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
         post_id = meta.get("post_id", "")
         if not post_id:
             continue
+        # Buffer post IDs (24-char hex) that couldn't be resolved to real IG media
+        # IDs will always return 400 from the Graph API. Skip them cleanly rather
+        # than making a doomed request.
+        if _is_buffer_id(post_id):
+            logger.warning(f"[learning_loop] IG insights skipped — unresolved Buffer ID {post_id} (post not yet live or not matched)")
+            continue
         try:
             # `plays` was removed in Graph API v22+. Use `views` only — Facebook
             # serves v22+ metric validation even on v21 requests, so including
@@ -424,6 +430,9 @@ def fetch_instagram_story_metrics(post_ids: list, access_token: str) -> list:
         post_id = meta.get("post_id", "")
         if not post_id:
             continue
+        if _is_buffer_id(post_id):
+            logger.warning(f"[learning_loop] IG Story insights skipped — unresolved Buffer ID {post_id}")
+            continue
         try:
             resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{post_id}/insights",
@@ -474,41 +483,61 @@ def fetch_instagram_story_metrics(post_ids: list, access_token: str) -> list:
 
 def fetch_youtube_metrics(post_ids: list, oauth_token: str) -> list:
     """
-    Fetch YouTube video analytics.
+    Fetch YouTube video analytics for a known list of video IDs.
+    Uses a 28-day window so recently-posted videos (where today-only has no data yet)
+    still return cumulative metrics. Falls back to the bulk channel approach when
+    no specific IDs are provided.
     post_ids: list of {post_id (video_id), clip_index, variant, ...}
     """
     from content_engine.types import PerformanceRecord
     records = []
 
-    for meta in post_ids:
-        video_id = meta.get("post_id", "")
-        if not video_id:
-            continue
-        try:
-            resp = requests.get(
-                YOUTUBE_ANALYTICS,
-                params={
-                    "ids": "channel==MINE",
-                    "metrics": "views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage",
-                    "filters": f"video=={video_id}",
-                    "startDate": _date.today().isoformat(),
-                    "endDate": _date.today().isoformat(),
-                    "dimensions": "video",
-                },
-                headers={"Authorization": f"Bearer {oauth_token}"},
-                timeout=15,
-            )
-            if resp.status_code != 200:
-                logger.warning(f"[learning_loop] YT analytics {video_id}: {resp.status_code}")
-                continue
+    # Build a lookup for per-video metadata from the registry
+    meta_by_id = {m.get("post_id", ""): m for m in post_ids if m.get("post_id")}
 
-            rows = resp.json().get("rows", [])
-            if not rows:
-                continue
+    # Batch all video IDs into a single Analytics call with a 28-day window.
+    # YouTube Analytics data takes 24-72h to propagate, so today-only always
+    # returns empty rows for same-day posts. A 28-day window covers all cases.
+    video_ids = [vid for vid in meta_by_id if vid]
+    if not video_ids:
+        return records
 
-            _, views, _, avg_dur, avg_pct = rows[0]
-            clip_length = meta.get("clip_length", 15)
+    start_date = (_date.today().replace(day=1)
+                  if _date.today().day <= 28
+                  else _date.today()).isoformat()
+    # Always go back 28 days to capture full propagation window
+    from datetime import timedelta
+    start_date = (_date.today() - timedelta(days=28)).isoformat()
+    end_date   = _date.today().isoformat()
 
+    try:
+        # Query all video IDs at once using a comma-joined filter
+        video_filter = ",".join(video_ids)
+        resp = requests.get(
+            YOUTUBE_ANALYTICS,
+            params={
+                "ids":        "channel==MINE",
+                "metrics":    "views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage",
+                "filters":    f"video=={video_filter}",
+                "startDate":  start_date,
+                "endDate":    end_date,
+                "dimensions": "video",
+                "maxResults": 200,
+            },
+            headers={"Authorization": f"Bearer {oauth_token}"},
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            logger.warning(f"[learning_loop] YT analytics batch: {resp.status_code} — {resp.text[:200]}")
+            return records
+
+        rows = resp.json().get("rows", [])
+        logger.info(f"[learning_loop] YT batch query: {len(video_ids)} IDs → {len(rows)} rows")
+
+        for row in rows:
+            video_id, views, _, avg_dur, avg_pct = row
+            meta = meta_by_id.get(video_id, {})
+            clip_length = meta.get("clip_length", int(avg_dur) if avg_dur else 15)
             records.append(PerformanceRecord(
                 post_id=video_id,
                 platform="youtube",
@@ -524,8 +553,79 @@ def fetch_youtube_metrics(post_ids: list, oauth_token: str) -> list:
                 save_rate=0.0,
                 recorded_at=datetime.now().isoformat(),
             ))
-        except Exception as e:
-            logger.warning(f"[learning_loop] YT metrics error for {video_id}: {e}")
+    except Exception as e:
+        logger.warning(f"[learning_loop] YT metrics batch error: {e}")
+
+    return records
+
+
+def fetch_youtube_channel_metrics_bulk(
+    oauth_token: str,
+    days_back: int = 28,
+    registry_lookup: dict = None,
+) -> list:
+    """
+    Fetch YouTube analytics for ALL channel videos in the past N days.
+
+    Uses dimensions=video with no filter — the API returns every video that had
+    at least 1 view. Cross-references registry_lookup (post_id→registry entry)
+    to attach hook/format/track metadata where available.
+
+    This is the preferred function for the daily learning run because it does not
+    require knowing video IDs in advance and uses a wide date window that works
+    even when same-day data has not yet propagated.
+    """
+    from content_engine.types import PerformanceRecord
+    from datetime import timedelta
+
+    start_date = (_date.today() - timedelta(days=days_back)).isoformat()
+    end_date   = _date.today().isoformat()
+    registry_lookup = registry_lookup or {}
+    records = []
+
+    try:
+        resp = requests.get(
+            YOUTUBE_ANALYTICS,
+            params={
+                "ids":        "channel==MINE",
+                "metrics":    "views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage",
+                "startDate":  start_date,
+                "endDate":    end_date,
+                "dimensions": "video",
+                "sort":       "-views",
+                "maxResults": 200,
+            },
+            headers={"Authorization": f"Bearer {oauth_token}"},
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            logger.warning(f"[learning_loop] YT channel bulk: {resp.status_code} — {resp.text[:200]}")
+            return records
+
+        rows = resp.json().get("rows", [])
+        logger.info(f"[learning_loop] YT channel bulk: {len(rows)} videos with data in last {days_back}d")
+
+        for row in rows:
+            video_id, views, _, avg_dur, avg_pct = row
+            meta = registry_lookup.get(video_id, {})
+            clip_length = meta.get("clip_length", int(avg_dur) if avg_dur else 15)
+            records.append(PerformanceRecord(
+                post_id=video_id,
+                platform="youtube",
+                clip_index=meta.get("clip_index", 0),
+                variant=meta.get("variant", "a"),
+                hook_mechanism=meta.get("hook_mechanism", "tension"),
+                visual_type=meta.get("visual_type", "b_roll"),
+                clip_length=clip_length,
+                views=int(views),
+                completion_rate=round(float(avg_pct) / 100, 4),
+                scroll_stop_rate=0.0,
+                share_rate=0.0,
+                save_rate=0.0,
+                recorded_at=datetime.now().isoformat(),
+            ))
+    except Exception as e:
+        logger.warning(f"[learning_loop] YT channel bulk error: {e}")
 
     return records
 
@@ -585,12 +685,28 @@ def calculate_new_weights(records: list, old_weights) -> "PromptWeights":
     )
 
 
-def detect_outliers(records: list) -> list:
-    """Return records with views > 2× rolling average."""
+def detect_outliers(records: list, min_views: int = 500, max_outliers: int = 5) -> list:
+    """Return the top short-form outliers — videos exceeding 2× rolling average.
+
+    min_views guards against low-sample noise: a 100-view video being "2× avg"
+    on a channel with mostly 50-view videos is not a meaningful breakthrough.
+    max_outliers caps Claude CLI subprocess calls per run so the loop stays fast.
+    Only considers short-form content (clip_length ≤ 90s) to exclude long-form
+    videos that skew the average and inflate outlier counts.
+    """
     if not records:
         return []
-    avg = sum(r.views for r in records) / len(records)
-    return [r for r in records if r.views > avg * 2]
+    # Scope to short-form only so long-form videos don't dominate the average
+    short_form = [r for r in records if getattr(r, "clip_length", 0) <= 90]
+    pool = short_form if short_form else records
+    if not pool:
+        return []
+    avg = sum(r.views for r in pool) / len(pool)
+    threshold = avg * 2
+    outliers = [r for r in pool if r.views >= min_views and r.views > threshold]
+    # Return highest-view outliers up to max_outliers
+    outliers.sort(key=lambda r: r.views, reverse=True)
+    return outliers[:max_outliers]
 
 
 def _write_breakthrough(outlier, date_str: str):
@@ -647,6 +763,132 @@ def _save_performance_log(records: list, date_str: str):
     )
 
 
+def _build_registry_lookup(days_back: int = 28) -> dict:
+    """Build a {post_id: registry_entry} lookup from all post registry files in the last N days.
+
+    Used to attach hook/format/track metadata to bulk-fetched analytics rows
+    where the analytics API returns a video ID but no associated metadata.
+    """
+    from datetime import timedelta
+    cutoff = _date.today() - timedelta(days=days_back)
+    lookup = {}
+    for f in sorted(PERFORMANCE_DIR.glob("*_posts.json")):
+        # Extract date from filename like "2026-04-16_posts.json"
+        try:
+            file_date = _date.fromisoformat(f.stem.split("_posts")[0])
+            if file_date < cutoff:
+                continue
+        except Exception:
+            pass
+        try:
+            posts = json.loads(f.read_text())
+            for p in posts:
+                pid = p.get("post_id", "")
+                if pid and p.get("success"):
+                    lookup.setdefault(pid, p)
+        except Exception:
+            pass
+    return lookup
+
+
+def backfill(days_back: int = 28) -> dict:
+    """Pull full analytics history for all channel videos in the past N days.
+
+    Fetches:
+    - YouTube Analytics for ALL channel videos (no ID filter needed)
+    - Instagram media list + per-post insights for all posts in registries
+    - Cross-references all post registries for metadata enrichment
+
+    Writes enriched performance records to data/performance/backfill_YYYY-MM-DD.json
+    and recalculates unified weights from the full dataset.
+
+    Returns summary dict.
+    """
+    from content_engine.types import UnifiedWeights
+
+    date_str = _date.today().isoformat()
+    logger.info(f"[learning_loop] Starting backfill for last {days_back}d…")
+
+    registry_lookup = _build_registry_lookup(days_back=days_back)
+    logger.info(f"[learning_loop] Registry lookup: {len(registry_lookup)} known posts")
+
+    # Refresh tokens
+    raw_ig_token  = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    ig_token      = _refresh_instagram_token(raw_ig_token)
+    ig_user_id    = os.environ.get("INSTAGRAM_USER_ID", "").strip('"').strip("'")
+    yt_token      = _refresh_youtube_token()
+
+    all_records = []
+
+    # --- YouTube: bulk channel-wide pull ---
+    if yt_token:
+        yt_records = fetch_youtube_channel_metrics_bulk(yt_token, days_back=days_back, registry_lookup=registry_lookup)
+        all_records += yt_records
+        logger.info(f"[learning_loop] Backfill YT: {len(yt_records)} records")
+
+    # --- Instagram: fetch all posts from registries ---
+    if ig_token and ig_user_id:
+        # Collect all IG post IDs from registries, resolve Buffer IDs first
+        ig_metas = [v for v in registry_lookup.values() if v.get("platform") == "instagram"]
+        ig_story_metas = [v for v in registry_lookup.values() if v.get("platform") == "instagram_story"]
+
+        if ig_metas:
+            ig_metas = _resolve_ig_media_ids(ig_metas, ig_token, ig_user_id)
+            ig_records = fetch_instagram_metrics(ig_metas, ig_token)
+            all_records += ig_records
+            logger.info(f"[learning_loop] Backfill IG: {len(ig_records)} records from {len(ig_metas)} posts")
+
+        if ig_story_metas:
+            ig_story_metas = _resolve_ig_story_ids(ig_story_metas, ig_token, ig_user_id)
+            story_records = fetch_instagram_story_metrics(ig_story_metas, ig_token)
+            all_records += story_records
+            logger.info(f"[learning_loop] Backfill IG Stories: {len(story_records)} records")
+
+    if not all_records:
+        logger.warning("[learning_loop] Backfill: no records collected")
+        return {"records": 0, "status": "no_data"}
+
+    # Save backfill snapshot
+    PERFORMANCE_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = PERFORMANCE_DIR / f"backfill_{date_str}.json"
+    out_path.write_text(json.dumps([r.__dict__ for r in all_records], indent=2))
+    logger.info(f"[learning_loop] Backfill saved: {len(all_records)} records → {out_path.name}")
+
+    # Recalculate weights from full dataset
+    records_as_dicts = []
+    for r in all_records:
+        base = r.__dict__.copy()
+        extra = registry_lookup.get(r.post_id, {})
+        for k, v in extra.items():
+            base.setdefault(k, v)
+        records_as_dicts.append(base)
+
+    old_weights = UnifiedWeights.load()
+    new_weights = calculate_unified_weights(records_as_dicts, old_weights)
+    new_weights.save()
+
+    top_hook   = max(new_weights.hook_weights,   key=new_weights.hook_weights.get)   if new_weights.hook_weights   else "n/a"
+    top_format = max(new_weights.format_weights, key=new_weights.format_weights.get) if new_weights.format_weights else "n/a"
+
+    logger.info(
+        f"[learning_loop] Backfill weights: platform={new_weights.best_platform}, "
+        f"length={new_weights.best_clip_length}s, hook={top_hook}, format={top_format}"
+    )
+
+    return {
+        "records":        len(all_records),
+        "yt_videos":      len([r for r in all_records if r.platform == "youtube"]),
+        "ig_posts":       len([r for r in all_records if r.platform == "instagram"]),
+        "ig_stories":     len([r for r in all_records if r.platform == "instagram_story"]),
+        "best_platform":  new_weights.best_platform,
+        "best_clip_length": new_weights.best_clip_length,
+        "top_hook":       top_hook,
+        "top_format":     top_format,
+        "saved_to":       str(out_path),
+        "updated":        new_weights.updated,
+    }
+
+
 def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
     """
     Full learning loop run.
@@ -668,8 +910,15 @@ def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
         if registry_path.exists():
             post_registry = json.loads(registry_path.read_text())
         else:
-            logger.warning("[learning_loop] No post registry — weights unchanged")
-            return UnifiedWeights.load()
+            # Also check the dry-run subdirectory (pipeline may have been run in
+            # --dry-run mode while still producing a valid registry for reference).
+            dry_run_path = PERFORMANCE_DIR / "dry-run" / f"{date_str}_posts.json"
+            if dry_run_path.exists():
+                post_registry = json.loads(dry_run_path.read_text())
+                logger.info(f"[learning_loop] Using dry-run registry: {dry_run_path.name}")
+            else:
+                logger.warning("[learning_loop] No post registry for today — continuing with bulk YT fetch only")
+                post_registry = []
 
     ig_posts = [p for p in post_registry if p.get("platform") == "instagram"]
     yt_posts = [p for p in post_registry if p.get("platform") == "youtube"]
@@ -698,14 +947,29 @@ def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
         if ig_story_posts:
             ig_story_posts = _resolve_ig_story_ids(ig_story_posts, ig_token, ig_user_id)
 
+    # Build a channel-wide registry lookup (all post registries, last 28 days)
+    # so that bulk YT fetches can be annotated with hook/format/track metadata.
+    all_registry_lookup = _build_registry_lookup()
+    # Also merge today's registry into the lookup
+    for p in post_registry:
+        pid = p.get("post_id", "")
+        if pid:
+            all_registry_lookup.setdefault(pid, p)
+
     records = []
     if ig_posts and ig_token:
         records += fetch_instagram_metrics(ig_posts, ig_token)
         logger.info(f"[learning_loop] IG: {len(ig_posts)} posts → {len([r for r in records if r.platform == 'instagram'])} records")
-    if yt_posts and yt_token:
-        yt_records = fetch_youtube_metrics(yt_posts, yt_token)
+    if yt_token:
+        # Use bulk channel fetch (all videos, 28-day window) instead of per-ID
+        # today-only queries. This captures same-day posts once data propagates
+        # AND all prior videos. Falls back to per-ID if bulk returns nothing.
+        yt_records = fetch_youtube_channel_metrics_bulk(yt_token, days_back=28, registry_lookup=all_registry_lookup)
+        if not yt_records and yt_posts:
+            logger.info("[learning_loop] YT bulk returned 0 — falling back to per-ID query")
+            yt_records = fetch_youtube_metrics(yt_posts, yt_token)
         records += yt_records
-        logger.info(f"[learning_loop] YouTube: {len(yt_posts)} posts → {len(yt_records)} records")
+        logger.info(f"[learning_loop] YouTube: {len(yt_records)} records (channel-wide 28d)")
     if fb_posts and fb_page_token:
         fb_records = fetch_facebook_metrics(fb_posts, fb_page_token)
         records += fb_records
@@ -721,14 +985,13 @@ def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
 
     _save_performance_log(records, date_str)
 
-    # Hydrate records with full metadata from the registry (format, template, track, etc.)
-    # so the multi-dimensional EMA has something to group on.
-    registry_by_post_id = {p.get("post_id", ""): p for p in post_registry if p.get("post_id")}
+    # Hydrate records with full metadata (format, template, track, etc.) from both
+    # today's registry and the channel-wide 28-day lookup so the multi-dimensional
+    # EMA has something to group on even for historical YT videos.
     records_as_dicts = []
     for r in records:
         base = r.__dict__.copy()
-        extra = registry_by_post_id.get(r.post_id, {})
-        # merge — don't overwrite real metric values
+        extra = all_registry_lookup.get(r.post_id, {})
         for k, v in extra.items():
             base.setdefault(k, v)
         records_as_dicts.append(base)
