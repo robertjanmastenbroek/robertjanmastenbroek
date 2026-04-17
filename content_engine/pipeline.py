@@ -323,6 +323,8 @@ def run_full_day(
     registry_path.write_text(json.dumps(registry, indent=2))
     logger.info(f"[pipeline] Post registry saved: {registry_path} ({len(registry)} entries)")
 
+    _cleanup_output_dir(output_dir)
+
     distributed_count = len([r for r in results if r.get("success")]) if not dry_run else 0
 
     return {
@@ -336,6 +338,30 @@ def run_full_day(
     }
 
 
+def _cleanup_output_dir(output_dir: str) -> None:
+    """Delete _ prefixed temp files and update the 'latest' symlink."""
+    out = Path(output_dir)
+    removed = []
+    for f in out.iterdir():
+        if f.name.startswith("_"):
+            try:
+                f.unlink()
+                removed.append(f.name)
+            except OSError:
+                pass
+    if removed:
+        logger.info(f"[pipeline] Cleaned {len(removed)} temp files from {out.name}")
+
+    latest = out.parent / "latest"
+    try:
+        if latest.is_symlink() or latest.exists():
+            latest.unlink()
+        latest.symlink_to(out.name)
+        logger.info(f"[pipeline] latest → {out.name}")
+    except OSError as e:
+        logger.warning(f"[pipeline] Could not update latest symlink: {e}")
+
+
 def build_daily_clips(
     config: DailyPipelineConfig,
     brief: TrendBrief,
@@ -346,7 +372,7 @@ def build_daily_clips(
 ) -> list:
     """Build 3 clips (one per format)."""
     from content_engine.renderer import (
-        render_transitional, render_emotional, render_performance, render_story_variant,
+        render_transitional, render_emotional, render_performance,
     )
     from content_engine.generator import generate_hooks_for_format, generate_caption
     from content_engine.transitional_manager import TransitionalManager
@@ -416,7 +442,6 @@ def build_daily_clips(
         used_segments.update(segments)
 
         output_path = str(Path(output_dir) / f"{fmt.value}_{track.title.lower().replace(' ', '_')}.mp4")
-        story_path = str(Path(output_dir) / f"{fmt.value}_{track.title.lower().replace(' ', '_')}_story.mp4")
 
         clip_meta = {
             "clip_index": clip_idx,
@@ -470,11 +495,8 @@ def build_daily_clips(
                 render_performance(segments, track.file_path, audio_start, hook_data["hook"],
                                    "youtube", output_path, duration)
 
-            # Render Story variant
-            render_story_variant(output_path, track.title, clip_meta["spotify_url"], story_path)
-
             clip_meta["path"] = output_path
-            clip_meta["story_path"] = story_path
+            clip_meta["story_path"] = output_path   # stories reuse main clip — no separate re-render
             clips.append(clip_meta)
 
         except Exception as e:

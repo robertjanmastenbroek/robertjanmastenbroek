@@ -1,10 +1,13 @@
 """Tests for content_engine.pipeline — unified daily orchestrator."""
 import pytest
+from pathlib import Path
+from unittest.mock import patch
+from datetime import date
 from content_engine.pipeline import (
     build_daily_clips,
     DailyPipelineConfig,
 )
-from content_engine.types import ClipFormat
+from content_engine.types import ClipFormat, TrendBrief, UnifiedWeights, TrackInfo
 
 
 def test_config_defaults():
@@ -23,3 +26,92 @@ def test_config_durations():
     assert config.durations[ClipFormat.TRANSITIONAL] == 22
     assert config.durations[ClipFormat.EMOTIONAL] == 7
     assert config.durations[ClipFormat.PERFORMANCE] == 28
+
+
+# ── helper fixtures ────────────────────────────────────────────────────────────
+
+def _make_track():
+    return TrackInfo(
+        title="jericho", file_path="", bpm=140, energy=0.7, danceability=0.7,
+        valence=0.5, scripture_anchor="Joshua 6", spotify_id="", spotify_popularity=50,
+        pool_weight=1.0, entered_pool=date.today().isoformat(),
+    )
+
+
+def _make_weights():
+    return UnifiedWeights(
+        hook_weights={}, visual_weights={}, format_weights={}, platform_weights={},
+        transitional_category_weights={}, track_weights={},
+        best_clip_length=22, best_platform="instagram", updated="2026-04-17",
+    )
+
+
+def _make_brief():
+    return TrendBrief(
+        date="2026-04-17", top_visual_formats=[], dominant_emotion="test",
+        oversaturated="", hook_pattern_of_day="", contrarian_gap="test",
+        trend_confidence=0.5,
+    )
+
+
+# ── story variant tests ────────────────────────────────────────────────────────
+
+def test_story_path_equals_main_path(tmp_path):
+    """story_path must equal path — no separate story re-render."""
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.TRANSITIONAL],
+        durations={ClipFormat.TRANSITIONAL: 22},
+    )
+
+    with patch("content_engine.renderer.render_transitional") as mock_render, \
+         patch("content_engine.transitional_manager.TransitionalManager") as mock_tm, \
+         patch("content_engine.generator.generate_hooks_for_format") as mock_hook, \
+         patch("content_engine.generator.generate_caption") as mock_caption, \
+         patch("content_engine.renderer.validate_output", return_value={"valid": True, "errors": []}):
+
+        mock_tm.return_value.pick.return_value = {"file": "satisfying/123.mp4", "category": "satisfying"}
+        mock_tm.return_value.full_path.return_value = Path("/fake/bait.mp4")
+        mock_hook.return_value = {
+            "hook": "test hook", "template_id": "t1",
+            "mechanism": "save", "sub_mode": "COST", "exploration": False,
+        }
+        mock_caption.return_value = "test caption"
+        mock_render.side_effect = lambda **kw: Path(kw["output_path"]).touch()
+
+        clips = build_daily_clips(
+            config, _make_brief(), _make_weights(), _make_track(), [30.0], str(tmp_path)
+        )
+
+    assert clips, "No clips returned"
+    assert clips[0]["story_path"] == clips[0]["path"], (
+        f"story_path != path: {clips[0]['story_path']!r} vs {clips[0]['path']!r}"
+    )
+
+
+def test_no_story_variant_files_generated(tmp_path):
+    """build_daily_clips must not create any *_story.mp4 files."""
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.PERFORMANCE],
+        durations={ClipFormat.PERFORMANCE: 28},
+    )
+
+    with patch("content_engine.renderer.render_performance") as mock_render, \
+         patch("content_engine.generator.generate_hooks_for_format") as mock_hook, \
+         patch("content_engine.generator.generate_caption") as mock_caption, \
+         patch("content_engine.renderer.validate_output", return_value={"valid": True, "errors": []}):
+
+        mock_hook.return_value = {
+            "hook": "test hook", "template_id": "t1",
+            "mechanism": "dare", "sub_mode": "BODY", "exploration": False,
+        }
+        mock_caption.return_value = "test caption"
+        mock_render.side_effect = lambda *a, **kw: Path(
+            kw.get("output_path", str(tmp_path / "out.mp4"))
+        ).touch()
+
+        build_daily_clips(
+            config, _make_brief(), _make_weights(), _make_track(), [30.0], str(tmp_path)
+        )
+
+    story_files = list(tmp_path.glob("*_story.mp4"))
+    assert story_files == [], f"Unexpected story files: {story_files}"
