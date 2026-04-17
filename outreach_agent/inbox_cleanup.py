@@ -45,12 +45,40 @@ KEEP_SENDERS = [
     "support@bandlab.com",
     "noreply@digid.nl",
     "worldscollide123pod@gmail.com",   # confirmed podcast booking Apr 14
+    # ── empresa-closure workstream (2026-04-16): protect all fiscal/legal replies ──
+    "asesoriacodesur.es",              # gestoría CODESUR San Isidro
+    "codesursi@asesoriacodesur.es",
+    "sabadellsolbank.com",             # Sabadell Solbank Costa Adeje (Saül)
+    "sperezfondon@sabadellsolbank.com",
+    "bancsabadell.com",                # Sabadell parent domain
+    "agenciatributaria.gob.es",        # AEAT — notifications, CSVs, etc.
+    "seg-social.es",                   # TGSS — RETA, resguardos
+    "correos.es",                      # Correos — Cl@ve registration confirmations
+    "clave.gob.es",                    # Cl@ve system notifications
+    "gobiernodecanarias.org",          # ATC — IGIC, Modelo 400
+    "policia.es",                      # Policía Nacional — NIE duplicate if needed
 ]
 
 KEEP_SUBJECT_KEYWORDS = [
     "calendar invite",
     "booking confirmed",
     "podcast",
+    # ── empresa-closure protections ──
+    "nie",
+    "autónomo",
+    "autonomo",
+    "baja",
+    "modelo 036",
+    "modelo 130",
+    "modelo 400",
+    "reta",
+    "hacienda",
+    "aeat",
+    "tgss",
+    "cl@ve",
+    "clave",
+    "certificado de registro",
+    "igic",
 ]
 
 # ── Bulk-trash queries (ALL mail, not just inbox) ─────────────────────────────
