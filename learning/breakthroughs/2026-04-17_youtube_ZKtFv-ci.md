@@ -2,17 +2,16 @@
 
 **Views:** 743  **Completion:** 54.0%  **Saves:** 0.0%  **Hook:** tension  **Visual:** b_roll  **Length:** 12s
 
-**What Worked:**
+**What Made This Work & What to Repeat:**
 
-• **Tension hook + 12s duration = forced-watch narrative.** Tension requires resolution; viewers *must* stay to completion. At 12s, the arc is tight enough to sustain curiosity without testing attention span. YouTube's algorithm prioritizes completion rate—54% is strong because it signals the video held attention start-to-finish.
+• **Tension hook at 12s = maximum completion rate** — The hook created narrative curiosity that a viewer *needs* to resolve. 54% completion on 12 seconds means you held attention through the entire arc. The duration was short enough that tension didn't dissipate, long enough to build payoff. This is your "golden window" for YouTube.
 
-• **B-roll as attention motor, not filler.** Motion and cuts sustain tension visually without requiring dialogue or static shots. B-roll velocity keeps eyes moving, reinforcing the hook's psychological pull. This drives the completion number.
+• **B-roll over talent removes distraction** — Static footage lets audio/pacing/tension carry the weight. No face to judge, no performance to critique—just pure "what happens next?" This reduced cognitive load, keeping viewers locked to the thread.
 
-• **Zero saves/scroll-stops reveals the winner.** This isn't a "pause and think" video—it's pure **watch-through optimization**. No friction points where viewers stop to share or click away. The formula works *because* it's frictionless momentum.
+• **Zero saves = narrative/mystery tension, not utility** — Nobody saved because this wasn't a "how-to" or guide they'd bookmark. It was pure curiosity closure. The tension resolved *in the video itself*, not something they needed later. This signals the hook worked exactly as intended.
 
-• **Completion rate > saves for algorithm lift.** YouTube prioritizes watch time and completion. At 2x+ views with 54% completion, you've cracked the "binge this channel" signal. Algorithm amplifies. Saves don't matter here; watch-through does.
+• **Repeat the exact recipe tomorrow:** Tension opener (audio cue, cut, question, conflict) → 9-10s of b-roll momentum → micro-payoff or plot turn at 11-12s. Keep under 13s, use pacing cuts (not static b-roll), let tension/audio drive the narrative, not visuals.
 
-**Repeat Tomorrow:**
-- **Same tension hook + b_roll + 12s template.** This is your format. Don't chase saves or engagement metrics—chase completion rate above 50%.
-- **Test tighter opening (first 2s).** Tension hook must hook in the first frame. Refine the inciting incident if completion dips.
-- **Meter b_roll cuts to music tempo.** If this is music content, sync cut rhythm to track's BPM. Motion sync drives micro-attention loops.
+• **Why 2x views:** YouTube's algorithm favors high completion + rewatch signals. Your 54% completion tells the algorithm this is watch-till-the-end content. Zero scroll-stop means you didn't lose people mid-video. That completion rate → distribution → 743 views, which is 2x baseline because the metric says "people actually finished this."
+
+**Action item:** Tomorrow, recreate with same tension-build architecture but different topic. Test different audio cues (silence, sound design, voiceover type) to see which tension mechanic drives the 50%+ completion again.

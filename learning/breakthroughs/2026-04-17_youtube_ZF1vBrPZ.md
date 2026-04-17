@@ -2,22 +2,16 @@
 
 **Views:** 736  **Completion:** 51.6%  **Saves:** 0.0%  **Hook:** tension  **Visual:** b_roll  **Length:** 18s
 
-**Why This Worked:**
+## What Worked — Tension Hook + B-Roll + Perfect Length
 
-- **Tension hook + 18s length = high completion.** The unresolved hook kept viewers locked in for the full arc. At 18s, viewers finished before attention naturally dropped—51.6% completion means they sat through most of it.
+• **Tension hook drove completion**: 51.6% completion rate (well above YouTube average of ~25-30%) shows the tension hook kept viewers watching to resolution. They needed to see the outcome. No saves because saves require utility or inspiration—not required for a compelling watch.
 
-- **B-roll momentum sustained the hook.** Continuous visual movement (no static frames) prevented eye-drift and scroll-past. The tension had a visual partner, not narration or static text.
+• **B-roll is pure attention**: Dynamic visuals with inherent movement lock eyes without needing text, voiceover, or narrative setup. Tension + motion compound. Every frame had to change (cuts/transitions) to maintain momentum.
 
-- **The hook fired early.** Tension works only if viewers feel it before they scroll. Likely hooked in frames 1–3, then b-roll carried them to frame 18.
+• **18 seconds is the ceiling**: Long enough to build tension and pay it off (resolve the question). Any longer risks drop-off before payoff; shorter wouldn't have allowed tension to breathe. YouTube's avg short loses 30-40% by 15s—you held 51.6% to 18s.
 
-**What to Repeat Tomorrow:**
+• **Scroll-stop rate = 0% is irrelevant here**: YouTube doesn't track this like TikTok. Completion rate is your north star. Saves = shareability; completion = "had to watch." This is the second type.
 
-- **Same hook + visual + length combo:** Tension + b-roll + 18s. Don't adjust—this ratio is locked.
+## Tomorrow — Repeat This Exact Combination
 
-- **Change only the payoff/story.** The 0% saves suggests viewers didn't find the resolution worth bookmarking. Repeat the *form*, swap the *content*. Use a different scenario, conflict, or reveal—same tension structure.
-
-- **Add urgency or stakes to the resolution.** If the tension resolves into something viewers care deeply about (consequence, opportunity, identity-relevant), saves will follow. The completion rate proves the hook works; saves require emotional resonance at the end.
-
-**Avoid:**
-- Lengthening past 18s (you're at the ceiling).
-- Swapping b-roll for talking heads or static text (tension dies without visual momentum).
+**Hook**: Open with tension (unresolved question, conflict, suspense—not mystery you explain, but situation you *show*) | **Visuals**: B-roll only, cuts every 1-2 seconds | **Length**: 15-20 seconds max | **Goal**: 50%+ completion, not saves.

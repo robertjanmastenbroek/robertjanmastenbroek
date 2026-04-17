@@ -2,14 +2,13 @@
 
 **Views:** 728  **Completion:** 52.5%  **Saves:** 0.0%  **Hook:** tension  **Visual:** b_roll  **Length:** 16s
 
-## Why It Worked + What to Repeat
+**What Worked (Completion Driver):**
+- **Tension hook + 16s length = optimal pacing.** The unresolved mystery held viewers through to resolution within the sweet spot (15–60s). B-roll without dialogue forced viewers to stay invested to understand what was happening, eliminating the option to skim.
+- **B-roll's visual momentum.** No talking head = no pause points. Continuous movement (b-roll) creates cognitive friction—stopping means you lose narrative thread. That friction drove the 52.5% completion.
 
-1. **Tension hook + 16-second length = 52.5% completion** — Tension creates immediate curiosity that demands resolution. 16 seconds is short enough that viewers watch to the end to see the payoff rather than scroll. This combo is portable and repeatable.
+**The Problem (Save Rate = 0%):**
+- **Tension without payoff doesn't drive saves.** High completion ≠ re-engagement. Viewers watched to resolve the mystery but found no reason to save (no insight, no actionable takeaway, no emotional peak worth revisiting). Saves require either a surprising *reveal*, a *how-to* moment, or a *feeling* worth re-experiencing.
 
-2. **B-roll + dynamic visuals over static frames** — B-roll holds attention through motion and scene changes. The 0% scroll-stop rate confirms the hook landed—people didn't bounce. Repeat the visual intensity throughout, not just the opening.
-
-3. **Hook resolves within the clip** — The tension had a clear, contained payoff (no cliffhanger to external content). This drove completion. Don't extend the tension beyond the video length or make viewers click for resolution.
-
-4. **The gap: 0% saves despite 52.5% completion** — People watched but didn't bookmark. The tension hook entertains but doesn't inspire action. Tomorrow: embed one quotable line, a practical takeaway, or visual that's worth remembering. Tension grabs attention; *substance* gets saves.
-
-5. **Tomorrow's formula: same tension hook + 16s b-roll, but add a memorable reveal/quote/moment at :14-:16 that makes viewers want to save it** — Keep what drove completion; add the layer that drives saves and social proof.
+**Repeat Tomorrow:**
+- **Same formula: tension hook + b-roll + 16s—but add ONE of:** a shocking revelation in the final 3–4s, a clear CTA ("watch until the end for..."), or an emotional climax (not just resolved mystery). Test which pairing increases saves while maintaining completion rate.
+- **Benchmark:** If you hit 50%+ completion + 5%+ saves tomorrow, you've cracked the pattern. Pure completion without saves = engagement bait, not growth.
