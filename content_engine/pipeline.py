@@ -11,6 +11,7 @@ Daily flow:
 import json
 import logging
 import os
+import random
 from dataclasses import dataclass, field
 from datetime import date as _date
 from pathlib import Path
@@ -66,6 +67,43 @@ def _load_project_env() -> None:
 # read os.environ at import time (e.g. buffer_poster's CHANNELS dict) see
 # the right values.
 _load_project_env()
+
+
+def derive_format_mix(format_weights: dict, n_clips: int = 3) -> list:
+    """Derive a clip format mix from learned weights.
+
+    Each format can occupy at most n_clips-1 slots so the mix always has
+    at least two distinct formats. Zero-weight formats are never picked.
+    """
+    formats = [ClipFormat.TRANSITIONAL, ClipFormat.EMOTIONAL, ClipFormat.PERFORMANCE]
+    base_weights = [max(format_weights.get(f.value, 1.0), 0.0) for f in formats]
+    result = []
+    counts = {f: 0 for f in formats}
+    max_per_format = n_clips - 1
+
+    while len(result) < n_clips:
+        available = [
+            (f, w) for f, w in zip(formats, base_weights)
+            if counts[f] < max_per_format
+        ]
+        if not available:
+            available = list(zip(formats, base_weights))
+        total = sum(w for _, w in available)
+        if total == 0:
+            f = random.choice([fmt for fmt, _ in available])
+        else:
+            r = random.random() * total
+            cumulative = 0.0
+            f = available[-1][0]
+            for fmt, w in available:
+                cumulative += w
+                if r <= cumulative:
+                    f = fmt
+                    break
+        result.append(f)
+        counts[f] += 1
+
+    return result
 
 
 @dataclass
@@ -134,7 +172,6 @@ def run_full_day(
 
     Returns {date, clips_rendered, valid_clips, distributed, failures, dry_run, registry}.
     """
-    config = config or DailyPipelineConfig()
     date_str = _date.today().isoformat()
     logger.info(f"[pipeline] Starting unified daily run for {date_str} (dry_run={dry_run})")
 
@@ -187,6 +224,13 @@ def run_full_day(
     # 2. Load weights
     weights = UnifiedWeights.load()
     logger.info(f"[pipeline] Weights loaded — best platform: {weights.best_platform}")
+
+    # Resolve config after weights are loaded so the format mix can be derived
+    # from learned engagement data instead of always using the hard-coded default.
+    if config is None:
+        config = DailyPipelineConfig(
+            formats=derive_format_mix(weights.format_weights),
+        )
 
     # 3. Select track
     from content_engine.audio_engine import TrackPool, detect_bpm, find_peak_sections

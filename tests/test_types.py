@@ -69,3 +69,33 @@ def test_pick_sub_mode_zero_weights_still_returns_valid():
 def test_pick_sub_mode_unknown_angle_uses_emotional_modes():
     result = pick_sub_mode("nonexistent_angle", {})
     assert result in ["COST", "NAMING", "DOUBT", "DEVOTION", "RUPTURE"]
+
+
+from content_engine.pipeline import derive_format_mix
+from content_engine.types import ClipFormat
+
+def test_derive_format_mix_equal_weights_all_formats_possible():
+    weights = {"transitional": 1.0, "emotional": 1.0, "performance": 1.0}
+    seen = set()
+    for _ in range(200):
+        mix = derive_format_mix(weights)
+        seen.update(mix)
+    assert ClipFormat.TRANSITIONAL in seen
+    assert ClipFormat.EMOTIONAL in seen
+    assert ClipFormat.PERFORMANCE in seen
+
+def test_derive_format_mix_dominant_weight_favors_format():
+    weights = {"transitional": 10.0, "emotional": 0.01, "performance": 0.01}
+    mixes = [derive_format_mix(weights) for _ in range(50)]
+    transitional_counts = [m.count(ClipFormat.TRANSITIONAL) for m in mixes]
+    assert sum(transitional_counts) / len(transitional_counts) > 1.5
+
+def test_derive_format_mix_caps_at_two_per_format():
+    weights = {"transitional": 999.0, "emotional": 0.0, "performance": 0.0}
+    for _ in range(20):
+        mix = derive_format_mix(weights)
+        assert mix.count(ClipFormat.TRANSITIONAL) <= 2, "No format should occupy all 3 slots"
+
+def test_derive_format_mix_returns_three_clips():
+    weights = {"transitional": 1.0, "emotional": 1.0, "performance": 1.0}
+    assert len(derive_format_mix(weights)) == 3
