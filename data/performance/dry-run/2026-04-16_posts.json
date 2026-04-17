@@ -1,0 +1,44 @@
+[
+  {
+    "platform": "all",
+    "format_type": "transitional",
+    "clip_index": 0,
+    "variant": "a",
+    "hook_mechanism": "save",
+    "hook_template_id": "save.pov_discovered",
+    "hook_sub_mode": "RUPTURE",
+    "visual_type": "b_roll",
+    "transitional_category": "nature",
+    "transitional_file": "nature/855633.mp4",
+    "track_title": "jericho",
+    "clip_length": 22
+  },
+  {
+    "platform": "all",
+    "format_type": "transitional",
+    "clip_index": 1,
+    "variant": "a",
+    "hook_mechanism": "save",
+    "hook_template_id": "save.vibes_were_song",
+    "hook_sub_mode": "DOUBT",
+    "visual_type": "b_roll",
+    "transitional_category": "craftsmanship",
+    "transitional_file": "craftsmanship/856350.mp4",
+    "track_title": "jericho",
+    "clip_length": 22
+  },
+  {
+    "platform": "all",
+    "format_type": "performance",
+    "clip_index": 2,
+    "variant": "a",
+    "hook_mechanism": "scene",
+    "hook_template_id": "bodydrop.played_at_place",
+    "hook_sub_mode": "THRESHOLD",
+    "visual_type": "b_roll",
+    "transitional_category": "",
+    "transitional_file": "",
+    "track_title": "jericho",
+    "clip_length": 28
+  }
+]

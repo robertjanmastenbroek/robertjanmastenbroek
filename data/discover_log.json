@@ -1,0 +1,88 @@
+[
+  {
+    "ts": "2026-04-16T11:32:34.404221",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "query_slots_by_type": {
+      "blog": 4,
+      "youtube": 2,
+      "curator": 2
+    },
+    "candidates_evaluated": 4,
+    "contacts_appended": 0,
+    "contacts_skipped_dedup": 4,
+    "contacts_skipped_avoid": 0,
+    "learning_signal_used": false
+  },
+  {
+    "ts": "2026-04-16T11:32:34.404244",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 13,
+    "playlists_added": 12,
+    "database_total": 12
+  },
+  {
+    "ts": "2026-04-16T12:01:00",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "query_slots_by_type": {
+      "blog": 8
+    },
+    "candidates_evaluated": 2,
+    "contacts_appended": 0,
+    "contacts_skipped_dedup": 2,
+    "contacts_skipped_no_email": 18,
+    "note": "blog=1 critical gap; all 8 slots allocated to blog/editorial discovery; only 2 email-visible candidates both already in DB"
+  },
+  {
+    "ts": "2026-04-16T12:01:00",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 4,
+    "database_total": 16
+  },
+  {
+    "ts": "2026-04-16T17:21:45.190488Z",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 3,
+    "database_total": 19
+  },
+  {
+    "ts": "2026-04-16T17:21:49.712495+00:00",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 2,
+    "contacts_added": 0,
+    "skipped_already_in_db": 2,
+    "skipped_no_email": 18
+  },
+  {
+    "ts": "2026-04-16T22:16:37.676017Z",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 12,
+    "playlists_added": 6,
+    "database_total": 25
+  },
+  {
+    "ts": "2026-04-16T22:19:31.305570+00:00",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 12,
+    "contacts_added": 2,
+    "webfetch_visits": 5,
+    "skipped_no_email": 10
+  }
+]
