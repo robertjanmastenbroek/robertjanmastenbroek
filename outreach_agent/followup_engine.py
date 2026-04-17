@@ -58,7 +58,7 @@ def _send_followup(contact: dict, is_second: bool = False) -> bool:
     msg_id     = contact.get("gmail_message_id") or ""
 
     try:
-        subject, body = template_engine.generate_followup_email(contact)
+        subject, body = template_engine.generate_followup_email(contact, is_second=is_second)
     except Exception as exc:
         log.error("Failed to generate follow-up for %s: %s", email, exc)
         return False
@@ -122,7 +122,8 @@ def run_followup_batch(max_generates: int = 10) -> dict:
             time.sleep(scheduler.random_interval())
 
     # ── Second follow-ups (use remaining quota) ─────────────────────────────────
-    remaining = max_generates - sent1 - failed1
+    # Only successful sends count against the quota — failures don't consume capacity.
+    remaining = max_generates - sent1
     if remaining > 0:
         queue2 = get_followup2_queue(limit=remaining)
         for contact in queue2:

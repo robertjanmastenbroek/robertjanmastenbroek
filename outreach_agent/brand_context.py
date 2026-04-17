@@ -39,26 +39,37 @@ FACTS (never invent, never exaggerate):
 BRAND: Direct, peer-to-peer, no "world-class"/"groundbreaking". Faith is depth not headline (except faith audiences). Sign off: Robert-Jan / robertjanmastenbroek.com | {ARTIST['instagram']}"""
 
 
-# ─── SMYKM Email Framework ─────────────────────────────────────────────────────
+# ─── SMYKM Email Framework v2 ──────────────────────────────────────────────────
 # 7-step cold email method. Used by template_engine for all outreach.
+# Updated: deeper per-step guidance, expanded bans, no-apology rule.
 
 SMYKM_FRAMEWORK = """
-SMYKM EMAIL FRAMEWORK — follow this 7-step sequence exactly, no skips:
+SMYKM EMAIL FRAMEWORK v2 — follow this 7-step sequence exactly:
 
-1. SUBJECT: 2–4 words, lowercase. Hyper-specific to this person only — if it fits anyone else, rewrite it.
-2. OPENER: One specific researched observation (episode quote, post, career move). Zero pleasantries. Must be verifiable.
-3. TRANSITION: One sentence bridging their world to this pitch.
-4. CHALLENGE: Their specific current problem — not a generic industry problem.
-5. VALUE PROP: Direct solution. Understood in 2 seconds (One Mississippi test).
-6. HIDDEN OBJECTION: One sentence defusing the likeliest reason they'll ignore this.
-7. CLOSE: One interest question. No meeting ask. No calendar link.
+1. SUBJECT: 2–4 words, lowercase, no punctuation. Must feel like an internal note or reply thread — NOT a pitch broadcast. Reference something the recipient just did or a specific fact about their work. Test: could this subject go to anyone else on your list? If yes, rewrite. Never use your own name, track title, or genre label in the subject.
+
+2. OPENER: Observation + interpretation (not just observation). Name something the recipient DID — a playlist add, a booking decision, a public statement — then show you understood WHY it matters. One to two sentences max. Must be verifiable. If no research exists, skip a generic opener and go straight to BPM/genre — honest generic beats fabricated specific.
+
+3. TRANSITION: One sentence that makes the pitch feel like a CONSEQUENCE of the opener, not a subject change. Never use "which is why I'm writing" or "that's why I'm reaching out." The reader should arrive at the pitch, not be introduced to it.
+
+4. CHALLENGE: Their SPECIFIC, MOMENT-SPECIFIC pressure — not a category problem. "Curators struggle to find good music" is useless. "Your tribal playlist has been building toward darker BPMs for 6 weeks and the queue hasn't caught up" is a challenge. If you cannot identify a specific challenge, SKIP THIS STEP — a generic challenge is worse than none.
+
+5. VALUE PROP: One sentence. Understood in under 2 seconds. Must contain at least one detail that cannot come from any other artist: owned masters, Hebrew lyrics, Tenerife origin, the €6M collapse. Never say "I think this would be a great fit" — earn the conclusion, don't announce it.
+
+6. HIDDEN OBJECTION: Remove the likeliest reason they stop reading — WITHOUT naming it, apologizing for it, or drawing attention to it. Never say "I know you're busy" or "sorry to bother you." Address their fear (I don't know this person / this doesn't fit my direction / if I respond I'm committing) by making the forward step smaller or the cost of ignoring clearer.
+
+7. CLOSE: One forward-assumption question. Never yes/no — that has an easy exit. Assume engagement and ask WHICH form it takes. No calendar links ever. Calibrate to status: high-status contacts get shorter, bolder closes; emerging contacts get collaborative curiosity openers.
 
 HARD RULES:
-- 120 words max (entire body)
-- 1–2 sentences per paragraph, line breaks for white space
-- Confident, peer-to-peer, modern — meaning discovered, never announced
-- Banned phrases (any = rewrite): "I am reaching out", "I hope this finds you well", "I know you are busy", "Just following up", "My name is Robert-Jan and I", "I've been following your [show/work]", "I wanted to reach out", "We help [X] do [Y]"
-- Language: EN for EN contacts, Dutch for NL/BE, German for DE/AT/CH"""
+- 100–140 words max (body only). Every word earns its place.
+- 1–2 sentences per paragraph, one blank line between — reads like a message, not a document
+- No apology, no hedging, no permission-asking. The email proceeds from the assumption that this conversation is worth having.
+- Confident, peer-to-peer, modern. Meaning discovered, never announced.
+- Specificity beats vague claims: one concrete detail > three adjectives. "140 BPM, Hebrew text from Joshua 6, owned master" beats "unique, authentic, high-energy."
+- Language: EN for EN/US/AU contacts, Dutch for NL/BE, German for DE/AT/CH
+
+BANNED PHRASES — any of these = rewrite from scratch:
+"I am reaching out" / "I hope this finds you well" / "I know you're busy" / "Just following up" / "My name is Robert-Jan and I" / "I've been following your work" / "I wanted to reach out" / "I'd love to connect" / "Quick question" / "No worries if not" / "Sorry to bother you" / "I'm sure you get a lot of these" / "Looking forward to hearing from you" / "Let me know if you have any questions" / "I believe my music would be a great fit" / "Please feel free to" / "I don't want to take up too much of your time" / "As a fan of your work" / "Hopefully we can work together" / "I came across your profile" / "Would love to chat" / "At your earliest convenience" / "I think you'd really enjoy" / "Excited to share" / "My music has been described as" / Any sentence where "I" is the first word of the email body"""
 
 
 # ─── Voice Rules — lazy-loaded from BRAND_VOICE.md ────────────────────────────

@@ -153,68 +153,282 @@ Output ONLY valid JSON: {{"subject": "...", "body": "..."}}
 """
 
 _TYPE_ADDONS = {
-    "label": """CONTEXT: Demo submission to a record label.
-- Trigger: cite a specific release or signing from their catalogue
-- Challenge: most demos have no story — faceless production, no hook
-- Value Prop: record deal walkaway at 21 → €6M platform → total collapse → 30+ tracks, all owned
-- Hidden Objection: "another unsolicited demo" → I own all masters (flexible to license, sign, or collaborate)
-- No faith angle unless label is faith-focused""",
 
-    "curator": """CONTEXT: Spotify playlist curator pitch.
-- Subject line formula: "[Track Name] ([BPM] BPM [micro-genre]) for [Exact Playlist Name]"
-  Example: "Jericho (140 BPM Psytrance) for Ritual Techno Selections"
-- Opening (3 sentences max): name one specific thing about their playlist proving you listened,
-  then: track name + BPM + genre + Spotify stream link, then single frictionless ask.
-- Email length: 60–80 words maximum. Never exceed 100.
-- Signature must include: 290K IG @holyraveofficial | Tenerife, CET
-  (signals cross-promotion reach — curators add tracks knowing they get exposure)
-- Trigger: cite a SPECIFIC track already on their playlist + BPM match
-  Example: "Your playlist sits at 136–140 BPM — Jericho is 140 BPM, same register as [track X] you added in March."
-- Challenge: drowning in faceless bulk-blast submissions
-- Value Prop: one specific track + why it sits next to what they already play (cite BPM, mood, energy match)
-- Hidden Objection: "sounds like everything else" → name one concrete differentiator
-- DO NOT use this template for press/editorial contacts — they need a different ask""",
+    "curator": """
+═══ CURATOR EMAIL — COMPLETE SYSTEM ═══
 
-    "youtube": """CONTEXT: YouTube music-promo channel — ask them to upload our track to their channel.
-The pitch is MONEY: they keep 100% of the ad revenue from the upload.
-Content ID has been DISABLED at the distributor for these tracks, so the promise is real.
+PSYCHOLOGICAL FRAME:
+The curator's fear is not "this track is bad" — it is "I missed something good."
+Every sentence reinforces one of two curator self-images:
+  A. "I have good ears — this person noticed what I noticed."
+  B. "This artist is moving — I found them before they blew up."
+RJM's independent status (no label, no manager, owns all masters) is DISCOVERY UPSIDE.
+The biblical depth is a category differentiator — surface it as texture, not sermon:
+"Hebrew text as subtext," "ancient percussion architecture" — the curator FEELS something underneath.
 
-- Subject formula: "[Track] ([BPM] BPM [genre]) — free track, you keep 100% ad rev"
-  Example: "Kavod (140 BPM Hebrew psytrance) — free track, you keep 100% ad rev"
-- Opening (2 sentences): name ONE specific recent upload of theirs (genre, vibe).
-  Show you actually watched it — don't flatter generically.
-- Offer (3 sentences): ONE track (WAV + artwork). Name BPM, genre, one-word visual.
-  Spotify link inline directly after the track title.
-- The deal (2 sentences, concrete and clean):
-  "You keep 100% of the ad revenue — Content ID is off on this track. I just ask
-   you to put my Spotify artist link in the description so listeners can go stream."
-- CTA (1 sentence): "Reply 'yes' and I'll send the WAV + artwork within the hour."
-- Email length: 80–110 words.
-- Signature: Robert-Jan | robertjanmastenbroek.com | 290K IG @holyraveofficial
-- NEVER hedge the ad rev promise. NEVER mention BandLab, distributors, or claims.
-- NEVER use 'monetize' as a carrot — 'keep 100% of the ad revenue' is the money phrase.
-- The deal is simple: free track → they run ads → RJM gets Spotify streams from the link.
-- Faith angle: OFF unless the channel description explicitly says christian/worship/spiritual.""",
+SUBJECT LINE — DO NOT use the old formula "[Track] ([BPM]) for [Playlist]". That is a filing system, not a hook.
 
-    "festival": """CONTEXT: Festival booking inquiry.
-- Trigger: a specific past edition, headliner decision, or stated ethos
-- Challenge: bookers need artists with a reason for being there — not another DJ with a generic bio
-- Value Prop: record deal walkaway → €6M platform → total loss → camper van → music rooted in something real
-- Hidden Objection: "we don't know this artist" → Tenerife = low EU/Canary travel costs
-- Conscious/spiritual festivals: sacred music angle front and centre. Secular: music + story first.""",
+Use ONE of these three formulas (rotate, never repeat):
 
-    "podcast": """CONTEXT: Podcast guest pitch.
-- Trigger: ONE specific episode or verbatim quote — not "I love your show"
-- Challenge: finding guests with structurally RARE stories (not just "entrepreneur who overcame adversity")
-- Hidden Objection: "we get hundreds of pitches" → name the specific combo: Dutch raver + €6M collapse + Jesus + own catalogue
-- Available via Zoom, video or audio
+FORMULA A — Contrarian Fact:
+  "[Track name]: [one unexpected true thing about the track]"
+  GOOD: "Jericho: psytrance built around a 3,000-year-old battle cry"
+  GOOD: "Renamed: tribal techno that ends in 8 seconds of silence"
+  GOOD: "Living Water: afro house with an untranslated scripture sample"
 
-STORY ANGLES BY AUDIENCE:
-- Faith/ministry: collapse → surrender → rebuilding on faith. Return to faith, not first conversion.
-- Music biz: walked away from record deal at 21, 290K following with zero label, owns every master
-- Expat/nomad: name destroyed in Holland → island → camper van → built new life in Tenerife by choice
-- Sober/wellness: sober raver, music as the altered state — what fills the space
-- Entrepreneurship: built €6M platform, lost everything at 30, repaid every creditor, rebuilt from zero""",
+FORMULA B — Proof-of-Ears:
+  "noticed [one specific curatorial behavior] — built something for that slot"
+  GOOD: "noticed you mix tribal percussion with downtempo exits — have something for that gap"
+  GOOD: "noticed your afro house sets always end slow — built a track for that slot"
+
+FORMULA C — Credibility Leakage (no "for", use "/" as separator):
+  "[social proof] / [track name] / [micro-genre]"
+  GOOD: "290K IG / Renamed / tribal psytrance"
+  GOOD: "1.9M video views / Jericho / dark psytrance"
+
+WHEN RESEARCH IS AVAILABLE (specific playlist track, playlist name, or vibe known):
+  GOOD: "[Track already on their playlist] reminded me why I made Jericho"
+  GOOD: "[Playlist name] is missing a breakdown that breathes — Renamed does this"
+
+DEAD SUBJECTS — NEVER produce these:
+  ✗ "Renamed (130 BPM tribal) for Tribal Drums Music"  — filing system, bot-detectable
+  ✗ "Living Water (124 BPM Afro House) for Afro House Mix 2026"  — genre mislabel + flat
+  ✗ "Renamed (130 BPM tribal house) for Tribal House Top Hits"  — no tension, no differentiation
+
+EMAIL ARCHITECTURE (55–75 words body — ruthless):
+
+SENTENCE 1 — PROOF SENTENCE (10–18 words):
+Show you listened with ONE SPECIFIC, EARNED OBSERVATION. Must name something a curator DID — a choice only a listener could know. If no research: go directly to BPM/genre match (honest generic beats fabricated specific).
+  GOOD: "You kept [track X] at position 4 for four months — same BPM register as what I'm sending."
+  GOOD: "Three of your last five adds are tribal percussion with no drop — Jericho breaks that pattern once, and earns it."
+  DEAD: "I love your playlist and think your curation is really unique."
+  DEAD: "I've been listening to your playlist for a while."
+
+SENTENCE 2 — TRACK SENTENCE (three data points inline):
+"[Track name] — [BPM] BPM — [one phrase that sounds like music writing, not a press release] → [Spotify link]"
+  GOOD: "Jericho — 140 BPM — tribal percussion that builds like a siege and breaks like one → [link]"
+  GOOD: "Renamed — 130 BPM — raw percussive foundation, Isaiah 62 as the subtext → [link]"
+  DEAD: "I'd love for you to check out my track Jericho on Spotify here: [link]"
+
+SENTENCE 3 — BRIDGE (optional — only if specific enough):
+Connect to a track or sonic characteristic already on their playlist. Skip if vague.
+  GOOD: "Sits in the same register as [Track X] you added in February — same patience, different scripture."
+  SKIP if you cannot make it that specific.
+
+SENTENCE 4 — ASK (one sentence, peer-to-peer):
+  GOOD: "Worth 90 seconds if the BPM sits right for you."
+  GOOD: "One listen is all I'm asking."
+  DEAD: "I would be so honored if you would consider adding it."
+  DEAD: "I hope this is a good fit and look forward to hearing from you!"
+
+SIGNATURE (exact format):
+Robert-Jan
+robertjanmastenbroek.com  |  @holyraveofficial (290K)  |  Tenerife, CET
+(The 290K goes in the signature, not the body — it signals discovery upside as they decide, not as a barter offer.)
+
+FINAL CHECKLIST before outputting:
+□ Subject: tension or specificity? (not a form submission)
+□ First sentence: could a bot write this? (if yes, rewrite)
+□ Track description: music writing or press release?
+□ Spotify link: inline, not on its own sentence
+□ Ask: fellow selector tone or supplicant tone?
+□ Banned phrases: none
+□ Word count: 55–75 body words
+□ Does the email make the curator feel like a discoverer, not a gatekeeper?
+""",
+
+    "label": """
+═══ LABEL EMAIL — COMPLETE SYSTEM ═══
+
+READER PSYCHOLOGY:
+Label A&R reads 40+ demos a week. Their primary fear: "artist with no angle." They need a story their marketing team can package. Secondary fear: catalogue lock-in with an artist with no proven market. Both fears must be defused before the music is mentioned.
+
+SUBJECT LINE:
+2–4 words lowercase. Feel like an internal Slack message, NOT a pitch. Reference their catalogue or a specific recent move.
+  GOOD: "after the [artist] signing"
+  GOOD: "re: your recent [genre] direction"
+  DEAD: "demo from robert-jan mastenbroek"
+  DEAD: "music submission"
+
+OPENER: State one specific researched observation about a signing choice, release strategy, or public statement that reveals their A&R taste. Connect to what it implies about what they VALUE — not how great they are.
+  GOOD: "Signing [Artist] the month after their Boiler Room set — before the blog cycle — tells me you move on feel, not metrics."
+  DEAD: "I really admire what you've built with [Label]."
+
+TRANSITION: Bridge their taste to RJM's relevance through contrast or paradox.
+  Template: "What I'm making lives in that same [adjective] territory — [specific sonic descriptor] — built without a label, which is either a problem or an asset depending on how you read it."
+
+CHALLENGE: Name their specific ROSTER GAP — inferred from the trigger observation. Not a generic industry problem.
+  GOOD: "Your psytrance roster is technically strong but the spiritual narrative angle — the thing that turns a set into a pilgrimage — is missing."
+
+VALUE PROP — commercial hook first, story second:
+  1. Owns all 30+ masters outright — walked away from a deal at 21 to keep them.
+  2. 290K Instagram (@holyraveofficial) built independently, zero label infrastructure.
+  3. The story arc (€6M platform, total collapse, rebuilt in Tenerife) is pre-packaged marketing narrative — real, verified, documentable.
+State matter-of-factly. NEVER use: "unique," "authentic," "journey," "passion," "vibe."
+
+HIDDEN OBJECTION DEFUSE:
+Frame this as a licensing/release conversation, not a demo begging for a deal. RJM is approaching as an IP holder, not an unsigned artist.
+  Adjust by label type:
+  - Sync/licensing label: lead with master ownership + sync potential
+  - Boutique imprint: lead with marketing narrative + fanbase size
+  - Artist-run label: peer relationship + IP collaboration angle
+
+CLOSE — about their roster logic, not whether they want to "hear more":
+  GOOD: "Is there a sonic territory you're actively looking to add to the roster right now?"
+  GOOD: "Does the owned-masters angle change how you'd approach a conversation like this?"
+  DEAD: "Would you be open to a call to discuss further?"
+
+TONE: Peer-to-peer. Robert-Jan is not auditioning — he is identifying mutual interest. Write with that confidence.
+LENGTH: 120–160 words maximum.
+""",
+
+    "festival": """
+═══ FESTIVAL BOOKING — COMPLETE SYSTEM ═══
+
+READER PSYCHOLOGY:
+Festival bookers receive hundreds of booking requests. They are not looking for the best DJ — they already have those. They are looking for the artist who completes THEIR STORY. The lineup is a narrative. Robert-Jan's job: show how he fits the chapter they haven't written yet. Their primary fear: "this artist looks fine but gives us nothing to say about why they're here."
+
+THE ANGLE IS ALWAYS THE SAME — ONLY THE FRAMING CHANGES:
+"A rave becomes holy wherever Robert-Jan plays" works for every festival type.
+- Conscious/spiritual events: lead with it directly
+- Secular/underground events: let it arrive as a provocation in the transition sentence
+- NEVER suppress it entirely — it IS the differentiator
+
+SUBJECT LINE: 2–4 words lowercase. Reference the festival or a specific edition — never the artist's name.
+  GOOD: "re: [festival name] 2026 lineup"
+  GOOD: "after [headliner name] sunrise set"
+  DEAD: "festival booking — robert-jan mastenbroek"
+  DEAD: "available for shows"
+
+OPENER: Reference ONE specific, researched element: a headliner choice, stage concept, lineup decision, stated ethos, or past edition moment. The observation must reveal you understand what they're BUILDING, not that you admire it.
+  GOOD: "Programming Kalya Scintilla on the closing sunrise set — not the main stage — tells me you think about emotional arc, not just draw."
+  GOOD: "The 'no phones on the dancefloor' policy is the first booking criterion I've seen that makes artistic sense."
+  DEAD: "I've always loved the curation at [Festival]."
+
+TRANSITION — plant the FORWARDING LINE here (the sentence a booker copies into their internal lineup brief):
+  GOOD: "What I play is electronic music that behaves like a ceremony — which is either exactly what [festival] programs or the thing it's been missing."
+  GOOD: "The rave becomes holy wherever I play — which makes [festival] either a natural home or an interesting provocation."
+
+CHALLENGE: Name their lineup gap, inferred from the trigger observation.
+  GOOD: "The tribal-psytrance slot on your second stage has been filled by technically competent artists — none of them bring a reason to be THERE."
+  GOOD: "Your sunrise sets have a sound but not yet a story."
+
+VALUE PROP — in order: story → proof → logistics:
+  Story: "At 21, I walked away from a record deal to keep my masters. At 30, I lost a €6M platform to a hack and blackmail. I rebuilt in Tenerife, own 30+ tracks, and play sets rooted in that arc."
+  Proof: "290K Instagram (@holyraveofficial). Crowd footage runs to 1.9M views on IG without paid promotion."
+  Logistics: "Based in Tenerife (Canary Islands, Spain) — EU routing, Canary Islands travel rates, full European festival season available."
+
+HIDDEN OBJECTION — plant the lineup-announcement sentence:
+The sentence they'd use to justify the booking internally.
+  GOOD: "If the question is 'how do we explain this to the audience' — 'Dutch DJ who walked away from a label deal, lost everything, and builds ceremony into every set' is a one-line brief."
+
+CLOSE — about their programming LOGIC, not a meeting ask:
+  GOOD: "Is the sunrise slot something you build by artist or by sound?"
+  GOOD: "Does the tribal-psytrance category have room in the 2026 build?"
+  DEAD: "Would love to jump on a call."
+
+LINEUP ANNOUNCEMENT LINE: Every email must contain one sentence that could be copy-pasted into an internal lineup brief or Instagram announcement. No special formatting — just make sure it's there.
+LENGTH: 130–170 words.
+""",
+
+    "podcast": """
+═══ PODCAST GUEST PITCH — COMPLETE SYSTEM ═══
+
+READER PSYCHOLOGY:
+Podcast hosts read pitches for one thing: an episode they could NOT manufacture with a standard guest. Their fear: "this episode sounds like 40 others I've made." RJM is valuable because his story combination is STRUCTURALLY RARE — not because any single element is impressive. The pitch must deliver the combination as a PARADOX, not a list.
+
+THE PARADOX FRAME (engine of every pitch):
+Robert-Jan holds positions most people believe are mutually exclusive:
+- Sober raver who plays 140 BPM psytrance sets
+- Jesus-committed artist whose music plays in clubs, not churches
+- Man who built €6M and lost it all — calls the collapse the best thing that happened to him, and can prove why without spiritual bypassing
+- Dutch producer who walked away from a label deal at 21, owns every master, 290K followers with zero industry infrastructure
+
+The pitch: not "here is a guest with an interesting story" but "here is a guest whose existence creates an argument your audience will still be having after the episode ends."
+
+SUBJECT LINE — never start with "GUEST PITCH: [Name], [Title], [Topic]" (PR agency spam):
+  FORMULA A (highest priority — Reversal Fragment):
+    "[age/location] / [one-line reversal of fortune]"
+    GOOD: "36 / Tenerife / built €6M, lost it all, the music is better now"
+    GOOD: "lost everything at 34 — the album I made after is the best work of my life"
+  FORMULA B (Theological Tension):
+    "[genre] + [belief system] — why these don't cancel each other"
+    GOOD: "psytrance and Jesus — not a contradiction (here's the framework)"
+    GOOD: "rave as church — one DJ's serious argument"
+  FORMULA C (Falsifiable Claim):
+    "[bold industry claim] — [proof in 3 words]"
+    GOOD: "Spotify punishes trend-chasers — I stopped and grew"
+    GOOD: "no label, no manager, 290K — here's what that actually costs"
+
+ANGLE SELECTION — pick by researching what the HOST has said they're missing, not just by podcast category:
+  Faith/ministry hosts: Lead with the RETURN to faith (not conversion). "I kept making rave music and the ravers came." Collapse → surrender → rebuild.
+  Music business hosts: Lead with the masters decision at 21. Most radical choice an artist can make.
+  Entrepreneur/resilience hosts: Lead with the MECHANICS of the €6M collapse — hack, blackmail, what that does to a person at 30. The unusual element: he repaid every creditor. That separates "lost everything" stories (common) from "took responsibility and rebuilt" stories (rare).
+  Expat/nomad hosts: Lead with identity destruction in Holland and what it takes to rebuild a name from zero. Tenerife = strategic, not escapism.
+  Sober/wellness hosts: Lead with the sobriety paradox — sober raver, in club settings, makes the case that the altered state IS the music.
+
+OPENER: Quote or reference ONE specific episode — a verbatim line the host said, or a specific episode title and what it revealed about what the host values.
+  DEAD: "I've been a listener for years" / "Love what you do" / "Your show resonates with me"
+
+TRANSITION — the sentence the host screenshots and sends to their producer. Slightly provocative, not aggressive:
+  GOOD: "I make tribal psytrance for ravers, own every master, and haven't touched alcohol in [X] years — and I think that combination is an episode your audience hasn't heard."
+  GOOD: "I'm a Dutch DJ who lost €6M and found Jesus — not as a redemption arc, just as the actual order of events."
+
+HIDDEN OBJECTION — scarcity framing, not "I'm different":
+  GOOD: "If your inbox has another guest who walked away from a label deal at 21, lost €6M to blackmail at 30, and still credits Jesus without running a ministry — book them first. I'll wait."
+
+CLOSE — create FOMO: make the host feel they're missing a specific episode type if they don't reply:
+  GOOD: "Has anyone on your show walked away from a deal and kept the faith while the money burned?"
+  GOOD: "Is the 'sober in the rave' angle something your audience has asked about, or is it a gap nobody's named yet?"
+  DEAD: "Would I be a good fit for your show?" / "Happy to jump on a call"
+
+Always end with: "Available via Zoom, video or audio."
+LENGTH: 140–180 words maximum.
+""",
+
+    "youtube": """
+═══ YOUTUBE CHANNEL PITCH — COMPLETE SYSTEM ═══
+
+THE OFFER (drives every word):
+RJM gives a free, full-quality WAV + cover art. The channel uploads it, runs ads, keeps 100% of ad revenue. Content ID has been turned off at the distributor — no claims, no split. The only return: RJM's Spotify artist link in the description so listeners can stream.
+
+THE EXCHANGE: Channel gets a content asset that earns forever. RJM gets discovery traffic.
+
+SUBJECT LINE: Lead with the business proposition. Track metadata identifies fit but the subject is opened because of the deal.
+  FORMULA: "Free track upload — 100% ad rev yours | [Track] ([BPM] BPM [genre])"
+  GOOD: "Free track upload — 100% ad rev yours | Jericho (140 BPM tribal psytrance)"
+  DEAD: "Kavod (140 BPM Hebrew psytrance) — free track, you keep 100% ad rev"  ← buries the money
+
+OPENER (2 sentences — the ONLY personalized part):
+Reference ONE specific thing that proves you watched their channel. Not the channel name, not the genre description — one concrete detail: a recent upload's TITLE, a specific edit choice, BPM they consistently use, visual treatment of thumbnails.
+  NEVER write:
+  - "I really love what you're doing"
+  - "Your channel has great energy"
+  - "I've been following your work"
+  If no research: skip personalisation, go straight to BPM/genre fit — honest generic beats fabricated specific.
+
+TRACK OFFER (2–3 sentences):
+  - Name the track, BPM, genre, and ONE visual word (what does this music look like?)
+  - Include Spotify link IMMEDIATELY after the track title — never name the track without it
+  - State that WAV + artwork are ready to send
+
+THE DEAL (2 sentences — no hedging, no softening):
+  Sentence 1: "You keep 100% of the ad revenue — Content ID is disabled on this track."
+  Sentence 2: "The only thing I ask is my Spotify artist link in the description, so your listeners can stream."
+  NEVER write:
+  - "I just ask" (weakens the ask)
+  - "monetize" (wrong frame)
+  - "hopefully" or "if you're interested" (hedging)
+  - Any reference to distributors, BandLab, or claims processes
+
+CTA (1 sentence): "Reply 'yes' and I'll send the WAV + artwork within the hour."
+
+SIGNATURE: Robert-Jan | robertjanmastenbroek.com | 290K IG @holyraveofficial
+
+TONE: Peer-to-peer. Two professionals making a deal. Not a fan writing to a creator.
+FAITH ANGLE: OFF unless channel description explicitly uses: christian, worship, faith, spiritual.
+LENGTH: 80–110 words.
+""",
 }
 
 
@@ -282,9 +496,15 @@ SPOTIFY ARTIST PAGE: {ARTIST['spotify_artist']}
     return system + "\n\n" + user
 
 
-_FOLLOWUP_SYSTEM = """Write a follow-up email as Robert-Jan Mastenbroek (Dutch DJ/producer, Tenerife, instagram.com/robertjanmastenbroek). First person. Peer-to-peer tone. Sign off: Robert-Jan / robertjanmastenbroek.com | https://instagram.com/robertjanmastenbroek"""
+_FOLLOWUP_SYSTEM = """You write follow-up emails as Robert-Jan Mastenbroek (Dutch DJ/producer, Tenerife). First person. Peer-to-peer posture.
 
-def _build_followup_prompt(contact: dict) -> str:
+POSTURE RULE (read before writing a single word):
+You are not apologizing for emailing. You are not asking if they got the last email. You are not "just checking in." You are re-entering because something has changed, something new is available, or the window is closing. Every follow-up must have a reason to exist that is NOT "I didn't hear back."
+
+Sign off: Robert-Jan | robertjanmastenbroek.com | https://instagram.com/robertjanmastenbroek"""
+
+
+def _build_followup_prompt(contact: dict, is_second: bool = False) -> str:
     orig_subject = contact.get("sent_subject", "") or ""
     # Prefer full stored body, fall back to snippet; strip whitespace-only values
     orig_body    = (contact.get("sent_body") or contact.get("sent_body_snippet", "") or "").strip()
@@ -293,34 +513,71 @@ def _build_followup_prompt(contact: dict) -> str:
     genre        = contact.get("genre", "") or ""
     notes        = contact.get("notes", "") or ""
 
-    if orig_body:
-        context_section = f"Original email body:\n{orig_body}\n"
-        ref_rule = 'One sentence referencing something specific from the first email (not "Just following up")'
+    subject_line = f"Re: {orig_subject}" if orig_subject else ""
+
+    if is_second:
+        # ── FOLLOWUP FINAL (21 days) — last contact, genuine urgency ───────────
+        mode_instructions = """MODE: FINAL CONTACT (last email — 21 days since first send)
+
+JOB: Create genuine urgency and close the loop gracefully. This is the last email.
+TONE: Calm, direct, no resentment. "I'm moving on after this — here's one last clean shot."
+
+STRUCTURE (3 parts):
+1. ACKNOWLEDGE the silence without blame: "I'll take the silence as a no for now — no hard feelings."
+2. RE-STATE the offer in ONE sentence — the most commercially concrete version. Lead with the money or the track, not with yourself.
+3. CLOSE with a SPECIFIC, time-limited reason to act today. Use ONE of:
+   - Content ID window: "I'm re-enabling Content ID on [track] at the end of [current month] — after that, the 100% revenue promise is gone."
+   - Exclusivity: "I'm only keeping this offer open to one channel in the [genre] space — whoever responds first."
+   - New track: "I have a new track dropping soon — happy to offer both, but only to whoever's in first."
+   Then step back completely.
+
+NEVER use:
+- "I just wanted to follow up one last time" (no urgency)
+- "No worries if not" (deflates everything)
+- Manufactured countdown language
+
+LENGTH: 60–80 words."""
+
     else:
-        # No stored body — give enough context for a grounded follow-up
+        # ── FOLLOWUP #1 (7-10 days) — bring ONE new piece of information ────────
+        mode_instructions = """MODE: FOLLOW-UP #1 (7–10 days after first email)
+
+JOB: Bring ONE new piece of information that makes the original offer feel more alive, not more desperate.
+DO NOT ask "did you see my last email" — that is not new information.
+
+NEW VALUE to introduce (choose one that fits):
+- A Spotify milestone or stream count on the track since the first email
+- A playlist placement the track landed on
+- A second track option if the first was a genre mismatch
+- A real deadline: "I'm keeping Content ID off through the end of the month"
+- Social proof: another creator who already uploaded it and the views it earned
+
+STRUCTURE:
+1. ONE callback sentence — reference the most compelling line from the original email (the revenue offer, the track, the specific detail they would have registered). NOT a recap — a callback.
+2. ONE sentence of new information. Concrete. Dated if possible.
+3. ONE zero-friction CTA: "Reply 'yes' and the WAV is in your inbox within the hour."
+
+LENGTH: 50–70 words. Shorter than the original pitch."""
+
+    if orig_body:
+        context_section = f"Original email body (mine the most compelling line for the callback):\n{orig_body}\n"
+    else:
         context_section = (
-            f"Contact type: {ctype}\n"
-            f"Genre / focus: {genre}\n"
-            f"Notes: {notes}\n"
-            f"(Original email body not stored — write a natural follow-up that makes sense "
-            f"for a {ctype} outreach from Robert-Jan Mastenbroek, without inventing details "
-            f"that weren't sent.)\n"
-        )
-        ref_rule = (
-            'One short sentence that reopens the door naturally — reference the contact\'s '
-            'type/genre (e.g. their label, playlist, show focus) as the hook, not the original email'
+            f"Contact type: {ctype}\nGenre / focus: {genre}\nNotes: {notes}\n"
+            f"(Original email body not stored — write a natural follow-up grounded in the "
+            f"contact's type and genre. Do NOT invent details that were not sent.)\n"
         )
 
-    subject_line = f"Re: {orig_subject}" if orig_subject else f"following up"
+    subject_directive = (
+        f'Subject: "{subject_line}"'
+        if subject_line
+        else "Subject: write a short, specific subject (2–4 words lowercase, no punctuation)"
+    )
 
     user = f"""Follow-up to {name} ({ctype}).
 {context_section}
-Rules:
-- Under 80 words
-- {ref_rule}
-- Don't repeat the full pitch — reopen the door with one question
-- Not pushy, not apologetic
-- Subject: "{subject_line}"
+{mode_instructions}
+{subject_directive}
 
 Return ONLY valid JSON with 'subject' and 'body' keys."""
 
@@ -789,14 +1046,20 @@ def generate_emails_batch(contacts, learning_contexts=None):
     return result
 
 
-def generate_followup_email(contact: dict) -> tuple[str, str]:
+def generate_followup_email(contact: dict, is_second: bool = False) -> tuple[str, str]:
     """
     Generate a short follow-up email. Returns (subject, body).
     Uses the fast/cheap model — follow-ups are short and simple.
-    """
-    prompt = _build_followup_prompt(contact)
 
-    log.info("Generating follow-up for %s...", contact.get("email"))
+    Args:
+        contact:   Contact dict with sent_subject, sent_body, type, genre, etc.
+        is_second: True for the final follow-up (21 days, urgency close);
+                   False for the first follow-up (7–10 days, new information hook).
+    """
+    prompt = _build_followup_prompt(contact, is_second=is_second)
+
+    mode = "final" if is_second else "first"
+    log.info("Generating %s follow-up for %s...", mode, contact.get("email"))
 
     raw = _call_claude(prompt, model=CLAUDE_MODEL_FAST)
     subject, body = _parse_response(raw)
@@ -806,7 +1069,7 @@ def generate_followup_email(contact: dict) -> tuple[str, str]:
     if orig_subject and not subject.lower().startswith("re:"):
         subject = f"Re: {orig_subject}"
 
-    log.info("Generated follow-up — subject: %r", subject)
+    log.info("Generated %s follow-up — subject: %r", mode, subject)
     if _BRAND_GATE_AVAILABLE:
-        _brand_gate.gate_or_warn(body, context="template_engine.followup")
+        _brand_gate.gate_or_warn(body, context=f"template_engine.followup_{mode}")
     return subject, body
