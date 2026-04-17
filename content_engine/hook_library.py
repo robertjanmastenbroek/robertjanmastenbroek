@@ -614,13 +614,14 @@ def pick_templates_for_format(
 def pick_transitional_hook(
     bank: list[dict],
     yesterday_category: str | None = None,
+    category_weights: dict | None = None,
 ) -> dict | None:
     """Pick a transitional visual hook clip from the bank.
 
     Rules:
     - 7-day cooldown: skip if last_used within 7 days
     - Category diversity: skip yesterday's category
-    - Weighted random by performance_score
+    - Weighted random by performance_score × learned category weight
     """
     today = date.today()
     cooldown = today - timedelta(days=7)
@@ -648,15 +649,16 @@ def pick_transitional_hook(
     if not eligible:
         return None
 
-    # Weighted random by performance_score
-    total = sum(h["performance_score"] for h in eligible)
+    # Weighted random by performance_score × learned category weight
+    cw = category_weights or {}
+    scores = [(h, h["performance_score"] * max(cw.get(h["category"], 1.0), 0.0)) for h in eligible]
+    total = sum(s for _, s in scores)
     if total == 0:
         return random.choice(eligible)
-
     r = random.random() * total
     cumulative = 0.0
-    for h in eligible:
-        cumulative += h["performance_score"]
+    for h, s in scores:
+        cumulative += s
         if r <= cumulative:
             return h
-    return eligible[-1]
+    return scores[-1][0]

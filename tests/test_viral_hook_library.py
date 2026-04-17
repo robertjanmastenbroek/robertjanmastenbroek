@@ -230,3 +230,36 @@ def test_parse_filled_templates_handles_various_formats():
     assert out[15]["hook_text"].startswith("8 seconds")
     # Wrapping quotes must be stripped
     assert not out[28]["hook_text"].startswith('"')
+
+
+# ── category_weights tests ─────────────────────────────────────────────────
+
+def _make_bank():
+    return [
+        {"file": "nature/a.mp4", "category": "nature", "last_used": None, "performance_score": 1.0, "times_used": 0},
+        {"file": "satisfying/b.mp4", "category": "satisfying", "last_used": None, "performance_score": 1.0, "times_used": 0},
+        {"file": "elemental/c.mp4", "category": "elemental", "last_used": None, "performance_score": 1.0, "times_used": 0},
+    ]
+
+def test_pick_transitional_hook_category_weights_bias():
+    from content_engine.hook_library import pick_transitional_hook
+    bank = _make_bank()
+    weights = {"nature": 100.0, "satisfying": 0.001, "elemental": 0.001}
+    results = [pick_transitional_hook(bank, category_weights=weights) for _ in range(100)]
+    categories = [r["category"] for r in results]
+    assert categories.count("nature") > 80, f"Expected nature to dominate, got {categories.count('nature')}/100"
+
+def test_pick_transitional_hook_no_category_weights_unchanged():
+    from content_engine.hook_library import pick_transitional_hook
+    bank = _make_bank()
+    result = pick_transitional_hook(bank)
+    assert result is not None
+    assert result["category"] in {"nature", "satisfying", "elemental"}
+
+def test_pick_transitional_hook_zero_weight_category_excluded():
+    from content_engine.hook_library import pick_transitional_hook
+    bank = _make_bank()
+    weights = {"nature": 0.0, "satisfying": 1.0, "elemental": 1.0}
+    results = [pick_transitional_hook(bank, category_weights=weights) for _ in range(50)]
+    categories = [r["category"] for r in results]
+    assert "nature" not in categories, "nature had 0.0 weight, should never be picked"

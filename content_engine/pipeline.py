@@ -420,7 +420,7 @@ def build_daily_clips(
 
         if fmt == ClipFormat.TRANSITIONAL:
             tm = TransitionalManager()
-            bait = tm.pick()
+            bait = tm.pick(category_weights=weights.transitional_category_weights)
             if bait:
                 bait_path = str(tm.full_path(bait["file"]))
                 tm.mark_used(bait["file"])

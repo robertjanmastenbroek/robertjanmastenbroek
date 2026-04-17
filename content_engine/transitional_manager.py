@@ -39,12 +39,12 @@ class TransitionalManager:
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
         self.index_path.write_text(json.dumps(self.bank, indent=2))
 
-    def pick(self, yesterday_category: Optional[str] = None) -> Optional[dict]:
-        """Pick a transitional hook clip respecting cooldown and diversity rules."""
+    def pick(self, yesterday_category: Optional[str] = None, category_weights: Optional[dict] = None) -> Optional[dict]:
+        """Pick a transitional hook clip respecting cooldown, diversity, and category weights."""
         if not self.bank:
             logger.warning("Transitional hook bank is empty")
             return None
-        return pick_transitional_hook(self.bank, yesterday_category)
+        return pick_transitional_hook(self.bank, yesterday_category, category_weights=category_weights)
 
     def mark_used(self, file: str):
         """Mark a clip as used today and save."""
