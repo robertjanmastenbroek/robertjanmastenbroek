@@ -59,3 +59,14 @@ def test_track_pool_rotation(tmp_path):
     pool.mark_used(track.title)
     data = json.loads(pool.rotation_path.read_text())
     assert track.title in data
+
+
+def test_seed_track_bpms_hardcoded():
+    """Seed tracks must have non-zero BPM without needing audio files."""
+    pool = TrackPool()
+    by_title = {t.title: t for t in pool.tracks}
+    assert by_title["halleluyah"].bpm == 140, f"Expected 140, got {by_title['halleluyah'].bpm}"
+    assert by_title["jericho"].bpm == 140, f"Expected 140, got {by_title['jericho'].bpm}"
+    assert by_title["fire in our hands"].bpm == 130, f"Expected 130, got {by_title['fire in our hands'].bpm}"
+    for t in pool.tracks:
+        assert t.bpm > 0, f"Track '{t.title}' still has bpm=0"

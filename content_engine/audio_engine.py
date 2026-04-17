@@ -37,6 +37,19 @@ SCRIPTURE_ANCHORS = {
 
 SEED_TRACKS = ["halleluyah", "renamed", "jericho", "fire in our hands"]
 
+# Artist-verified BPMs — never rely on librosa for these (librosa doubles psytrance
+# BPMs: half-time detection reports ~92 BPM → doubled to 185 for a 140 BPM track).
+TRACK_BPMS: dict[str, int] = {
+    "halleluyah":        140,
+    "renamed":           128,
+    "jericho":           140,
+    "fire in our hands": 130,
+    "living water":      124,
+    "he is the light":   128,
+    "exodus":            138,
+    "abba":              132,
+}
+
 
 class TrackPool:
     """Manages the active track pool with weighted selection and rotation."""
@@ -58,7 +71,7 @@ class TrackPool:
             self.tracks.append(TrackInfo(
                 title=title,
                 file_path=str(path) if path else "",
-                bpm=0,  # detected on first use
+                bpm=TRACK_BPMS.get(title, 0),
                 energy=0.7,
                 danceability=0.7,
                 valence=0.5,
