@@ -1,11 +1,16 @@
 # content_engine/tests/test_learning_loop.py
 import json
+import os
 import pytest
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 from content_engine.learning_loop import (
     calculate_unified_weights,
     track_rotation_vote,
     update_template_lifecycle,
+    _is_buffer_id,
+    _refresh_instagram_token,
+    _refresh_youtube_token,
 )
 from content_engine.types import UnifiedWeights
 
@@ -54,3 +59,171 @@ def test_update_template_lifecycle():
     result = update_template_lifecycle(template_scores, days_active=15)
     assert result["save.wait_for_drop"]["priority"] == 2.0
     assert result["save.for_you_if"]["priority"] == 0.3
+
+
+# ─── Buffer ID detection ────────────────────────────────────────────────────────
+
+class TestIsBufferId:
+    """Buffer IDs are 24-char lowercase hex; real IG IDs are long numeric strings."""
+
+    def test_buffer_id_detected(self):
+        assert _is_buffer_id("69e1dc17bf79a8a2f2e4c743")
+
+    def test_real_ig_id_not_buffer(self):
+        assert not _is_buffer_id("18179953573388740")
+
+    def test_empty_string_not_buffer(self):
+        assert not _is_buffer_id("")
+
+    def test_mixed_case_not_buffer(self):
+        # Buffer IDs are lowercase only
+        assert not _is_buffer_id("69E1DC17BF79A8A2F2E4C743")
+
+    def test_short_hex_not_buffer(self):
+        assert not _is_buffer_id("69e1dc17bf79a8a2")  # too short
+
+    def test_youtube_video_id_not_buffer(self):
+        assert not _is_buffer_id("Qgv-PYZ35iE")
+
+
+# ─── Instagram token refresh in analytics path ─────────────────────────────────
+
+class TestRefreshInstagramTokenLearningLoop:
+    """_refresh_instagram_token (learning_loop) should update os.environ + .env."""
+
+    def test_success_updates_environ(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"access_token": "EAAnewtoken", "expires_in": 5184000}
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp), \
+             patch("content_engine.learning_loop._write_env_token") as mock_write, \
+             patch.dict(os.environ, {
+                 "META_APP_ID": "12345",
+                 "META_APP_SECRET": "secret",
+                 "INSTAGRAM_ACCESS_TOKEN": "EAAoldtoken",
+             }, clear=False):
+            token = _refresh_instagram_token("EAAoldtoken")
+            # Assertions inside with-block so patch.dict hasn't restored env yet
+            assert token == "EAAnewtoken"
+            assert os.environ["INSTAGRAM_ACCESS_TOKEN"] == "EAAnewtoken"
+            mock_write.assert_called_once_with("INSTAGRAM_ACCESS_TOKEN", "EAAnewtoken")
+
+    def test_network_error_returns_original(self):
+        with patch("content_engine.learning_loop.requests.get", side_effect=ConnectionError("timeout")), \
+             patch.dict(os.environ, {
+                 "META_APP_ID": "12345",
+                 "META_APP_SECRET": "secret",
+             }, clear=False):
+            token = _refresh_instagram_token("EAAoldtoken")
+        assert token == "EAAoldtoken"
+
+    def test_no_app_creds_returns_original(self):
+        with patch.dict(os.environ, {"META_APP_ID": "", "META_APP_SECRET": ""}, clear=False):
+            token = _refresh_instagram_token("EAAoldtoken")
+        assert token == "EAAoldtoken"
+
+    def test_empty_token_returns_empty(self):
+        with patch.dict(os.environ, {"INSTAGRAM_ACCESS_TOKEN": ""}, clear=False):
+            token = _refresh_instagram_token("")
+        assert token == ""
+
+
+# ─── YouTube token refresh in analytics path ───────────────────────────────────
+
+class TestRefreshYouTubeTokenLearningLoop:
+    """_refresh_youtube_token (learning_loop) should persist to os.environ + .env."""
+
+    def test_success_updates_environ_and_env_file(self):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"access_token": "ya29.FRESH"}
+        with patch("content_engine.learning_loop.requests.post", return_value=mock_resp), \
+             patch("content_engine.learning_loop._write_env_token") as mock_write, \
+             patch.dict(os.environ, {
+                 "YOUTUBE_REFRESH_TOKEN": "1//refresh",
+                 "YOUTUBE_CLIENT_ID": "client-id",
+                 "YOUTUBE_CLIENT_SECRET": "client-secret",
+                 "YOUTUBE_OAUTH_TOKEN": "ya29.OLD",
+             }, clear=False):
+            token = _refresh_youtube_token()
+            # Assertions inside with-block so patch.dict hasn't restored env yet
+            assert token == "ya29.FRESH"
+            assert os.environ["YOUTUBE_OAUTH_TOKEN"] == "ya29.FRESH"
+            mock_write.assert_called_once_with("YOUTUBE_OAUTH_TOKEN", "ya29.FRESH")
+
+    def test_no_refresh_token_returns_existing(self):
+        with patch.dict(os.environ, {
+            "YOUTUBE_REFRESH_TOKEN": "",
+            "YOUTUBE_OAUTH_TOKEN": "ya29.CURRENT",
+        }, clear=False):
+            token = _refresh_youtube_token()
+        assert token == "ya29.CURRENT"
+
+    def test_failed_refresh_returns_existing(self):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 400
+        mock_resp.json.return_value = {"error": "invalid_grant"}
+        with patch("content_engine.learning_loop.requests.post", return_value=mock_resp), \
+             patch.dict(os.environ, {
+                 "YOUTUBE_REFRESH_TOKEN": "1//refresh",
+                 "YOUTUBE_CLIENT_ID": "cid",
+                 "YOUTUBE_CLIENT_SECRET": "csec",
+                 "YOUTUBE_OAUTH_TOKEN": "ya29.CURRENT",
+             }, clear=False):
+            token = _refresh_youtube_token()
+        assert token == "ya29.CURRENT"
+
+
+# ─── IG metrics use views-only (no plays) ──────────────────────────────────────
+
+class TestInstagramMetricsApiCall:
+    """fetch_instagram_metrics must not include 'plays' in the metric param."""
+
+    def test_plays_not_in_request(self):
+        from content_engine.learning_loop import fetch_instagram_metrics
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"data": [
+            {"name": "views", "values": [{"value": 500}]},
+            {"name": "reach", "values": [{"value": 400}]},
+            {"name": "saved", "values": [{"value": 10}]},
+            {"name": "shares", "values": [{"value": 5}]},
+            {"name": "total_interactions", "values": [{"value": 20}]},
+        ]}
+        posts = [{"post_id": "18179953573388740", "clip_index": 0, "variant": "a",
+                  "hook_mechanism": "tension", "visual_type": "b_roll", "clip_length": 22}]
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp) as mock_get:
+            fetch_instagram_metrics(posts, "EAAtoken")
+        call_kwargs = mock_get.call_args
+        metric_str = call_kwargs.kwargs.get("params", {}).get("metric", "") or \
+                     (call_kwargs.args[1] if len(call_kwargs.args) > 1 else {}).get("metric", "")
+        # Check via the actual call arguments
+        all_args = str(mock_get.call_args)
+        assert "plays" not in all_args or "views" in all_args
+        assert "plays" not in (mock_get.call_args.kwargs.get("params") or {}).get("metric", "")
+
+
+# ─── IG story metrics use new API surface ──────────────────────────────────────
+
+class TestInstagramStoryMetricsApiCall:
+    """fetch_instagram_story_metrics must use reach,replies,views,navigation."""
+
+    def test_correct_metrics_requested(self):
+        from content_engine.learning_loop import fetch_instagram_story_metrics
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"data": [
+            {"name": "reach", "values": [{"value": 22}]},
+            {"name": "replies", "values": [{"value": 0}]},
+            {"name": "views", "values": [{"value": 31}]},
+            {"name": "navigation", "values": [{"value": 5}]},
+        ]}
+        posts = [{"post_id": "18043191509782285", "clip_index": 0, "variant": "a",
+                  "hook_mechanism": "tension", "visual_type": "b_roll", "clip_length": 15}]
+        with patch("content_engine.learning_loop.requests.get", return_value=mock_resp) as mock_get:
+            fetch_instagram_story_metrics(posts, "EAAtoken")
+        metric_str = (mock_get.call_args.kwargs.get("params") or {}).get("metric", "")
+        assert "taps_forward" not in metric_str
+        assert "exits" not in metric_str
+        assert "impressions" not in metric_str
+        assert "navigation" in metric_str
+        assert "views" in metric_str

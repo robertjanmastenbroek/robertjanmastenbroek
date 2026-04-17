@@ -95,13 +95,21 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 # Load .env from project root
+# Strips surrounding single/double quotes from values (standard dotenv behaviour).
+# Without this, INSTAGRAM_USER_ID="17841443472097088" in .env produces a value
+# with literal quote characters that breaks every Meta Graph API call.
 _env_path = Path(__file__).parent / ".env"
 if _env_path.exists():
     for _line in _env_path.read_text().splitlines():
         _line = _line.strip()
         if _line and not _line.startswith("#") and "=" in _line:
             _k, _, _v = _line.partition("=")
-            os.environ.setdefault(_k.strip(), _v.strip())
+            _k = _k.strip()
+            _v = _v.strip()
+            # Strip matching surrounding quotes (single or double)
+            if len(_v) >= 2 and ((_v[0] == '"' and _v[-1] == '"') or (_v[0] == "'" and _v[-1] == "'")):
+                _v = _v[1:-1]
+            os.environ.setdefault(_k, _v)
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT    = Path(__file__).parent

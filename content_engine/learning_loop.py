@@ -83,7 +83,7 @@ def _refresh_youtube_token() -> str:
 
 
 def _write_env_token(key: str, value: str):
-    """Overwrite a single key=value line in .env (no quotes). Safe for tokens."""
+    """Overwrite a single key=value line in .env (always without quotes). Safe for tokens."""
     env_path = PROJECT_DIR / ".env"
     if not env_path.exists():
         return
@@ -91,7 +91,8 @@ def _write_env_token(key: str, value: str):
     new_lines = []
     replaced = False
     for line in lines:
-        if line.startswith(f"{key}=") or line.startswith(f"{key}=\""):
+        # Match KEY= (with or without surrounding quotes on the value side)
+        if line.strip().startswith(f"{key}=") or line.strip().startswith(f"{key} ="):
             new_lines.append(f"{key}={value}")
             replaced = True
         else:
@@ -99,6 +100,49 @@ def _write_env_token(key: str, value: str):
     if not replaced:
         new_lines.append(f"{key}={value}")
     env_path.write_text("\n".join(new_lines) + "\n")
+
+
+def _refresh_instagram_token(access_token: str = "") -> str:
+    """Refresh the long-lived Meta/Instagram User access token (60-day window).
+
+    Uses the fb_exchange_token grant — correct for Business Login tokens (EAA*).
+    Updates os.environ + .env so the refreshed token is available to subsequent
+    code in this process and to the next process without operator intervention.
+    Returns the refreshed token on success, or the original token on failure.
+    """
+    token = access_token or os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    if not token:
+        return token
+    app_id     = os.environ.get("META_APP_ID", "")
+    app_secret = os.environ.get("META_APP_SECRET", "")
+    if not (app_id and app_secret):
+        return token  # can't refresh without app creds, but token may still be valid
+    try:
+        resp = requests.get(
+            f"{INSTAGRAM_GRAPH_BASE}/oauth/access_token",
+            params={
+                "grant_type":        "fb_exchange_token",
+                "client_id":         app_id,
+                "client_secret":     app_secret,
+                "fb_exchange_token": token,
+            },
+            timeout=15,
+        )
+        new_token  = resp.json().get("access_token", "")
+        expires_in = resp.json().get("expires_in", 0)
+        if new_token:
+            os.environ["INSTAGRAM_ACCESS_TOKEN"] = new_token
+            _write_env_token("INSTAGRAM_ACCESS_TOKEN", new_token)
+            logger.info(
+                f"[learning_loop] Instagram token refreshed "
+                f"(expires in {expires_in}s / ~{expires_in // 86400}d)"
+            )
+            return new_token
+        err = resp.json().get("error", {})
+        logger.warning(f"[learning_loop] Instagram token refresh failed: {err.get('message', resp.text[:200])}")
+    except Exception as e:
+        logger.warning(f"[learning_loop] Instagram token refresh error: {e}")
+    return token
 
 
 def _resolve_ig_media_ids(posts: list, access_token: str, user_id: str) -> list:
@@ -632,9 +676,14 @@ def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
     fb_posts = [p for p in post_registry if p.get("platform") == "facebook"]
     ig_story_posts = [p for p in post_registry if p.get("platform") == "instagram_story"]
 
-    ig_token     = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
-    ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "").strip('"')
-    fb_page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "") or ig_token
+    # Refresh Instagram token before fetching insights.
+    # The token is a long-lived FB User token (60-day rolling window). Calling
+    # fb_exchange_token on every analytics run keeps it fresh automatically so
+    # it never expires mid-run or overnight.
+    raw_ig_token  = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    ig_token      = _refresh_instagram_token(raw_ig_token)
+    ig_user_id    = os.environ.get("INSTAGRAM_USER_ID", "").strip('"').strip("'")
+    fb_page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "").strip('"').strip("'") or ig_token
 
     # Always refresh YouTube token before use — access tokens expire in ~1h.
     yt_token = _refresh_youtube_token()

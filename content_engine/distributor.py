@@ -406,33 +406,80 @@ def post_facebook_reel(video_path: str, description: str, page_id: str, page_tok
 
 
 def _refresh_youtube_token() -> str:
-    """Refresh YouTube OAuth token using client_secret.json + YOUTUBE_REFRESH_TOKEN."""
+    """Refresh YouTube OAuth token using YOUTUBE_CLIENT_ID/SECRET + YOUTUBE_REFRESH_TOKEN.
+
+    Falls back to client_secret.json if the env vars are not set.
+    Persists the new token to os.environ and .env so every subsequent call
+    in this process (and the next run) uses the fresh token automatically.
+    """
     import json
     refresh_token = os.environ.get("YOUTUBE_REFRESH_TOKEN", "")
     if not refresh_token:
         return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
 
-    secret_path = PROJECT_DIR / "client_secret.json"
-    if not secret_path.exists():
+    # Prefer env vars; fall back to client_secret.json for legacy compat
+    client_id     = os.environ.get("YOUTUBE_CLIENT_ID", "")
+    client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET", "")
+    if not (client_id and client_secret):
+        secret_path = PROJECT_DIR / "client_secret.json"
+        if secret_path.exists():
+            try:
+                data   = json.loads(secret_path.read_text())
+                creds  = data.get("installed") or data.get("web") or {}
+                client_id     = creds.get("client_id", "")
+                client_secret = creds.get("client_secret", "")
+            except Exception:
+                pass
+
+    if not (client_id and client_secret):
+        logger.warning("[distributor] YouTube refresh: missing client credentials")
         return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
 
     try:
-        data = json.loads(secret_path.read_text())
-        creds = data.get("installed") or data.get("web") or {}
         resp = requests.post("https://oauth2.googleapis.com/token", data={
-            "client_id":     creds.get("client_id", ""),
-            "client_secret": creds.get("client_secret", ""),
+            "client_id":     client_id,
+            "client_secret": client_secret,
             "refresh_token": refresh_token,
             "grant_type":    "refresh_token",
         }, timeout=15)
         token = resp.json().get("access_token", "")
         if token:
             logger.info("[distributor] YouTube token refreshed")
+            os.environ["YOUTUBE_OAUTH_TOKEN"] = token
+            _atomic_env_update({"YOUTUBE_OAUTH_TOKEN": token})
             return token
+        logger.warning(f"[distributor] YouTube token refresh got no token: {resp.text[:200]}")
     except Exception as e:
         logger.warning(f"[distributor] YouTube token refresh failed: {e}")
 
     return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
+
+
+def _ensure_tokens_fresh() -> None:
+    """Pre-flight: refresh all platform tokens before a distribution run.
+
+    Called once at the top of distribute_clip() — idempotent and fast because
+    refresh_instagram_token() caches the result in os.environ and skips the
+    network call if the token is still valid (and because the FB page token
+    derived from a long-lived user token does not expire).
+
+    This ensures that even if the process has been running for hours, the
+    tokens used for every clip are fresh rather than relying on lazy refresh
+    inside each native posting function.
+    """
+    # Instagram / Facebook — one refresh covers both (FB page token is derived
+    # from the same long-lived user token)
+    ig_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    if ig_token and not _INSTAGRAM_TOKEN_DEAD:
+        new_ig = refresh_instagram_token(ig_token)
+        if new_ig and new_ig != ig_token:
+            # Re-derive FB page token from the refreshed user token
+            page_id = os.environ.get("FACEBOOK_PAGE_ID", "")
+            if page_id and not _INSTAGRAM_TOKEN_DEAD:
+                get_facebook_page_token(new_ig, page_id)
+
+    # YouTube — always refresh since access tokens expire in ~1h
+    _refresh_youtube_token()
 
 
 def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_token: str) -> dict:
@@ -626,6 +673,46 @@ _BUFFER_CHANNELS = {
     "instagram_story", "facebook_story",
 }
 
+# Auth-related HTTP status codes and Meta/Google error codes that indicate an
+# expired or revoked token — as opposed to a transient platform error.
+# Auth errors should NOT silently fall back to Buffer; they should surface
+# loudly so the operator knows re-auth is needed.
+_AUTH_ERROR_CODES = {190, 102, 200, 463, 467}  # Meta OAuth codes
+_AUTH_HTTP_STATUS = {401, 403}
+
+
+def _is_auth_error(result: dict) -> bool:
+    """Return True if the native API failure is an authentication error.
+
+    Auth errors (expired/revoked token, wrong credentials) should NOT route
+    to Buffer — they must be fixed at the source.  Transient platform errors
+    (5xx, network timeouts, rate limits) are legitimate fallback triggers.
+    """
+    error_str = str(result.get("error", "")).lower()
+    auth_phrases = (
+        "oauth", "access token", "invalid token", "token expired",
+        "cannot parse access token", "missing permission",
+    )
+    if any(p in error_str for p in auth_phrases):
+        return True
+    # Check numeric error code embedded in error string (e.g. "code 190")
+    for code in _AUTH_ERROR_CODES:
+        if str(code) in error_str:
+            return True
+    return False
+
+
+def _log_native_failure(platform: str, result: dict) -> None:
+    """Log a native API failure with the correct severity."""
+    error = result.get("error", "unknown error")
+    if _is_auth_error(result):
+        logger.critical(
+            f"[distributor] {platform} AUTH ERROR — re-auth needed: {error}\n"
+            f"  Run: python3 rjm.py auth {platform.split('_')[0]}  to refresh tokens."
+        )
+    else:
+        logger.warning(f"[distributor] {platform} native failed (platform error) — Buffer fallback: {error}")
+
 
 def _buffer_fallback(clip: dict, scheduled_at: str = "") -> dict:
     """Post a clip to exactly ONE Buffer channel.
@@ -731,6 +818,14 @@ def distribute_clip(clip: dict) -> dict:
     clip_index  = clip.get("clip_index", 0)
     scheduled_at = _scheduled_at_utc(platform, clip_index)
 
+    # Pre-flight: refresh all platform tokens before attempting native APIs.
+    # This runs once per clip call but is idempotent — refresh_instagram_token()
+    # and _refresh_youtube_token() both cache in os.environ so subsequent clips
+    # in the same process pay only the cost of an env lookup.
+    # TikTok is excluded — it routes through Buffer only (no native OAuth).
+    if platform not in ("tiktok",):
+        _ensure_tokens_fresh()
+
     logger.info(f"[distributor] {platform} clip {clip_index} → scheduled {scheduled_at}")
 
     if platform == "instagram":
@@ -739,28 +834,33 @@ def distribute_clip(clip: dict) -> dict:
             access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
             result = post_instagram_reel(path, caption, ig_user_id, access_token)
             if not result.get("success"):
-                logger.warning(f"[distributor] Instagram native failed: {result.get('error')} — Buffer fallback")
-                result = _buffer_fallback(clip, scheduled_at)
+                _log_native_failure("instagram", result)
+                if not _is_auth_error(result):
+                    result = _buffer_fallback(clip, scheduled_at)
         else:
-            logger.info("[distributor] Instagram native unavailable — using Buffer")
-            result = _buffer_fallback(clip, scheduled_at)
+            logger.critical(
+                "[distributor] Instagram native unavailable after pre-flight — "
+                "check INSTAGRAM_USER_ID / INSTAGRAM_ACCESS_TOKEN in .env"
+            )
+            result = {"success": False, "platform": "instagram",
+                      "error": "native unavailable after pre-flight", "via": "native"}
 
     elif platform == "facebook":
         page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "")
         page_id    = os.environ.get("FACEBOOK_PAGE_ID", "")
-        # Auto-fetch page token from user token if not yet saved
-        if not page_token:
-            user_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
-            if user_token and not _INSTAGRAM_TOKEN_DEAD:
-                page_token = get_facebook_page_token(user_token, page_id)
         if page_token and page_id:
             result = post_facebook_reel(path, caption, page_id, page_token)
             if not result.get("success"):
-                logger.warning(f"[distributor] Facebook native failed: {result.get('error')} — Buffer fallback")
-                result = _buffer_fallback(clip, scheduled_at)
+                _log_native_failure("facebook", result)
+                if not _is_auth_error(result):
+                    result = _buffer_fallback(clip, scheduled_at)
         else:
-            logger.info("[distributor] Facebook native credentials missing — using Buffer")
-            result = _buffer_fallback(clip, scheduled_at)
+            logger.critical(
+                "[distributor] Facebook native unavailable after pre-flight — "
+                "check FACEBOOK_PAGE_TOKEN / FACEBOOK_PAGE_ID in .env"
+            )
+            result = {"success": False, "platform": "facebook",
+                      "error": "native unavailable after pre-flight", "via": "native"}
 
     elif platform == "youtube":
         api_key     = os.environ.get("YOUTUBE_API_KEY", "")
@@ -769,12 +869,20 @@ def distribute_clip(clip: dict) -> dict:
         if api_key and oauth_token:
             result = post_youtube_short(path, title, caption, api_key, oauth_token,
                                         publish_at=scheduled_at)
+            if not result.get("success"):
+                _log_native_failure("youtube", result)
+                if not _is_auth_error(result):
+                    result = _buffer_fallback(clip, scheduled_at)
         else:
-            logger.info("[distributor] YouTube credentials missing — using Buffer")
-            result = _buffer_fallback(clip, scheduled_at)
+            logger.critical(
+                "[distributor] YouTube native unavailable after pre-flight — "
+                "check YOUTUBE_API_KEY / YOUTUBE_OAUTH_TOKEN / YOUTUBE_REFRESH_TOKEN in .env"
+            )
+            result = {"success": False, "platform": "youtube",
+                      "error": "native unavailable after pre-flight", "via": "native"}
 
     elif platform == "tiktok":
-        # TikTok posting routes through Buffer (no native OAuth flow in this environment).
+        # TikTok routes through Buffer only — no native OAuth flow configured.
         result = _buffer_fallback(clip, scheduled_at)
 
     elif platform == "instagram_story":
@@ -787,11 +895,16 @@ def distribute_clip(clip: dict) -> dict:
                 story_path, caption, ig_user_id, access_token, spotify_url,
             )
             if not result.get("success"):
-                logger.warning(f"[distributor] Instagram Story native failed: {result.get('error')} — Buffer fallback")
-                result = _buffer_fallback(clip, scheduled_at)
+                _log_native_failure("instagram_story", result)
+                if not _is_auth_error(result):
+                    result = _buffer_fallback(clip, scheduled_at)
         else:
-            logger.info("[distributor] Instagram Story native unavailable — using Buffer")
-            result = _buffer_fallback(clip, scheduled_at)
+            logger.critical(
+                "[distributor] Instagram Story native unavailable after pre-flight — "
+                "check INSTAGRAM_USER_ID / INSTAGRAM_ACCESS_TOKEN in .env"
+            )
+            result = {"success": False, "platform": "instagram_story",
+                      "error": "native unavailable after pre-flight", "via": "native"}
 
     elif platform == "facebook_story":
         page_id    = os.environ.get("FACEBOOK_PAGE_ID", "")
@@ -800,26 +913,19 @@ def distribute_clip(clip: dict) -> dict:
             story_path = clip.get("story_path", clip.get("path", ""))
             result = post_facebook_story(story_path, page_id, page_token)
             if not result.get("success"):
-                logger.warning(f"[distributor] Facebook Story native failed: {result.get('error')} — Buffer fallback")
-                result = _buffer_fallback(clip, scheduled_at)
+                _log_native_failure("facebook_story", result)
+                if not _is_auth_error(result):
+                    result = _buffer_fallback(clip, scheduled_at)
         else:
-            logger.info("[distributor] Facebook Story native credentials missing — using Buffer")
-            result = _buffer_fallback(clip, scheduled_at)
+            logger.critical(
+                "[distributor] Facebook Story native unavailable after pre-flight — "
+                "check FACEBOOK_PAGE_TOKEN / FACEBOOK_PAGE_ID in .env"
+            )
+            result = {"success": False, "platform": "facebook_story",
+                      "error": "native unavailable after pre-flight", "via": "native"}
 
     else:
         result = {"success": False, "platform": platform, "error": f"Unknown platform: {platform}"}
-
-    # Final fallback to Buffer for Reel-class targets. Stories and TikTok have
-    # already routed through Buffer if native failed — re-falling them back
-    # would double-post. Facebook feed + Instagram feed + YouTube can fall
-    # through here when the inline Buffer fallback above didn't fire.
-    if (
-        not result.get("success")
-        and result.get("via") != "buffer_fallback"
-        and platform in ("instagram", "youtube", "facebook")
-    ):
-        logger.warning(f"[distributor] {platform} native failed: {result.get('error')} — Buffer fallback")
-        result = _buffer_fallback(clip, scheduled_at)
 
     result["clip_index"] = clip.get("clip_index")
     result["variant"]    = clip.get("variant")
