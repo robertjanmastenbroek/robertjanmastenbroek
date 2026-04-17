@@ -1,11 +1,33 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+import pytest
 from unittest.mock import patch, MagicMock
+import content_engine.distributor as _distributor
 from content_engine.distributor import (
     post_instagram_reel, post_youtube_short,
     distribute_clip, distribute_all, POST_SCHEDULE,
 )
+
+
+@pytest.fixture(autouse=True)
+def _reset_distributor_module_state():
+    """Reset the one-way ``_INSTAGRAM_TOKEN_DEAD`` latch between tests.
+
+    ``post_instagram_reel`` calls ``refresh_instagram_token`` which makes a
+    real HTTP call to graph.facebook.com unless patched. The 400-path test
+    mocks ``requests.post`` but leaves ``requests.get`` un-patched, so the
+    refresh hits the real API with a fake token, gets back an ``OAuthException
+    190``/"Cannot parse access token", and flips the module-level dead flag.
+    Every subsequent test that relied on native IG routing then falls through
+    to Buffer and its ``mock_ig.assert_called_once()`` fails.
+
+    Rather than rewire every test to patch ``refresh_instagram_token``, we
+    simply reset the flag so each test starts with a clean distributor state.
+    """
+    _distributor._INSTAGRAM_TOKEN_DEAD = False
+    yield
+    _distributor._INSTAGRAM_TOKEN_DEAD = False
 
 CLIP_IG = {
     "clip_index": 0, "platform": "instagram", "variant": "a",
@@ -163,11 +185,14 @@ def test_buffer_fallback_posts_to_single_youtube_channel():
     assert "Jericho" in mock_post.call_args.kwargs["title"]
 
 
-def test_buffer_fallback_rejects_facebook():
-    # Facebook has no Buffer channel — falling back would raise in Buffer.
-    # Distributor must short-circuit instead of calling into buffer_poster.
+def test_buffer_fallback_rejects_unsupported_platform():
+    # Platforms outside _BUFFER_CHANNELS (e.g. linkedin, x_twitter) have no
+    # Buffer channel connected — falling back would raise. Distributor must
+    # short-circuit with a clean error instead of calling into buffer_poster.
+    # Facebook used to be in this list; it's now a valid Buffer channel so we
+    # test an actually-unsupported platform here.
     import content_engine.distributor as d
-    clip = {**CLIP_IG, "platform": "facebook"}
+    clip = {**CLIP_IG, "platform": "linkedin"}
     with patch("buffer_poster._create_video_post") as mock_post:
         result = d._buffer_fallback(clip)
     assert result["success"] is False

@@ -82,23 +82,28 @@ class TestUploadVideoAndQueue:
         clip = tmp_path / "clip.mp4"
         clip.write_bytes(b"data")
 
-        with patch("buffer_poster.upload_video", return_value="https://example.com/v.mp4"):
-            with patch("buffer_poster._create_video_post") as mock_post:
-                with patch("buffer_poster._create_video_story_post"):
-                    with patch("buffer_poster.time.sleep"):
-                        # TikTok fails, Instagram succeeds, YouTube succeeds
-                        mock_post.side_effect = [
-                            RuntimeError("TikTok API error"),
-                            "ig_post_id",
-                            "yt_post_id",
-                        ]
-                        results = upload_video_and_queue(
-                            clip_path=str(clip),
-                            tiktok_caption="tt",
-                            instagram_caption="ig",
-                            youtube_title="YT Title",
-                            youtube_desc="YT Desc",
-                        )
+        # Mock db counters so the test doesn't depend on prod state — otherwise
+        # a real day's post count will trip the daily cap guard and every
+        # platform comes back as {"success": False, "error": "daily_cap_reached"}.
+        with patch("buffer_poster.db.today_content_count", return_value=0):
+            with patch("buffer_poster.db.increment_content_count"):
+                with patch("buffer_poster.upload_video", return_value="https://example.com/v.mp4"):
+                    with patch("buffer_poster._create_video_post") as mock_post:
+                        with patch("buffer_poster._create_video_story_post"):
+                            with patch("buffer_poster.time.sleep"):
+                                # TikTok fails, Instagram succeeds, YouTube succeeds
+                                mock_post.side_effect = [
+                                    RuntimeError("TikTok API error"),
+                                    "ig_post_id",
+                                    "yt_post_id",
+                                ]
+                                results = upload_video_and_queue(
+                                    clip_path=str(clip),
+                                    tiktok_caption="tt",
+                                    instagram_caption="ig",
+                                    youtube_title="YT Title",
+                                    youtube_desc="YT Desc",
+                                )
 
         assert results["tiktok"]["success"] is False
         assert results["instagram_reel"]["success"] is True
@@ -109,16 +114,18 @@ class TestUploadVideoAndQueue:
         clip = tmp_path / "clip.mp4"
         clip.write_bytes(b"data")
 
-        with patch("buffer_poster.upload_video", return_value="https://example.com/v.mp4"):
-            with patch("buffer_poster._create_video_post", return_value="post_id"):
-                with patch("buffer_poster._create_video_story_post", return_value="story_id"):
-                    with patch("buffer_poster.time.sleep"):
-                        results = upload_video_and_queue(
-                            clip_path=str(clip),
-                            tiktok_caption="tt",
-                            instagram_caption="ig",
-                            youtube_title="YT Title",
-                            youtube_desc="YT Desc",
-                        )
+        with patch("buffer_poster.db.today_content_count", return_value=0):
+            with patch("buffer_poster.db.increment_content_count"):
+                with patch("buffer_poster.upload_video", return_value="https://example.com/v.mp4"):
+                    with patch("buffer_poster._create_video_post", return_value="post_id"):
+                        with patch("buffer_poster._create_video_story_post", return_value="story_id"):
+                            with patch("buffer_poster.time.sleep"):
+                                results = upload_video_and_queue(
+                                    clip_path=str(clip),
+                                    tiktok_caption="tt",
+                                    instagram_caption="ig",
+                                    youtube_title="YT Title",
+                                    youtube_desc="YT Desc",
+                                )
 
         assert all(v["success"] for v in results.values())
