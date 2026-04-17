@@ -9,12 +9,83 @@ Combines:
 """
 from __future__ import annotations
 
+import json
+import os
 import random
 from dataclasses import dataclass, field
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Optional
 
 from content_engine.types import ClipFormat
+
+_PROJECT_DIR = Path(__file__).parent.parent
+_DEFAULT_TEMPLATE_HISTORY_PATH = _PROJECT_DIR / "data" / "hook_template_history.json"
+TEMPLATE_COOLDOWN_DAYS = 3  # don't reuse any hook template within 3 days
+
+
+def _history_path() -> Path:
+    """Template-history file path — overrideable via env for test isolation.
+
+    Set RJM_TEMPLATE_HISTORY_PATH to an empty string to disable cooldown
+    entirely (tests that explore the full template pool), or to a /tmp path
+    to shard per test run.
+    """
+    override = os.environ.get("RJM_TEMPLATE_HISTORY_PATH")
+    if override is not None:
+        return Path(override) if override else Path("/dev/null")
+    return _DEFAULT_TEMPLATE_HISTORY_PATH
+
+
+def _load_template_history() -> list[dict]:
+    """Load [{template_id, date, format}] log. Empty list if not present."""
+    p = _history_path()
+    if not p.exists() or str(p) == "/dev/null":
+        return []
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return []
+
+
+def _templates_in_cooldown() -> set[str]:
+    """Template ids used within TEMPLATE_COOLDOWN_DAYS — skip these in selection."""
+    history = _load_template_history()
+    if not history:
+        return set()
+    cutoff = date.today() - timedelta(days=TEMPLATE_COOLDOWN_DAYS)
+    in_cooldown = set()
+    for entry in history:
+        try:
+            used = date.fromisoformat(entry.get("date", ""))
+            if used >= cutoff:
+                in_cooldown.add(entry.get("template_id", ""))
+        except Exception:
+            continue
+    return in_cooldown
+
+
+def log_template_use(template_id: str, fmt: str = "") -> None:
+    """Append a (template_id, today, format) record. Called by pipeline on use.
+
+    Keeps last 60 entries on disk — enough to cover any plausible cooldown
+    without the file ballooning. Safe to call even if the file doesn't exist.
+    """
+    if not template_id:
+        return
+    p = _history_path()
+    if str(p) == "/dev/null":
+        return  # cooldown disabled via env
+    p.parent.mkdir(parents=True, exist_ok=True)
+    history = _load_template_history()
+    history.append({
+        "template_id": template_id,
+        "date": date.today().isoformat(),
+        "format": fmt,
+    })
+    # Keep most recent 60 (roughly 20 days at 3 clips/day)
+    history = history[-60:]
+    p.write_text(json.dumps(history, indent=2))
 
 
 @dataclass
@@ -505,7 +576,11 @@ def pick_templates_for_format(
 
     Weighted random by priority × (weight from learning loop if provided).
     """
-    exclude_ids = exclude_ids or set()
+    exclude_ids = set(exclude_ids or set())
+    # Merge the 3-day cooldown list so a template used Monday can't be picked
+    # again until Friday. Without this, the randomizer was stamping the same
+    # template 3-4 days in a row and the feed started feeling algorithmic.
+    exclude_ids |= _templates_in_cooldown()
 
     if fmt == ClipFormat.TRANSITIONAL:
         pool = SAVE_DRIVER_TEMPLATES + BODY_DROP_TEMPLATES
@@ -518,7 +593,7 @@ def pick_templates_for_format(
 
     candidates = [t for t in pool if t.id not in exclude_ids]
     if not candidates:
-        candidates = pool  # fallback: ignore exclusions
+        candidates = pool  # fallback: ignore exclusions (cooldown OR exclude_ids)
 
     # Weighted random by priority x learned weight
     w = weights or {}

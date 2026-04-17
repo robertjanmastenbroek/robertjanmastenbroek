@@ -10,6 +10,7 @@ Daily flow:
 """
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import date as _date
 from pathlib import Path
@@ -25,11 +26,59 @@ PERFORMANCE_DIR = PROJECT_DIR / "data" / "performance"
 logger = logging.getLogger(__name__)
 
 
+def _load_project_env() -> None:
+    """Load KEY=VALUE pairs from the project .env file into os.environ.
+
+    Dependency-free implementation (no python-dotenv required). Parses
+    simple KEY=VALUE lines, strips surrounding quotes, skips comments and
+    blanks, and DOES NOT clobber variables already present in os.environ
+    (so explicit exports keep winning over the file).
+
+    This is the fix for the silent 401 Unauthorized storm in distribution:
+    buffer_poster / meta_native previously fell back to stale hardcoded
+    tokens whenever the pipeline was spawned from a context that didn't
+    already export BUFFER_API_KEY / INSTAGRAM_ACCESS_TOKEN / etc.
+    """
+    env_path = PROJECT_DIR / ".env"
+    if not env_path.exists():
+        return
+    try:
+        for raw in env_path.read_text().splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[len("export "):]
+            if "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+                value = value[1:-1]
+            if key and key not in os.environ:
+                os.environ[key] = value
+    except Exception as exc:
+        logger.warning(f"[pipeline] .env load failed: {exc}")
+
+
+# Load .env as soon as the module is imported so downstream modules that
+# read os.environ at import time (e.g. buffer_poster's CHANNELS dict) see
+# the right values.
+_load_project_env()
+
+
 @dataclass
 class DailyPipelineConfig:
+    # Format mix weighted heavily toward TRANSITIONAL — the "viral hook
+    # starter" format (pre-cleared bait clip → count-down / tension → track).
+    # Data from 2026-04-16: the transitional variant outperformed emotional
+    # and performance on every platform we can measure, so we give it 2
+    # of 3 daily slots and keep one PERFORMANCE slot for b-roll variety.
+    # Revert to a balanced mix by passing an explicit formats list.
     formats: list = field(default_factory=lambda: [
         ClipFormat.TRANSITIONAL,
-        ClipFormat.EMOTIONAL,
+        ClipFormat.TRANSITIONAL,
         ClipFormat.PERFORMANCE,
     ])
     durations: dict = field(default_factory=lambda: {
@@ -43,14 +92,76 @@ class DailyPipelineConfig:
     ])
 
 
-def run_full_day(dry_run: bool = False, config: Optional[DailyPipelineConfig] = None) -> dict:
+def _already_distributed_today(date_str: str) -> tuple[bool, int]:
+    """Idempotency guard: return (already_ran, success_count) for today's registry.
+
+    A day counts as 'already distributed' if today's registry file exists AND
+    contains at least one entry with success=True OR a non-empty post_id. This
+    prevents multiple pipeline runs on the same day from double-posting to
+    IG/TikTok/YouTube — which is what happened on 2026-04-16 when 4 separate
+    runs landed 17 uploads instead of 3.
+
+    The guard can be bypassed by deleting the registry file for the day or by
+    passing force=True to run_full_day (emergency re-run path).
+    """
+    registry_path = PERFORMANCE_DIR / f"{date_str}_posts.json"
+    if not registry_path.exists():
+        return False, 0
+    try:
+        data = json.loads(registry_path.read_text())
+    except Exception:
+        return False, 0
+    successes = [
+        r for r in data
+        if r.get("success") is True or (r.get("post_id") or "").strip()
+    ]
+    return (len(successes) > 0), len(successes)
+
+
+def run_full_day(
+    dry_run: bool = False,
+    config: Optional[DailyPipelineConfig] = None,
+    force: bool = False,
+) -> dict:
     """Full daily pipeline run.
+
+    Args:
+        dry_run: render + build registry but skip distribution.
+        config: override defaults (formats/durations/platforms).
+        force: bypass the per-day idempotency guard. Use ONLY when you've
+            confirmed the previous run's posts are deleted or you actively
+            want a second batch on the same day.
 
     Returns {date, clips_rendered, valid_clips, distributed, failures, dry_run, registry}.
     """
     config = config or DailyPipelineConfig()
     date_str = _date.today().isoformat()
     logger.info(f"[pipeline] Starting unified daily run for {date_str} (dry_run={dry_run})")
+
+    # Per-day idempotency guard — bail BEFORE any FFmpeg work or network calls
+    # if today's registry already has successful posts. Covers the full cost
+    # path (rendering ≈ 2 min/clip, captions ≈ 80s each, distribution ≈ 30s
+    # per platform) so re-runs are genuinely cheap no-ops.
+    if not dry_run and not force:
+        ran, succ = _already_distributed_today(date_str)
+        if ran:
+            logger.warning(
+                f"[pipeline] IDEMPOTENCY GUARD: {date_str} already has {succ} "
+                f"successful posts in registry — aborting to prevent duplicates. "
+                f"Pass force=True or delete {PERFORMANCE_DIR}/{date_str}_posts.json "
+                f"to re-run intentionally."
+            )
+            return {
+                "date": date_str,
+                "clips_rendered": 0,
+                "valid_clips": 0,
+                "distributed": 0,
+                "failures": 0,
+                "dry_run": dry_run,
+                "registry": str(PERFORMANCE_DIR / f"{date_str}_posts.json"),
+                "skipped_reason": "already_distributed_today",
+                "existing_successes": succ,
+            }
 
     # 1. Load trend brief
     try:
@@ -186,12 +297,21 @@ def run_full_day(dry_run: bool = False, config: Optional[DailyPipelineConfig] = 
                 if r.get("clip_index") == clip["clip_index"]
                 and r.get("platform", "") != ""
             ]
+            from datetime import datetime, timezone
+            _now_iso = datetime.now(timezone.utc).isoformat()
             for r in clip_results:
                 entry_copy = dict(entry)
                 entry_copy["platform"] = r["platform"]
                 entry_copy["post_id"] = r.get("post_id", "")
-                entry_copy["posted_at"] = r.get("posted_at", "")
+                # Stamp posted_at at write time — the distributor doesn't
+                # always populate it (buffer_poster returns only post_id),
+                # but we know the post just completed so 'now UTC' is
+                # accurate enough for the learning loop to order events.
+                entry_copy["posted_at"] = r.get("posted_at") or (
+                    _now_iso if r.get("success") else ""
+                )
                 entry_copy["success"] = bool(r.get("success"))
+                entry_copy["via"] = r.get("via", "native")
                 if not r.get("success"):
                     entry_copy["error"] = r.get("error", "")
                 registry.append(entry_copy)
@@ -253,6 +373,7 @@ def build_daily_clips(
         return []
 
     used_ids = set()
+    used_segments: set[str] = set()
     track_facts = {
         "bpm": track.bpm,
         "scripture_anchor": track.scripture_anchor,
@@ -267,12 +388,32 @@ def build_daily_clips(
         hook_data = generate_hooks_for_format(fmt, track.title, track_facts, weights.hook_weights, used_ids)
         used_ids.add(hook_data["template_id"])
 
-        # Generate caption
-        caption = generate_caption(track.title, hook_data["hook"], "instagram", track_facts)
+        # Generate caption per platform so each surface gets the right voice
+        # (Instagram vs YouTube SEO vs TikTok casual vs Stories short-form).
+        # The distributor consumes ``caption_by_platform`` when available and
+        # falls back to the ``caption`` field for older callers.
+        caption_platforms = [
+            "instagram", "youtube", "tiktok", "facebook",
+            "instagram_story", "facebook_story",
+        ]
+        caption_by_platform = {
+            p: generate_caption(track.title, hook_data["hook"], p, track_facts)
+            for p in caption_platforms
+        }
+        caption = caption_by_platform.get("instagram", "")
 
-        # Pick content segments
-        n_segments = {"transitional": 2, "emotional": 1, "performance": 4}.get(fmt.value, 2)
-        segments = random.sample(all_videos, min(n_segments, len(all_videos)))
+        # Pick content segments. More cuts = more visual energy; the old
+        # values (2/1/4) left long static shots mid-clip that read as 'stuck'
+        # on small screens. Bump transitional content to 3 cuts, emotional
+        # to 2 (so there's always motion even in a 7s beat), performance to 5.
+        n_segments = {"transitional": 3, "emotional": 2, "performance": 5}.get(fmt.value, 3)
+        # Avoid repeating segments across the day's three clips — use the
+        # video exclusion set from prior iterations.
+        available = [v for v in all_videos if v not in used_segments]
+        if len(available) < n_segments:
+            available = list(all_videos)  # reset if we've used too many
+        segments = random.sample(available, min(n_segments, len(available)))
+        used_segments.update(segments)
 
         output_path = str(Path(output_dir) / f"{fmt.value}_{track.title.lower().replace(' ', '_')}.mp4")
         story_path = str(Path(output_dir) / f"{fmt.value}_{track.title.lower().replace(' ', '_')}_story.mp4")
@@ -284,7 +425,8 @@ def build_daily_clips(
             "hook_template_id": hook_data["template_id"],
             "hook_sub_mode": hook_data["sub_mode"],
             "hook_text": hook_data["hook"],
-            "caption": caption,
+            "caption": caption,                           # default IG-tuned caption
+            "caption_by_platform": caption_by_platform,   # distributor picks per-target
             "track_title": track.title,
             "clip_length": duration,
             "visual_type": "b_roll",  # categorize based on actual segments
@@ -347,6 +489,11 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Bypass the per-day idempotency guard (use only if today's posts were deleted)",
+    )
     args = parser.parse_args()
-    result = run_full_day(dry_run=args.dry_run)
+    result = run_full_day(dry_run=args.dry_run, force=args.force)
     print(json.dumps(result, indent=2))

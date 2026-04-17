@@ -273,20 +273,38 @@ def mix_audio_onto_video(
 ) -> str:
     """Replace video audio with a segment of the track. Returns output path.
 
-    Uses ffmpeg to:
-    1. Extract audio segment from track (start_time, duration)
-    2. Apply fade-out in last fade_out_s seconds
-    3. Merge with video (replacing original audio)
+    Audio pipeline (in order):
+      1. Extract track segment (start_time, duration)
+      2. Normalize sample rate + channel layout to 44.1kHz stereo — social
+         platforms transcode anything weirder and introduce sync drift
+      3. Light loudness boost (volume=1.2, hard-capped via alimiter) so our
+         clips land at the platform target loudness (~-14 LUFS) without
+         getting gained-down in the feed
+      4. Fade-out in last fade_out_s seconds
+      5. Mux into video stream with copy (video untouched), AAC 192k audio,
+         regenerated timestamps and faststart for streaming playback
     """
     fade_start = max(0, duration - fade_out_s)
+    # aresample guarantees 44.1kHz, aformat locks stereo s16, volume boosts
+    # perceived loudness, alimiter prevents peaks clipping above -1dBFS, and
+    # afade rolls off the tail so the cut doesn't feel abrupt.
+    audio_filter = (
+        f"[1:a]aresample=44100,"
+        f"aformat=sample_fmts=fltp:channel_layouts=stereo,"
+        f"volume=1.2,"
+        f"alimiter=level_in=1:level_out=0.95:limit=0.95,"
+        f"afade=t=out:st={fade_start}:d={fade_out_s}[a]"
+    )
     cmd = [
         "ffmpeg", "-y",
+        "-fflags", "+genpts",
         "-i", video_path,
         "-ss", str(start_time), "-t", str(duration), "-i", audio_path,
-        "-filter_complex",
-        f"[1:a]afade=t=out:st={fade_start}:d={fade_out_s}[a]",
+        "-filter_complex", audio_filter,
         "-map", "0:v", "-map", "[a]",
-        "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+        "-c:v", "copy",
+        "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
+        "-movflags", "+faststart",
         "-shortest",
         output_path,
     ]
@@ -294,5 +312,32 @@ def mix_audio_onto_video(
         subprocess.run(cmd, check=True, capture_output=True, timeout=120)
         return output_path
     except subprocess.CalledProcessError as e:
-        logger.error(f"Audio mix failed: {e.stderr.decode()[:500]}")
-        raise
+        err = e.stderr.decode()[:500] if e.stderr else ""
+        logger.error(f"Audio mix failed: {err}")
+        # Fallback without alimiter (some builds lack it). Still normalizes
+        # sample rate / channels which is the most critical fix for sync.
+        try:
+            fallback_filter = (
+                f"[1:a]aresample=44100,"
+                f"aformat=sample_fmts=fltp:channel_layouts=stereo,"
+                f"afade=t=out:st={fade_start}:d={fade_out_s}[a]"
+            )
+            cmd_fb = [
+                "ffmpeg", "-y",
+                "-fflags", "+genpts",
+                "-i", video_path,
+                "-ss", str(start_time), "-t", str(duration), "-i", audio_path,
+                "-filter_complex", fallback_filter,
+                "-map", "0:v", "-map", "[a]",
+                "-c:v", "copy",
+                "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
+                "-movflags", "+faststart",
+                "-shortest",
+                output_path,
+            ]
+            subprocess.run(cmd_fb, check=True, capture_output=True, timeout=120)
+            logger.info("[audio_engine] fell back to simple audio mix (no alimiter)")
+            return output_path
+        except subprocess.CalledProcessError as e2:
+            logger.error(f"Audio mix fallback also failed: {e2.stderr.decode()[:500] if e2.stderr else ''}")
+            raise

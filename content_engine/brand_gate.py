@@ -202,3 +202,117 @@ def gate_or_reject(text: str, context: str = "") -> Optional[str]:
         file=sys.stderr,
     )
     return None
+
+
+# ─── Caption-level validators ──────────────────────────────────────────────────
+# These run AFTER validate_content (which is hook-focused). They enforce the
+# platform-specific rules that a feed-caption must satisfy.
+
+# Map track_title → scripture anchor. Kept in sync with audio_engine.SCRIPTURE_ANCHORS
+# but duplicated here to avoid a circular import. When a track is in this list
+# and the caption doesn't reference the anchor, brand_gate FLAGS (not rejects)
+# so the post still ships but we track the miss.
+_SCRIPTURE_ANCHORS = {
+    "renamed": "Isaiah 62",
+    "halleluyah": "",
+    "jericho": "Joshua 6",
+    "fire in our hands": "",
+    "living water": "John 4",
+    "he is the light": "John 8",
+    "exodus": "Exodus 14",
+    "abba": "Romans 8:15",
+}
+
+
+def caption_has_scripture_anchor(caption: str, track_title: str) -> bool:
+    """Return True if the caption mentions the track's scripture anchor (when one exists).
+
+    Returns True unconditionally if the track has no configured anchor — we
+    can't flag what doesn't exist. Match is lenient: anywhere in the caption,
+    case-insensitive.
+    """
+    anchor = _SCRIPTURE_ANCHORS.get((track_title or "").lower(), "")
+    if not anchor:
+        return True
+    return anchor.lower() in caption.lower()
+
+
+def validate_tiktok_caption(caption: str) -> dict:
+    """TikTok-specific caption rules. Returns {passes, flags}.
+
+    TikTok feed punishes marketing-voice captions (Instagram-style hashtag
+    blocks, emojis-for-SEO, hype language). Rules:
+      - hashtag count: max 5 (inline OK, no bottom block)
+      - max 2 emojis total
+      - no all-caps words longer than 4 chars (READS AS SCREAM)
+      - no 'link in bio' on its own line — must read as a casual aside
+    """
+    flags: list[str] = []
+    text = (caption or "").strip()
+
+    # Hashtag count
+    hashtags = re.findall(r"#\w+", text)
+    if len(hashtags) > 5:
+        flags.append(f"TikTok: {len(hashtags)} hashtags (max 5 — embed inline, no bottom block)")
+
+    # Hashtag block check — if more than 3 hashtags appear on the LAST line
+    # (i.e. bottom block), that's the Instagram pattern TikTok punishes.
+    last_line = text.splitlines()[-1] if text else ""
+    last_line_hashtags = re.findall(r"#\w+", last_line)
+    if len(last_line_hashtags) >= 4:
+        flags.append("TikTok: hashtag block on last line — embed inline instead")
+
+    # Emoji count (rough — any non-ASCII, non-letter char that's a symbol).
+    # Using regex to catch the common ranges. Not exhaustive but catches 🔥🙏✨.
+    emoji_pattern = re.compile(
+        "["
+        "\U0001F300-\U0001F6FF"  # misc symbols + pictographs + transport
+        "\U0001F900-\U0001F9FF"  # supplemental symbols
+        "\U0001F1E0-\U0001F1FF"  # flags
+        "\u2600-\u27BF"           # misc symbols + dingbats
+        "]"
+    )
+    emojis = emoji_pattern.findall(text)
+    if len(emojis) > 2:
+        flags.append(f"TikTok: {len(emojis)} emojis (max 2 — feed reads excessive emoji as spam)")
+
+    # All-caps screams (exclude URLs, hashtags, acronyms like BPM, RJM, CET)
+    allcap_words = re.findall(r"\b[A-Z]{5,}\b", text)
+    allcap_words = [w for w in allcap_words if w not in {"SPOTIFY", "YOUTUBE", "TIKTOK"}]
+    if len(allcap_words) > 1:
+        flags.append(f"TikTok: {len(allcap_words)} all-caps words >4 chars — reads as scream")
+
+    return {"passes": len(flags) == 0, "flags": flags}
+
+
+def gate_caption(
+    caption: str,
+    platform: str = "",
+    track_title: str = "",
+    context: str = "",
+) -> str:
+    """Caption-level gate — runs platform-specific checks, logs misses, returns text.
+
+    Non-blocking (warn-only) — captions are generated late in the pipeline and
+    rejecting at this stage would mean posting nothing. The goal here is
+    telemetry: surface scripture-anchor misses + TikTok voice violations so
+    the generator's prompt can be improved iteratively.
+    """
+    if not caption:
+        return caption
+    prefix = f"[brand_gate:{context or platform}] "
+
+    # Scripture anchor is only checked for tracks that HAVE one
+    if track_title and not caption_has_scripture_anchor(caption, track_title):
+        anchor = _SCRIPTURE_ANCHORS.get(track_title.lower(), "")
+        print(
+            f"{prefix}WARN missing scripture anchor '{anchor}' for track '{track_title}'",
+            file=sys.stderr,
+        )
+
+    if platform == "tiktok":
+        tt = validate_tiktok_caption(caption)
+        if not tt["passes"]:
+            print(f"{prefix}TIKTOK WARN flags={tt['flags']}", file=sys.stderr)
+
+    return caption

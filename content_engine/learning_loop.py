@@ -94,6 +94,135 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
     return records
 
 
+def fetch_facebook_metrics(post_ids: list, page_token: str) -> list:
+    """
+    Fetch per-post insights from Facebook Graph API (feed videos + reels).
+    post_ids: list of {post_id, clip_index, variant, hook_mechanism, visual_type, clip_length}
+    Returns list of PerformanceRecord.
+    """
+    from content_engine.types import PerformanceRecord
+    records = []
+
+    for meta in post_ids:
+        post_id = meta.get("post_id", "")
+        if not post_id:
+            continue
+        try:
+            # FB Page post insights. total_video_views is the view count,
+            # post_video_view_time_by_region_id gives us completion signal,
+            # post_reactions_by_type_total + post_clicks_by_type approximate
+            # engagement. We keep it to views + reactions for now — FB's
+            # completion_rate equivalent (video_avg_time_watched) is on the
+            # video endpoint, not the post.
+            resp = requests.get(
+                f"{INSTAGRAM_GRAPH_BASE}/{post_id}/insights",
+                params={
+                    "metric": "post_video_views,post_reactions_by_type_total,"
+                              "post_video_avg_time_watched,post_video_view_time",
+                    "access_token": page_token,
+                },
+                timeout=15,
+            )
+            if resp.status_code != 200:
+                logger.warning(f"[learning_loop] FB insights {post_id}: {resp.status_code}")
+                continue
+
+            raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
+                   for d in resp.json().get("data", [])}
+
+            views = raw.get("post_video_views", 0) or 0
+            avg_watched_ms = raw.get("post_video_avg_time_watched", 0) or 0
+            clip_length = meta.get("clip_length", 15)
+            # Completion rate = avg seconds watched / clip length
+            completion = 0.0
+            if clip_length > 0 and avg_watched_ms > 0:
+                completion = min(1.0, (avg_watched_ms / 1000.0) / clip_length)
+            reactions = raw.get("post_reactions_by_type_total", {}) or {}
+            total_reactions = sum(reactions.values()) if isinstance(reactions, dict) else 0
+
+            records.append(PerformanceRecord(
+                post_id=post_id,
+                platform="facebook",
+                clip_index=meta.get("clip_index", 0),
+                variant=meta.get("variant", "a"),
+                hook_mechanism=meta.get("hook_mechanism", "tension"),
+                visual_type=meta.get("visual_type", "b_roll"),
+                clip_length=clip_length,
+                views=int(views),
+                completion_rate=round(completion, 4),
+                scroll_stop_rate=0.0,  # FB doesn't expose reach→views ratio on post insights
+                share_rate=0.0,
+                save_rate=round(total_reactions / max(views, 1), 4) if views else 0.0,
+                recorded_at=datetime.now().isoformat(),
+            ))
+        except Exception as e:
+            logger.warning(f"[learning_loop] FB metrics error for {post_id}: {e}")
+
+    return records
+
+
+def fetch_instagram_story_metrics(post_ids: list, access_token: str) -> list:
+    """
+    Fetch per-story insights from Instagram Graph API.
+    Stories only live 24h — this only works same-day. Metrics:
+      reach, replies, impressions, profile_visits (taps), exits
+    """
+    from content_engine.types import PerformanceRecord
+    records = []
+
+    for meta in post_ids:
+        post_id = meta.get("post_id", "")
+        if not post_id:
+            continue
+        try:
+            resp = requests.get(
+                f"{INSTAGRAM_GRAPH_BASE}/{post_id}/insights",
+                params={
+                    "metric": "reach,replies,impressions,taps_forward,taps_back,exits",
+                    "access_token": access_token,
+                },
+                timeout=15,
+            )
+            if resp.status_code != 200:
+                logger.warning(f"[learning_loop] IG Story insights {post_id}: {resp.status_code}")
+                continue
+
+            raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
+                   for d in resp.json().get("data", [])}
+
+            reach = raw.get("reach", 1)
+            impressions = raw.get("impressions", 1)
+            replies = raw.get("replies", 0)
+            taps_forward = raw.get("taps_forward", 0)
+            exits = raw.get("exits", 0)
+
+            # For stories, "completion" ≈ (impressions - exits - taps_forward) / impressions
+            # since taps_forward = user skipped before end. Exits = user bailed from
+            # the whole story set.
+            completed = max(0, impressions - exits - taps_forward)
+            completion_rate = completed / max(impressions, 1)
+
+            records.append(PerformanceRecord(
+                post_id=post_id,
+                platform="instagram_story",
+                clip_index=meta.get("clip_index", 0),
+                variant=meta.get("variant", "a"),
+                hook_mechanism=meta.get("hook_mechanism", "tension"),
+                visual_type=meta.get("visual_type", "b_roll"),
+                clip_length=meta.get("clip_length", 15),
+                views=int(impressions),
+                completion_rate=round(completion_rate, 4),
+                scroll_stop_rate=round(impressions / max(reach, 1), 4),
+                share_rate=round(replies / max(impressions, 1), 4),
+                save_rate=0.0,
+                recorded_at=datetime.now().isoformat(),
+            ))
+        except Exception as e:
+            logger.warning(f"[learning_loop] IG Story metrics error for {post_id}: {e}")
+
+    return records
+
+
 def fetch_youtube_metrics(post_ids: list, oauth_token: str) -> list:
     """
     Fetch YouTube video analytics.
@@ -295,9 +424,12 @@ def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
 
     ig_posts = [p for p in post_registry if p.get("platform") == "instagram"]
     yt_posts = [p for p in post_registry if p.get("platform") == "youtube"]
+    fb_posts = [p for p in post_registry if p.get("platform") == "facebook"]
+    ig_story_posts = [p for p in post_registry if p.get("platform") == "instagram_story"]
 
     ig_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
     yt_token = os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
+    fb_page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "") or ig_token
 
     records = []
     if ig_posts and ig_token:
@@ -307,6 +439,14 @@ def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
         yt_records = fetch_youtube_metrics(yt_posts, yt_token)
         records += yt_records
         logger.info(f"[learning_loop] YouTube: {len(yt_posts)} posts → {len(yt_records)} records")
+    if fb_posts and fb_page_token:
+        fb_records = fetch_facebook_metrics(fb_posts, fb_page_token)
+        records += fb_records
+        logger.info(f"[learning_loop] Facebook: {len(fb_posts)} posts → {len(fb_records)} records")
+    if ig_story_posts and ig_token:
+        story_records = fetch_instagram_story_metrics(ig_story_posts, ig_token)
+        records += story_records
+        logger.info(f"[learning_loop] IG Stories: {len(ig_story_posts)} posts → {len(story_records)} records")
 
     if not records:
         logger.warning("[learning_loop] No performance records collected — weights unchanged")
@@ -370,12 +510,15 @@ def calculate_unified_weights(
         best_clip_length=old_weights.best_clip_length,
         best_platform=old_weights.best_platform,
         updated=datetime.now().isoformat(),
+        sub_mode_weights=dict(getattr(old_weights, "sub_mode_weights", {}) or {}),
+        time_of_day_weights=dict(getattr(old_weights, "time_of_day_weights", {}) or {}),
+        best_time_of_day=getattr(old_weights, "best_time_of_day", "morning"),
     )
 
     if not records:
         return new
 
-    # Compute signal per record
+    # Compute signal per record + derive time-of-day bucket from posted_at
     signals = []
     for r in records:
         signal = (
@@ -383,6 +526,11 @@ def calculate_unified_weights(
             + r.get("save_rate", 0) * 0.3
             + r.get("scroll_stop_rate", 0) * 0.2
         )
+        # Derive time-of-day bucket from posted_at or recorded_at.
+        # morning: 05-11, midday: 11-15, evening: 15-21, late: 21-05
+        bucket = _derive_time_of_day(r)
+        if bucket:
+            r["time_of_day"] = bucket
         signals.append((r, signal))
 
     # Group signals by dimension and update via EMA
@@ -392,12 +540,41 @@ def calculate_unified_weights(
     _ema_update(new.visual_weights, signals, "visual_type", learning_rate)
     _ema_update(new.track_weights, signals, "track_title", learning_rate)
     _ema_update(new.transitional_category_weights, signals, "transitional_category", learning_rate)
+    # New dimensions: sub_mode (emotional register) + time_of_day (posting slot)
+    _ema_update(new.sub_mode_weights, signals, "hook_sub_mode", learning_rate)
+    _ema_update(new.time_of_day_weights, signals, "time_of_day", learning_rate)
 
-    # Update best_platform
+    # Update best_platform + best_time_of_day
     if new.platform_weights:
         new.best_platform = max(new.platform_weights, key=new.platform_weights.get)
+    if new.time_of_day_weights:
+        new.best_time_of_day = max(new.time_of_day_weights, key=new.time_of_day_weights.get)
 
     return new
+
+
+def _derive_time_of_day(record: dict) -> str:
+    """Bucket the record's posting time into morning/midday/evening/late.
+
+    Checks `posted_at` then `recorded_at`. Returns "" if neither parseable —
+    which keeps the record out of the time_of_day EMA (correct behavior).
+    """
+    ts = record.get("posted_at") or record.get("recorded_at") or ""
+    if not ts:
+        return ""
+    try:
+        # Accept both 2026-04-16T09:30:00 and 2026-04-16T09:30:00+00:00 shapes
+        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        h = dt.hour
+    except Exception:
+        return ""
+    if 5 <= h < 11:
+        return "morning"
+    if 11 <= h < 15:
+        return "midday"
+    if 15 <= h < 21:
+        return "evening"
+    return "late"
 
 
 def _ema_update(weights: dict, signals: list, key: str, lr: float):

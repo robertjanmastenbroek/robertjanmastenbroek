@@ -143,6 +143,17 @@ class UnifiedWeights:
     best_clip_length: int
     best_platform: str
     updated: str
+    # New dimensions: variant stratification + time-of-day bucket.
+    # Default empty so old on-disk UnifiedWeights files still load.
+    sub_mode_weights: dict = None          # COST/NAMING/RUPTURE/etc. → weight
+    time_of_day_weights: dict = None       # morning/midday/evening/late → weight
+    best_time_of_day: str = "morning"
+
+    def __post_init__(self):
+        if self.sub_mode_weights is None:
+            self.sub_mode_weights = {}
+        if self.time_of_day_weights is None:
+            self.time_of_day_weights = {}
 
     @classmethod
     def defaults(cls) -> "UnifiedWeights":
@@ -169,6 +180,17 @@ class UnifiedWeights:
             best_clip_length=15,
             best_platform="instagram",
             updated="",
+            sub_mode_weights={
+                "COST": 1.0, "NAMING": 1.0, "DOUBT": 1.0, "DEVOTION": 1.0,
+                "RUPTURE": 1.0, "FINDER": 1.0, "PERMISSION": 1.0,
+                "RECOGNITION": 1.0, "SEASON": 1.0, "UNSAID": 1.0,
+                "BODY": 1.0, "TIME": 1.0, "GEOGRAPHY": 1.0,
+                "THRESHOLD": 1.0, "DISSOLUTION": 1.0,
+            },
+            time_of_day_weights={
+                "morning": 1.0, "midday": 1.0, "evening": 1.0, "late": 1.0,
+            },
+            best_time_of_day="morning",
         )
 
     def save(self, path=None):
@@ -192,4 +214,14 @@ class UnifiedWeights:
             w.best_platform = data.get("best_platform", w.best_platform)
             w.updated = data.get("updated", w.updated)
             return w
-        return cls(**data)
+        # Forward-compat: filter to fields the dataclass accepts so old dumps
+        # without sub_mode_weights / time_of_day_weights load cleanly.
+        allowed = set(cls.__dataclass_fields__.keys())
+        filtered = {k: v for k, v in data.items() if k in allowed}
+        w = cls(**filtered)
+        # Post-load defaults for fields missing from disk
+        if not w.sub_mode_weights:
+            w.sub_mode_weights = cls.defaults().sub_mode_weights
+        if not w.time_of_day_weights:
+            w.time_of_day_weights = cls.defaults().time_of_day_weights
+        return w
