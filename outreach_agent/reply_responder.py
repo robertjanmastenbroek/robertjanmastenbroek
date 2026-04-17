@@ -29,6 +29,7 @@ import gmail_client
 from brand_context import (
     COMPACT_STORY, get_voice_rules, get_track_for_contact,
     TRACK_SCRIPTURE, SPOTIFY_ARTIST_URL,
+    UNRELEASED_TRACKS_DRIVE, UNRELEASED_TRACKS, UNRELEASED_REQUEST_KEYWORDS,
 )
 from config import FROM_NAME, CLAUDE_MODEL_FAST
 from template_engine import _call_claude
@@ -238,8 +239,35 @@ TASK: Write a warm, brief thank-you reply acknowledging the playlist add.
     return _parse_subject_body(raw, contact)
 
 
+def _is_unreleased_request(reply_body: str, reply_action: str = "") -> bool:
+    """Return True if the reply is asking for unreleased/private/demo material."""
+    combined = (reply_body + " " + (reply_action or "")).lower()
+    return any(kw in combined for kw in UNRELEASED_REQUEST_KEYWORDS)
+
+
 def _generate_question_reply(contact: dict, reply_body: str) -> tuple[str, str]:
     """Generate subject + body answering their question."""
+    asking_unreleased = _is_unreleased_request(
+        reply_body or contact.get("response_snippet", "") or "",
+        contact.get("reply_action", "") or "",
+    )
+
+    unreleased_block = ""
+    if asking_unreleased:
+        track_lines = "\n".join(
+            f"  - {t['title']} ({t['bpm']} BPM, {t['genre']}, {t['language']})"
+            for t in UNRELEASED_TRACKS
+        )
+        unreleased_block = f"""
+UNRELEASED TRACKS — they asked for private/demo material. Include this Drive link:
+{UNRELEASED_TRACKS_DRIVE}
+
+Tracks in the folder:
+{track_lines}
+
+Lead with the Drive link. Brief description of each track. No apology for not having SoundCloud.
+"""
+
     prompt = f"""You are writing a reply email on behalf of {FROM_NAME}, a DJ/producer based in Tenerife.
 
 {COMPACT_STORY}
@@ -251,7 +279,7 @@ CONTEXT:
 - Their reply / question: "{reply_body or contact.get('response_snippet','')}"
 - Original email subject we sent: "{contact.get('sent_subject','')}"
 - Suggested action from classifier: "{contact.get('reply_action','')}"
-
+{unreleased_block}
 KEY LINKS to include as relevant:
 - Spotify artist: {SPOTIFY_ARTIST_URL}
 - Renamed (tribal techno, 130 BPM): {TRACK_SCRIPTURE['Renamed']['spotify']}

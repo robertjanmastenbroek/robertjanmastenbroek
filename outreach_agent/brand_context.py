@@ -155,6 +155,33 @@ ARTIST_INSTAGRAM   = ARTIST["instagram"]
 ARTIST_WEBSITE     = ARTIST["website"]
 ARTIST_EMAIL       = ARTIST["email"]
 
+# ─── Unreleased Tracks ────────────────────────────────────────────────────────
+# Private Drive folder — share with labels/curators asking for demos/promos/unreleased material.
+# Agent is authorized to send this link autonomously (no confirmation needed).
+UNRELEASED_TRACKS_DRIVE = "https://drive.google.com/drive/folders/1sUJBho2H9f3Ddt1Z48erIhUh9Bc0mx_8?usp=sharing"
+UNRELEASED_TRACKS = [
+    {
+        "title":    "Kadosh",
+        "bpm":      142,
+        "genre":    "tribal psytrance",
+        "language": "Hebrew",
+        "notes":    "142 BPM, tribal psytrance, Hebrew lyrics — 'Kadosh' means Holy",
+    },
+    {
+        "title":    "Side by Side",
+        "bpm":      130,
+        "genre":    "ethnic electronic / cafe de anatolia",
+        "language": "English",
+        "notes":    "130 BPM, English, Cafe de Anatolia style but faster and stronger",
+    },
+]
+
+# Keywords that signal a contact is asking for unreleased/private/demo material
+UNRELEASED_REQUEST_KEYWORDS = [
+    "unreleased", "private", "demo", "promo", "soundcloud link",
+    "not released", "exclusive", "wav", "stems",
+]
+
 
 # ─── Track → Scripture mapping ────────────────────────────────────────────────
 # Single source of truth for track-scripture anchors and pitch angles.
