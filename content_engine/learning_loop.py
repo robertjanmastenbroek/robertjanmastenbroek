@@ -148,36 +148,54 @@ def _refresh_instagram_token(access_token: str = "") -> str:
 def _resolve_ig_media_ids(posts: list, access_token: str, user_id: str) -> list:
     """Replace Buffer post IDs with real IG media IDs.
 
-    Queries /me/media for the last 50 posts and matches by closest timestamp.
-    Posts that cannot be resolved (too old, no match) are returned with their
-    original ID — the caller will see a 400 and skip them, which is correct.
+    Paginates /{user_id}/media (following `next` cursors) until all Buffer IDs
+    are resolved or posts older than 28 days are reached. The old single-page
+    limit=50 fetch missed Buffer IDs from posts more than ~50 items ago.
+    Posts that cannot be resolved are returned unchanged — the caller skips them.
     """
+    from datetime import timedelta
+
     buffer_posts = [p for p in posts if _is_buffer_id(p.get("post_id", ""))]
     if not buffer_posts:
         return posts
 
-    try:
-        resp = requests.get(
-            f"{INSTAGRAM_GRAPH_BASE}/{user_id}/media",
-            params={"fields": "id,timestamp", "limit": 50, "access_token": access_token},
-            timeout=15,
-        )
-        if resp.status_code != 200:
-            logger.warning(f"[learning_loop] IG media list failed: {resp.status_code}")
-            return posts
-        media_items = resp.json().get("data", [])
-    except Exception as e:
-        logger.warning(f"[learning_loop] IG media list error: {e}")
-        return posts
+    cutoff = datetime.now() - timedelta(days=28)
+    media_by_ts = []  # list of (datetime, media_id)
 
-    # Build a list of (datetime, media_id) sorted newest-first
-    media_by_ts = []
-    for m in media_items:
+    url = f"{INSTAGRAM_GRAPH_BASE}/{user_id}/media"
+    params = {"fields": "id,timestamp", "limit": 50, "access_token": access_token}
+    pages_fetched = 0
+
+    while url:
         try:
-            ts = datetime.fromisoformat(m["timestamp"].replace("Z", "+00:00"))
-            media_by_ts.append((ts, m["id"]))
-        except Exception:
-            pass
+            resp = requests.get(url, params=params, timeout=15)
+            params = {}  # next_url has all params baked in
+            if resp.status_code != 200:
+                err = resp.json().get("error", {}).get("message", resp.text[:200])
+                logger.warning(f"[learning_loop] IG media list page {pages_fetched}: {resp.status_code} — {err}")
+                break
+            data = resp.json()
+            items = data.get("data", [])
+            stop = False
+            for m in items:
+                try:
+                    ts = datetime.fromisoformat(m["timestamp"].replace("Z", "+00:00"))
+                    if ts.replace(tzinfo=None) < cutoff.replace(tzinfo=None):
+                        stop = True
+                        break
+                    media_by_ts.append((ts, m["id"]))
+                except Exception:
+                    pass
+            if stop:
+                break
+            pages_fetched += 1
+            url = data.get("paging", {}).get("next", "")
+            if pages_fetched >= 10:  # safety cap: 10 × 50 = 500 items
+                break
+        except Exception as e:
+            logger.warning(f"[learning_loop] IG media list error: {e}")
+            break
+
     if not media_by_ts:
         return posts
 
@@ -192,7 +210,6 @@ def _resolve_ig_media_ids(posts: list, access_token: str, user_id: str) -> list:
             posted_dt = datetime.fromisoformat(posted_at_str.replace("Z", "+00:00"))
         except Exception:
             continue
-        # Find the closest IG media within ±2 hours that hasn't been used yet
         best_id, best_delta = None, None
         for ts, mid in media_by_ts:
             if mid in used_media_ids:
@@ -205,7 +222,6 @@ def _resolve_ig_media_ids(posts: list, access_token: str, user_id: str) -> list:
             used_media_ids.add(best_id)
             logger.info(f"[learning_loop] Resolved Buffer ID {p['post_id']} → IG media {best_id} (Δ{best_delta:.0f}s)")
 
-    # Apply resolutions
     result = []
     for p in posts:
         orig_id = p.get("post_id", "")
@@ -314,7 +330,8 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
                 timeout=15,
             )
             if resp.status_code != 200:
-                logger.warning(f"[learning_loop] IG insights {post_id}: {resp.status_code}")
+                err = resp.json().get("error", {}).get("message", resp.text[:200])
+                logger.warning(f"[learning_loop] IG insights {post_id}: {resp.status_code} — {err}")
                 continue
 
             raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
@@ -348,9 +365,15 @@ def fetch_instagram_metrics(post_ids: list, access_token: str) -> list:
 
 def fetch_facebook_metrics(post_ids: list, page_token: str) -> list:
     """
-    Fetch per-post insights from Facebook Graph API (feed videos + reels).
+    Fetch per-post metrics from Facebook Graph API (feed videos + reels).
     post_ids: list of {post_id, clip_index, variant, hook_mechanism, visual_type, clip_length}
     Returns list of PerformanceRecord.
+
+    Uses GET /{video_id}?fields=id,views,length directly on the video node.
+    The /{post_id}/insights endpoint does NOT work for Reels — it raises
+    "(#100) Tried accessing nonexisting field (insights)" for that node type.
+    The `views` field on the video node is the canonical Reel view count and
+    works for both Reels and regular uploaded Page videos.
     """
     from content_engine.types import PerformanceRecord
     records = []
@@ -360,37 +383,23 @@ def fetch_facebook_metrics(post_ids: list, page_token: str) -> list:
         if not post_id:
             continue
         try:
-            # FB Page post insights. total_video_views is the view count,
-            # post_video_view_time_by_region_id gives us completion signal,
-            # post_reactions_by_type_total + post_clicks_by_type approximate
-            # engagement. We keep it to views + reactions for now — FB's
-            # completion_rate equivalent (video_avg_time_watched) is on the
-            # video endpoint, not the post.
             resp = requests.get(
-                f"{INSTAGRAM_GRAPH_BASE}/{post_id}/insights",
+                f"{INSTAGRAM_GRAPH_BASE}/{post_id}",
                 params={
-                    "metric": "post_video_views,post_reactions_by_type_total,"
-                              "post_video_avg_time_watched,post_video_view_time",
+                    "fields": "id,views,length",
                     "access_token": page_token,
                 },
                 timeout=15,
             )
             if resp.status_code != 200:
-                logger.warning(f"[learning_loop] FB insights {post_id}: {resp.status_code}")
+                err = resp.json().get("error", {}).get("message", resp.text[:200])
+                logger.warning(f"[learning_loop] FB video {post_id}: {resp.status_code} — {err}")
                 continue
 
-            raw = {d["name"]: d.get("values", [{}])[0].get("value", 0)
-                   for d in resp.json().get("data", [])}
-
-            views = raw.get("post_video_views", 0) or 0
-            avg_watched_ms = raw.get("post_video_avg_time_watched", 0) or 0
-            clip_length = meta.get("clip_length", 15)
-            # Completion rate = avg seconds watched / clip length
-            completion = 0.0
-            if clip_length > 0 and avg_watched_ms > 0:
-                completion = min(1.0, (avg_watched_ms / 1000.0) / clip_length)
-            reactions = raw.get("post_reactions_by_type_total", {}) or {}
-            total_reactions = sum(reactions.values()) if isinstance(reactions, dict) else 0
+            data = resp.json()
+            views = int(data.get("views", 0) or 0)
+            clip_length_raw = float(data.get("length", 0) or 0)
+            clip_length = meta.get("clip_length", 0) or int(clip_length_raw) or 15
 
             records.append(PerformanceRecord(
                 post_id=post_id,
@@ -400,16 +409,111 @@ def fetch_facebook_metrics(post_ids: list, page_token: str) -> list:
                 hook_mechanism=meta.get("hook_mechanism", "tension"),
                 visual_type=meta.get("visual_type", "b_roll"),
                 clip_length=clip_length,
-                views=int(views),
-                completion_rate=round(completion, 4),
-                scroll_stop_rate=0.0,  # FB doesn't expose reach→views ratio on post insights
+                views=views,
+                completion_rate=0.0,
+                scroll_stop_rate=0.0,
                 share_rate=0.0,
-                save_rate=round(total_reactions / max(views, 1), 4) if views else 0.0,
+                save_rate=0.0,
                 recorded_at=datetime.now().isoformat(),
             ))
         except Exception as e:
             logger.warning(f"[learning_loop] FB metrics error for {post_id}: {e}")
 
+    return records
+
+
+def fetch_facebook_metrics_bulk(
+    page_token: str,
+    page_id: str,
+    days_back: int = 28,
+    registry_lookup: dict = None,
+) -> list:
+    """Fetch analytics for ALL Facebook Reels on the page in the past N days.
+
+    Uses /{page_id}/video_reels?fields=id,views,created_time,length — the only
+    endpoint that reliably returns view counts for Reels without requiring the
+    `read_insights` permission that most apps do not have.
+    (/{reel_id}/insights → #100 error; /video_insights → #200 permission error.)
+
+    Paginates until all reels are fetched or the cutoff date is reached.
+    Cross-references registry_lookup to attach hook/format metadata where known.
+    """
+    from content_engine.types import PerformanceRecord
+    from datetime import timedelta
+
+    cutoff = datetime.now() - timedelta(days=days_back)
+    registry_lookup = registry_lookup or {}
+    records = []
+
+    # /videos returns both Reels and regular uploaded videos; /video_reels only
+    # returns Reels. Use /videos so non-reel uploads are not silently skipped.
+    url = f"{INSTAGRAM_GRAPH_BASE}/{page_id}/videos"
+    params = {
+        "fields": "id,views,created_time,length",
+        "limit": 25,
+        "access_token": page_token,
+    }
+
+    pages_fetched = 0
+    while url:
+        try:
+            resp = requests.get(url, params=params, timeout=15)
+            params = {}  # next_url has all params baked in
+            if resp.status_code != 200:
+                err = resp.json().get("error", {}).get("message", resp.text[:200])
+                logger.warning(f"[learning_loop] FB bulk reels page {pages_fetched}: {resp.status_code} — {err}")
+                break
+
+            data = resp.json()
+            items = data.get("data", [])
+            stop = False
+
+            for item in items:
+                try:
+                    ts = datetime.fromisoformat(item["created_time"].replace("Z", "+00:00"))
+                    if ts.replace(tzinfo=None) < cutoff.replace(tzinfo=None):
+                        stop = True
+                        break
+                except Exception:
+                    pass
+
+                post_id = item.get("id", "")
+                if not post_id:
+                    continue
+                views = int(item.get("views", 0) or 0)
+                clip_length_raw = float(item.get("length", 0) or 0)
+                meta = registry_lookup.get(post_id, {})
+                clip_length = meta.get("clip_length", 0) or int(clip_length_raw) or 15
+
+                records.append(PerformanceRecord(
+                    post_id=post_id,
+                    platform="facebook",
+                    clip_index=meta.get("clip_index", 0),
+                    variant=meta.get("variant", "a"),
+                    hook_mechanism=meta.get("hook_mechanism", "tension"),
+                    visual_type=meta.get("visual_type", "b_roll"),
+                    clip_length=clip_length,
+                    views=views,
+                    completion_rate=0.0,
+                    scroll_stop_rate=0.0,
+                    share_rate=0.0,
+                    save_rate=0.0,
+                    recorded_at=datetime.now().isoformat(),
+                ))
+
+            if stop:
+                break
+
+            pages_fetched += 1
+            url = data.get("paging", {}).get("next", "")
+            if pages_fetched >= 10:  # safety cap: 10 × 25 = 250 reels
+                break
+
+        except Exception as e:
+            logger.warning(f"[learning_loop] FB bulk reels error: {e}")
+            break
+
+    logger.info(f"[learning_loop] FB bulk reels: {len(records)} reels in last {days_back}d")
     return records
 
 
@@ -797,6 +901,7 @@ def backfill(days_back: int = 28) -> dict:
     Fetches:
     - YouTube Analytics for ALL channel videos (no ID filter needed)
     - Instagram media list + per-post insights for all posts in registries
+    - Facebook Reels via bulk page endpoint (/{page_id}/video_reels)
     - Cross-references all post registries for metadata enrichment
 
     Writes enriched performance records to data/performance/backfill_YYYY-MM-DD.json
@@ -816,6 +921,8 @@ def backfill(days_back: int = 28) -> dict:
     raw_ig_token  = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
     ig_token      = _refresh_instagram_token(raw_ig_token)
     ig_user_id    = os.environ.get("INSTAGRAM_USER_ID", "").strip('"').strip("'")
+    fb_page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "").strip('"').strip("'")
+    fb_page_id    = os.environ.get("FACEBOOK_PAGE_ID", "").strip('"').strip("'")
     yt_token      = _refresh_youtube_token()
 
     all_records = []
@@ -828,7 +935,6 @@ def backfill(days_back: int = 28) -> dict:
 
     # --- Instagram: fetch all posts from registries ---
     if ig_token and ig_user_id:
-        # Collect all IG post IDs from registries, resolve Buffer IDs first
         ig_metas = [v for v in registry_lookup.values() if v.get("platform") == "instagram"]
         ig_story_metas = [v for v in registry_lookup.values() if v.get("platform") == "instagram_story"]
 
@@ -843,6 +949,12 @@ def backfill(days_back: int = 28) -> dict:
             story_records = fetch_instagram_story_metrics(ig_story_metas, ig_token)
             all_records += story_records
             logger.info(f"[learning_loop] Backfill IG Stories: {len(story_records)} records")
+
+    # --- Facebook: bulk reel pull ---
+    if fb_page_token and fb_page_id:
+        fb_records = fetch_facebook_metrics_bulk(fb_page_token, fb_page_id, days_back=days_back, registry_lookup=registry_lookup)
+        all_records += fb_records
+        logger.info(f"[learning_loop] Backfill FB: {len(fb_records)} records")
 
     if not all_records:
         logger.warning("[learning_loop] Backfill: no records collected")
@@ -880,6 +992,7 @@ def backfill(days_back: int = 28) -> dict:
         "yt_videos":      len([r for r in all_records if r.platform == "youtube"]),
         "ig_posts":       len([r for r in all_records if r.platform == "instagram"]),
         "ig_stories":     len([r for r in all_records if r.platform == "instagram_story"]),
+        "fb_reels":       len([r for r in all_records if r.platform == "facebook"]),
         "best_platform":  new_weights.best_platform,
         "best_clip_length": new_weights.best_clip_length,
         "top_hook":       top_hook,
@@ -920,60 +1033,72 @@ def run(date_str: str = None, post_registry: list = None) -> "UnifiedWeights":
                 logger.warning("[learning_loop] No post registry for today — continuing with bulk YT fetch only")
                 post_registry = []
 
-    ig_posts = [p for p in post_registry if p.get("platform") == "instagram"]
     yt_posts = [p for p in post_registry if p.get("platform") == "youtube"]
-    fb_posts = [p for p in post_registry if p.get("platform") == "facebook"]
-    ig_story_posts = [p for p in post_registry if p.get("platform") == "instagram_story"]
 
-    # Refresh Instagram token before fetching insights.
-    # The token is a long-lived FB User token (60-day rolling window). Calling
-    # fb_exchange_token on every analytics run keeps it fresh automatically so
-    # it never expires mid-run or overnight.
+    # Refresh tokens first — everything below depends on them.
     raw_ig_token  = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
     ig_token      = _refresh_instagram_token(raw_ig_token)
     ig_user_id    = os.environ.get("INSTAGRAM_USER_ID", "").strip('"').strip("'")
-    fb_page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "").strip('"').strip("'") or ig_token
+    fb_page_token = os.environ.get("FACEBOOK_PAGE_TOKEN", "").strip('"').strip("'")
+    fb_page_id    = os.environ.get("FACEBOOK_PAGE_ID", "").strip('"').strip("'")
+    yt_token      = _refresh_youtube_token()
 
-    # Always refresh YouTube token before use — access tokens expire in ~1h.
-    yt_token = _refresh_youtube_token()
+    # Build a channel-wide registry lookup (all post registries, last 28 days)
+    # so bulk fetches can be annotated with hook/format/track metadata.
+    all_registry_lookup = _build_registry_lookup()
+    for p in post_registry:
+        pid = p.get("post_id", "")
+        if pid:
+            all_registry_lookup.setdefault(pid, p)
+
+    # IG: pull all 28-day registry posts, not just today's — mirrors what the
+    # YT bulk fetch does. This ensures historical reels are tracked daily.
+    ig_posts = []
+    seen_ig: set = set()
+    for pid, p in all_registry_lookup.items():
+        if p.get("platform") == "instagram" and pid and pid not in seen_ig:
+            ig_posts.append(p)
+            seen_ig.add(pid)
+
+    ig_story_posts = [p for p in post_registry if p.get("platform") == "instagram_story"]
 
     # Resolve Buffer post IDs to real IG media IDs before querying insights.
-    # Buffer returns its own 24-char hex IDs; IG Graph API only accepts native
-    # numeric media IDs. Resolution runs against the /media and /stories
-    # endpoints which list the last 50 items — more than enough for daily runs.
+    # Pagination now covers up to 28 days back so older Buffer IDs are resolved.
     if ig_token and ig_user_id:
         if ig_posts:
             ig_posts = _resolve_ig_media_ids(ig_posts, ig_token, ig_user_id)
         if ig_story_posts:
             ig_story_posts = _resolve_ig_story_ids(ig_story_posts, ig_token, ig_user_id)
 
-    # Build a channel-wide registry lookup (all post registries, last 28 days)
-    # so that bulk YT fetches can be annotated with hook/format/track metadata.
-    all_registry_lookup = _build_registry_lookup()
-    # Also merge today's registry into the lookup
-    for p in post_registry:
-        pid = p.get("post_id", "")
-        if pid:
-            all_registry_lookup.setdefault(pid, p)
-
     records = []
     if ig_posts and ig_token:
-        records += fetch_instagram_metrics(ig_posts, ig_token)
-        logger.info(f"[learning_loop] IG: {len(ig_posts)} posts → {len([r for r in records if r.platform == 'instagram'])} records")
+        ig_records = fetch_instagram_metrics(ig_posts, ig_token)
+        records += ig_records
+        logger.info(f"[learning_loop] IG: {len(ig_posts)} posts → {len(ig_records)} records")
     if yt_token:
-        # Use bulk channel fetch (all videos, 28-day window) instead of per-ID
-        # today-only queries. This captures same-day posts once data propagates
-        # AND all prior videos. Falls back to per-ID if bulk returns nothing.
         yt_records = fetch_youtube_channel_metrics_bulk(yt_token, days_back=28, registry_lookup=all_registry_lookup)
         if not yt_records and yt_posts:
             logger.info("[learning_loop] YT bulk returned 0 — falling back to per-ID query")
             yt_records = fetch_youtube_metrics(yt_posts, yt_token)
         records += yt_records
         logger.info(f"[learning_loop] YouTube: {len(yt_records)} records (channel-wide 28d)")
-    if fb_posts and fb_page_token:
-        fb_records = fetch_facebook_metrics(fb_posts, fb_page_token)
+    if fb_page_token and fb_page_id:
+        # Bulk reel fetch (like YT channel bulk) — gets all page reels in 28d.
+        # Per-ID fallback handles any registry posts not returned by the bulk.
+        fb_records = fetch_facebook_metrics_bulk(fb_page_token, fb_page_id, days_back=28, registry_lookup=all_registry_lookup)
+        bulk_ids = {r.post_id for r in fb_records}
+        fb_today = [p for p in post_registry if p.get("platform") == "facebook" and p.get("post_id") and p["post_id"] not in bulk_ids]
+        if fb_today:
+            fb_records += fetch_facebook_metrics(fb_today, fb_page_token)
         records += fb_records
-        logger.info(f"[learning_loop] Facebook: {len(fb_posts)} posts → {len(fb_records)} records")
+        logger.info(f"[learning_loop] Facebook: {len(fb_records)} records (28d bulk + {len(fb_today)} per-ID)")
+    elif fb_page_token:
+        # page_id missing — fall back to per-ID only for today's posts
+        fb_today = [p for p in post_registry if p.get("platform") == "facebook"]
+        if fb_today:
+            fb_records = fetch_facebook_metrics(fb_today, fb_page_token)
+            records += fb_records
+            logger.info(f"[learning_loop] Facebook: {len(fb_records)} records (per-ID fallback, no page_id)")
     if ig_story_posts and ig_token:
         story_records = fetch_instagram_story_metrics(ig_story_posts, ig_token)
         records += story_records
@@ -1074,8 +1199,16 @@ def calculate_unified_weights(
     _ema_update(new.sub_mode_weights, signals, "hook_sub_mode", learning_rate)
     _ema_update(new.time_of_day_weights, signals, "time_of_day", learning_rate)
 
-    # Update best_platform + best_time_of_day
-    if new.platform_weights:
+    # Update best_platform + best_time_of_day.
+    # Only consider platforms observed in this run — platforms with no analytics
+    # data (e.g. TikTok, which has no native API integration) keep their prior
+    # EMA weight but must not override platforms we can actually measure.
+    active_platforms = {r.get("platform") for r, _ in signals if r.get("platform")}
+    if active_platforms:
+        scored = {k: v for k, v in new.platform_weights.items() if k in active_platforms}
+        if scored:
+            new.best_platform = max(scored, key=scored.get)
+    elif new.platform_weights:
         new.best_platform = max(new.platform_weights, key=new.platform_weights.get)
     if new.time_of_day_weights:
         new.best_time_of_day = max(new.time_of_day_weights, key=new.time_of_day_weights.get)
