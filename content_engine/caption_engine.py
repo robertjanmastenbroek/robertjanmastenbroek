@@ -1,72 +1,54 @@
 """
 caption_engine.py — Beat-aligned auto-caption burn-in for muted autoplay.
 
-85% of IG Reels and 40% of TikTok views start muted. If the hook text is the
-only on-screen content, we lose comprehension instantly. This module generates
-word-by-word kinetic captions from the spoken hook (or the hook template text)
-and burns them as an ASS subtitle track — displayed in short bursts timed to
-beat divisions of the track so they pop ON the drum hit.
+85% of IG Reels and 40% of TikTok views start muted. This module generates
+word-by-word kinetic captions timed to beat divisions of the track.
 
-Design choices:
-  * ASS format (not SRT) so we get per-word styling: big Bebas Neue, white
-    with 8px black stroke + subtle drop shadow, uppercase. Same visual DNA
-    as the hook overlay.
-  * Captions position ABOVE the hook overlay block (y=0.35 vs 0.68) so they
-    don't collide on transitional / emotional clips.
-  * Burn-in via ffmpeg `subtitles=` filter — no second text-overlay pass.
-  * Falls back to a no-op (return input) on any failure — captions are
-    an enhancement, never a blocker.
+Implemented with PyAV (libav bindings) + Pillow — no ffmpeg subprocess.
+Falls back to a no-op (returns input path) on any failure.
 """
 
 import logging
-import os
-import subprocess
-import tempfile
 from pathlib import Path
 from typing import List, Tuple
 
-from content_engine.video_codec import video_codec_args
-
 logger = logging.getLogger(__name__)
 
-# Pillow-equivalent visual tokens, translated to ASS tag values.
-# ASS uses &HBBGGRR& color order (not RGB) and alpha-inverted (00=opaque).
-CAPTION_FONT = "Bebas Neue"
-CAPTION_FONT_FALLBACK = "Impact"
-CAPTION_FONT_SIZE = 80        # ~80pt at 1080p reads ~56pt perceived
-CAPTION_OUTLINE = 4           # px black stroke
-CAPTION_SHADOW = 2            # px drop shadow
-CAPTION_POS_Y = 500           # from top (of 1920); gives ~26% from top
-CAPTION_MIN_WORD_DURATION = 0.25  # seconds — readable floor per word
-CAPTION_MAX_WORD_DURATION = 0.9   # seconds — any longer feels lazy
+CAPTION_FONT_PATHS = [
+    "/System/Library/Fonts/Supplemental/Impact.ttf",
+    "/Library/Fonts/Impact.ttf",
+    "/System/Library/Fonts/Supplemental/DIN Condensed Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+]
+CAPTION_FONT_SIZE = 80
+CAPTION_OUTLINE  = 4
+CAPTION_SHADOW   = 3
+CAPTION_POS_Y    = 500   # pixels from top of 1920px frame (~26%)
+CAPTION_MIN_WORD_DURATION = 0.25
+CAPTION_MAX_WORD_DURATION = 0.9
 
 
-def _hr_time(seconds: float) -> str:
-    """ASS timestamp format: H:MM:SS.cc (centiseconds)."""
-    if seconds < 0:
-        seconds = 0.0
-    h = int(seconds // 3600)
-    m = int((seconds % 3600) // 60)
-    s = seconds % 60
-    return f"{h}:{m:02d}:{s:05.2f}"
+def _load_font(size: int):
+    from PIL import ImageFont
+    for path in CAPTION_FONT_PATHS:
+        if Path(path).exists():
+            try:
+                return ImageFont.truetype(path, size)
+            except Exception:
+                continue
+    return ImageFont.load_default()
 
 
-def _split_to_word_groups(text: str, max_per_group: int = 3) -> List[str]:
-    """Split hook text into 1-3 word groups for kinetic pacing.
-
-    Short groups pop harder on the beat than full lines. 3 is the upper
-    bound — 4+ words stops being kinetic and becomes a subtitle.
-    """
+def _split_to_word_groups(text: str) -> List[str]:
+    """Split hook text into 1-3 word groups for kinetic pacing."""
     words = text.strip().split()
     if not words:
         return []
     groups: List[str] = []
     i = 0
     while i < len(words):
-        # Variable group size 1-3 biased toward 2 (most rhythmic)
         remaining = len(words) - i
         size = min(remaining, 2 if remaining >= 2 else remaining)
-        # If the 2-word group would end with a stop-word, try 3
         if size == 2 and i + 2 < len(words) and len(words[i + 1]) <= 3:
             size = min(3, remaining)
         groups.append(" ".join(words[i:i + size]).upper())
@@ -75,7 +57,7 @@ def _split_to_word_groups(text: str, max_per_group: int = 3) -> List[str]:
 
 
 def _beat_times(audio_path: str, audio_start: float, duration: float) -> List[float]:
-    """Return beat timestamps (relative to clip start) falling inside [0, duration]."""
+    """Return beat timestamps (relative to clip start) inside [0, duration]."""
     try:
         import librosa
         y, sr = librosa.load(
@@ -86,7 +68,6 @@ def _beat_times(audio_path: str, audio_start: float, duration: float) -> List[fl
         )
         _, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
         beat_times = librosa.frames_to_time(beat_frames, sr=sr)
-        # Shift back into clip time
         shifted = [float(bt) - 0.5 for bt in beat_times]
         return [t for t in shifted if 0.0 <= t <= duration]
     except Exception as e:
@@ -94,52 +75,18 @@ def _beat_times(audio_path: str, audio_start: float, duration: float) -> List[fl
         return []
 
 
-def _generate_ass(
+def _compute_windows(
     groups: List[str],
     beats: List[float],
     total_duration: float,
-    start_offset: float = 0.3,
-) -> str:
-    """Build an ASS file where each group is shown from beat[k] to beat[k+N].
-
-    If we have fewer beats than groups, fall back to even pacing.
-    """
-    # Header — define one style, bold+uppercase+thick outline for legibility on
-    # any background. Alignment=8 → top-center. MarginV is the distance in px
-    # from the TOP of the frame when Alignment is top-*.
-    header = (
-        "[Script Info]\n"
-        "PlayResX: 1080\n"
-        "PlayResY: 1920\n"
-        "WrapStyle: 2\n"
-        "ScaledBorderAndShadow: yes\n"
-        "\n"
-        "[V4+ Styles]\n"
-        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
-        "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
-        "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
-        "Alignment, MarginL, MarginR, MarginV, Encoding\n"
-        f"Style: RJM,{CAPTION_FONT},{CAPTION_FONT_SIZE},"
-        "&H00FFFFFF,&H000000FF,&H00000000,&H80000000,"
-        "-1,0,0,0,100,100,2,0,1,"
-        f"{CAPTION_OUTLINE},{CAPTION_SHADOW},"
-        f"8,40,40,{CAPTION_POS_Y},1\n"
-        "\n"
-        "[Events]\n"
-        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
-        "Effect, Text\n"
-    )
-
-    events: List[str] = []
+    start_offset: float,
+) -> List[Tuple[float, float]]:
+    """Compute (start, end) time window for each caption group."""
     n = len(groups)
-    if n == 0:
-        return header  # No events; the filter is a no-op
-
-    # Compute per-group (start, end) windows
     windows: List[Tuple[float, float]] = []
     usable_beats = [b for b in beats if b >= start_offset]
+
     if len(usable_beats) >= n + 1:
-        # Use every other beat (half-note pacing → feels deliberate not frantic)
         step = max(1, len(usable_beats) // (n + 1))
         picked = usable_beats[::step][: n + 1]
         if len(picked) < n + 1:
@@ -147,12 +94,10 @@ def _generate_ass(
         for i in range(n):
             s = picked[i]
             e = picked[i + 1] if i + 1 < len(picked) else total_duration
-            # Clamp to sane word-duration bounds
             dur = max(CAPTION_MIN_WORD_DURATION, min(e - s, CAPTION_MAX_WORD_DURATION * 3))
             e = min(total_duration - 0.1, s + dur)
             windows.append((s, e))
     else:
-        # Even pacing fallback — evenly divide the [start_offset, total-0.3] window
         avail = max(0.1, total_duration - start_offset - 0.3)
         per = max(CAPTION_MIN_WORD_DURATION, min(CAPTION_MAX_WORD_DURATION, avail / n))
         for i in range(n):
@@ -160,21 +105,169 @@ def _generate_ass(
             e = min(total_duration - 0.1, s + per)
             windows.append((s, e))
 
-    for (s, e), text in zip(windows, groups):
-        # Pop-in animation: scale from 85% → 100% over first 120ms via \t tag
-        # ASS `\fscx` controls horizontal scale; mirror for vertical.
-        effect = (
-            "{\\fad(60,80)\\fscx85\\fscy85"
-            "\\t(0,120,\\fscx100\\fscy100)"
-            "}"
-        )
-        # Escape commas or curly braces in text
-        safe = text.replace("{", "\\{").replace("}", "\\}")
-        events.append(
-            f"Dialogue: 0,{_hr_time(s)},{_hr_time(e)},RJM,,0,0,0,,{effect}{safe}"
-        )
+    return windows
 
-    return header + "\n".join(events) + "\n"
+
+def _draw_text_centered(draw, text: str, font, frame_width: int, y: int) -> None:
+    """Draw white text with black outline centered horizontally at y."""
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    x = (frame_width - text_w) // 2
+
+    # Black outline via stroke
+    draw.text(
+        (x, y), text, font=font,
+        fill=(255, 255, 255),
+        stroke_width=CAPTION_OUTLINE,
+        stroke_fill=(0, 0, 0),
+    )
+
+
+def _get_caption_at(t: float, sorted_windows: list) -> str | None:
+    """Return caption text for timestamp t, or None if not in any window."""
+    for (s, e), text in sorted_windows:
+        if s <= t < e:
+            return text
+        if s > t:
+            break
+    return None
+
+
+def _encode_video_with_captions(
+    input_path: str,
+    video_only_path: str,
+    sorted_windows: list,
+) -> None:
+    """Encode video frames with caption overlays to a video-only file.
+
+    Separated from audio muxing so the MP4 muxer never has to interleave
+    re-encoded video DTS with copied audio DTS — which causes AVERROR_EINVAL
+    when PIL processing delays push audio far ahead of video.
+    """
+    import av
+    from PIL import ImageDraw
+
+    font = _load_font(CAPTION_FONT_SIZE)
+
+    in_container = av.open(input_path)
+    v_in      = in_container.streams.video[0]
+    time_base = v_in.time_base
+    fps       = v_in.average_rate
+
+    out_container = av.open(video_only_path, "w")
+    v_out = out_container.add_stream("libx264", rate=fps)
+    v_out.width   = v_in.width
+    v_out.height  = v_in.height
+    v_out.pix_fmt = "yuv420p"
+    v_out.options = {"crf": "22", "preset": "fast"}
+
+    frame_num = 0
+    for packet in in_container.demux(v_in):
+        if packet.pts is None:
+            continue
+        for frame in packet.decode():
+            if frame.pts is None:
+                continue
+            t = float(frame.pts * time_base)
+            caption = _get_caption_at(t, sorted_windows)
+            if caption:
+                img  = frame.to_image()
+                draw = ImageDraw.Draw(img)
+                _draw_text_centered(draw, caption, font, v_in.width, CAPTION_POS_Y)
+                new_frame = av.VideoFrame.from_image(img).reformat(format="yuv420p")
+            else:
+                # Fresh frame strips pict_type (I/P/B) that corrupts libx264 DTS
+                # tracking when mixed with PIL-derived frames (pict_type=NONE).
+                new_frame = av.VideoFrame.from_ndarray(
+                    frame.to_ndarray(format="yuv420p"), format="yuv420p"
+                )
+            # Monotonic counter in encoder's time_base (1/fps) — avoids the
+            # 512x scaling mismatch that occurs when input pts (1/15360 units)
+            # are passed directly to a stream configured at 1/fps.
+            new_frame.pts = frame_num
+            frame_num += 1
+            for pkt in v_out.encode(new_frame):
+                out_container.mux(pkt)
+
+    for pkt in v_out.encode(None):
+        out_container.mux(pkt)
+
+    out_container.close()
+    in_container.close()
+
+
+def _mux_with_pyav(video_only_path: str, original_path: str, output_path: str) -> None:
+    """Mux captioned video-only file with original audio — pure PyAV packet copy, no subprocess.
+
+    Both streams are copied without re-encoding. Packets are interleaved by DTS
+    so the MP4 muxer doesn't reject out-of-order timestamps.
+    """
+    import av
+
+    v_in = av.open(video_only_path)
+    a_in = av.open(original_path)
+    out  = av.open(output_path, "w")
+
+    in_v = v_in.streams.video[0]
+    in_a = a_in.streams.audio[0]
+
+    # PyAV 17 uses add_stream_from_template (add_stream(template=) was removed)
+    out_v = out.add_stream_from_template(in_v)
+    out_a = out.add_stream_from_template(in_a)
+
+    # Buffer all packets — interleave by DTS so the MP4 muxer stays happy
+    v_pkts = []
+    for pkt in v_in.demux(in_v):
+        if pkt.dts is not None:
+            pkt.stream = out_v
+            v_pkts.append((float(pkt.dts * in_v.time_base), pkt))
+
+    a_pkts = []
+    for pkt in a_in.demux(in_a):
+        if pkt.dts is not None:
+            pkt.stream = out_a
+            a_pkts.append((float(pkt.dts * in_a.time_base), pkt))
+
+    vi = ai = 0
+    while vi < len(v_pkts) or ai < len(a_pkts):
+        if vi >= len(v_pkts):
+            out.mux(a_pkts[ai][1]); ai += 1
+        elif ai >= len(a_pkts):
+            out.mux(v_pkts[vi][1]); vi += 1
+        elif v_pkts[vi][0] <= a_pkts[ai][0]:
+            out.mux(v_pkts[vi][1]); vi += 1
+        else:
+            out.mux(a_pkts[ai][1]); ai += 1
+
+    out.close()
+    v_in.close()
+    a_in.close()
+
+
+def _burn_with_pillow(
+    input_path: str,
+    output_path: str,
+    sorted_windows: list,
+) -> str:
+    """Overlay captions on video frames using PyAV + Pillow, write to output_path.
+
+    Two-pass approach:
+    1. Encode video-with-captions to a temp file (PyAV/libx264, no audio).
+    2. Mux captioned video + original audio via PyAV packet copy (no subprocess).
+    """
+    import tempfile
+    import os
+
+    tmp_video = tempfile.mktemp(suffix="_vid_only.mp4")
+    try:
+        _encode_video_with_captions(input_path, tmp_video, sorted_windows)
+        _mux_with_pyav(tmp_video, input_path, output_path)
+    finally:
+        try:
+            os.unlink(tmp_video)
+        except OSError:
+            pass
+    return output_path
 
 
 def burn_captions(
@@ -186,64 +279,23 @@ def burn_captions(
     total_duration: float,
     start_offset: float = 0.3,
 ) -> str:
-    """Burn beat-aligned captions into `input_path`, writing to `output_path`.
+    """Burn beat-aligned captions into input_path, writing to output_path.
 
-    Returns `output_path` on success, `input_path` on any failure so callers
-    can chain: ``next = burn_captions(next, ...)``.
+    Returns output_path on success, input_path on any failure.
     """
     groups = _split_to_word_groups(hook_text)
     if not groups:
         return input_path
 
     beats = _beat_times(audio_path, audio_start, total_duration)
-    ass_text = _generate_ass(groups, beats, total_duration, start_offset)
-
-    ass_path = None
-    try:
-        # Write ASS to a temp file; ffmpeg subtitles filter reads from disk.
-        with tempfile.NamedTemporaryFile(suffix=".ass", delete=False, mode="w", encoding="utf-8") as tmp:
-            tmp.write(ass_text)
-            ass_path = tmp.name
-
-        # ffmpeg subtitles filter requires escaping `:` and `'` in the path.
-        # Safest approach: cd into the directory and pass the basename.
-        ass_dir = os.path.dirname(ass_path)
-        ass_base = os.path.basename(ass_path).replace(":", r"\:")
-
-        # force_style lets us override font if the system doesn't have Bebas Neue
-        # (the ASS style is only used if the font is found; otherwise libass
-        # falls back to a default — force_style makes the fallback explicit).
-        filter_expr = (
-            f"subtitles=filename='{ass_base}'"
-            f":force_style='FontName={CAPTION_FONT_FALLBACK}"
-            f",Fontsize={CAPTION_FONT_SIZE}"
-            f",PrimaryColour=&H00FFFFFF"
-            f",OutlineColour=&H00000000"
-            f",BorderStyle=1,Outline={CAPTION_OUTLINE},Shadow={CAPTION_SHADOW}'"
-        )
-
-        cmd = [
-            "ffmpeg", "-y",
-            "-i", input_path,
-            "-vf", filter_expr,
-            *video_codec_args(22, "fast"),
-            "-pix_fmt", "yuv420p",
-            "-c:a", "copy",
-            output_path,
-        ]
-        subprocess.run(cmd, check=True, capture_output=True, timeout=180, cwd=ass_dir)
-        return output_path
-
-    except subprocess.CalledProcessError as e:
-        err = e.stderr.decode()[:300] if e.stderr else ""
-        logger.error(f"Caption burn failed: {err}")
+    windows = _compute_windows(groups, beats, total_duration, start_offset)
+    if not windows:
         return input_path
+
+    sorted_windows = sorted(zip(windows, groups), key=lambda x: x[0][0])
+
+    try:
+        return _burn_with_pillow(input_path, output_path, sorted_windows)
     except Exception as e:
         logger.error(f"Caption burn error: {e}")
         return input_path
-    finally:
-        if ass_path:
-            try:
-                os.unlink(ass_path)
-            except Exception:
-                pass
