@@ -170,7 +170,7 @@ Include these 3 availability slots (pick the 3 below, offer all three):
 
 Instructions:
 - Mention Tenerife (CET timezone)
-- Offer to send a press kit / one-sheet once they confirm
+- Include this press kit link naturally: https://robertjanmastenbroek.com/press-kit
 - Keep it under 6 sentences. Human, warm, not corporate.
 - Sign off as: Robert-Jan
 - Output JSON only: {{"subject": "...", "body": "..."}}
@@ -284,7 +284,7 @@ KEY LINKS to include as relevant:
 - Spotify artist: {SPOTIFY_ARTIST_URL}
 - Renamed (tribal techno, 130 BPM): {TRACK_SCRIPTURE['Renamed']['spotify']}
 - Halleluyah (psytrance, 140 BPM): {TRACK_SCRIPTURE['Halleluyah']['spotify']}
-- Press kit: available on request (mention it)
+- Press kit: https://robertjanmastenbroek.com/press-kit (include this link)
 
 TASK: Answer their question directly and completely.
 - Give them exactly what they asked for
