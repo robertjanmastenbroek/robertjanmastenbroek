@@ -73,6 +73,7 @@ DRAFT_MODE           = os.getenv("RJM_DRAFT_MODE", "false").lower() == "true"
 
 # ─── Contact Types ────────────────────────────────────────────────────────────
 CONTACT_TYPES = {
+    # Legacy types — kept for backward compat with existing pipeline
     "curator":       "Spotify playlist curator",
     "podcast":       "Podcast / radio show / livestream guest pitch",
     "youtube":       "YouTube channel / mix series",
@@ -81,6 +82,44 @@ CONTACT_TYPES = {
     "booking_agent": "Booking agent",
     "wellness":      "Wellness / yoga retreat",
 }
+
+# ─── Relationship-First Personas ──────────────────────────────────────────────
+# New persona system for fan + relationship outreach (2026-04-17 redesign).
+# Persona lives in contacts.persona; type is kept for pipeline compat.
+CONTACT_PERSONAS = {
+    # Zone 1 — Sacred Intersection
+    "faith_creator":      "Christian / spiritual content creator",
+    "church":             "Church or Christian event organizer",
+    "retreat":            "Faith-based or conscious retreat organizer",
+    "ecstatic_dance":     "Ecstatic Dance organizer (sober, spiritually-open)",
+    # Zone 2 — Scene Insiders
+    "rave_photographer":  "Event / rave photographer or videographer",
+    "sound_engineer":     "Live sound engineer at electronic music events",
+    "conscious_promoter": "Conscious rave / sober event promoter",
+    "lifestyle_creator":  "Rave fashion, festival lifestyle content creator",
+    # Zone 3 — Lifestyle Overlap
+    "digital_nomad":      "Digital nomad creator (Tenerife / location-independent)",
+    "surfer":             "Surf / ocean lifestyle creator",
+    "sacred_artist":      "Sacred geometry, dark aesthetic visual artist",
+    "genre_creator":      "YouTube / TikTok melodic techno or psytrance creator",
+    # Relationship-upgraded legacy
+    "community_leader":   "Reddit / Discord / Facebook group admin or mod",
+    "event_promoter":     "Underground venue or festival promoter",
+}
+
+# Relationship stages (contacts.relationship_stage)
+RELATIONSHIP_STAGES = [
+    "discovered",    # found, basic info only
+    "researched",    # know who they are, what to say
+    "first_touch",   # sent genuine first message about THEM
+    "responded",     # they replied — this is the new "win"
+    "nurturing",     # active conversation, building trust
+    "collaborating", # featuring, sharing, or working with RJM
+    "advocate",      # promoting RJM unprompted to their audience
+]
+
+# Outreach goals (contacts.outreach_goal)
+OUTREACH_GOALS = ["relationship", "booking", "music_share", "collaboration"]
 
 # ─── Outreach Priority Weights ────────────────────────────────────────────────
 # Controls how the batch planner picks contact types each cycle.

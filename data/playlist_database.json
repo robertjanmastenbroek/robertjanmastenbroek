@@ -30,7 +30,7 @@
   },
   {
     "playlist_id": "5Ob9EjYpTvbmNGxhdQe5JM",
-    "playlist_name": "Flow State \u2014 Productivity and Work Music",
+    "playlist_name": "Flow State — Productivity and Work Music",
     "spotify_url": "https://open.spotify.com/playlist/5Ob9EjYpTvbmNGxhdQe5JM",
     "curator_name": "jeremylim.ca",
     "follower_count": 56900,
@@ -46,7 +46,7 @@
   },
   {
     "playlist_id": "5tS60kao8racJYRscFsLfv",
-    "playlist_name": "PSYTRANCE / TRANCE - S\u00d3 AS MELHORES",
+    "playlist_name": "PSYTRANCE / TRANCE - SÓ AS MELHORES",
     "spotify_url": "https://open.spotify.com/playlist/5tS60kao8racJYRscFsLfv",
     "curator_name": "PRINSH Music Group",
     "follower_count": 46600,
@@ -150,7 +150,7 @@
   },
   {
     "playlist_id": "2sMrT5R4bt05SCGScL3e5B",
-    "playlist_name": "\ud83d\ude4f\ufe0f Tribal Psytrance | Ethnic | Oriental | Shamanic | World",
+    "playlist_name": "🙏️ Tribal Psytrance | Ethnic | Oriental | Shamanic | World",
     "spotify_url": "https://open.spotify.com/playlist/2sMrT5R4bt05SCGScL3e5B",
     "curator_name": "unknown",
     "follower_count": 6500,
@@ -182,7 +182,7 @@
   },
   {
     "playlist_id": "3trwmrgLd7b5Clh3YwuILu",
-    "playlist_name": "Melodic Techno 2026 \ud83c\udf19",
+    "playlist_name": "Melodic Techno 2026 🌙",
     "spotify_url": "https://open.spotify.com/playlist/3trwmrgLd7b5Clh3YwuILu",
     "curator_name": "unique playlists",
     "follower_count": 79000,
@@ -288,7 +288,7 @@
   },
   {
     "playlist_id": "6ZNqBjtmRBjXBG2BW0QYCA",
-    "playlist_name": "Psytrance -\ud83d\udd49- Full On Progressive",
+    "playlist_name": "Psytrance -🕉- Full On Progressive",
     "spotify_url": "https://open.spotify.com/playlist/6ZNqBjtmRBjXBG2BW0QYCA",
     "curator_name": "Yves Vrancken",
     "follower_count": 110900,
@@ -304,7 +304,7 @@
   },
   {
     "playlist_id": "0iJEh2BsvSw8V3lDTkiUK7",
-    "playlist_name": "Psytrance 2026 \ud83c\udf00 Psy Trance - Goatrance",
+    "playlist_name": "Psytrance 2026 🌀 Psy Trance - Goatrance",
     "spotify_url": "https://open.spotify.com/playlist/0iJEh2BsvSw8V3lDTkiUK7",
     "curator_name": "Revealed Recordings",
     "follower_count": 222100,
@@ -333,7 +333,7 @@
   },
   {
     "playlist_id": "0CBjqMf8vZfndoXw91G5T5",
-    "playlist_name": "Psytrance -\ud83d\udd49- 50 Progressive Masterpieces",
+    "playlist_name": "Psytrance -🕉- 50 Progressive Masterpieces",
     "spotify_url": "https://open.spotify.com/playlist/0CBjqMf8vZfndoXw91G5T5",
     "curator_name": "Yves Vrancken",
     "follower_count": 6800,
@@ -399,13 +399,155 @@
     "playlist_id": "3LrNpJEJZy1Cvv8vVIHjaE",
     "playlist_name": "Ethnic Electronic",
     "spotify_url": "https://open.spotify.com/playlist/3LrNpJEJZy1Cvv8vVIHjaE",
-    "curator_name": "\u00d6zge Y\u0131ld\u0131r\u0131m",
+    "curator_name": "Özge Yıldırım",
     "follower_count": 2700,
     "genre_tags": [
       "ethnic-electronic",
       "world-electronic"
     ],
     "audience_type": "music-first",
+    "priority": "low",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "5MPv3Ox4MiFif9LQG6bOqZ",
+    "playlist_name": "Burning Man 2025 - Ethnic House - Organic House - Desert House - Afro House - Downtempo",
+    "spotify_url": "https://open.spotify.com/playlist/5MPv3Ox4MiFif9LQG6bOqZ",
+    "curator_name": "Gobi Desert Collective",
+    "follower_count": 106600,
+    "genre_tags": [
+      "ethnic-electronic",
+      "organic-house",
+      "afro-house",
+      "downtempo"
+    ],
+    "audience_type": "seeker",
+    "priority": "high",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "2BrIlwvkjTtiq7XlkIRE6V",
+    "playlist_name": "BURNING MAN 2026 (WhoMadeWho, Kerala Dust, Be Svendsen)",
+    "spotify_url": "https://open.spotify.com/playlist/2BrIlwvkjTtiq7XlkIRE6V",
+    "curator_name": "HMWL (House Music With Love)",
+    "follower_count": 57500,
+    "genre_tags": [
+      "melodic-techno",
+      "organic-house",
+      "melodic-house"
+    ],
+    "audience_type": "music-first",
+    "priority": "high",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "0bqSL4ch8oDuq4NKdzGP4G",
+    "playlist_name": "Burning Man 2026",
+    "spotify_url": "https://open.spotify.com/playlist/0bqSL4ch8oDuq4NKdzGP4G",
+    "curator_name": "trndmsk",
+    "follower_count": 10100,
+    "genre_tags": [
+      "melodic-techno",
+      "organic-house"
+    ],
+    "audience_type": "music-first",
+    "priority": "medium",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "6z2trFYi0UgTdbploTSxhY",
+    "playlist_name": "Burning Man! PLAYA DEEPHOUSE TECHNO ORGANIC Robot Heart Distrikt",
+    "spotify_url": "https://open.spotify.com/playlist/6z2trFYi0UgTdbploTSxhY",
+    "curator_name": "Unknown",
+    "follower_count": 9900,
+    "genre_tags": [
+      "melodic-techno",
+      "organic-house",
+      "deep-house"
+    ],
+    "audience_type": "music-first",
+    "priority": "low",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "3ExInGJj2IVaD5YdTdTqKL",
+    "playlist_name": "Burning Man 2026 👽",
+    "spotify_url": "https://open.spotify.com/playlist/3ExInGJj2IVaD5YdTdTqKL",
+    "curator_name": "unique playlists",
+    "follower_count": 7000,
+    "genre_tags": [
+      "melodic-techno"
+    ],
+    "audience_type": "music-first",
+    "priority": "low",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "0V7cWocdcIspkPkVj3oDmJ",
+    "playlist_name": "PSYTRANCE DOMINANCE - 400 Hours of Psy Trance, Goa & Melodic Techno",
+    "spotify_url": "https://open.spotify.com/playlist/0V7cWocdcIspkPkVj3oDmJ",
+    "curator_name": "Muzikoda",
+    "follower_count": null,
+    "genre_tags": [
+      "psytrance",
+      "goa-trance",
+      "melodic-techno"
+    ],
+    "audience_type": "seeker",
+    "priority": "high",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "2eH9GLfdHD2QRUGfFLZie1",
+    "playlist_name": "Road to Burning Man",
+    "spotify_url": "https://open.spotify.com/playlist/2eH9GLfdHD2QRUGfFLZie1",
+    "curator_name": "Data Transmission",
+    "follower_count": 9900,
+    "genre_tags": [
+      "melodic-techno",
+      "organic-house",
+      "ethnic-electronic"
+    ],
+    "audience_type": "music-first",
+    "priority": "medium",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "1vQCrEhmMKMXVwQ0Ghtf5j",
+    "playlist_name": "Robot Heart (Burning Man) & All Day I Dream",
+    "spotify_url": "https://open.spotify.com/playlist/1vQCrEhmMKMXVwQ0Ghtf5j",
+    "curator_name": "DjC",
+    "follower_count": 8700,
+    "genre_tags": [
+      "melodic-techno",
+      "organic-house",
+      "deep-house"
+    ],
+    "audience_type": "music-first",
+    "priority": "medium",
+    "curator_contact": null,
+    "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "0OBX0IlqSElrGIkSe3e5Fp",
+    "playlist_name": "Psytrance 2026 Progressive Melodic",
+    "spotify_url": "https://open.spotify.com/playlist/0OBX0IlqSElrGIkSe3e5Fp",
+    "curator_name": "Psytrance Central",
+    "follower_count": 5000,
+    "genre_tags": [
+      "psytrance",
+      "progressive-psytrance",
+      "melodic"
+    ],
+    "audience_type": "seeker",
     "priority": "low",
     "curator_contact": null,
     "added_at": "2026-04-17"

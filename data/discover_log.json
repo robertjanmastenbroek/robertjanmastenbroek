@@ -155,5 +155,44 @@
       "A Disclosure Toronto"
     ],
     "notes": "US/CA market first run. Top 5 US outlets already in DB. Secondary outlets blocked by 403 or use contact forms. WebFetch budget exhausted on wrong targets (lesson learned). 4 YouTube contacts reactivated to warm_up separately."
+  },
+  {
+    "ts": "2026-04-17T11:04:24.439914Z",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 12,
+    "contacts_added": 0,
+    "webfetch_visits": 5,
+    "skipped_no_email": 5,
+    "note": "All WebFetch contacts already in DB; Italy/Scandinavia/LatAm markets explored"
+  },
+  {
+    "ts": "2026-04-17T11:04:24.439617Z",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 5,
+    "database_total": 32
+  },
+  {
+    "ts": "2026-04-17T11:10:29.940662+00:00",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 20,
+    "contacts_added": 1,
+    "webfetch_visits": 5,
+    "skipped_no_email": 6
+  },
+  {
+    "ts": "2026-04-17T11:10:29.940662+00:00",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 4,
+    "database_total": 36
   }
 ]

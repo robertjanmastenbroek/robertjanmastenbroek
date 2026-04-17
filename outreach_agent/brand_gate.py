@@ -64,6 +64,55 @@ _VISUAL_MARKERS = [
 ]
 
 
+def validate_contact(contact: dict) -> dict:
+    """
+    Validate a contact against brand safety rules before adding to pipeline.
+
+    Checks: pagan/occult signals, drug-ceremony framing, booking venue safety.
+    Returns {"safe": bool, "reason": str}
+    """
+    text = " ".join([
+        contact.get("notes", ""),
+        contact.get("genre", ""),
+        contact.get("name", ""),
+        contact.get("website", ""),
+    ]).lower()
+
+    # Hard excludes — explicit pagan/occult/drug ceremony
+    _PAGAN_HARD = re.compile(
+        r"\b(pagan\b|wicca|witchcraft|occult|satanic|satanism|baphomet|"
+        r"ayahuasca ceremony|psilocybin ceremony|plant medicine ceremony|"
+        r"drug ceremony|psychedelic ceremony|dark magic|spell casting|"
+        r"black mass|demonology)\b",
+        re.IGNORECASE,
+    )
+    m = _PAGAN_HARD.search(text)
+    if m:
+        return {"safe": False, "reason": f"pagan/occult hard-exclude: '{m.group()}'"}
+
+    # Venue safety — drunk/drugged as primary selling point
+    _VENUE_UNSAFE = re.compile(
+        r"\b(free drugs|open bar unlimited|drunk encouraged|rolling hard|"
+        r"mdma friendly|drug friendly|ketamine lounge|open pill|"
+        r"alcohol freeflow|alcohol free flow)\b",
+        re.IGNORECASE,
+    )
+    m = _VENUE_UNSAFE.search(text)
+    if m:
+        return {"safe": False, "reason": f"venue hard-exclude: '{m.group()}'"}
+
+    # Ecstatic Dance / sober — explicit green light
+    _ED_SIGNALS = re.compile(
+        r"\b(ecstatic dance|sober dance|no alcohol|substance.free|alcohol.free|"
+        r"conscious rave|conscious dance|authentic movement)\b",
+        re.IGNORECASE,
+    )
+    if _ED_SIGNALS.search(text):
+        return {"safe": True, "reason": "ecstatic dance / sober qualified"}
+
+    return {"safe": True, "reason": "passed"}
+
+
 def validate_content(text: str) -> dict:
     """
     Validate text against the 5 brand voice tests.
