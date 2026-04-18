@@ -373,74 +373,96 @@ def get_facebook_page_token(user_access_token: str, page_id: str) -> str:
 
 def post_facebook_reel(video_path: str, description: str, page_id: str, page_token: str) -> dict:
     """
-    Upload a video as a Facebook Reel to a Page via the Graph API resumable upload.
+    Upload a video as a Facebook Reel to a Page via the video_reels Graph API endpoint.
+
+    Uses the same 3-phase resumable upload as post_facebook_story (video_stories),
+    adapted for Reels: init → binary upload to upload_url → finish with published=true.
+    The /{page_id}/videos endpoint only creates regular page video posts; Reels
+    require /{page_id}/video_reels so they appear in the Reels section of the feed.
+
     Returns {success: bool, post_id: str|None, platform: 'facebook', error: str|None}
     """
     try:
-        video_size = Path(video_path).stat().st_size
+        file_size = Path(video_path).stat().st_size
+        url = f"{FACEBOOK_GRAPH_BASE}/{page_id}/video_reels"
 
-        # 1. Start resumable upload session
-        start_resp = requests.post(
-            f"{FACEBOOK_GRAPH_BASE}/{page_id}/videos",
-            params={"access_token": page_token},
+        # 1. Initialize — Meta returns {video_id, upload_url}
+        init_resp = requests.post(
+            url,
             data={
                 "upload_phase": "start",
-                "file_size":    video_size,
+                "file_size":    file_size,
+                "access_token": page_token,
             },
             timeout=30,
         )
-        if start_resp.status_code != 200:
+        if init_resp.status_code != 200:
             return {"success": False, "platform": "facebook",
-                    "error": start_resp.json().get("error", {}).get("message", start_resp.text[:200])}
+                    "error": init_resp.json().get("error", {}).get("message", init_resp.text[:200])}
 
-        start_data  = start_resp.json()
-        upload_id   = start_data.get("upload_session_id", "")
-        video_id    = start_data.get("video_id", "")
-        start_offset = int(start_data.get("start_offset", 0))
-        end_offset   = int(start_data.get("end_offset", video_size))
-
-        # 2. Upload the file in one chunk (≤ 1 GB; shorts are well under this)
-        with open(video_path, "rb") as f:
-            f.seek(start_offset)
-            chunk = f.read(end_offset - start_offset)
-
-        transfer_resp = requests.post(
-            f"{FACEBOOK_GRAPH_BASE}/{page_id}/videos",
-            params={"access_token": page_token},
-            data={
-                "upload_phase":   "transfer",
-                "upload_session_id": upload_id,
-                "start_offset":   start_offset,
-            },
-            files={"video_file_chunk": (Path(video_path).name, chunk, "video/mp4")},
-            timeout=300,
-        )
-        if transfer_resp.status_code != 200:
+        init_data  = init_resp.json()
+        video_id   = init_data.get("video_id", "")
+        upload_url = init_data.get("upload_url", "")
+        if not video_id:
             return {"success": False, "platform": "facebook",
-                    "error": transfer_resp.json().get("error", {}).get("message", transfer_resp.text[:200])}
+                    "error": f"video_reels init returned no video_id: {init_data}"}
 
-        # 3. Finish — set description and publish. Meta defaults uploaded videos
-        # to draft state; explicitly setting published=true ensures the Reel goes
-        # live instead of sitting in the Page's "Your Posts" drafts.
+        # 2. Upload full binary to the returned upload_url (same pattern as video_stories).
+        #    Headers carry auth + byte-range metadata so Meta assembles the file correctly.
+        transfer_ok = False
+        if upload_url:
+            with open(video_path, "rb") as f:
+                transfer_resp = requests.post(
+                    upload_url,
+                    data=f.read(),
+                    headers={
+                        "Authorization": f"OAuth {page_token}",
+                        "offset":        "0",
+                        "file_size":     str(file_size),
+                    },
+                    timeout=300,
+                )
+                transfer_ok = transfer_resp.status_code in (200, 201)
+        if not transfer_ok:
+            # Fallback: multipart source upload via video node
+            with open(video_path, "rb") as f:
+                transfer_resp = requests.post(
+                    f"{FACEBOOK_GRAPH_BASE}/{video_id}",
+                    files={"source": f},
+                    data={"access_token": page_token, "upload_phase": "transfer"},
+                    timeout=300,
+                )
+                transfer_ok = transfer_resp.status_code in (200, 201)
+        if not transfer_ok:
+            return {"success": False, "platform": "facebook",
+                    "error": f"Reel transfer failed: {transfer_resp.text[:200]}"}
+
+        # 3. Finish — publish as a Reel. video_state=PUBLISHED makes it live
+        #    immediately; published=true sets the distribution to the Reels feed.
         finish_resp = requests.post(
-            f"{FACEBOOK_GRAPH_BASE}/{page_id}/videos",
-            params={"access_token": page_token},
+            url,
             data={
-                "upload_phase":      "finish",
-                "upload_session_id": upload_id,
-                "description":       description,
-                "content_tags":      "",
-                "published":         "true",
-                "video_state":       "PUBLISHED",
+                "upload_phase": "finish",
+                "video_id":     video_id,
+                "description":  description,
+                "published":    "true",
+                "video_state":  "PUBLISHED",
+                "access_token": page_token,
             },
             timeout=30,
         )
-        if finish_resp.status_code != 200:
+        finish_data = finish_resp.json()
+        success = (
+            finish_resp.status_code in (200, 201)
+            and (bool(finish_data.get("success")) or bool(finish_data.get("post_id")))
+        )
+        if not success:
             return {"success": False, "platform": "facebook",
-                    "error": finish_resp.json().get("error", {}).get("message", finish_resp.text[:200])}
+                    "error": finish_data.get("error", {}).get("message", str(finish_data))}
 
-        logger.info(f"[distributor] Facebook Reel published: video_id={video_id}")
-        return {"success": True, "post_id": video_id, "platform": "facebook"}
+        post_id = str(finish_data.get("post_id", video_id))
+        logger.info(f"[distributor] Facebook Reel published via video_reels: post_id={post_id}")
+        return {"success": True, "post_id": post_id, "platform": "facebook"}
 
     except Exception as e:
         return {"success": False, "platform": "facebook", "error": str(e)}
