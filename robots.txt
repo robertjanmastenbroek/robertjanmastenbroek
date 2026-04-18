@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /.claude/
+Disallow: /.well-known/
+Disallow: /outreach_agent/
+Disallow: /content_engine/
+Disallow: /data/
+Disallow: /logs/
+Disallow: /scripts/
+Disallow: /tests/
+Disallow: /ruflo/
+Disallow: /graphify-out/
+Disallow: /node_modules/
+Disallow: /learning/
+Disallow: /content/
+Disallow: /privacy.html
+Disallow: /terms.html
+
+Sitemap: https://robertjanmastenbroek.com/sitemap.xml

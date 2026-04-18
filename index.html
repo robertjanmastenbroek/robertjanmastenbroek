@@ -22,6 +22,30 @@
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+    <link rel="canonical" href="https://robertjanmastenbroek.com/">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MusicGroup",
+      "name": "Robert-Jan Mastenbroek",
+      "alternateName": "RJM",
+      "url": "https://robertjanmastenbroek.com",
+      "image": "https://robertjanmastenbroek.com/images/holy-rave-bg.jpg",
+      "description": "Dutch producer of Bible-based melodic techno and tribal psytrance. Creator of Holy Rave.",
+      "genre": ["Melodic Techno", "Tribal Psytrance", "Electronic"],
+      "foundingLocation": {
+        "@type": "Place",
+        "name": "Tenerife, Spain"
+      },
+      "sameAs": [
+        "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds",
+        "https://music.apple.com/us/artist/robert-jan-mastenbroek/1875064180",
+        "https://www.instagram.com/robertjanmastenbroek/",
+        "https://www.youtube.com/@robertjanmastenbroekofficial",
+        "https://tiktok.com/@robertjanmastenbroek"
+      ]
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
@@ -39,7 +63,6 @@
             --card-bg: #161616;
             --accent-gold: #d4af37;
             --accent-gold-dim: rgba(212, 175, 55, 0.15);
-            --accent-blue: #4a90e2;
             --text-primary: #ffffff;
             --text-secondary: #a0a0a0;
             --border-subtle: rgba(255, 255, 255, 0.08);
@@ -364,7 +387,7 @@
 
         .video-card:hover {
             transform: translateY(-8px);
-            border-color: var(--accent-blue);
+            border-color: var(--accent-gold);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
 
@@ -1126,7 +1149,10 @@
     <nav>
         <div class="container">
             <div class="logo">Robert-Jan <span>M</span></div>
-            <button class="menu-toggle" onclick="toggleMenu()">
+            <button class="menu-toggle" onclick="toggleMenu(this)"
+                    aria-label="Toggle navigation menu"
+                    aria-expanded="false"
+                    aria-controls="navMenu">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -1412,9 +1438,13 @@
     </footer>
 
     <script>
-        function toggleMenu() {
+        function toggleMenu(btn) {
             const menu = document.getElementById('navMenu');
-            menu.classList.toggle('active');
+            const isOpen = menu.classList.toggle('active');
+            if (btn && btn.setAttribute) {
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                btn.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Toggle navigation menu');
+            }
         }
 
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
