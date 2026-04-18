@@ -551,24 +551,45 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
 
         creation_id = resp.json()["id"]
 
-        # 2. Wait for FINISHED (up to 3 minutes — Reels can take > 2 min to transcode)
+        # 2. Wait for FINISHED (up to 6 minutes — Reels can take > 2 min to transcode;
+        #    each iteration is 5 s so 72 × 5 = 360 s = 6 min ceiling)
         finished = False
-        for _ in range(36):
+        for attempt in range(72):
             time.sleep(5)
             status_resp = requests.get(
                 f"{INSTAGRAM_GRAPH_BASE}/{creation_id}",
-                params={"fields": "status_code,error_message", "access_token": access_token},
+                params={"fields": "status_code", "access_token": access_token},
                 timeout=15,
             )
+            if status_resp.status_code != 200:
+                api_err = ""
+                try:
+                    api_err = status_resp.json().get("error", {}).get("message", "")
+                except Exception:
+                    api_err = status_resp.text[:200]
+                logger.error(
+                    f"[distributor] Instagram Reel status check HTTP {status_resp.status_code} "
+                    f"for container {creation_id}: {api_err}"
+                )
+                return {"success": False, "platform": "instagram",
+                        "error": f"status check HTTP {status_resp.status_code}: {api_err}"}
             status_data = status_resp.json()
+            if "error" in status_data:
+                api_err = status_data["error"].get("message", str(status_data["error"]))
+                logger.error(f"[distributor] Instagram Reel status check error: {api_err}")
+                return {"success": False, "platform": "instagram", "error": f"status check error: {api_err}"}
             ig_status = status_data.get("status_code", "")
             if ig_status == "FINISHED":
                 finished = True
                 break
             if ig_status == "ERROR":
-                err = status_data.get("error_message", "unknown processing error")
-                logger.error(f"Instagram Reel container ERROR: {err}")
-                return {"success": False, "platform": "instagram", "error": f"container ERROR: {err}"}
+                logger.error(f"[distributor] Instagram Reel container {creation_id} entered ERROR state")
+                return {"success": False, "platform": "instagram", "error": "container ERROR"}
+            if attempt % 6 == 0:
+                logger.info(
+                    f"[distributor] Instagram Reel {creation_id} still processing "
+                    f"({attempt * 5}s elapsed, status={ig_status or 'unknown'})"
+                )
 
         if not finished:
             logger.error(
@@ -872,9 +893,8 @@ def distribute_clip(clip: dict) -> dict:
     # This runs once per clip call but is idempotent — refresh_instagram_token()
     # and _refresh_youtube_token() both cache in os.environ so subsequent clips
     # in the same process pay only the cost of an env lookup.
-    # TikTok is excluded — it routes through Buffer only (no native OAuth).
-    if platform not in ("tiktok",):
-        _ensure_tokens_fresh()
+    # TikTok token is self-contained (Bearer header) — no refresh needed.
+    _ensure_tokens_fresh()
 
     logger.info(f"[distributor] {platform} clip {clip_index} → scheduled {scheduled_at}")
 
@@ -956,8 +976,17 @@ def distribute_clip(clip: dict) -> dict:
                       "error": "native unavailable after pre-flight", "via": "native"}
 
     elif platform == "tiktok":
-        # TikTok routes through Buffer only — no native OAuth flow configured.
-        result = _buffer_fallback(clip, scheduled_at)
+        tiktok_token = os.environ.get("TIKTOK_ACCESS_TOKEN", "")
+        if tiktok_token:
+            result = post_tiktok(path, caption, tiktok_token)
+            if result.get("success"):
+                _record_native_post(platform, clip_index, result.get("post_id", ""))
+            else:
+                _log_native_failure("tiktok", result)
+                if not _is_auth_error(result):
+                    result = _buffer_fallback(clip, scheduled_at)
+        else:
+            result = _buffer_fallback(clip, scheduled_at)
 
     elif platform == "instagram_story":
         spotify_url  = clip.get("spotify_url", "")
