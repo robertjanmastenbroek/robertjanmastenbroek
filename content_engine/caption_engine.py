@@ -24,8 +24,12 @@ CAPTION_FONT_SIZE = 80
 CAPTION_OUTLINE  = 4
 CAPTION_SHADOW   = 3
 CAPTION_POS_Y    = 500   # pixels from top of 1920px frame (~26%)
-CAPTION_MIN_WORD_DURATION = 0.25
-CAPTION_MAX_WORD_DURATION = 0.9
+# Kinetic pacing targets (2026 viral benchmark: 180-250ms/word).
+# MIN=0.18 lets tight beats snap to fast pacing; MAX=0.30 prevents dead
+# air when beats are sparse. At 128 BPM (~234ms/beat) this gives a
+# one-beat buffer for readability before the next word hits.
+CAPTION_MIN_WORD_DURATION = 0.18
+CAPTION_MAX_WORD_DURATION = 0.30
 
 
 def _load_font(size: int):
