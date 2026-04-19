@@ -523,7 +523,7 @@ def build_daily_clips(
         segments = random.sample(available, min(n_segments, len(available)))
         used_segments.update(segments)
 
-        output_path = str(Path(output_dir) / f"{fmt.value}_{track.title.lower().replace(' ', '_')}.mp4")
+        output_path = str(Path(output_dir) / f"{fmt.value}_{clip_idx}_{track.title.lower().replace(' ', '_')}.mp4")
 
         clip_meta = {
             "clip_index": clip_idx,

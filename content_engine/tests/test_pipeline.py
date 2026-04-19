@@ -88,6 +88,40 @@ def test_story_path_equals_main_path(tmp_path):
     )
 
 
+def test_two_transitional_clips_get_distinct_output_paths(tmp_path):
+    """Two TRANSITIONAL clips must write to different files — same path = same video = double-post."""
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.TRANSITIONAL, ClipFormat.TRANSITIONAL],
+        durations={ClipFormat.TRANSITIONAL: 22},
+    )
+
+    with patch("content_engine.renderer.render_transitional") as mock_render, \
+         patch("content_engine.transitional_manager.TransitionalManager") as mock_tm, \
+         patch("content_engine.generator.generate_hooks_for_format") as mock_hook, \
+         patch("content_engine.generator.generate_caption") as mock_caption:
+
+        mock_tm.return_value.pick.return_value = {"file": "satisfying/123.mp4", "category": "satisfying"}
+        mock_tm.return_value.full_path.return_value = Path("/fake/bait.mp4")
+        mock_hook.return_value = {
+            "hook": "test hook", "template_id": "t1",
+            "mechanism": "save", "sub_mode": "COST", "exploration": False,
+        }
+        mock_caption.return_value = "test caption"
+        mock_render.side_effect = lambda **kw: Path(kw["output_path"]).touch()
+
+        clips = build_daily_clips(
+            config, _make_brief(), _make_weights(), _make_track(),
+            peak_sections=[0.0, 0.0], output_dir=str(tmp_path),
+        )
+
+    assert len(clips) == 2
+    paths = [c["path"] for c in clips]
+    assert paths[0] != paths[1], (
+        f"Both TRANSITIONAL clips wrote to the same path: {paths[0]!r}. "
+        "This is the double-post bug — fix by including clip_idx in the filename."
+    )
+
+
 def test_no_story_variant_files_generated(tmp_path):
     """build_daily_clips must not create any *_story.mp4 files."""
     config = DailyPipelineConfig(
