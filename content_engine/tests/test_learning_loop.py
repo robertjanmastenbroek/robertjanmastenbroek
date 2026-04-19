@@ -158,10 +158,28 @@ class TestRefreshYouTubeTokenLearningLoop:
             token = _refresh_youtube_token()
         assert token == "ya29.CURRENT"
 
-    def test_failed_refresh_returns_existing(self):
+    def test_invalid_grant_returns_empty(self):
+        """invalid_grant means the refresh token is permanently dead — return ""
+        so callers skip YouTube rather than making API calls with a stale token."""
         mock_resp = MagicMock()
         mock_resp.status_code = 400
         mock_resp.json.return_value = {"error": "invalid_grant"}
+        with patch("content_engine.learning_loop.requests.post", return_value=mock_resp), \
+             patch.dict(os.environ, {
+                 "YOUTUBE_REFRESH_TOKEN": "1//refresh",
+                 "YOUTUBE_CLIENT_ID": "cid",
+                 "YOUTUBE_CLIENT_SECRET": "csec",
+                 "YOUTUBE_OAUTH_TOKEN": "ya29.CURRENT",
+             }, clear=False):
+            token = _refresh_youtube_token()
+        assert token == ""
+
+    def test_transient_refresh_failure_returns_existing(self):
+        """Non-invalid_grant failures (e.g. 503) fall back to the stale token
+        since it may still be valid if the refresh endpoint had a transient error."""
+        mock_resp = MagicMock()
+        mock_resp.status_code = 503
+        mock_resp.json.return_value = {"error": "backend_error"}
         with patch("content_engine.learning_loop.requests.post", return_value=mock_resp), \
              patch.dict(os.environ, {
                  "YOUTUBE_REFRESH_TOKEN": "1//refresh",

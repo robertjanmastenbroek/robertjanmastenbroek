@@ -69,6 +69,17 @@ def _refresh_youtube_token() -> str:
             timeout=15,
         )
         if resp.status_code != 200:
+            try:
+                err = resp.json().get("error", "")
+            except Exception:
+                err = ""
+            if err == "invalid_grant":
+                logger.critical(
+                    "[learning_loop] YouTube refresh token is expired or revoked — "
+                    "YouTube analytics will be skipped this run. "
+                    "Re-auth required: python3 scripts/setup_youtube_oauth.py"
+                )
+                return ""
             logger.warning(f"[learning_loop] YouTube token refresh failed: {resp.status_code} {resp.text}")
             return os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
         new_token = resp.json()["access_token"]
