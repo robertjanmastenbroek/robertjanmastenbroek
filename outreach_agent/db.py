@@ -6,6 +6,8 @@ Contact lifecycle:
                                 ↘ bounced (pre-check failed)
 """
 
+from __future__ import annotations
+
 import sqlite3
 import logging
 from datetime import datetime, date, timedelta
@@ -46,7 +48,14 @@ CREATE TABLE IF NOT EXISTS contacts (
     research_notes          TEXT,   -- fetched facts about the recipient used to personalise email
     research_done           INTEGER DEFAULT 0,  -- 0=not researched, 1=done
     website                 TEXT,   -- homepage URL for research
-    playlist_size           TEXT    -- 'small' | 'medium' | 'large' | NULL (curators only)
+    playlist_size           TEXT,   -- 'small' | 'medium' | 'large' | NULL (curators only)
+    -- Persona / relationship fields (added by discovery miners)
+    persona                 TEXT,   -- faith_creator|church|ecstatic_dance|genre_fan|curator|etc.
+    outreach_goal           TEXT,   -- booking|relationship|music_share|collaboration
+    their_location          TEXT,   -- city/country if known
+    relationship_stage      TEXT,   -- discovered|contacted|replied|warm
+    warmth_score            INTEGER DEFAULT 0,  -- 0-10; ≥6 = hand-researched, <6 = auto-mined
+    faith_signals           INTEGER DEFAULT 0   -- 0=none, 1=explicit faith content detected
 );
 
 CREATE TABLE IF NOT EXISTS discovery_log (
