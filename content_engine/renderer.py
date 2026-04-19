@@ -579,14 +579,16 @@ def _slice_to_vertical(input_path: str, output_path: str,
     only duration_s — used by the fast-cut renderer where each visible
     "cut" is a sub-second slice from the middle of a longer source.
 
-    Seek is applied as an output-side -ss (after -i) so we land within ~1
-    frame of the requested boundary, which matters when the cut rate is
-    0.4-0.7s and frame-precision becomes audible/visible.
+    Seek is applied as an input-side -ss (before -i) so ffmpeg fast-seeks
+    to the nearest keyframe instead of decoding the entire source. For
+    long phone-footage files (30+ min), output-side seek stalled for
+    minutes before emitting a single 0.4s slice. Since we re-encode every
+    slice anyway, input-side seek is still frame-accurate in ffmpeg 4+.
     """
     cmd = [
         "ffmpeg", "-y",
-        "-i", input_path,
         "-ss", str(start_s),
+        "-i", input_path,
         "-t", str(duration_s),
         "-r", "30",
         "-vf", f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase,crop={OUTPUT_W}:{OUTPUT_H}",
