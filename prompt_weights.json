@@ -9,19 +9,20 @@
   "visual_weights": {
     "ai_generated": 1.0,
     "performance": 1.0,
-    "b_roll": 0.5810312783358952,
+    "b_roll": 0.5727518693574196,
     "phone": 1.0
   },
   "format_weights": {
     "transitional": 1.0,
     "emotional": 1.0,
-    "performance": 1.0
+    "performance": 1.0,
+    "sacred_arc": 1.0
   },
   "platform_weights": {
-    "instagram": 0.5277184527259439,
-    "youtube": 0.6426169958205836,
-    "facebook": 0.11764899999999995,
-    "instagram_story": 0.6498201303172338,
+    "instagram": 0.5171689169081607,
+    "youtube": 0.6406222047667162,
+    "facebook": 0.08235429999999996,
+    "instagram_story": 0.6435590912220637,
     "facebook_story": 1.0
   },
   "transitional_category_weights": {
@@ -35,7 +36,7 @@
   "track_weights": {},
   "best_clip_length": 5,
   "best_platform": "instagram_story",
-  "updated": "2026-04-17T18:07:41.740910",
+  "updated": "2026-04-18T18:20:21.451250",
   "sub_mode_weights": {
     "COST": 1.0,
     "NAMING": 1.0,
@@ -54,9 +55,9 @@
     "DISSOLUTION": 1.0
   },
   "time_of_day_weights": {
-    "morning": 0.38664139155904276,
+    "morning": 0.33671077409132993,
     "midday": 0.6022325339216337,
-    "evening": 0.7883476639662184,
+    "evening": 0.7246738953885976,
     "late": 1.0
   },
   "best_time_of_day": "late"
