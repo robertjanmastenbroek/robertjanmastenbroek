@@ -193,6 +193,7 @@ class TestDistributeClipNativeFirst:
         import content_engine.distributor as dist_mod
         dist_mod._INSTAGRAM_TOKEN_DEAD = False
         with patch("content_engine.distributor._ensure_tokens_fresh"), \
+             patch("content_engine.distributor._load_native_registry", return_value=set()), \
              patch("content_engine.distributor._instagram_native_available", return_value=True), \
              patch("content_engine.distributor.post_instagram_reel") as mock_native, \
              patch("content_engine.distributor._buffer_fallback") as mock_buf, \
@@ -209,6 +210,7 @@ class TestDistributeClipNativeFirst:
         import content_engine.distributor as dist_mod
         dist_mod._INSTAGRAM_TOKEN_DEAD = False
         with patch("content_engine.distributor._ensure_tokens_fresh"), \
+             patch("content_engine.distributor._load_native_registry", return_value=set()), \
              patch("content_engine.distributor._instagram_native_available", return_value=True), \
              patch("content_engine.distributor.post_instagram_reel") as mock_native, \
              patch("content_engine.distributor._buffer_fallback") as mock_buf, \
@@ -226,6 +228,7 @@ class TestDistributeClipNativeFirst:
         import content_engine.distributor as dist_mod
         dist_mod._INSTAGRAM_TOKEN_DEAD = False
         with patch("content_engine.distributor._ensure_tokens_fresh"), \
+             patch("content_engine.distributor._load_native_registry", return_value=set()), \
              patch("content_engine.distributor._instagram_native_available", return_value=True), \
              patch("content_engine.distributor.post_instagram_reel") as mock_native, \
              patch("content_engine.distributor._buffer_fallback") as mock_buf, \
@@ -240,6 +243,7 @@ class TestDistributeClipNativeFirst:
     def test_youtube_uses_native(self):
         from content_engine.distributor import distribute_clip
         with patch("content_engine.distributor._ensure_tokens_fresh"), \
+             patch("content_engine.distributor._load_native_registry", return_value=set()), \
              patch("content_engine.distributor.post_youtube_short") as mock_native, \
              patch("content_engine.distributor._buffer_fallback") as mock_buf, \
              patch.dict(os.environ, {"YOUTUBE_API_KEY": "key", "YOUTUBE_OAUTH_TOKEN": "ya29.token"}):
@@ -251,6 +255,7 @@ class TestDistributeClipNativeFirst:
     def test_facebook_uses_native(self):
         from content_engine.distributor import distribute_clip
         with patch("content_engine.distributor._ensure_tokens_fresh"), \
+             patch("content_engine.distributor._load_native_registry", return_value=set()), \
              patch("content_engine.distributor.post_facebook_reel") as mock_native, \
              patch("content_engine.distributor._buffer_fallback") as mock_buf, \
              patch.dict(os.environ, {"FACEBOOK_PAGE_TOKEN": "EAApage", "FACEBOOK_PAGE_ID": "982928391581585"}):
