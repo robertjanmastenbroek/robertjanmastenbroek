@@ -25,6 +25,13 @@ logger = logging.getLogger(__name__)
 # Separate from _posts.json so it survives manual registry deletion.
 # Prevents native double-posts when a user clears the idempotency guard
 # to force a re-run after deleting Buffer scheduled videos.
+#
+# ─── Buffer-post dedup ───────────────────────────────────────────────────────
+# Mirrors native dedup. Prevents three failure modes:
+#   1. Retry loop calling _buffer_fallback on every attempt (3× per clip)
+#   2. User re-running the pipeline on the same day after a failure
+#   3. Any future caller that invokes _buffer_fallback directly
+# Registry lives at data/performance/{date}_buffer.json (same dir as native).
 
 def _native_dedup_path(date_str: str = "") -> Path:
     return PERFORMANCE_DIR / f"{date_str or _date.today().isoformat()}_native.json"
@@ -58,6 +65,42 @@ def _record_native_post(platform: str, clip_index: int, post_id: str, date_str: 
         path.write_text(json.dumps(data, indent=2))
     except Exception as e:
         logger.warning(f"[distributor] native dedup write failed: {e}")
+
+
+# ─── Buffer-post dedup registry ───────────────────────────────────────────────
+
+def _buffer_dedup_path(date_str: str = "") -> Path:
+    return PERFORMANCE_DIR / f"{date_str or _date.today().isoformat()}_buffer.json"
+
+
+def _load_buffer_registry(date_str: str = "") -> set:
+    """Return set of (platform, clip_index) already successfully queued to Buffer today."""
+    path = _buffer_dedup_path(date_str)
+    if not path.exists():
+        return set()
+    try:
+        data = json.loads(path.read_text())
+        return {(r["platform"], r["clip_index"]) for r in data if r.get("success")}
+    except Exception:
+        return set()
+
+
+def _record_buffer_post(platform: str, clip_index: int, post_id: str, date_str: str = "") -> None:
+    """Append a successful Buffer queue entry to the dedup registry."""
+    path = _buffer_dedup_path(date_str)
+    PERFORMANCE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        data = json.loads(path.read_text()) if path.exists() else []
+        data.append({
+            "platform": platform,
+            "clip_index": clip_index,
+            "post_id": post_id,
+            "success": True,
+            "queued_at": datetime.now(timezone.utc).isoformat(),
+        })
+        path.write_text(json.dumps(data, indent=2))
+    except Exception as e:
+        logger.warning(f"[distributor] buffer dedup write failed: {e}")
 
 # IG publishing is now routed through graph.facebook.com — that's the
 # endpoint that accepts the Facebook User/Page access token we get via the
@@ -819,13 +862,30 @@ def _buffer_fallback(clip: dict, scheduled_at: str = "") -> dict:
     facebook.type=story) via ``_create_video_story_post``. Reels/feed posts go
     through ``_create_video_post``.
     """
-    platform = clip["platform"]
+    platform   = clip["platform"]
+    clip_index = clip.get("clip_index", 0)
+
     if platform not in _BUFFER_CHANNELS:
         return {
             "success": False,
             "platform": platform,
             "error": f"no Buffer channel for {platform}",
             "via": "buffer_fallback",
+        }
+
+    # Dedup: if this (platform, clip_index) was already successfully queued to
+    # Buffer today, skip — prevents triple-queueing from the retry loop and
+    # protects against accidental re-runs on the same day.
+    if (platform, clip_index) in _load_buffer_registry():
+        logger.warning(
+            f"[distributor] BUFFER DEDUP: {platform} clip {clip_index} already queued "
+            "to Buffer today — skipping to prevent duplicate post"
+        )
+        return {
+            "success":  True,
+            "post_id":  "buffer_dedup_skipped",
+            "platform": platform,
+            "via":      "buffer_dedup",
         }
 
     try:
@@ -868,6 +928,8 @@ def _buffer_fallback(clip: dict, scheduled_at: str = "") -> dict:
                 platform, video_url, caption,
                 scheduled_at=scheduled_at or None,
             )
+
+        _record_buffer_post(platform, clip_index, post_id)
 
         # Count against Buffer's daily cap (parity with upload_video_and_queue).
         try:
@@ -1257,6 +1319,12 @@ def _distribute_with_retry(clip: dict, target: str, max_retries: int = 3) -> dic
         result = _distribute_single(clip, target)
         if result.get("success"):
             return result
+        # Buffer already fired (success or failure) — do NOT retry. Retrying
+        # would call _buffer_fallback again on the next attempt, queuing a
+        # duplicate post. The dedup registry in _buffer_fallback is the last
+        # line of defence, but we should never reach it from this path.
+        if result.get("via") in ("buffer_fallback", "buffer_dedup"):
+            break
         # Don't retry platform-misconfig errors — they won't change on retry.
         err = str(result.get("error", "")).lower()
         permanent = any(s in err for s in (
@@ -1274,10 +1342,11 @@ def _distribute_with_retry(clip: dict, target: str, max_retries: int = 3) -> dic
 
     # Final fallback to Buffer for ANY target that still failed and has a
     # Buffer channel. Stories are now Buffer-compatible, so this safely covers
-    # every configured distribution target.
+    # every configured distribution target. The _buffer_fallback dedup registry
+    # ensures this path can't double-queue even if called redundantly.
     if (
         not result.get("success")
-        and result.get("via") != "buffer_fallback"
+        and result.get("via") not in ("buffer_fallback", "buffer_dedup")
         and target in _BUFFER_CHANNELS
     ):
         logger.info(f"[distributor] Falling back to Buffer for {target}")
