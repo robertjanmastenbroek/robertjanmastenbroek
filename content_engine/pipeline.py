@@ -549,7 +549,7 @@ def build_daily_clips(
             "caption_by_platform": caption_by_platform,
             "track_title": track.title,
             "clip_length": duration,
-            "visual_type": "b_roll",
+            "visual_type": "performance" if fmt == ClipFormat.SACRED_ARC else "b_roll",
             "transitional_category": visual_context.get("category", ""),
             "transitional_file": visual_context.get("file", ""),
             "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds",
