@@ -58,6 +58,7 @@ class PerformanceRecord:
     transitional_category: str = ""
     transitional_file: str = ""
     track_title: str = ""
+    posted_at: str = ""
     views: int = 0
     completion_rate: float = 0.0
     scroll_stop_rate: float = 0.0
