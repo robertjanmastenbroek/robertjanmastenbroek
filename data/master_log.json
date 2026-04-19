@@ -710,5 +710,233 @@
     "summary": "outreach: 5 emails sent, 0 replies detected",
     "contacts_added": 5,
     "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T21:12:44.703850",
+    "summary": "outreach: 1 emails sent, 1 replies detected",
+    "contacts_added": 1,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T21:50:51.314373",
+    "summary": "discover: 1 contact added (1 rave_photographer Keig Studio Barcelona) + 0 playlists (all high-follower already in DB) + 0 promoted",
+    "contacts_added": 1,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-17T22:11:10.560378",
+    "summary": "discover: 5 contacts added (lifestyle_creator:1, ecstatic_dance:2, retreat:1, genre_creator:1) + 0 playlists + 0 promoted",
+    "contacts_added": 5,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-17T22:27:18.680511",
+    "summary": "outreach: 6 emails sent, 0 replies detected",
+    "contacts_added": 6,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-17T23:04:56.627256",
+    "summary": "research: 0 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-18T08:10:26.435600",
+    "summary": "discover: 2 contacts added (1 rave_photographer, 1 faith_creator) + 0 playlists + 0 promoted",
+    "contacts_added": 2,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-18T08:49:25.168696",
+    "summary": "outreach: 17 emails sent, 2 replies detected",
+    "contacts_added": 17,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-18T09:06:02.945983",
+    "summary": "research: 7 personalized, 1 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-18T09:30:18.810662",
+    "summary": "master: breakthrough-amplification \u2014 3 remix concepts for p8NtdfXEtNM (1,018 views, 66.6% completion) across IG/TikTok/YT Shorts with contrast/emotional/performance formats",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-master-creative"
+  },
+  {
+    "ts": "2026-04-18T09:40:51.458998",
+    "summary": "outreach: 17 emails sent (7 new + 10 follow-ups), 0 replies detected",
+    "contacts_added": 17,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-18T10:12:30.515329",
+    "summary": "outreach: 2 emails sent, 0 replies detected",
+    "contacts_added": 2,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-18T11:11:25.527188",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-18T12:07:14.685085",
+    "summary": "discover: 2 contacts added (ecstatic_dance:1 Lisbon, faith_creator:1 Stuttgart) + 0 playlists + 0 promoted",
+    "contacts_added": 2,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-18T12:17:48.174967",
+    "summary": "outreach: 2 emails sent, 1 reply detected",
+    "contacts_added": 2,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-18T13:05:00.996349",
+    "summary": "research: 0 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-18T13:11:24.412870",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-18T14:11:28.347040",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-18T15:11:28.528573",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-18T18:21:01.428506",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T01:57:08.707509",
+    "summary": "research: 1 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-19T01:57:59.663104",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T08:11:03.572286",
+    "summary": "outreach: 0 emails sent, 0 replies detected \u2014 sends paused (bounce rate 18.3% > 15% limit)",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T09:11:04.636964",
+    "summary": "outreach: 0 emails sent, 0 replies detected \u2014 sends paused (bounce rate 18.3% > 15% limit)",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T09:12:49.086169",
+    "summary": "research: 3 personalized, 1 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-19T10:11:20.860079",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T11:02:36.799018",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T11:19:03.410293",
+    "summary": "master: breakthrough-amplification \u2014 3 remix concepts for IG post 17961684 (125% scroll-stop scene hook); saved to content/amplifications/2026-04-19_amplification.md",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-master-creative"
+  },
+  {
+    "ts": "2026-04-19T11:21:01.317870",
+    "summary": "discover: 4 contacts added (lifestyle_creator:1 Emma Kapotes, retreat:1 Koningsteen Belgium, church:1 HICC Netherlands, curator:1 Rave Culture) + 3 playlists added (total 39) + 0 promoted from playlists",
+    "contacts_added": 7,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-19T11:32:42.183380",
+    "summary": "discover: 3 contacts added (1 lifestyle_creator, 2 ecstatic_dance) + 0 playlists + 0 promoted",
+    "contacts_added": 3,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-19T12:02:35.666918",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T12:18:58.596321",
+    "summary": "discover: 3 contacts added (faith_creator:1 Luke Munns, ecstatic_dance:1 Geneva Human Experience, podcast:1 Ton Podcast) + 0 playlists (DB at 39) + 0 promoted. Miners: ecstatic_dance=0, church=0, fan=0, soundplate=skipped. 3 skipped (duplicates). Scheduler paused: bounce rate 18.3%>15%",
+    "contacts_added": 3,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-19T13:06:24.459164",
+    "summary": "research: 10 personalized, 0 skipped",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-research"
+  },
+  {
+    "ts": "2026-04-19T13:11:06.761315",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T14:11:17.996527",
+    "summary": "outreach: 0 emails sent (bounce rate paused 18.3%), 0 replies detected, 37 dead addresses confirmed, 3 domains blacklisted",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T15:11:13.954510",
+    "summary": "outreach: 0 emails sent (bounce rate paused: 18.3% > 15% limit), 0 replies detected, 38 dead addresses cleaned, 3 domains blacklisted",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
+  },
+  {
+    "ts": "2026-04-19T15:36:24.593914",
+    "summary": "master: contact-discovery-deep-dive \u2014 10 melodic techno/psytrance podcast contacts added via week-3 angle (podcast guest booking)",
+    "contacts_added": 10,
+    "strategy_worked": "rjm-master-creative"
+  },
+  {
+    "ts": "2026-04-19T15:40:18.761831",
+    "summary": "discover: 2 contacts added (1 ecstatic_dance Vienna Austria, 1 retreat Conscious Soul USA) + 0 playlists + 0 promoted",
+    "contacts_added": 2,
+    "strategy_worked": "rjm-discover"
+  },
+  {
+    "ts": "2026-04-19T16:11:25.272111",
+    "summary": "outreach: 0 emails sent, 0 replies detected",
+    "contacts_added": 0,
+    "strategy_worked": "rjm-outreach-agent"
   }
 ]

@@ -50,7 +50,7 @@ def _load_native_registry(date_str: str = "") -> set:
 
 
 def _record_native_post(platform: str, clip_index: int, post_id: str, date_str: str = "") -> None:
-    """Append a successful native post to the dedup registry."""
+    """Append a successful native post to the dedup registry (atomic write)."""
     path = _native_dedup_path(date_str)
     PERFORMANCE_DIR.mkdir(parents=True, exist_ok=True)
     try:
@@ -62,9 +62,14 @@ def _record_native_post(platform: str, clip_index: int, post_id: str, date_str: 
             "success": True,
             "posted_at": datetime.now(timezone.utc).isoformat(),
         })
-        path.write_text(json.dumps(data, indent=2))
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data, indent=2))
+        tmp.replace(path)  # atomic POSIX rename — no partial-write corruption
     except Exception as e:
-        logger.warning(f"[distributor] native dedup write failed: {e}")
+        logger.error(
+            f"[distributor] native dedup write FAILED — {platform} clip {clip_index} "
+            f"may double-post on retry: {e}"
+        )
 
 
 # ─── Buffer-post dedup registry ───────────────────────────────────────────────
@@ -86,7 +91,7 @@ def _load_buffer_registry(date_str: str = "") -> set:
 
 
 def _record_buffer_post(platform: str, clip_index: int, post_id: str, date_str: str = "") -> None:
-    """Append a successful Buffer queue entry to the dedup registry."""
+    """Append a successful Buffer queue entry to the dedup registry (atomic write)."""
     path = _buffer_dedup_path(date_str)
     PERFORMANCE_DIR.mkdir(parents=True, exist_ok=True)
     try:
@@ -98,9 +103,11 @@ def _record_buffer_post(platform: str, clip_index: int, post_id: str, date_str: 
             "success": True,
             "queued_at": datetime.now(timezone.utc).isoformat(),
         })
-        path.write_text(json.dumps(data, indent=2))
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data, indent=2))
+        tmp.replace(path)  # atomic POSIX rename
     except Exception as e:
-        logger.warning(f"[distributor] buffer dedup write failed: {e}")
+        logger.error(f"[distributor] buffer dedup write FAILED — {platform} clip {clip_index}: {e}")
 
 # IG publishing is now routed through graph.facebook.com — that's the
 # endpoint that accepts the Facebook User/Page access token we get via the
@@ -800,13 +807,13 @@ def post_youtube_short(video_path: str, title: str, description: str,
         return {"success": False, "platform": "youtube", "error": str(e)}
 
 
-# Platforms that have a Buffer channel connected. Every one of these is a
-# viable fallback target when the native Graph/YouTube/TikTok API fails or
-# credentials are missing. Facebook was added once a FB Buffer channel was
-# wired up; Stories are supported via Buffer's story metadata surface.
+# Platforms with a Buffer fallback channel. Facebook and facebook_story are
+# native-API-only — Buffer is excluded to prevent the scenario where a
+# successful native post is followed by a Buffer attempt that double-posts
+# or fills the failed_posts queue with ghost entries.
 _BUFFER_CHANNELS = {
-    "tiktok", "instagram", "youtube", "facebook",
-    "instagram_story", "facebook_story",
+    "tiktok", "instagram", "youtube",
+    "instagram_story",
 }
 
 # Auth-related HTTP status codes and Meta/Google error codes that indicate an
@@ -1028,8 +1035,7 @@ def distribute_clip(clip: dict) -> dict:
                 _record_native_post(platform, clip_index, result.get("post_id", ""))
             else:
                 _log_native_failure("facebook", result)
-                if not _is_auth_error(result):
-                    result = _buffer_fallback(clip, scheduled_at)
+                # No Buffer fallback for Facebook — native-only to prevent double-posts
         else:
             logger.critical(
                 "[distributor] Facebook native unavailable after pre-flight — "
@@ -1105,8 +1111,7 @@ def distribute_clip(clip: dict) -> dict:
                 _record_native_post(platform, clip_index, result.get("post_id", ""))
             else:
                 _log_native_failure("facebook_story", result)
-                if not _is_auth_error(result):
-                    result = _buffer_fallback(clip, scheduled_at)
+                # No Buffer fallback for Facebook — native-only to prevent double-posts
         else:
             logger.critical(
                 "[distributor] Facebook Story native unavailable after pre-flight — "

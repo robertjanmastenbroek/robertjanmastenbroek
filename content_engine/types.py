@@ -104,6 +104,7 @@ class ClipFormat(Enum):
     EMOTIONAL = "emotional"
     PERFORMANCE = "performance"
     SACRED_ARC = "sacred_arc"
+    PERFORMANCE_FAST_CUT = "performance_fast_cut"
 
 
 @dataclass
@@ -150,12 +151,20 @@ class UnifiedWeights:
     sub_mode_weights: dict = None          # COST/NAMING/RUPTURE/etc. → weight
     time_of_day_weights: dict = None       # morning/midday/evening/late → weight
     best_time_of_day: str = "morning"
+    # Per-segment virality memory. Key = source-clip basename (e.g.
+    # "PXL_20260412_185734187.mp4"); value = EMA-smoothed weight in [0, ~2].
+    # Lets the pipeline bias future picks toward footage that earned views
+    # and away from footage that didn't. Default empty so pre-segment-tracking
+    # weights files load cleanly.
+    segment_weights: dict = None
 
     def __post_init__(self):
         if self.sub_mode_weights is None:
             self.sub_mode_weights = {}
         if self.time_of_day_weights is None:
             self.time_of_day_weights = {}
+        if self.segment_weights is None:
+            self.segment_weights = {}
 
     @classmethod
     def defaults(cls) -> "UnifiedWeights":
@@ -169,7 +178,7 @@ class UnifiedWeights:
             },
             format_weights={
                 "transitional": 1.0, "emotional": 1.0, "performance": 1.0,
-                "sacred_arc": 1.0,
+                "sacred_arc": 1.0, "performance_fast_cut": 1.0,
             },
             platform_weights={
                 "instagram": 1.0, "youtube": 1.0, "facebook": 1.0,
@@ -194,6 +203,7 @@ class UnifiedWeights:
                 "morning": 1.0, "midday": 1.0, "evening": 1.0, "late": 1.0,
             },
             best_time_of_day="morning",
+            segment_weights={},
         )
 
     def save(self, path=None):
@@ -227,4 +237,8 @@ class UnifiedWeights:
             w.sub_mode_weights = cls.defaults().sub_mode_weights
         if not w.time_of_day_weights:
             w.time_of_day_weights = cls.defaults().time_of_day_weights
+        # segment_weights starts empty by design — only populated as the
+        # learning loop sees real performance data per source clip.
+        if w.segment_weights is None:
+            w.segment_weights = {}
         return w

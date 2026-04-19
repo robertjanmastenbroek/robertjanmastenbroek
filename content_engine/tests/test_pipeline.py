@@ -11,18 +11,22 @@ from content_engine.types import ClipFormat, TrendBrief, UnifiedWeights, TrackIn
 
 
 def test_config_defaults():
-    # Daily mix: 2 sacred_arc (proven viral: bait hook + performance footage) + 1 transitional
-    # for experimentation. Sacred arc outperformed on 20k+ view IG post — locked to 2 slots.
+    # Locked slot allocation as of 2026-04-19:
+    #   slots 0-1: SACRED_ARC (proven viral: bait hook + slow performance arc)
+    #   slot 2:    PERFORMANCE_FAST_CUT (Anyma/ISOxo style, 0.4-0.7s cuts)
+    # The TRANSITIONAL b-roll slot was retired after Short Video Coach research
+    # showed b-roll-heavy music posts underperform performance-anchored ones 3-5x.
     config = DailyPipelineConfig()
     assert len(config.formats) == 3
     assert config.formats[0] == ClipFormat.SACRED_ARC
     assert config.formats[1] == ClipFormat.SACRED_ARC
-    assert config.formats[2] == ClipFormat.TRANSITIONAL
+    assert config.formats[2] == ClipFormat.PERFORMANCE_FAST_CUT
 
 
 def test_config_durations():
     config = DailyPipelineConfig()
     assert config.durations[ClipFormat.TRANSITIONAL] == 22
+    assert config.durations[ClipFormat.PERFORMANCE_FAST_CUT] == 22
     assert config.durations[ClipFormat.EMOTIONAL] == 7
     assert config.durations[ClipFormat.PERFORMANCE] == 28
 
@@ -251,11 +255,16 @@ def test_sacred_arc_uses_performance_footage_only(tmp_path):
 
 
 def test_daily_config_default_uses_sacred_arc():
-    """Default daily mix must be [SACRED_ARC, SACRED_ARC, TRANSITIONAL]."""
+    """Default daily mix: [SACRED_ARC, SACRED_ARC, PERFORMANCE_FAST_CUT].
+
+    Slot 2 was TRANSITIONAL b-roll until 2026-04-19; replaced with fast-cut
+    performance after Short Video Coach research showed b-roll-heavy music
+    posts underperform performance-anchored ones 3-5x.
+    """
     config = DailyPipelineConfig()
     assert config.formats[0] == ClipFormat.SACRED_ARC
     assert config.formats[1] == ClipFormat.SACRED_ARC
-    assert config.formats[2] == ClipFormat.TRANSITIONAL
+    assert config.formats[2] == ClipFormat.PERFORMANCE_FAST_CUT
 
 
 def test_bait_pick_biases_to_viral_category(tmp_path):
@@ -296,3 +305,101 @@ def test_bait_pick_biases_to_viral_category(tmp_path):
     assert all(v == 0.0 for v in non_viral.values()), (
         f"non-viral categories should be suppressed, got {non_viral}"
     )
+
+
+# ── fast-cut format tests ─────────────────────────────────────────────────────
+
+def test_compute_fast_cut_slices_returns_beat_aligned_cuts():
+    """At 140 BPM the kick is ~0.43s — slice durations should land in [0.4, 0.7]s."""
+    from content_engine.pipeline import compute_fast_cut_slices, FAST_CUT_MIN_S, FAST_CUT_MAX_S
+    pool = ["/fake/clip1.mp4", "/fake/clip2.mp4", "/fake/clip3.mp4"]
+    # Patch _safe_probe_duration so the helper doesn't try to ffprobe fake paths
+    with patch("content_engine.pipeline._safe_probe_duration", return_value=20.0):
+        slices = compute_fast_cut_slices(
+            source_pool=pool, total_duration=18.0, bpm=140, segment_weights={}
+        )
+    # ≥ 4 fast cuts + 1 final hold
+    assert len(slices) >= 5
+    # All non-final slices land in the fast-cut window
+    for src, s_start, s_end in slices[:-1]:
+        dur = s_end - s_start
+        assert FAST_CUT_MIN_S - 0.01 <= dur <= FAST_CUT_MAX_S + 0.01, (
+            f"slice duration {dur:.2f}s outside fast-cut window"
+        )
+    # Final slice held longer (the "hold" for the drop to breathe)
+    *_, hold_start, hold_end = slices[-1]
+    hold_dur = hold_end - hold_start
+    assert hold_dur >= 2.5, f"final hold {hold_dur:.2f}s too short"
+
+
+def test_compute_fast_cut_slices_empty_pool_returns_empty():
+    from content_engine.pipeline import compute_fast_cut_slices
+    assert compute_fast_cut_slices(source_pool=[], total_duration=20.0, bpm=140) == []
+
+
+def test_compute_fast_cut_slices_biases_to_high_weight_segments():
+    """Segments with higher weight should be picked more often. Run many trials."""
+    from content_engine.pipeline import compute_fast_cut_slices
+    pool = ["/fake/winner.mp4", "/fake/loser.mp4"]
+    weights = {"winner.mp4": 5.0, "loser.mp4": 0.1}
+    counts = {"winner.mp4": 0, "loser.mp4": 0}
+    with patch("content_engine.pipeline._safe_probe_duration", return_value=15.0):
+        for _ in range(40):
+            slices = compute_fast_cut_slices(
+                source_pool=pool, total_duration=18.0, bpm=140, segment_weights=weights,
+            )
+            for src, *_ in slices:
+                key = src.split("/")[-1]
+                counts[key] = counts.get(key, 0) + 1
+    assert counts["winner.mp4"] > counts["loser.mp4"] * 3, (
+        f"weighted bias not reflected in picks: {counts}"
+    )
+
+
+def test_segments_used_populated_in_clip_meta(tmp_path):
+    """Every clip's meta carries segments_used so learning loop can score footage."""
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.SACRED_ARC],
+        durations={ClipFormat.SACRED_ARC: 22},
+    )
+    captured_clips: list = []
+
+    with patch("content_engine.transitional_manager.TransitionalManager") as mock_tm, \
+         patch("content_engine.generator.generate_hooks_for_format") as mock_hook, \
+         patch("content_engine.generator.generate_caption") as mock_caption, \
+         patch("content_engine.renderer.render_transitional") as mock_render, \
+         patch("pathlib.Path.rglob") as mock_rglob, \
+         patch("pathlib.Path.is_file", return_value=True), \
+         patch("pathlib.Path.exists", return_value=True):
+
+        mock_tm.return_value.pick.return_value = {
+            "file": "viral/test.mp4", "category": "viral"
+        }
+        mock_tm.return_value.full_path.return_value = Path("/fake/bait.mp4")
+        mock_hook.return_value = {
+            "hook": "test", "template_id": "t1",
+            "mechanism": "save", "sub_mode": "COST", "exploration": False,
+        }
+        mock_caption.return_value = "test"
+        # Fake source pool — return paths under performances/
+        fake_paths = [
+            Path("/proj/content/videos/performances/clip_a.mp4"),
+            Path("/proj/content/videos/performances/clip_b.mp4"),
+            Path("/proj/content/videos/performances/clip_c.mp4"),
+        ]
+        mock_rglob.return_value = fake_paths
+        mock_render.return_value = str(tmp_path / "out.mp4")
+
+        clips = build_daily_clips(
+            config, _make_brief(), _make_weights(), _make_track(), [30.0], str(tmp_path)
+        )
+        captured_clips.extend(clips)
+
+    assert captured_clips, "no clips returned"
+    for clip in captured_clips:
+        assert "segments_used" in clip, f"clip missing segments_used: {clip.get('format_type')}"
+        assert clip["segments_used"], "segments_used should not be empty"
+        for seg in clip["segments_used"]:
+            assert "file" in seg and "start" in seg and "end" in seg, (
+                f"segments_used entry missing keys: {seg}"
+            )

@@ -39,6 +39,7 @@ VALID_INTENTS = {
     "playlist_added",
     "booking_intent",
     "question",
+    "label_inquiry",
     "negative_fit",
     "negative_hard",
     "auto_reply",
@@ -50,6 +51,7 @@ _LOG_LABELS = {
     "playlist_added": "*** TRACK ADDED TO PLAYLIST ***",
     "booking_intent": "!!! BOOKING INQUIRY !!!",
     "question":       "QUESTION — needs answer",
+    "label_inquiry":  "!!! LABEL / RELEASE INQUIRY — MANUAL REPLY REQUIRED !!!",
     "negative_fit":   "Negative (fit)",
     "negative_hard":  "Negative (hard no)",
     "auto_reply":     "Auto-reply (bot/OOO)",
@@ -77,6 +79,7 @@ Classify into exactly one intent:
 - positive: interested, wants to hear more, positive engagement (but hasn't confirmed adding yet)
 - playlist_added: explicitly confirmed they added the track to a playlist
 - booking_intent: interested in booking RJM for a show, festival, or event
+- label_inquiry: a label, A&R, or publisher expressing interest in signing, releasing, or licensing tracks (EP deals, label releases, sync licensing, distribution offers, A&R follow-ups) — MUST NOT be auto-replied
 - question: asking for more info — Spotify link, EPK, stems, social links, pricing, etc.
 - negative_fit: polite decline, track doesn't fit their playlist or show right now
 - negative_hard: clear no, not interested, stop contacting
@@ -177,6 +180,10 @@ def _apply_routing(contact: dict, classification: dict):
     elif intent == "booking_intent":
         # Leave as "responded" so it stays visible; flag loudly
         log.info("!!! BOOKING LEAD — respond manually: %s", email)
+
+    elif intent == "label_inquiry":
+        # Label/release deal — never auto-reply; RJM must respond personally
+        log.info("!!! LABEL INQUIRY — DO NOT AUTO-REPLY — respond manually: %s", email)
 
     elif intent in ("negative_fit", "negative_hard"):
         db.update_contact(email, status="closed")

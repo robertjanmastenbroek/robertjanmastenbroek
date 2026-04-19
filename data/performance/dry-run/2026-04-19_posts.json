@@ -1,0 +1,44 @@
+[
+  {
+    "platform": "all",
+    "format_type": "sacred_arc",
+    "clip_index": 0,
+    "variant": "a",
+    "hook_mechanism": "dare",
+    "hook_template_id": "save.bet_you_cant",
+    "hook_sub_mode": "COST",
+    "visual_type": "performance",
+    "transitional_category": "viral",
+    "transitional_file": "viral/Sea-Lion-Performs-Water-Bending.mp4",
+    "track_title": "jericho",
+    "clip_length": 22
+  },
+  {
+    "platform": "all",
+    "format_type": "sacred_arc",
+    "clip_index": 1,
+    "variant": "a",
+    "hook_mechanism": "save",
+    "hook_template_id": "save.what_it_felt",
+    "hook_sub_mode": "DOUBT",
+    "visual_type": "performance",
+    "transitional_category": "viral",
+    "transitional_file": "viral/Its-All-In-The-Timing.mp4",
+    "track_title": "jericho",
+    "clip_length": 22
+  },
+  {
+    "platform": "all",
+    "format_type": "transitional",
+    "clip_index": 2,
+    "variant": "a",
+    "hook_mechanism": "claim",
+    "hook_template_id": "bodydrop.felt_in_body",
+    "hook_sub_mode": "DOUBT",
+    "visual_type": "b_roll",
+    "transitional_category": "viral",
+    "transitional_file": "viral/Never-Give-Up.mp4",
+    "track_title": "jericho",
+    "clip_length": 22
+  }
+]

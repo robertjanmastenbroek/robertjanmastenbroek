@@ -551,5 +551,48 @@
     "priority": "low",
     "curator_contact": null,
     "added_at": "2026-04-17"
+  },
+  {
+    "playlist_id": "4BJbwkuOajbOrA9AA1KCrr",
+    "playlist_name": "Top Melodic Techno Tracks Of 2026",
+    "spotify_url": "https://open.spotify.com/playlist/4BJbwkuOajbOrA9AA1KCrr",
+    "curator_name": "Magnetic Magazine",
+    "follower_count": null,
+    "genre_tags": [
+      "melodic-techno"
+    ],
+    "audience_type": "music-first",
+    "priority": "medium",
+    "curator_contact": null,
+    "added_at": "2026-04-19"
+  },
+  {
+    "playlist_id": "3stoQLPXw1JWoBvSUndrs7",
+    "playlist_name": "Melodic Techno",
+    "spotify_url": "https://open.spotify.com/playlist/3stoQLPXw1JWoBvSUndrs7",
+    "curator_name": "Chosic",
+    "follower_count": null,
+    "genre_tags": [
+      "melodic-techno"
+    ],
+    "audience_type": "music-first",
+    "priority": "medium",
+    "curator_contact": null,
+    "added_at": "2026-04-19"
+  },
+  {
+    "playlist_id": "7BeAoKCDjGcP2l42PYQRFR",
+    "playlist_name": "Trance, Techno & Melodic 2026",
+    "spotify_url": "https://open.spotify.com/playlist/7BeAoKCDjGcP2l42PYQRFR",
+    "curator_name": "Andrew Rayel",
+    "follower_count": null,
+    "genre_tags": [
+      "trance",
+      "melodic-techno"
+    ],
+    "audience_type": "music-first",
+    "priority": "medium",
+    "curator_contact": null,
+    "added_at": "2026-04-19"
   }
 ]

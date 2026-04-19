@@ -8,6 +8,7 @@ Daily flow:
 4. Distribute all clips to 6 targets
 5. Save post registry for learning loop
 """
+import fcntl
 import json
 import logging
 import os
@@ -39,6 +40,107 @@ VIRAL_ONLY_CATEGORY_WEIGHTS = {
     "craftsmanship": 0.0,
     "illusion": 0.0,
 }
+
+# Fast-cut format constants — derived from the Short Video Coach research
+# (Anyma / ISOxo / Knock2 / RL Grime cut rates). Beat lengths fall naturally
+# into this range at 130-140 BPM (kick = 60 / BPM = 0.43-0.46s), so cuts on
+# the kick land here automatically.
+FAST_CUT_MIN_S = 0.4
+FAST_CUT_MAX_S = 0.7
+# Final "hold" window — last segment locks on one shot so the drop breathes.
+FAST_CUT_HOLD_MIN_S = 3.0
+FAST_CUT_HOLD_MAX_S = 5.0
+
+
+def _segment_weight(seg_path: str, segment_weights: dict) -> float:
+    """Look up a segment's learned weight by basename. Default 1.0 for unseen."""
+    return float(segment_weights.get(Path(seg_path).name, 1.0))
+
+
+def _weighted_choice(items: list, weights: list) -> "str | None":
+    """Random pick proportional to weights. Returns None on empty list."""
+    if not items:
+        return None
+    total = sum(max(w, 0.0) for w in weights)
+    if total <= 0:
+        return random.choice(items)
+    r = random.random() * total
+    cumulative = 0.0
+    for item, w in zip(items, weights):
+        cumulative += max(w, 0.0)
+        if r <= cumulative:
+            return item
+    return items[-1]
+
+
+def compute_fast_cut_slices(
+    source_pool: list,
+    total_duration: float,
+    bpm: float,
+    segment_weights: dict | None = None,
+) -> list:
+    """Return a list of (source_path, start_s, end_s) tuples for a fast-cut clip.
+
+    Each slice lands in the [FAST_CUT_MIN_S, FAST_CUT_MAX_S] window, which at
+    130-140 BPM aligns with the kick (60 / BPM = 0.43-0.46s). The final slice
+    is held FAST_CUT_HOLD_MIN_S to FAST_CUT_HOLD_MAX_S to let the drop breathe.
+
+    Source picks are biased by segment_weights (basename → weight). Slices
+    pull from random in-source positions so we don't always see the same
+    opening frame; positions are skewed toward the middle (avoids dead intro/
+    outro frames).
+
+    Returns empty list if source_pool is empty.
+    """
+    if not source_pool:
+        return []
+
+    segment_weights = segment_weights or {}
+    weights = [_segment_weight(p, segment_weights) for p in source_pool]
+
+    # Reserve the final hold slice
+    hold_dur = min(FAST_CUT_HOLD_MAX_S, max(FAST_CUT_HOLD_MIN_S, total_duration * 0.18))
+    hold_dur = min(hold_dur, total_duration - FAST_CUT_MIN_S * 4)  # leave room for ≥4 fast cuts
+    cut_budget = total_duration - hold_dur
+
+    # Beat-aligned cut length: 60/BPM if it falls in the window, else midpoint
+    beat_s = 60.0 / max(bpm, 1.0) if bpm else (FAST_CUT_MIN_S + FAST_CUT_MAX_S) / 2
+    cut_len = max(FAST_CUT_MIN_S, min(FAST_CUT_MAX_S, beat_s))
+
+    slices = []
+    elapsed = 0.0
+    while elapsed + cut_len <= cut_budget:
+        src = _weighted_choice(source_pool, weights)
+        if src is None:
+            break
+        src_dur = _safe_probe_duration(src)
+        # Skew toward middle 60% of source so we avoid dead intro/outro
+        margin = src_dur * 0.2
+        max_start = max(0.0, src_dur - cut_len - margin)
+        start_s = random.uniform(margin, max_start) if max_start > margin else 0.0
+        slices.append((src, start_s, start_s + cut_len))
+        elapsed += cut_len
+
+    # Append the final hold slice — pick a high-weight source if possible
+    hold_src = _weighted_choice(source_pool, weights)
+    if hold_src:
+        hold_src_dur = _safe_probe_duration(hold_src)
+        margin = hold_src_dur * 0.15
+        max_start = max(0.0, hold_src_dur - hold_dur - margin)
+        start_s = random.uniform(margin, max_start) if max_start > margin else 0.0
+        slices.append((hold_src, start_s, start_s + hold_dur))
+
+    return slices
+
+
+def _safe_probe_duration(path: str) -> float:
+    """ffprobe wrapper — returns 0.0 on any failure so callers fall through cleanly."""
+    try:
+        from content_engine.renderer import _get_video_info
+        info = _get_video_info(path)
+        return float(info.get("duration", 0.0))
+    except Exception:
+        return 0.0
 
 
 def _load_project_env() -> None:
@@ -141,11 +243,12 @@ class DailyPipelineConfig:
     formats: list = field(default_factory=lambda: [
         ClipFormat.SACRED_ARC,
         ClipFormat.SACRED_ARC,
-        ClipFormat.TRANSITIONAL,
+        ClipFormat.PERFORMANCE_FAST_CUT,
     ])
     durations: dict = field(default_factory=lambda: {
         ClipFormat.SACRED_ARC: 22,
         ClipFormat.TRANSITIONAL: 22,
+        ClipFormat.PERFORMANCE_FAST_CUT: 22,
         ClipFormat.EMOTIONAL: 7,
         ClipFormat.PERFORMANCE: 28,
     })
@@ -200,6 +303,24 @@ def run_full_day(
     date_str = _date.today().isoformat()
     logger.info(f"[pipeline] Starting unified daily run for {date_str} (dry_run={dry_run})")
 
+    # Process-level exclusive lock — prevents concurrent launchd + manual runs
+    # from both passing the idempotency guard and double-posting. Lock is held
+    # for the duration of this call; released automatically when fd is GC'd.
+    if not dry_run:
+        _lock_path = PERFORMANCE_DIR.parent / ".pipeline.lock"
+        _lock_path.parent.mkdir(parents=True, exist_ok=True)
+        _lock_fd = _lock_path.open("w")
+        try:
+            fcntl.flock(_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            _lock_fd.close()
+            logger.error("[pipeline] LOCK: another run is in progress — aborting to prevent double-post")
+            return {
+                "date": date_str, "clips_rendered": 0, "valid_clips": 0,
+                "distributed": 0, "failures": 0, "dry_run": dry_run,
+                "skipped_reason": "concurrent_run_blocked_by_lock",
+            }
+
     # Per-day idempotency guard — bail BEFORE any FFmpeg work or network calls
     # if today's registry already has successful posts. Covers the full cost
     # path (rendering ≈ 2 min/clip, captions ≈ 80s each, distribution ≈ 30s
@@ -250,18 +371,24 @@ def run_full_day(
     weights = UnifiedWeights.load()
     logger.info(f"[pipeline] Weights loaded — best platform: {weights.best_platform}")
 
-    # Lock 2-of-3 slots to SACRED_ARC (proven viral format: transitional hook +
-    # performance footage). Slot 3 stays TRANSITIONAL for experimentation.
+    # Locked slot allocation:
+    #   Slots 0-1 → SACRED_ARC (proven viral format: bait hook + slow performance arc)
+    #   Slot 2   → PERFORMANCE_FAST_CUT (Anyma/ISOxo style: 0.4-0.7s cuts on the kick)
+    # Replaces the prior TRANSITIONAL b-roll slot — Short Video Coach research
+    # (2026-04-19) showed b-roll-heavy music posts underperform performance-anchored
+    # posts ~3-5x in 2025-2026. Fast-cut performance keeps the music-source signal
+    # while delivering format variety.
     if config is None:
         config = DailyPipelineConfig(
             formats=[
                 ClipFormat.SACRED_ARC,
                 ClipFormat.SACRED_ARC,
-                ClipFormat.TRANSITIONAL,
+                ClipFormat.PERFORMANCE_FAST_CUT,
             ],
             durations={
                 ClipFormat.SACRED_ARC: 22,
                 ClipFormat.TRANSITIONAL: 22,
+                ClipFormat.PERFORMANCE_FAST_CUT: 22,
                 ClipFormat.EMOTIONAL: emotional_duration_from_weights(weights.best_clip_length),
                 ClipFormat.PERFORMANCE: 28,
             },
@@ -366,6 +493,9 @@ def run_full_day(
             "visual_type": clip.get("visual_type", ""),
             "transitional_category": clip.get("transitional_category", ""),
             "transitional_file": clip.get("transitional_file", ""),
+            # Per-segment usage so the learning loop can score footage,
+            # not just the full clip. List of {file, path, start, end}.
+            "segments_used": clip.get("segments_used", []),
             "track_title": track.title,
             "clip_length": clip["clip_length"],
         }
@@ -399,7 +529,9 @@ def run_full_day(
 
     registry_dir.mkdir(parents=True, exist_ok=True)
     registry_path = registry_dir / f"{date_str}_posts.json"
-    registry_path.write_text(json.dumps(registry, indent=2))
+    _reg_tmp = registry_path.with_suffix(".tmp")
+    _reg_tmp.write_text(json.dumps(registry, indent=2))
+    _reg_tmp.replace(registry_path)  # atomic rename — no partial-write corruption
     logger.info(f"[pipeline] Post registry saved: {registry_path} ({len(registry)} entries)")
 
     _cleanup_output_dir(output_dir)
@@ -452,6 +584,7 @@ def build_daily_clips(
     """Build 3 clips (one per format)."""
     from content_engine.renderer import (
         render_transitional, render_emotional, render_performance,
+        render_performance_fast_cut,
     )
     from content_engine.generator import generate_hooks_for_format, generate_caption
     from content_engine.transitional_manager import TransitionalManager
@@ -463,6 +596,11 @@ def build_daily_clips(
         str(PROJECT_DIR / "content" / "videos" / "phone-footage"),
         str(PROJECT_DIR / "content" / "videos" / "performances"),
     ]
+    # Performance-anchored pool = performances/ + phone-footage/. Used by
+    # SACRED_ARC and PERFORMANCE_FAST_CUT so the music-source signal stays
+    # strong (per Short Video Coach research, 2026-04-19).
+    perf_dir = str(PROJECT_DIR / "content" / "videos" / "performances")
+    phone_dir = str(PROJECT_DIR / "content" / "videos" / "phone-footage")
 
     # Collect available videos — rglob so nested subdirectories are included
     all_videos = []
@@ -497,7 +635,7 @@ def build_daily_clips(
         bait = None
         bait_path = None
 
-        if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC):
+        if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC, ClipFormat.PERFORMANCE_FAST_CUT):
             tm = TransitionalManager()
             bait = tm.pick(category_weights=VIRAL_ONLY_CATEGORY_WEIGHTS)
             if bait:
@@ -534,23 +672,77 @@ def build_daily_clips(
 
         n_segments = {
             "transitional": 3, "emotional": 2, "performance": 5, "sacred_arc": 3,
+            "performance_fast_cut": 1,  # slice list computed by helper, not sampled here
         }.get(fmt.value, 3)
 
+        # Performance-anchored pool: performances/ + phone-footage/ combined.
+        # SACRED_ARC and PERFORMANCE_FAST_CUT both pull from here; phone-footage/
+        # was empty as of 2026-04-19 (user has stage video only) but the path is
+        # wired so dropping clips in starts the diversification immediately.
+        perf_pool_all = [v for v in all_videos if perf_dir in v or phone_dir in v]
+        segment_slices: list = []  # only populated for PERFORMANCE_FAST_CUT
+
         if fmt == ClipFormat.SACRED_ARC:
-            perf_dir = str(PROJECT_DIR / "content" / "videos" / "performances")
-            perf_pool = [v for v in all_videos if perf_dir in v and v not in used_segments]
-            if len(perf_pool) < n_segments:
-                perf_pool = [v for v in all_videos if perf_dir in v]
-            available = perf_pool if perf_pool else [v for v in all_videos if v not in used_segments]
+            avail_perf = [v for v in perf_pool_all if v not in used_segments]
+            if len(avail_perf) < n_segments:
+                avail_perf = perf_pool_all  # ignore dedup if pool too small
+            available = avail_perf if avail_perf else [v for v in all_videos if v not in used_segments]
+            segments = random.sample(available, min(n_segments, len(available)))
+        elif fmt == ClipFormat.PERFORMANCE_FAST_CUT:
+            # The slice computer handles weighted picking + beat alignment.
+            # Pool is performance-anchored only — no atmospheric b-roll.
+            fc_pool = perf_pool_all if perf_pool_all else list(all_videos)
+            segment_slices = compute_fast_cut_slices(
+                source_pool=fc_pool,
+                total_duration=duration - 4.0,  # reserve ~4s for bait
+                bpm=track.bpm,
+                segment_weights=getattr(weights, "segment_weights", {}) or {},
+            )
+            # Deduplicate the underlying source paths into `segments` so the
+            # dedup set + tracking logic below works the same as other formats.
+            segments = list({s[0] for s in segment_slices}) or [random.choice(fc_pool)]
         else:
             available = [v for v in all_videos if v not in used_segments]
             if len(available) < n_segments:
                 available = list(all_videos)
+            segments = random.sample(available, min(n_segments, len(available)))
 
-        segments = random.sample(available, min(n_segments, len(available)))
         used_segments.update(segments)
 
         output_path = str(Path(output_dir) / f"{fmt.value}_{clip_idx}_{track.title.lower().replace(' ', '_')}.mp4")
+
+        # Visual type tag: SACRED_ARC + PERFORMANCE_FAST_CUT both anchor to
+        # performance footage. Only the deprecated TRANSITIONAL b-roll path
+        # gets "b_roll" — kept for back-compat with older registry entries.
+        if fmt in (ClipFormat.SACRED_ARC, ClipFormat.PERFORMANCE_FAST_CUT):
+            visual_type = "performance"
+        else:
+            visual_type = "b_roll"
+
+        # segments_used = list of {file, start, end} dicts. For fast-cut this
+        # carries the actual slice timings; for other formats start=0 and
+        # end=clip's pro-rata share. Drives segment-level virality learning.
+        if fmt == ClipFormat.PERFORMANCE_FAST_CUT and segment_slices:
+            segments_used = [
+                {
+                    "file": Path(src).name,
+                    "path": src,
+                    "start": float(s_start),
+                    "end": float(s_end),
+                }
+                for src, s_start, s_end in segment_slices
+            ]
+        else:
+            seg_share = duration / max(len(segments), 1)
+            segments_used = [
+                {
+                    "file": Path(s).name,
+                    "path": s,
+                    "start": 0.0,
+                    "end": float(seg_share),
+                }
+                for s in segments
+            ]
 
         clip_meta = {
             "clip_index": clip_idx,
@@ -563,9 +755,10 @@ def build_daily_clips(
             "caption_by_platform": caption_by_platform,
             "track_title": track.title,
             "clip_length": duration,
-            "visual_type": "performance" if fmt == ClipFormat.SACRED_ARC else "b_roll",
+            "visual_type": visual_type,
             "transitional_category": visual_context.get("category", ""),
             "transitional_file": visual_context.get("file", ""),
+            "segments_used": segments_used,
             "spotify_url": "https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds",
         }
 
@@ -587,6 +780,28 @@ def build_daily_clips(
                     logger.warning(f"[pipeline] No transitional bait available for {fmt.value}, falling back to emotional")
                     render_emotional(segments, track.file_path, audio_start, hook_data["hook"],
                                      "youtube", output_path, duration)
+
+            elif fmt == ClipFormat.PERFORMANCE_FAST_CUT:
+                if bait_path and segment_slices:
+                    render_performance_fast_cut(
+                        bait_clip=bait_path,
+                        segment_slices=segment_slices,
+                        audio_path=track.file_path,
+                        audio_start=audio_start,
+                        hook_text=hook_data["hook"],
+                        track_label=f"{track.title} — Robert-Jan Mastenbroek",
+                        platform="youtube",
+                        output_path=output_path,
+                        target_duration=duration,
+                    )
+                else:
+                    logger.warning(
+                        f"[pipeline] Fast-cut needs bait + slices "
+                        f"(bait={bool(bait_path)}, slices={len(segment_slices)}); "
+                        f"falling back to performance render"
+                    )
+                    render_performance(segments, track.file_path, audio_start, hook_data["hook"],
+                                       "youtube", output_path, duration)
 
             elif fmt == ClipFormat.EMOTIONAL:
                 render_emotional(segments, track.file_path, audio_start, hook_data["hook"],

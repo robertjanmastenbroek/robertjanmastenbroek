@@ -1222,6 +1222,7 @@ def calculate_unified_weights(
         sub_mode_weights=dict(getattr(old_weights, "sub_mode_weights", {}) or {}),
         time_of_day_weights=dict(getattr(old_weights, "time_of_day_weights", {}) or {}),
         best_time_of_day=getattr(old_weights, "best_time_of_day", "morning"),
+        segment_weights=dict(getattr(old_weights, "segment_weights", {}) or {}),
     )
 
     if not records:
@@ -1252,6 +1253,10 @@ def calculate_unified_weights(
     # New dimensions: sub_mode (emotional register) + time_of_day (posting slot)
     _ema_update(new.sub_mode_weights, signals, "hook_sub_mode", learning_rate)
     _ema_update(new.time_of_day_weights, signals, "time_of_day", learning_rate)
+    # Per-segment learning: every source clip used in a render gets the
+    # parent record's signal credited to it (EMA-smoothed). Lets future runs
+    # bias toward footage that earns views and away from footage that doesn't.
+    _ema_update_segments(new.segment_weights, signals, learning_rate)
 
     # Update best_platform + best_time_of_day.
     # Only consider platforms observed in this run — platforms with no analytics
@@ -1305,6 +1310,29 @@ def _ema_update(weights: dict, signals: list, key: str, lr: float):
     for name, sigs in group_signals.items():
         avg_signal = sum(sigs) / len(sigs)
         # Normalize to 0-2 range (assuming signal is 0-1, multiply by 2)
+        normalized = min(avg_signal * 2.0, 2.0)
+        old = weights.get(name, 1.0)
+        weights[name] = old * (1 - lr) + normalized * lr
+
+
+def _ema_update_segments(weights: dict, signals: list, lr: float):
+    """EMA update for segment_weights — keyed by source-clip basename.
+
+    Each record carries a `segments_used` list of {file, ...} dicts. Every
+    segment file in the list gets credited the parent record's signal.
+    Multiple records can mention the same segment in one batch — we average
+    those signals before applying the EMA so a popular shot isn't punished
+    for appearing in many clips.
+    """
+    seg_signals = defaultdict(list)
+    for record, signal in signals:
+        for seg in record.get("segments_used", []) or []:
+            name = seg.get("file") if isinstance(seg, dict) else None
+            if name:
+                seg_signals[name].append(signal)
+
+    for name, sigs in seg_signals.items():
+        avg_signal = sum(sigs) / len(sigs)
         normalized = min(avg_signal * 2.0, 2.0)
         old = weights.get(name, 1.0)
         weights[name] = old * (1 - lr) + normalized * lr

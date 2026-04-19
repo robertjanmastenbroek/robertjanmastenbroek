@@ -63,5 +63,120 @@
     "template_id": "perf.turn_volume",
     "date": "2026-04-17",
     "format": "performance"
+  },
+  {
+    "template_id": "identity.one_line_for_you",
+    "date": "2026-04-18",
+    "format": "performance"
+  },
+  {
+    "template_id": "bodydrop.countdown_body",
+    "date": "2026-04-18",
+    "format": "performance"
+  },
+  {
+    "template_id": "save.friend_said",
+    "date": "2026-04-18",
+    "format": "emotional"
+  },
+  {
+    "template_id": "save.if_heartbroken",
+    "date": "2026-04-18",
+    "format": "transitional"
+  },
+  {
+    "template_id": "save.imagine_opening",
+    "date": "2026-04-18",
+    "format": "transitional"
+  },
+  {
+    "template_id": "save.bet_you_cant",
+    "date": "2026-04-18",
+    "format": "emotional"
+  },
+  {
+    "template_id": "save.imagine_moment",
+    "date": "2026-04-19",
+    "format": "transitional"
+  },
+  {
+    "template_id": "save.pov_driving",
+    "date": "2026-04-19",
+    "format": "transitional"
+  },
+  {
+    "template_id": "save.what_it_felt",
+    "date": "2026-04-19",
+    "format": "emotional"
+  },
+  {
+    "template_id": "save.pov_last_song",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.anyone_ever_felt",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "bodydrop.drop_at_timestamp",
+    "date": "2026-04-19",
+    "format": "transitional"
+  },
+  {
+    "template_id": "save.pov_listening",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.vibes_were_song",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.hidden_message",
+    "date": "2026-04-19",
+    "format": "transitional"
+  },
+  {
+    "template_id": "save.dare_listen",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.feeling_recently",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.for_you_if",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.pov_listening",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.for_you_if",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.bet_you_cant",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "save.what_it_felt",
+    "date": "2026-04-19",
+    "format": "sacred_arc"
+  },
+  {
+    "template_id": "bodydrop.felt_in_body",
+    "date": "2026-04-19",
+    "format": "transitional"
   }
 ]

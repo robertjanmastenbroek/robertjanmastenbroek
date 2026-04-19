@@ -75,6 +75,7 @@ def get_and_claim_pending_replies() -> list[dict]:
                sent_subject, sent_body
         FROM contacts
         WHERE reply_intent IN ('booking_intent','booking_inquiry','positive','question','playlist_added')
+          AND reply_intent != 'label_inquiry'
           AND reply_action IS NOT NULL
           AND date_replied IS NULL
         ORDER BY reply_classified_at ASC
@@ -333,6 +334,7 @@ def run(dry_run: bool = False) -> dict:
                    sent_subject, sent_body
             FROM contacts
             WHERE reply_intent IN ('booking_intent','booking_inquiry','positive','question','playlist_added')
+          AND reply_intent != 'label_inquiry'
               AND reply_action IS NOT NULL
               AND date_replied IS NULL
             ORDER BY reply_classified_at ASC

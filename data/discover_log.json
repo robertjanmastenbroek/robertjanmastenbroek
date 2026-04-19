@@ -213,5 +213,319 @@
       "lifestyle_creator": 1,
       "retreat": 2
     }
+  },
+  {
+    "ts": "2026-04-17T20:51:01Z",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 20,
+    "contacts_added": 1,
+    "webfetch_visits": 5,
+    "skipped_no_email": 4,
+    "personas_found": {
+      "rave_photographer": 1,
+      "ecstatic_dance": 0,
+      "lifestyle_creator": 0,
+      "digital_nomad": 0,
+      "retreat": 0,
+      "blog": 0,
+      "genre_creator": 0
+    }
+  },
+  {
+    "ts": "2026-04-17T20:51:01Z",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 0,
+    "database_total": 36,
+    "note": "All high-follower playlists already in DB; new candidates below 5K threshold"
+  },
+  {
+    "ts": "2026-04-17T20:51:01Z",
+    "agent": "rjm-discover",
+    "part": "C",
+    "promoted": 0,
+    "find_contacts_no_search": 0,
+    "find_contacts_with_search": 0,
+    "soundplate": "skipped (ran within 6h)"
+  },
+  {
+    "ts": "2026-04-17T20:51:01Z",
+    "agent": "rjm-discover",
+    "part": "D",
+    "ecstatic_dance_count": 16,
+    "added": 0,
+    "note": "Miner ran 29 searches, no emails found"
+  },
+  {
+    "ts": "2026-04-17T21:11:18Z",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 25,
+    "contacts_added": 5,
+    "webfetch_visits": 5,
+    "skipped_no_email": 15,
+    "personas_found": {
+      "lifestyle_creator": 1,
+      "ecstatic_dance": 2,
+      "retreat": 1,
+      "rave_photographer": 0,
+      "digital_nomad": 0,
+      "genre_creator": 1
+    }
+  },
+  {
+    "ts": "2026-04-17T21:11:18Z",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 0,
+    "database_total": 36
+  },
+  {
+    "ts": "2026-04-17T21:11:18Z",
+    "agent": "rjm-discover",
+    "part": "C",
+    "playlist_contacts_promoted": 0,
+    "find_contacts_filled": 0,
+    "soundplate_skipped": true
+  },
+  {
+    "ts": "2026-04-17T21:11:18Z",
+    "agent": "rjm-discover",
+    "part": "D",
+    "ecstatic_dance_added": 0,
+    "ecstatic_dance_total": 16
+  },
+  {
+    "ts": "2026-04-18T07:10:35.736730",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 20,
+    "contacts_added": 2,
+    "webfetch_visits": 5,
+    "skipped_no_email": 6,
+    "personas_found": {
+      "faith_creator": 1,
+      "ecstatic_dance": 0,
+      "church": 0,
+      "rave_photographer": 1,
+      "digital_nomad": 0
+    }
+  },
+  {
+    "ts": "2026-04-18T07:10:35.737011",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 0,
+    "database_total": 36
+  },
+  {
+    "ts": "2026-04-18T11:07:23.478427",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 20,
+    "contacts_added": 2,
+    "webfetch_visits": 5,
+    "skipped_no_email": 18,
+    "personas_found": {
+      "faith_creator": 1,
+      "ecstatic_dance": 1,
+      "church": 0,
+      "rave_photographer": 0,
+      "digital_nomad": 0
+    }
+  },
+  {
+    "ts": "2026-04-18T11:07:23.478427",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 0,
+    "database_total": 36
+  },
+  {
+    "ts": "2026-04-19T10:21:10Z",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 20,
+    "contacts_added": 4,
+    "webfetch_visits": 0,
+    "skipped_no_email": 6,
+    "personas_found": {
+      "lifestyle_creator": 1,
+      "retreat": 1,
+      "church": 1,
+      "curator": 1,
+      "rave_photographer": 0,
+      "digital_nomad": 0
+    }
+  },
+  {
+    "ts": "2026-04-19T10:21:10Z",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 15,
+    "playlists_added": 3,
+    "database_total": 39
+  },
+  {
+    "ts": "2026-04-19T10:21:10Z",
+    "agent": "rjm-discover",
+    "part": "C",
+    "playlist_contacts_promoted": 0,
+    "find_contacts_added": 0,
+    "soundplate_contacts": 0
+  },
+  {
+    "ts": "2026-04-19T10:21:10Z",
+    "agent": "rjm-discover",
+    "part": "D",
+    "ecstatic_dance_added": 0,
+    "note": "miner found no emails in new regions (Czech Republic, Hungary, Greece, Austria, Ireland)"
+  },
+  {
+    "ts": "2026-04-19T11:33:05.531940",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 20,
+    "contacts_added": 3,
+    "webfetch_visits": 5,
+    "skipped_no_email": 5,
+    "personas_found": {
+      "lifestyle_creator": 1,
+      "ecstatic_dance": 2,
+      "church": 0,
+      "rave_photographer": 0,
+      "digital_nomad": 0
+    }
+  },
+  {
+    "ts": "2026-04-19T11:33:05.531940",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 20,
+    "playlists_added": 0,
+    "database_total": 39
+  },
+  {
+    "ts": "2026-04-19T11:33:05.531940",
+    "agent": "rjm-discover",
+    "part": "C",
+    "playlist_contacts_promoted": 0,
+    "find_contacts_added": 0,
+    "soundplate_contacts": 0
+  },
+  {
+    "ts": "2026-04-19T11:33:05.531940",
+    "agent": "rjm-discover",
+    "part": "D",
+    "ecstatic_dance_added": 0,
+    "note": "miner ran but found 0 emails across 24 regions"
+  },
+  {
+    "ts": "2026-04-19T11:41:06.385828",
+    "agent": "rjm-discover",
+    "part": "A_church_research",
+    "queries_used": 10,
+    "contacts_evaluated": 52,
+    "contacts_added": 8,
+    "webfetch_visits": 5,
+    "note": "Deep church research: 52 orgs found across EU. 8 direct emails added. Church count: 1->9.",
+    "personas_found": {
+      "church": 8,
+      "faith_creator": 0
+    }
+  },
+  {
+    "ts": "2026-04-19T11:19:08Z",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 8,
+    "contacts_evaluated": 6,
+    "contacts_added": 3,
+    "webfetch_visits": 5,
+    "skipped_no_email": 0,
+    "skipped_duplicate": 3,
+    "personas_found": {
+      "faith_creator": 1,
+      "ecstatic_dance": 1,
+      "church": 0,
+      "rave_photographer": 0,
+      "digital_nomad": 0,
+      "podcast": 1
+    }
+  },
+  {
+    "ts": "2026-04-19T11:19:08Z",
+    "agent": "rjm-discover",
+    "part": "B",
+    "queries_used": 6,
+    "playlists_evaluated": 11,
+    "playlists_added": 0,
+    "database_total": 39,
+    "note": "All candidates already in DB"
+  },
+  {
+    "ts": "2026-04-19T11:19:08Z",
+    "agent": "rjm-discover",
+    "part": "C",
+    "playlist_contacts_promoted": 0,
+    "find_contacts": 0,
+    "soundplate": "skipped_ran_recently"
+  },
+  {
+    "ts": "2026-04-19T11:19:08Z",
+    "agent": "rjm-discover",
+    "part": "D",
+    "ecstatic_dance_added": 0,
+    "note": "miner ran, 0 found"
+  },
+  {
+    "ts": "2026-04-19T11:19:08Z",
+    "agent": "rjm-discover",
+    "part": "E",
+    "church_added": 0,
+    "note": "miner ran, 0 found"
+  },
+  {
+    "ts": "2026-04-19T11:19:08Z",
+    "agent": "rjm-discover",
+    "part": "F",
+    "fan_added": 0,
+    "note": "miner ran, 0 found"
+  },
+  {
+    "ts": "2026-04-19T14:40:41.749456Z",
+    "agent": "rjm-discover",
+    "part": "A",
+    "queries_used": 12,
+    "contacts_evaluated": 20,
+    "contacts_added": 2,
+    "webfetch_visits": 10,
+    "skipped_no_email": 3,
+    "skipped_duplicate": 5,
+    "personas_found": {
+      "ecstatic_dance": 1,
+      "retreat": 1,
+      "faith_creator": 0,
+      "rave_photographer": 0,
+      "digital_nomad": 0,
+      "genre_fan": 0
+    }
   }
 ]

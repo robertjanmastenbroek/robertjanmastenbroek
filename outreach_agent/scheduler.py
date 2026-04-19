@@ -22,7 +22,6 @@ from config import (
     BATCH_SIZE,
     CRON_INTERVAL_MINUTES,
     BOUNCE_RATE_LIMIT,
-    BOUNCE_RATE_WINDOW_DAYS,
 )
 from db import today_send_count, get_last_send_timestamp
 
@@ -123,33 +122,36 @@ def wait_for_interval():
 
 def bounce_rate_safe() -> tuple[bool, str]:
     """
-    Check recent bounce rate against the configured threshold.
+    Check all-time bounce rate against the configured threshold.
     Returns (True, status_msg) if safe to send, (False, reason) if paused.
+
+    Uses all-time data so that a clean history of thousands of sends isn't
+    wiped out by a short window of noisy data. The denominator includes
+    contacts currently in 'bounced' status so the rate is never inflated by
+    excluding them from the total.
     """
     import db as _db
     with _db.get_conn() as conn:
-        cutoff = (datetime.now() - timedelta(days=BOUNCE_RATE_WINDOW_DAYS)).isoformat()
         row = conn.execute("""
             SELECT
-                COUNT(*) FILTER (WHERE status IN ('sent','followup_sent','responded','won','closed')) AS total_sent,
+                COUNT(*) FILTER (WHERE date_sent IS NOT NULL) AS total_sent,
                 COUNT(*) FILTER (WHERE bounce = 'actual') AS actual_bounces
             FROM contacts
-            WHERE date_sent >= ?
-        """, (cutoff,)).fetchone()
+        """).fetchone()
 
     total_sent     = row["total_sent"] or 0
     actual_bounces = row["actual_bounces"] or 0
 
     if total_sent < 10:
-        return True, f"Bounce check: not enough data ({total_sent} sends in window)"
+        return True, f"Bounce check: not enough data ({total_sent} all-time sends)"
 
     rate = actual_bounces / total_sent
     if rate > BOUNCE_RATE_LIMIT:
         return False, (
             f"BOUNCE RATE TOO HIGH: {actual_bounces}/{total_sent} = {rate:.1%} "
-            f"over last {BOUNCE_RATE_WINDOW_DAYS}d (limit {BOUNCE_RATE_LIMIT:.0%}) — sends paused"
+            f"all-time (limit {BOUNCE_RATE_LIMIT:.0%}) — sends paused"
         )
-    return True, f"Bounce rate OK: {actual_bounces}/{total_sent} = {rate:.1%} over last {BOUNCE_RATE_WINDOW_DAYS}d"
+    return True, f"Bounce rate OK: {actual_bounces}/{total_sent} = {rate:.1%} all-time"
 
 
 def _publish_rate_limit(reason: str, **payload) -> None:

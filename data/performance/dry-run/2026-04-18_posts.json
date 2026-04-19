@@ -1,0 +1,44 @@
+[
+  {
+    "platform": "all",
+    "format_type": "transitional",
+    "clip_index": 0,
+    "variant": "a",
+    "hook_mechanism": "save",
+    "hook_template_id": "save.if_heartbroken",
+    "hook_sub_mode": "DEVOTION",
+    "visual_type": "b_roll",
+    "transitional_category": "satisfying",
+    "transitional_file": "satisfying/856951.mp4",
+    "track_title": "halleluyah",
+    "clip_length": 22
+  },
+  {
+    "platform": "all",
+    "format_type": "transitional",
+    "clip_index": 1,
+    "variant": "a",
+    "hook_mechanism": "save",
+    "hook_template_id": "save.imagine_opening",
+    "hook_sub_mode": "DOUBT",
+    "visual_type": "b_roll",
+    "transitional_category": "viral",
+    "transitional_file": "viral/Car-Bump.mp4",
+    "track_title": "halleluyah",
+    "clip_length": 22
+  },
+  {
+    "platform": "all",
+    "format_type": "emotional",
+    "clip_index": 2,
+    "variant": "a",
+    "hook_mechanism": "dare",
+    "hook_template_id": "save.bet_you_cant",
+    "hook_sub_mode": "RUPTURE",
+    "visual_type": "b_roll",
+    "transitional_category": "emotional",
+    "transitional_file": "",
+    "track_title": "halleluyah",
+    "clip_length": 5
+  }
+]

@@ -571,6 +571,153 @@ def render_transitional(
     return output_path
 
 
+def _slice_to_vertical(input_path: str, output_path: str,
+                       start_s: float, duration_s: float) -> str:
+    """Cut a precise window out of a source clip and crop to 9:16 vertical.
+
+    Differs from `_crop_to_vertical` in that it seeks to start_s and keeps
+    only duration_s — used by the fast-cut renderer where each visible
+    "cut" is a sub-second slice from the middle of a longer source.
+
+    Seek is applied as an output-side -ss (after -i) so we land within ~1
+    frame of the requested boundary, which matters when the cut rate is
+    0.4-0.7s and frame-precision becomes audible/visible.
+    """
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", input_path,
+        "-ss", str(start_s),
+        "-t", str(duration_s),
+        "-r", "30",
+        "-vf", f"scale={OUTPUT_W}:{OUTPUT_H}:force_original_aspect_ratio=increase,crop={OUTPUT_W}:{OUTPUT_H}",
+        *video_codec_args(26, "ultrafast"),
+        *COMMON_VIDEO_FLAGS,
+        "-an", output_path,
+    ]
+    subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+    return output_path
+
+
+def render_performance_fast_cut(
+    bait_clip: str,
+    segment_slices: list[tuple],
+    audio_path: str,
+    audio_start: float,
+    hook_text: str,
+    track_label: str,
+    platform: str,
+    output_path: str,
+    target_duration: float = 22.0,
+) -> str:
+    """Fast-cut performance render — Anyma/ISOxo/Knock2 style.
+
+    Each entry in `segment_slices` is `(source_path, start_s, end_s)`. The
+    caller (pipeline) is responsible for beat-locking those boundaries to
+    the track's BPM — this renderer just wires them together. Total slice
+    duration must equal `target_duration - bait_duration`.
+
+    The final slice is rendered at its requested duration even if it's
+    longer than the others; this is the intentional "hold on one shot"
+    that lets the drop breathe (Short Video Coach research, 2025).
+
+    Pipeline:
+      1. Vertical-crop the bait (muted, beat-snapped boundary)
+      2. Vertical-crop + slice each segment in sequence
+      3. Concat bait + slices into one stream
+      4. Overlay track audio from 0:00
+      5. Burn hook text on bait portion
+      6. Burn track label on first content slice
+      7. Beat-locked kinetic captions
+      8. Platform color grade
+    """
+    if not segment_slices:
+        raise ValueError("render_performance_fast_cut needs at least one slice")
+
+    work_dir = Path(output_path).parent
+    work_dir.mkdir(parents=True, exist_ok=True)
+
+    bait_info = _get_video_info(bait_clip)
+    bait_duration = min(bait_info["duration"], 7.0)
+
+    # Beat-snap the bait→fast-cut boundary so the first kick lands on a cut.
+    try:
+        from content_engine.audio_engine import snap_to_beat
+        target_cut_in_track = audio_start + bait_duration
+        snapped_cut_in_track = snap_to_beat(audio_path, target_cut_in_track)
+        snapped_bait = snapped_cut_in_track - audio_start
+        if 2.0 <= snapped_bait <= 7.0 and abs(snapped_bait - bait_duration) <= 0.35:
+            bait_duration = snapped_bait
+    except Exception as e:
+        logger.warning(f"Beat-snap failed in fast-cut, using raw bait cut: {e}")
+
+    # 1. Crop bait to vertical
+    bait_vert = str(work_dir / "_bait_vert.mp4")
+    _crop_to_vertical(bait_clip, bait_vert, max_duration=bait_duration + 1.0)
+
+    # 2. Slice each segment to vertical
+    slice_files = []
+    for i, (src, s_start, s_end) in enumerate(segment_slices):
+        s_dur = max(0.05, s_end - s_start)
+        slice_path = str(work_dir / f"_fc_slice_{i:03d}.mp4")
+        try:
+            _slice_to_vertical(src, slice_path, s_start, s_dur)
+            slice_files.append(slice_path)
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Fast-cut slice {i} failed for {Path(src).name} @ {s_start}s: skipping")
+            continue
+
+    if not slice_files:
+        raise RuntimeError("All fast-cut slices failed to render")
+
+    # 3. Concat bait + slices
+    concat_list = str(work_dir / "_fc_concat.txt")
+    with open(concat_list, "w") as f:
+        f.write(f"file '{_escape_concat(bait_vert)}'\n")
+        for sf in slice_files:
+            f.write(f"file '{_escape_concat(sf)}'\n")
+
+    raw_video = str(work_dir / "_fc_raw.mp4")
+    cmd = [
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", concat_list,
+        "-r", "30",
+        *video_codec_args(22, "fast"),
+        *COMMON_VIDEO_FLAGS,
+        "-an", raw_video,
+    ]
+    subprocess.run(cmd, check=True, capture_output=True, timeout=180)
+
+    # 4. Overlay track audio from 0:00
+    from content_engine.audio_engine import mix_audio_onto_video
+    with_audio = str(work_dir / "_fc_with_audio.mp4")
+    mix_audio_onto_video(raw_video, audio_path, audio_start, target_duration, with_audio)
+
+    # 5. Burn hook text on bait portion (capped at 2.2s by _burn_text_overlay)
+    with_hook = _burn_text_overlay(
+        with_audio, str(work_dir / "_fc_with_hook.mp4"),
+        hook_text, "transitional", 0.0, bait_duration - 0.3,
+    )
+
+    # 6. Burn track label on first slice
+    with_label = _burn_text_overlay(
+        with_hook, str(work_dir / "_fc_with_label.mp4"),
+        track_label, "performance", bait_duration + 0.5,
+    )
+
+    # 7. Beat-aligned kinetic captions
+    from content_engine.caption_engine import burn_captions
+    with_caps = burn_captions(
+        with_label, str(work_dir / "_fc_with_captions.mp4"),
+        hook_text, audio_path, audio_start, target_duration,
+        start_offset=0.3,
+    )
+
+    # 8. Platform color grade
+    _apply_color_grade(with_caps, output_path, platform)
+
+    return output_path
+
+
 def render_emotional(
     content_segments: list[str],
     audio_path: str,

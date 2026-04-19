@@ -21,6 +21,7 @@ from content_engine.types import ClipFormat
 
 _PROJECT_DIR = Path(__file__).parent.parent
 _DEFAULT_TEMPLATE_HISTORY_PATH = _PROJECT_DIR / "data" / "hook_template_history.json"
+_AUTO_TEMPLATES_PATH = _PROJECT_DIR / "data" / "auto_hook_templates.json"
 TEMPLATE_COOLDOWN_DAYS = 3  # don't reuse any hook template within 3 days
 
 
@@ -550,11 +551,41 @@ PERFORMANCE_TEMPLATES: list[HookTemplate] = [
 
 # ─── Selection Functions ─────────────────────────────────────────────────────
 
+def _load_auto_templates() -> list[HookTemplate]:
+    """Load rjm-master auto-generated templates from data/auto_hook_templates.json.
+
+    Returns empty list on any error — never breaks the pipeline.
+    File format: list of dicts with keys matching HookTemplate fields.
+    Written by rjm-master on Tue (hook proposals) and Sat (breakthrough remix).
+    """
+    if not _AUTO_TEMPLATES_PATH.exists():
+        return []
+    try:
+        data = json.loads(_AUTO_TEMPLATES_PATH.read_text())
+        return [
+            HookTemplate(
+                id=t["id"],
+                angle=t.get("angle", "save-driver"),
+                mechanism=t.get("mechanism", "save"),
+                template=t["template"],
+                slots=t.get("slots", {}),
+                example_fill=t.get("example_fill", ""),
+                source_credit=t.get("source_credit", "rjm-master auto"),
+                priority=float(t.get("priority", 1.0)),
+                tags=t.get("tags", []),
+            )
+            for t in data
+            if t.get("id") and t.get("template")
+        ]
+    except Exception:
+        return []
+
+
 def get_all_templates() -> list[HookTemplate]:
-    """Return every template in the library."""
+    """Return every template in the library, including rjm-master auto-generated ones."""
     return (
         CONTRAST_TEMPLATES + BODY_DROP_TEMPLATES + IDENTITY_TEMPLATES
-        + SAVE_DRIVER_TEMPLATES + PERFORMANCE_TEMPLATES
+        + SAVE_DRIVER_TEMPLATES + PERFORMANCE_TEMPLATES + _load_auto_templates()
     )
 
 

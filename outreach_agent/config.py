@@ -64,8 +64,7 @@ CLAUDE_MODEL_FAST    = "claude-haiku-4-5-20251001"   # follow-ups, insights, ana
 CRON_INTERVAL_MINUTES = 30
 
 # ─── Bounce Rate Guard ─────────────────────────────────────────────────────────
-BOUNCE_RATE_LIMIT        = 0.05   # Pause sends if bounce rate exceeds 5% over window
-BOUNCE_RATE_WINDOW_DAYS  = 14     # Rolling window for bounce rate calculation
+BOUNCE_RATE_LIMIT        = 0.05   # Pause sends if all-time bounce rate exceeds this
 
 # ─── Draft Mode ───────────────────────────────────────────────────────────────
 # When True: creates Gmail drafts instead of sending. Use during testing.
@@ -276,10 +275,11 @@ GROWTH_WEIGHT_PROFILES = {
 # Tag contacts with "christian" or "faith" in their notes — template engine leads with the faith angle for them.
 
 # ─── Bounce Rate Circuit Breaker ──────────────────────────────────────────────
-# If actual hard bounce rate over the window exceeds the limit, sends are paused
-# automatically. Protects sender reputation before Gmail flags the account.
-BOUNCE_RATE_LIMIT       = 0.15   # 15% — pause sends if bounce rate exceeds this
-BOUNCE_RATE_WINDOW_DAYS = 7      # 7-day rolling window — larger sample = more stable rate
+# If actual hard bounce rate all-time exceeds the limit, sends are paused
+# automatically. Uses all-time data so a long clean history isn't erased by a
+# short noisy window. Denominator includes bounced contacts so rate is never
+# artificially inflated.
+BOUNCE_RATE_LIMIT       = 0.15   # 15% — pause sends if all-time bounce rate exceeds this
 
 # ─── Warm-up Buffer ───────────────────────────────────────────────────────────
 # agent_discovered contacts go to 'warm_up' status after verification.

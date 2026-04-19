@@ -37,6 +37,74 @@ def test_calculate_unified_weights():
     assert new_weights.updated != ""
 
 
+def test_segment_weights_updated_from_records():
+    """Records carrying segments_used should drive segment_weights via EMA."""
+    old = UnifiedWeights.defaults()
+    # Records: a high-signal clip used 'winner.mp4', a low-signal one used 'loser.mp4'.
+    records = [
+        {
+            "format_type": "performance_fast_cut", "hook_template_id": "t1",
+            "hook_mechanism": "claim", "visual_type": "performance",
+            "platform": "instagram", "transitional_category": "viral",
+            "track_title": "jericho",
+            "completion_rate": 0.9, "save_rate": 0.1, "scroll_stop_rate": 0.5,
+            "segments_used": [
+                {"file": "winner.mp4", "start": 0.0, "end": 0.5},
+                {"file": "winner.mp4", "start": 1.0, "end": 1.5},
+            ],
+        },
+        {
+            "format_type": "performance_fast_cut", "hook_template_id": "t2",
+            "hook_mechanism": "claim", "visual_type": "performance",
+            "platform": "instagram", "transitional_category": "viral",
+            "track_title": "jericho",
+            "completion_rate": 0.1, "save_rate": 0.0, "scroll_stop_rate": 0.05,
+            "segments_used": [
+                {"file": "loser.mp4", "start": 0.0, "end": 0.5},
+            ],
+        },
+    ]
+    new_weights = calculate_unified_weights(records, old)
+    assert "winner.mp4" in new_weights.segment_weights
+    assert "loser.mp4" in new_weights.segment_weights
+    # Winner's EMA-updated weight should dominate.
+    assert new_weights.segment_weights["winner.mp4"] > new_weights.segment_weights["loser.mp4"], (
+        f"winner ({new_weights.segment_weights['winner.mp4']}) "
+        f"should beat loser ({new_weights.segment_weights['loser.mp4']})"
+    )
+
+
+def test_segment_weights_default_empty_dict():
+    """UnifiedWeights.defaults() ships an empty segment_weights — populated by learning."""
+    w = UnifiedWeights.defaults()
+    assert isinstance(w.segment_weights, dict)
+    assert w.segment_weights == {}
+
+
+def test_segment_weights_load_backwards_compat():
+    """A weights file written before segment_weights existed must load cleanly."""
+    import tempfile, json as _json
+    legacy = {
+        "hook_weights": {"tension": 1.0},
+        "visual_weights": {},
+        "format_weights": {},
+        "platform_weights": {},
+        "transitional_category_weights": {},
+        "track_weights": {},
+        "best_clip_length": 22, "best_platform": "instagram",
+        "updated": "2026-04-01",
+    }
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        _json.dump(legacy, f)
+        path = Path(f.name)
+    try:
+        w = UnifiedWeights.load(path)
+        assert isinstance(w.segment_weights, dict)
+        assert w.segment_weights == {}
+    finally:
+        path.unlink()
+
+
 def test_track_rotation_vote():
     pool = [
         {"title": "Jericho", "spotify_popularity": 60, "video_save_rate": 0.05},

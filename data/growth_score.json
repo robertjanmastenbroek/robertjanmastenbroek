@@ -121,5 +121,292 @@
         "detail": "1/1 runs successful (100%)"
       }
     }
+  },
+  {
+    "total_score": 25.0,
+    "calculated_at": "2026-04-18T06:58:33.007336",
+    "components": {
+      "listener_velocity": {
+        "weight": 0.3,
+        "score": 50.0,
+        "detail": "WoW delta = +0.0%"
+      },
+      "experiment_hit_rate": {
+        "weight": 0.2,
+        "score": 0.0,
+        "detail": "no completed experiments yet"
+      },
+      "pipeline_health": {
+        "weight": 0.15,
+        "score": 0.0,
+        "detail": "0/50 contacts added (0%)"
+      },
+      "channel_diversity": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "0/6 channels with positive LEI"
+      },
+      "content_performance": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "avg completion rate = 0%"
+      },
+      "budget_efficiency": {
+        "weight": 0.1,
+        "score": 50.0,
+        "detail": "no paid spend (free tier neutral)"
+      },
+      "system_reliability": {
+        "weight": 0.05,
+        "score": 100.0,
+        "detail": "1/1 runs successful (100%)"
+      }
+    }
+  },
+  {
+    "total_score": 25.0,
+    "calculated_at": "2026-04-18T07:05:05.535491",
+    "components": {
+      "listener_velocity": {
+        "weight": 0.3,
+        "score": 50.0,
+        "detail": "WoW delta = +0.0%"
+      },
+      "experiment_hit_rate": {
+        "weight": 0.2,
+        "score": 0.0,
+        "detail": "no completed experiments yet"
+      },
+      "pipeline_health": {
+        "weight": 0.15,
+        "score": 0.0,
+        "detail": "0/50 contacts added (0%)"
+      },
+      "channel_diversity": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "0/6 channels with positive LEI"
+      },
+      "content_performance": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "avg completion rate = 0%"
+      },
+      "budget_efficiency": {
+        "weight": 0.1,
+        "score": 50.0,
+        "detail": "no paid spend (free tier neutral)"
+      },
+      "system_reliability": {
+        "weight": 0.05,
+        "score": 100.0,
+        "detail": "1/1 runs successful (100%)"
+      }
+    }
+  },
+  {
+    "total_score": 25.0,
+    "calculated_at": "2026-04-18T07:12:11.716526",
+    "components": {
+      "listener_velocity": {
+        "weight": 0.3,
+        "score": 50.0,
+        "detail": "WoW delta = +0.0%"
+      },
+      "experiment_hit_rate": {
+        "weight": 0.2,
+        "score": 0.0,
+        "detail": "no completed experiments yet"
+      },
+      "pipeline_health": {
+        "weight": 0.15,
+        "score": 0.0,
+        "detail": "0/50 contacts added (0%)"
+      },
+      "channel_diversity": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "0/6 channels with positive LEI"
+      },
+      "content_performance": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "avg completion rate = 0%"
+      },
+      "budget_efficiency": {
+        "weight": 0.1,
+        "score": 50.0,
+        "detail": "no paid spend (free tier neutral)"
+      },
+      "system_reliability": {
+        "weight": 0.05,
+        "score": 100.0,
+        "detail": "1/1 runs successful (100%)"
+      }
+    }
+  },
+  {
+    "total_score": 25.0,
+    "calculated_at": "2026-04-19T06:58:16.248884",
+    "components": {
+      "listener_velocity": {
+        "weight": 0.3,
+        "score": 50.0,
+        "detail": "WoW delta = +0.0%"
+      },
+      "experiment_hit_rate": {
+        "weight": 0.2,
+        "score": 0.0,
+        "detail": "no completed experiments yet"
+      },
+      "pipeline_health": {
+        "weight": 0.15,
+        "score": 0.0,
+        "detail": "0/50 contacts added (0%)"
+      },
+      "channel_diversity": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "0/6 channels with positive LEI"
+      },
+      "content_performance": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "avg completion rate = 0%"
+      },
+      "budget_efficiency": {
+        "weight": 0.1,
+        "score": 50.0,
+        "detail": "no paid spend (free tier neutral)"
+      },
+      "system_reliability": {
+        "weight": 0.05,
+        "score": 100.0,
+        "detail": "1/1 runs successful (100%)"
+      }
+    }
+  },
+  {
+    "total_score": 25.0,
+    "calculated_at": "2026-04-19T07:05:04.628811",
+    "components": {
+      "listener_velocity": {
+        "weight": 0.3,
+        "score": 50.0,
+        "detail": "WoW delta = +0.0%"
+      },
+      "experiment_hit_rate": {
+        "weight": 0.2,
+        "score": 0.0,
+        "detail": "no completed experiments yet"
+      },
+      "pipeline_health": {
+        "weight": 0.15,
+        "score": 0.0,
+        "detail": "0/50 contacts added (0%)"
+      },
+      "channel_diversity": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "0/6 channels with positive LEI"
+      },
+      "content_performance": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "avg completion rate = 0%"
+      },
+      "budget_efficiency": {
+        "weight": 0.1,
+        "score": 50.0,
+        "detail": "no paid spend (free tier neutral)"
+      },
+      "system_reliability": {
+        "weight": 0.05,
+        "score": 100.0,
+        "detail": "1/1 runs successful (100%)"
+      }
+    }
+  },
+  {
+    "total_score": 25.0,
+    "calculated_at": "2026-04-19T07:13:05.430753",
+    "components": {
+      "listener_velocity": {
+        "weight": 0.3,
+        "score": 50.0,
+        "detail": "WoW delta = +0.0%"
+      },
+      "experiment_hit_rate": {
+        "weight": 0.2,
+        "score": 0.0,
+        "detail": "no completed experiments yet"
+      },
+      "pipeline_health": {
+        "weight": 0.15,
+        "score": 0.0,
+        "detail": "0/50 contacts added (0%)"
+      },
+      "channel_diversity": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "0/6 channels with positive LEI"
+      },
+      "content_performance": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "avg completion rate = 0%"
+      },
+      "budget_efficiency": {
+        "weight": 0.1,
+        "score": 50.0,
+        "detail": "no paid spend (free tier neutral)"
+      },
+      "system_reliability": {
+        "weight": 0.05,
+        "score": 100.0,
+        "detail": "1/1 runs successful (100%)"
+      }
+    }
+  },
+  {
+    "total_score": 25.0,
+    "calculated_at": "2026-04-19T14:32:24.058181",
+    "components": {
+      "listener_velocity": {
+        "weight": 0.3,
+        "score": 50.0,
+        "detail": "WoW delta = +0.0%"
+      },
+      "experiment_hit_rate": {
+        "weight": 0.2,
+        "score": 0.0,
+        "detail": "no completed experiments yet"
+      },
+      "pipeline_health": {
+        "weight": 0.15,
+        "score": 0.0,
+        "detail": "0/50 contacts added (0%)"
+      },
+      "channel_diversity": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "0/6 channels with positive LEI"
+      },
+      "content_performance": {
+        "weight": 0.1,
+        "score": 0.0,
+        "detail": "avg completion rate = 0%"
+      },
+      "budget_efficiency": {
+        "weight": 0.1,
+        "score": 50.0,
+        "detail": "no paid spend (free tier neutral)"
+      },
+      "system_reliability": {
+        "weight": 0.05,
+        "score": 100.0,
+        "detail": "1/1 runs successful (100%)"
+      }
+    }
   }
 ]

@@ -119,82 +119,114 @@ def _fetch(url: str) -> str:
 
 # ── Bandcamp tag page parsing ─────────────────────────────────────────────────
 
-def _get_artist_urls_from_tag_page(tag: str, page: int = 1) -> list[str]:
+def _get_artist_items_from_tag_page(
+    tag: str, page: int = 1
+) -> list[dict]:
     """
-    Fetch a Bandcamp tag page and return unique artist band URLs.
+    Return artist items from Bandcamp's hub/2/dig_deeper JSON API.
 
-    Tries three extraction strategies in order:
-    1. JSON in id="pagedata" data-blob attribute (primary — has band_url field)
-    2. Raw regex for "band_url" JSON keys anywhere in HTML
-    3. Regex for .bandcamp.com/album or /track href paths (fallback)
+    Each item is a dict with keys: band_url, band_id, band_name.
+    Bandcamp migrated tag pages to a Vite/Vue SPA in 2025 — the HTML no
+    longer contains artist data. We call the underlying API directly instead.
     """
-    url = (
-        f"https://bandcamp.com/tag/{urllib.parse.quote(tag)}"
-        f"?sort_field=tag_date&page={page}"
-    )
-    html = _fetch(url)
-    if not html:
+    api_url = "https://bandcamp.com/api/hub/2/dig_deeper"
+    payload = json.dumps({
+        "tag": tag,
+        "page": page,
+        "size": 20,
+        "filters": {
+            "sort": "date",
+            "format": "mp3-128",
+            "location": 0,
+            "tags": [],
+        },
+    }).encode()
+    headers = {
+        "User-Agent": _USER_AGENT,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://bandcamp.com",
+        "Referer": f"https://bandcamp.com/tag/{urllib.parse.quote(tag)}",
+    }
+    try:
+        req = urllib.request.Request(
+            api_url, data=payload, headers=headers, method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=_HTTP_TIMEOUT) as r:
+            data = json.loads(r.read())
+    except Exception as exc:
+        log.debug("Bandcamp API failed tag=%s page=%d: %s", tag, page, exc)
         return []
 
-    artist_urls: list[str] = []
+    if data.get("error"):
+        log.debug("Bandcamp API error: %s", data.get("error_message"))
+        return []
 
-    # Strategy 1: data-blob JSON on #pagedata div
-    blob_match = re.search(r'id=["\']pagedata["\'][^>]+data-blob=["\']([^"\']+)["\']', html)
-    if not blob_match:
-        blob_match = re.search(r'data-blob=["\']([^"\']+)["\'][^>]*id=["\']pagedata["\']', html)
-    if blob_match:
-        try:
-            raw = blob_match.group(1)
-            # Unescape HTML attribute encoding
-            raw = (
-                raw.replace("&quot;", '"')
-                   .replace("&#39;", "'")
-                   .replace("&amp;", "&")
-                   .replace("&#x27;", "'")
-            )
-            blob = json.loads(raw)
-            items: list[dict] = []
-            if isinstance(blob.get("hub"), dict):
-                items = blob["hub"].get("items", [])
-            elif isinstance(blob.get("items"), list):
-                items = blob["items"]
-            for item in items:
-                band_url = item.get("band_url") or item.get("item_url", "")
-                if band_url and ".bandcamp.com" in band_url:
-                    m = re.match(r"(https://[a-z0-9\-]+\.bandcamp\.com)", band_url)
-                    if m:
-                        sub = m.group(1).split("//")[1].split(".")[0]
-                        if sub not in _PLATFORM_SUBDOMAINS:
-                            artist_urls.append(m.group(1) + "/")
-        except (json.JSONDecodeError, KeyError, AttributeError):
-            pass
-
-    # Strategy 2: raw "band_url" pattern in HTML (works when JSON is unquoted/inline)
-    if not artist_urls:
-        for band_url in re.findall(
-            r'"band_url"\s*:\s*"(https://[a-z0-9\-]+\.bandcamp\.com[^"]*)"', html
-        ):
-            m = re.match(r"(https://[a-z0-9\-]+\.bandcamp\.com)", band_url)
-            if m:
-                sub = m.group(1).split("//")[1].split(".")[0]
-                if sub not in _PLATFORM_SUBDOMAINS:
-                    artist_urls.append(m.group(1) + "/")
-
-    # Strategy 3: href links to album/track pages (any subdomain with /album or /track)
-    if not artist_urls:
-        for sub in re.findall(
-            r'https://([a-z0-9\-]+)\.bandcamp\.com/(?:album|track|music)', html
-        ):
-            if sub not in _PLATFORM_SUBDOMAINS:
-                artist_urls.append(f"https://{sub}.bandcamp.com/")
-
-    # Deduplicate while preserving order
     seen: set[str] = set()
-    result: list[str] = []
-    for u in artist_urls:
-        if u not in seen:
-            seen.add(u)
-            result.append(u)
+    result: list[dict] = []
+    for item in data.get("items", []):
+        band_url = item.get("band_url", "")
+        if not band_url:
+            subdomain = item.get("subdomain", "")
+            custom = item.get("custom_domain", "")
+            if custom and item.get("custom_domain_verified"):
+                band_url = f"https://{custom}"
+            elif subdomain:
+                band_url = f"https://{subdomain}.bandcamp.com"
+        if not band_url or band_url in seen:
+            continue
+        seen.add(band_url)
+        m = re.match(r"https://([a-z0-9\-]+)\.bandcamp\.com", band_url)
+        if m and m.group(1) in _PLATFORM_SUBDOMAINS:
+            continue
+        result.append({
+            "band_url": band_url.rstrip("/") + "/",
+            "band_id": item.get("band_id"),
+            "band_name": item.get("band_name") or item.get("artist") or "",
+        })
+    return result
+
+
+# Domains to skip when looking for contact emails via external sites
+_SKIP_CONTACT_DOMAINS = {
+    "instagram.com", "facebook.com", "twitter.com", "x.com",
+    "soundcloud.com", "youtube.com", "tiktok.com", "spotify.com",
+    "bandcamp.com", "bcbits.com", "mixcloud.com", "beatport.com",
+    "apple.com", "deezer.com", "ra.co", "residentadvisor.net",
+}
+
+
+def _get_band_details(band_id: int) -> dict:
+    """Call Bandcamp band_details API to get bio, sites, and location."""
+    url = f"https://bandcamp.com/api/mobile/25/band_details?band_id={band_id}"
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": _USER_AGENT, "Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=_HTTP_TIMEOUT) as r:
+            return json.loads(r.read())
+    except Exception:
+        return {}
+
+
+def _useful_external_urls(sites: list) -> list[str]:
+    """Return external site URLs worth visiting for email discovery.
+
+    Filters out social/streaming platforms — only keeps personal websites,
+    Linktrees, booking pages, and label sites that likely have email addresses.
+    """
+    result = []
+    for site in sites:
+        url = site.get("url", "")
+        if not url or not url.startswith("http"):
+            continue
+        try:
+            domain = url.split("/")[2].lstrip("www.")
+        except IndexError:
+            continue
+        if not any(skip in domain for skip in _SKIP_CONTACT_DOMAINS):
+            result.append(url)
     return result
 
 
@@ -316,50 +348,82 @@ def mine(
                 break
 
             log.info("Fetching bandcamp.com/tag/%s page=%d", current_tag, pg)
-            artist_urls = _get_artist_urls_from_tag_page(current_tag, pg)
-            log.info("  → %d artist URLs found", len(artist_urls))
+            artist_items = _get_artist_items_from_tag_page(current_tag, pg)
+            log.info("  → %d artist URLs found", len(artist_items))
             time.sleep(_RATE_LIMIT_S)
 
-            if not artist_urls:
+            if not artist_items:
                 break  # No more pages for this tag
 
-            for artist_url in artist_urls:
+            for artist_item in artist_items:
                 if added >= limit:
                     break
+
+                artist_url = artist_item["band_url"]
+                band_id = artist_item.get("band_id")
+                artist_name = artist_item.get("band_name") or ""
 
                 if _already_processed(artist_url):
                     skipped_processed += 1
                     continue
 
-                html = _fetch(artist_url)
-                time.sleep(_RATE_LIMIT_S)
-
                 # Always mark as processed so we don't revisit across runs
                 if not dry_run:
                     _mark_processed(artist_url)
 
-                if not html:
-                    continue
+                emails: list[str] = []
 
-                # Brand safety on first 8KB (header/bio area)
-                if not _is_brand_safe(html[:8000]):
-                    log.debug("Skipped unsafe: %s", artist_url)
-                    skipped_unsafe += 1
-                    continue
+                # Step 1 — band_details API: check bio + external sites first
+                if band_id:
+                    details = _get_band_details(band_id)
+                    time.sleep(0.5)
 
-                artist_name = _get_artist_name(html, artist_url)
-                emails = _extract_emails(html)
+                    bio = details.get("bio", "")
+                    if bio and _is_brand_safe(bio):
+                        emails = _extract_emails(bio)
 
-                # Check /contact and /about if homepage has no email
+                    if not emails:
+                        # Check email in external site URLs (linktree, personal sites)
+                        external = _useful_external_urls(details.get("sites", []))
+                        for ext_url in external[:3]:
+                            ext_html = _fetch(ext_url)
+                            if ext_html:
+                                emails = _extract_emails(ext_html)
+                                if emails:
+                                    break
+                            time.sleep(0.5)
+
+                    if not artist_name:
+                        artist_name = details.get("name", "")
+
+                # Step 2 — fall back to Bandcamp artist page
                 if not emails:
-                    base = artist_url.rstrip("/")
-                    for path in ["/contact", "/about"]:
-                        sub_html = _fetch(base + path)
-                        if sub_html:
-                            emails = _extract_emails(sub_html)
-                            if emails:
-                                break
-                        time.sleep(0.5)
+                    html = _fetch(artist_url)
+                    time.sleep(_RATE_LIMIT_S)
+
+                    if not html:
+                        skipped_no_email += 1
+                        continue
+
+                    if not _is_brand_safe(html[:8000]):
+                        log.debug("Skipped unsafe: %s", artist_url)
+                        skipped_unsafe += 1
+                        continue
+
+                    if not artist_name:
+                        artist_name = _get_artist_name(html, artist_url)
+
+                    emails = _extract_emails(html)
+
+                    if not emails:
+                        base = artist_url.rstrip("/")
+                        for path in ["/contact", "/about"]:
+                            sub_html = _fetch(base + path)
+                            if sub_html:
+                                emails = _extract_emails(sub_html)
+                                if emails:
+                                    break
+                            time.sleep(0.5)
 
                 if not emails:
                     skipped_no_email += 1
