@@ -256,3 +256,43 @@ def test_daily_config_default_uses_sacred_arc():
     assert config.formats[0] == ClipFormat.SACRED_ARC
     assert config.formats[1] == ClipFormat.SACRED_ARC
     assert config.formats[2] == ClipFormat.TRANSITIONAL
+
+
+def test_bait_pick_biases_to_viral_category(tmp_path):
+    """Bait pick must pass category_weights={viral: 1.0, others: 0.0} so only viral/ clips are used."""
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.TRANSITIONAL],
+        durations={ClipFormat.TRANSITIONAL: 22},
+    )
+
+    captured = {}
+
+    with patch("content_engine.renderer.render_transitional"), \
+         patch("content_engine.transitional_manager.TransitionalManager") as mock_tm, \
+         patch("content_engine.generator.generate_hooks_for_format") as mock_hook, \
+         patch("content_engine.generator.generate_caption") as mock_caption, \
+         patch("content_engine.renderer.validate_output", return_value={"valid": True, "errors": []}):
+
+        def capture_pick(*args, **kwargs):
+            captured["weights"] = kwargs.get("category_weights")
+            return {"file": "viral/Wrap-It-LOL.mp4", "category": "viral"}
+
+        mock_tm.return_value.pick.side_effect = capture_pick
+        mock_tm.return_value.full_path.return_value = Path("/fake/bait.mp4")
+        mock_hook.return_value = {
+            "hook": "test", "template_id": "t1",
+            "mechanism": "save", "sub_mode": "COST", "exploration": False,
+        }
+        mock_caption.return_value = "test"
+
+        build_daily_clips(
+            config, _make_brief(), _make_weights(), _make_track(), [30.0], str(tmp_path)
+        )
+
+    w = captured.get("weights")
+    assert w is not None, "pipeline did not pass category_weights to TransitionalManager.pick"
+    assert w.get("viral", 0.0) > 0.0, f"viral weight should be >0, got {w}"
+    non_viral = {k: v for k, v in w.items() if k != "viral"}
+    assert all(v == 0.0 for v in non_viral.values()), (
+        f"non-viral categories should be suppressed, got {non_viral}"
+    )

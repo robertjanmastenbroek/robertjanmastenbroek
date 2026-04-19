@@ -26,6 +26,20 @@ PERFORMANCE_DIR = PROJECT_DIR / "data" / "performance"
 
 logger = logging.getLogger(__name__)
 
+# Viral-only bias for bait-clip picks. Pexels-sourced clips in the other
+# six categories have zero evidence of viral performance, while the 15
+# clips in viral/ match the proven 20k+ IG post format. Suppress the
+# rest until we have CTR evidence otherwise.
+VIRAL_ONLY_CATEGORY_WEIGHTS = {
+    "viral": 1.0,
+    "nature": 0.0,
+    "satisfying": 0.0,
+    "elemental": 0.0,
+    "sports": 0.0,
+    "craftsmanship": 0.0,
+    "illusion": 0.0,
+}
+
 
 def _load_project_env() -> None:
     """Load KEY=VALUE pairs from the project .env file into os.environ.
@@ -485,7 +499,7 @@ def build_daily_clips(
 
         if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC):
             tm = TransitionalManager()
-            bait = tm.pick(category_weights=weights.transitional_category_weights)
+            bait = tm.pick(category_weights=VIRAL_ONLY_CATEGORY_WEIGHTS)
             if bait:
                 bait_path = str(tm.full_path(bait["file"]))
                 tm.mark_used(bait["file"])
