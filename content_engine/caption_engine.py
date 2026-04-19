@@ -31,6 +31,12 @@ CAPTION_POS_Y    = 500   # pixels from top of 1920px frame (~26%)
 CAPTION_MIN_WORD_DURATION = 0.18
 CAPTION_MAX_WORD_DURATION = 0.30
 
+# Per-word punch-in animation: oversized onset that settles into place.
+# Reads as intentional motion rather than a hard cut.
+PUNCH_DURATION = 0.10      # seconds to settle from START → END scale
+PUNCH_SCALE_START = 1.12
+PUNCH_SCALE_END = 1.0
+
 
 def _load_font(size: int):
     from PIL import ImageFont
@@ -112,29 +118,82 @@ def _compute_windows(
     return windows
 
 
-def _draw_text_centered(draw, text: str, font, frame_width: int, y: int) -> None:
-    """Draw white text with black outline centered horizontally at y."""
+def _punch_in_scale(t_in_window: float) -> float:
+    """Linear scale interpolation 1.12 → 1.0 across PUNCH_DURATION, then flat."""
+    if t_in_window >= PUNCH_DURATION:
+        return PUNCH_SCALE_END
+    if t_in_window <= 0:
+        return PUNCH_SCALE_START
+    progress = t_in_window / PUNCH_DURATION
+    return PUNCH_SCALE_START + (PUNCH_SCALE_END - PUNCH_SCALE_START) * progress
+
+
+def _punch_in_alpha(t_in_window: float) -> int:
+    """Linear alpha ramp 0 → 255 across PUNCH_DURATION, then flat at 255."""
+    if t_in_window >= PUNCH_DURATION:
+        return 255
+    if t_in_window <= 0:
+        return 0
+    return int(255 * (t_in_window / PUNCH_DURATION))
+
+
+def _draw_text_centered(
+    draw, text: str, font, frame_width: int, y: int,
+    scale: float = 1.0, alpha: int = 255,
+) -> None:
+    """Draw white text with black outline centered horizontally at y.
+
+    Supports per-word punch-in via `scale` (1.0-1.12) and `alpha` (0-255).
+    Fast path at scale=1.0, alpha=255 — no temp layer, draws directly.
+    """
+    if scale == 1.0 and alpha == 255:
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        x = (frame_width - text_w) // 2
+        draw.text(
+            (x, y), text, font=font,
+            fill=(255, 255, 255),
+            stroke_width=CAPTION_OUTLINE,
+            stroke_fill=(0, 0, 0),
+        )
+        return
+
+    # Scaled / fading path: render into a temp RGBA layer and paste so we
+    # can apply alpha uniformly and resize without deforming the stroke.
+    from PIL import Image as _Image, ImageDraw as _ID
     bbox = draw.textbbox((0, 0), text, font=font)
     text_w = bbox[2] - bbox[0]
-    x = (frame_width - text_w) // 2
-
-    # Black outline via stroke
-    draw.text(
-        (x, y), text, font=font,
-        fill=(255, 255, 255),
+    text_h = bbox[3] - bbox[1]
+    pad = CAPTION_OUTLINE * 2 + 4
+    layer_w = text_w + pad * 2
+    layer_h = text_h + pad * 2
+    layer = _Image.new("RGBA", (layer_w, layer_h), (0, 0, 0, 0))
+    ld = _ID.Draw(layer)
+    ld.text(
+        (pad, pad), text, font=font,
+        fill=(255, 255, 255, alpha),
         stroke_width=CAPTION_OUTLINE,
-        stroke_fill=(0, 0, 0),
+        stroke_fill=(0, 0, 0, alpha),
     )
+    if scale != 1.0:
+        new_w = max(1, int(layer_w * scale))
+        new_h = max(1, int(layer_h * scale))
+        layer = layer.resize((new_w, new_h), _Image.LANCZOS)
+        layer_w, layer_h = new_w, new_h
+
+    x = (frame_width - layer_w) // 2
+    target_y = y - (layer_h - text_h) // 2
+    draw._image.paste(layer, (x, target_y), layer)
 
 
-def _get_caption_at(t: float, sorted_windows: list) -> str | None:
-    """Return caption text for timestamp t, or None if not in any window."""
+def _get_caption_at(t: float, sorted_windows: list):
+    """Return (text, window_start) for timestamp t, or (None, None) if not in any window."""
     for (s, e), text in sorted_windows:
         if s <= t < e:
-            return text
+            return text, s
         if s > t:
             break
-    return None
+    return None, None
 
 
 def _encode_video_with_captions(
@@ -173,11 +232,17 @@ def _encode_video_with_captions(
             if frame.pts is None:
                 continue
             t = float(frame.pts * time_base)
-            caption = _get_caption_at(t, sorted_windows)
+            caption, window_start = _get_caption_at(t, sorted_windows)
             if caption:
+                t_in = t - window_start
+                scale = _punch_in_scale(t_in)
+                alpha = _punch_in_alpha(t_in)
                 img  = frame.to_image()
                 draw = ImageDraw.Draw(img)
-                _draw_text_centered(draw, caption, font, v_in.width, CAPTION_POS_Y)
+                _draw_text_centered(
+                    draw, caption, font, v_in.width, CAPTION_POS_Y,
+                    scale=scale, alpha=alpha,
+                )
                 new_frame = av.VideoFrame.from_image(img).reformat(format="yuv420p")
             else:
                 # Fresh frame strips pict_type (I/P/B) that corrupts libx264 DTS

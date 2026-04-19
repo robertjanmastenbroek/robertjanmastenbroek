@@ -29,3 +29,41 @@ def test_compute_windows_respects_max():
         assert (e - s) <= CAPTION_MAX_WORD_DURATION * 3 + 0.01, (
             f"window {(s, e)} exceeds 3×MAX ({CAPTION_MAX_WORD_DURATION*3}s)"
         )
+
+
+def test_punch_in_scale_interpolation():
+    """Punch-in helper must go scale 1.12 → 1.0 over 0-100ms, then stay at 1.0."""
+    from content_engine.caption_engine import _punch_in_scale
+
+    assert abs(_punch_in_scale(0.0) - 1.12) < 0.001
+    assert 1.05 < _punch_in_scale(0.05) < 1.07
+    assert abs(_punch_in_scale(0.10) - 1.0) < 0.001
+    assert _punch_in_scale(0.5) == 1.0
+
+
+def test_punch_in_alpha_interpolation():
+    """Alpha must ramp 0 → 255 over 0-100ms, then stay at 255."""
+    from content_engine.caption_engine import _punch_in_alpha
+
+    assert _punch_in_alpha(0.0) == 0
+    assert 120 < _punch_in_alpha(0.05) < 135
+    assert _punch_in_alpha(0.10) == 255
+    assert _punch_in_alpha(0.5) == 255
+
+
+def test_get_caption_at_returns_window_start():
+    """_get_caption_at must return (text, window_start) for punch-in t_in math."""
+    from content_engine.caption_engine import _get_caption_at
+
+    sorted_windows = [((1.0, 1.3), "HOLD"), ((1.3, 1.6), "THE"), ((1.6, 1.9), "LINE")]
+    text, start = _get_caption_at(1.05, sorted_windows)
+    assert text == "HOLD"
+    assert start == 1.0
+
+    text, start = _get_caption_at(1.45, sorted_windows)
+    assert text == "THE"
+    assert start == 1.3
+
+    text, start = _get_caption_at(5.0, sorted_windows)
+    assert text is None
+    assert start is None
