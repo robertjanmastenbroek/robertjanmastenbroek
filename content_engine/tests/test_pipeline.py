@@ -11,14 +11,13 @@ from content_engine.types import ClipFormat, TrendBrief, UnifiedWeights, TrackIn
 
 
 def test_config_defaults():
-    # Current daily mix: 2 transitional (viral bait-clip hooks) + 1 performance.
-    # Emotional was rotated out after transitional outperformed on scroll-stop —
-    # the duration entry for EMOTIONAL is still present so ad-hoc runs work.
+    # Daily mix: 2 sacred_arc (proven viral: bait hook + performance footage) + 1 transitional
+    # for experimentation. Sacred arc outperformed on 20k+ view IG post — locked to 2 slots.
     config = DailyPipelineConfig()
     assert len(config.formats) == 3
-    assert config.formats[0] == ClipFormat.TRANSITIONAL
-    assert config.formats[1] == ClipFormat.TRANSITIONAL
-    assert config.formats[2] == ClipFormat.PERFORMANCE
+    assert config.formats[0] == ClipFormat.SACRED_ARC
+    assert config.formats[1] == ClipFormat.SACRED_ARC
+    assert config.formats[2] == ClipFormat.TRANSITIONAL
 
 
 def test_config_durations():
@@ -196,3 +195,64 @@ def test_no_story_variant_files_generated(tmp_path):
 
     story_files = list(tmp_path.glob("*_story.mp4"))
     assert story_files == [], f"Unexpected story files: {story_files}"
+
+
+def test_sacred_arc_uses_performance_footage_only(tmp_path):
+    """SACRED_ARC segments must come exclusively from the performances/ directory."""
+    from unittest.mock import patch as _patch
+    from content_engine import pipeline as _pipeline
+
+    perf_dir = tmp_path / "content" / "videos" / "performances" / "wetransfer_abc"
+    perf_dir.mkdir(parents=True)
+    (perf_dir / "DANCE1.MP4").touch()
+    (perf_dir / "DANCE2.MP4").touch()
+
+    (tmp_path / "content" / "videos" / "b-roll").mkdir(parents=True)
+    (tmp_path / "content" / "videos" / "b-roll" / "NATURE1.mp4").touch()
+    (tmp_path / "content" / "videos" / "phone-footage").mkdir(parents=True)
+
+    with _patch.object(_pipeline, "PROJECT_DIR", tmp_path):
+        config = DailyPipelineConfig(
+            formats=[ClipFormat.SACRED_ARC],
+            durations={ClipFormat.SACRED_ARC: 22},
+        )
+        with patch("content_engine.renderer.render_transitional") as mock_render, \
+             patch("content_engine.transitional_manager.TransitionalManager") as mock_tm, \
+             patch("content_engine.generator.generate_hooks_for_format") as mock_hook, \
+             patch("content_engine.generator.generate_caption") as mock_caption:
+
+            mock_tm.return_value.pick.return_value = {"file": "satisfying/123.mp4", "category": "satisfying"}
+            mock_tm.return_value.full_path.return_value = Path("/fake/bait.mp4")
+            mock_hook.return_value = {
+                "hook": "test hook", "template_id": "t1",
+                "mechanism": "save", "sub_mode": "COST", "exploration": False,
+            }
+            mock_caption.return_value = "test caption"
+
+            captured = {}
+            def fake_render(**kw):
+                captured["segments"] = kw.get("content_segments", [])
+                Path(kw["output_path"]).touch()
+            mock_render.side_effect = fake_render
+
+            build_daily_clips(
+                config, _make_brief(), _make_weights(), _make_track(),
+                peak_sections=[0.0], output_dir=str(tmp_path / "output"),
+            )
+
+    segments = captured.get("segments", [])
+    assert segments, "No segments were passed to the renderer"
+    for s in segments:
+        assert "performances" in s, (
+            f"SACRED_ARC used non-performance footage: {s!r}. "
+            "Only content/videos/performances/ is allowed."
+        )
+    assert not any("b-roll" in s for s in segments), "b-roll leaked into SACRED_ARC segments"
+
+
+def test_daily_config_default_uses_sacred_arc():
+    """Default daily mix must be [SACRED_ARC, SACRED_ARC, TRANSITIONAL]."""
+    config = DailyPipelineConfig()
+    assert config.formats[0] == ClipFormat.SACRED_ARC
+    assert config.formats[1] == ClipFormat.SACRED_ARC
+    assert config.formats[2] == ClipFormat.TRANSITIONAL

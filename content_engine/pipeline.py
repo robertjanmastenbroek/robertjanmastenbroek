@@ -125,11 +125,12 @@ class DailyPipelineConfig:
     # of 3 daily slots and keep one PERFORMANCE slot for b-roll variety.
     # Revert to a balanced mix by passing an explicit formats list.
     formats: list = field(default_factory=lambda: [
+        ClipFormat.SACRED_ARC,
+        ClipFormat.SACRED_ARC,
         ClipFormat.TRANSITIONAL,
-        ClipFormat.TRANSITIONAL,
-        ClipFormat.PERFORMANCE,
     ])
     durations: dict = field(default_factory=lambda: {
+        ClipFormat.SACRED_ARC: 22,
         ClipFormat.TRANSITIONAL: 22,
         ClipFormat.EMOTIONAL: 7,
         ClipFormat.PERFORMANCE: 28,
@@ -235,12 +236,17 @@ def run_full_day(
     weights = UnifiedWeights.load()
     logger.info(f"[pipeline] Weights loaded — best platform: {weights.best_platform}")
 
-    # Resolve config after weights are loaded so the format mix can be derived
-    # from learned engagement data instead of always using the hard-coded default.
+    # Lock 2-of-3 slots to SACRED_ARC (proven viral format: transitional hook +
+    # performance footage). Slot 3 stays TRANSITIONAL for experimentation.
     if config is None:
         config = DailyPipelineConfig(
-            formats=derive_format_mix(weights.format_weights),
+            formats=[
+                ClipFormat.SACRED_ARC,
+                ClipFormat.SACRED_ARC,
+                ClipFormat.TRANSITIONAL,
+            ],
             durations={
+                ClipFormat.SACRED_ARC: 22,
                 ClipFormat.TRANSITIONAL: 22,
                 ClipFormat.EMOTIONAL: emotional_duration_from_weights(weights.best_clip_length),
                 ClipFormat.PERFORMANCE: 28,
@@ -477,7 +483,7 @@ def build_daily_clips(
         bait = None
         bait_path = None
 
-        if fmt == ClipFormat.TRANSITIONAL:
+        if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC):
             tm = TransitionalManager()
             bait = tm.pick(category_weights=weights.transitional_category_weights)
             if bait:
@@ -512,14 +518,21 @@ def build_daily_clips(
         }
         caption = caption_by_platform.get("instagram", "")
 
-        # Pick content segments. More cuts = more visual energy; the old
-        # values (2/1/4) left long static shots mid-clip that read as 'stuck'
-        # on small screens. Bump transitional content to 3 cuts, emotional
-        # to 2 (so there's always motion even in a 7s beat), performance to 5.
-        n_segments = {"transitional": 3, "emotional": 2, "performance": 5}.get(fmt.value, 3)
-        available = [v for v in all_videos if v not in used_segments]
-        if len(available) < n_segments:
-            available = list(all_videos)
+        n_segments = {
+            "transitional": 3, "emotional": 2, "performance": 5, "sacred_arc": 3,
+        }.get(fmt.value, 3)
+
+        if fmt == ClipFormat.SACRED_ARC:
+            perf_dir = str(PROJECT_DIR / "content" / "videos" / "performances")
+            perf_pool = [v for v in all_videos if perf_dir in v and v not in used_segments]
+            if len(perf_pool) < n_segments:
+                perf_pool = [v for v in all_videos if perf_dir in v]
+            available = perf_pool if perf_pool else [v for v in all_videos if v not in used_segments]
+        else:
+            available = [v for v in all_videos if v not in used_segments]
+            if len(available) < n_segments:
+                available = list(all_videos)
+
         segments = random.sample(available, min(n_segments, len(available)))
         used_segments.update(segments)
 
@@ -543,7 +556,7 @@ def build_daily_clips(
         }
 
         try:
-            if fmt == ClipFormat.TRANSITIONAL:
+            if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC):
                 if bait_path:
                     render_transitional(
                         bait_clip=bait_path,
@@ -557,7 +570,7 @@ def build_daily_clips(
                         target_duration=duration,
                     )
                 else:
-                    logger.warning("[pipeline] No transitional bait available, falling back to emotional")
+                    logger.warning(f"[pipeline] No transitional bait available for {fmt.value}, falling back to emotional")
                     render_emotional(segments, track.file_path, audio_start, hook_data["hook"],
                                      "youtube", output_path, duration)
 

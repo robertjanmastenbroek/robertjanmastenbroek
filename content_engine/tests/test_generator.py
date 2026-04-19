@@ -10,6 +10,17 @@ from content_engine.types import ClipFormat
 from content_engine.hook_library import HookTemplate
 
 
+from content_engine.generator import FORMAT_TO_ANGLE
+
+
+def test_sacred_arc_has_angle():
+    assert ClipFormat.SACRED_ARC in FORMAT_TO_ANGLE
+
+
+def test_sacred_arc_angle_is_emotional():
+    assert FORMAT_TO_ANGLE[ClipFormat.SACRED_ARC] == "emotional"
+
+
 def test_sub_modes_exist():
     assert "emotional" in ANGLE_SUB_MODES
     assert "signal" in ANGLE_SUB_MODES

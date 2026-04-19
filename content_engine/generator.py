@@ -43,6 +43,7 @@ FORMAT_TO_ANGLE = {
     ClipFormat.TRANSITIONAL: "emotional",
     ClipFormat.EMOTIONAL: "emotional",
     ClipFormat.PERFORMANCE: "energy",
+    ClipFormat.SACRED_ARC: "emotional",
 }
 
 

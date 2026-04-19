@@ -102,6 +102,7 @@ class ClipFormat(Enum):
     TRANSITIONAL = "transitional"
     EMOTIONAL = "emotional"
     PERFORMANCE = "performance"
+    SACRED_ARC = "sacred_arc"
 
 
 @dataclass
@@ -167,6 +168,7 @@ class UnifiedWeights:
             },
             format_weights={
                 "transitional": 1.0, "emotional": 1.0, "performance": 1.0,
+                "sacred_arc": 1.0,
             },
             platform_weights={
                 "instagram": 1.0, "youtube": 1.0, "facebook": 1.0,

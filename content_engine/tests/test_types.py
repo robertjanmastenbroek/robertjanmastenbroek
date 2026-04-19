@@ -12,6 +12,16 @@ def test_clip_format_enum():
     assert ClipFormat.PERFORMANCE.value == "performance"
 
 
+def test_sacred_arc_in_clip_format():
+    assert ClipFormat.SACRED_ARC.value == "sacred_arc"
+
+
+def test_sacred_arc_in_unified_weights_defaults():
+    w = UnifiedWeights.defaults()
+    assert "sacred_arc" in w.format_weights
+    assert w.format_weights["sacred_arc"] == 1.0
+
+
 def test_transitional_hook_dataclass():
     hook = TransitionalHook(
         file="nature/lightning_01.mp4",
