@@ -78,6 +78,13 @@ PLATFORM_CRF = {
     "tiktok": 23,
 }
 
+# Hook overlay attention window. Research: ~2.5s before scroll risk.
+# We cap at 2.2s so the viewer's eye lands on motion (bait clip action)
+# before the hook cements, then snaps to the drop. Previous behavior let
+# the hook linger for the full bait duration (up to 7s) — well past the
+# attention window on TikTok/Reels.
+_HOOK_DWELL_MAX_S = 2.2
+
 # --- Hook text styling ------------------------------------------------------------
 # y_pct is the CENTER of the text block as a fraction of video height.
 # IG Reels UI chrome (like/comment/share buttons, caption) occupies roughly
@@ -294,7 +301,10 @@ def _burn_text_overlay(
 
     info = _get_video_info(input_path)
     if end_time is None:
-        end_time = max(start_time + 0.5, info["duration"] - 1.0) if info["duration"] > 1 else info["duration"]
+        natural_end = max(start_time + 0.5, info["duration"] - 1.0) if info["duration"] > 1 else info["duration"]
+        end_time = min(natural_end, start_time + _HOOK_DWELL_MAX_S)
+    else:
+        end_time = min(end_time, start_time + _HOOK_DWELL_MAX_S)
 
     # --- Load font: Bebas Neue → Impact → Helvetica ---
     font = None

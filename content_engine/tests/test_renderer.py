@@ -34,3 +34,18 @@ def test_get_platform_color_grade():
     grade = get_platform_color_grade("instagram")
     assert "contrast" in grade
     assert "saturation" in grade
+
+
+def test_hook_overlay_dwell_capped():
+    """Hook text must never dwell longer than 2.4s — attention-window research."""
+    from content_engine.renderer import _HOOK_DWELL_MAX_S
+    assert _HOOK_DWELL_MAX_S <= 2.4, (
+        f"_HOOK_DWELL_MAX_S={_HOOK_DWELL_MAX_S} is too long. "
+        "Viral hook research caps at 2.5s before attention drops."
+    )
+
+
+def test_hook_overlay_dwell_floor():
+    """Minimum hook dwell — a 7-word hook needs at least ~1.5s to be legible."""
+    from content_engine.renderer import _HOOK_DWELL_MAX_S
+    assert _HOOK_DWELL_MAX_S >= 1.8
