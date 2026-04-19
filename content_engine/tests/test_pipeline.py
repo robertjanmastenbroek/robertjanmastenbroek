@@ -122,6 +122,53 @@ def test_two_transitional_clips_get_distinct_output_paths(tmp_path):
     )
 
 
+def test_performance_footage_found_in_subdirectory(tmp_path):
+    """Videos nested inside a subdirectory of performances/ must be found."""
+    from unittest.mock import patch as _patch
+    from content_engine import pipeline as _pipeline
+
+    perf_dir = tmp_path / "content" / "videos" / "performances" / "wetransfer_abc123"
+    perf_dir.mkdir(parents=True)
+    nested_mp4 = perf_dir / "LUC9222.MP4"
+    nested_mp4.touch()
+
+    (tmp_path / "content" / "videos" / "b-roll").mkdir(parents=True)
+    (tmp_path / "content" / "videos" / "phone-footage").mkdir(parents=True)
+
+    with _patch.object(_pipeline, "PROJECT_DIR", tmp_path):
+        config = DailyPipelineConfig(
+            formats=[ClipFormat.PERFORMANCE],
+            durations={ClipFormat.PERFORMANCE: 28},
+        )
+        with patch("content_engine.renderer.render_performance") as mock_render, \
+             patch("content_engine.generator.generate_hooks_for_format") as mock_hook, \
+             patch("content_engine.generator.generate_caption") as mock_caption:
+
+            mock_hook.return_value = {
+                "hook": "test hook", "template_id": "t1",
+                "mechanism": "save", "sub_mode": "BODY", "exploration": False,
+            }
+            mock_caption.return_value = "test caption"
+
+            captured = {}
+            # render_performance(segments, audio_path, audio_start, hook_text, platform, output_path, ...)
+            def fake_render(content_segments, audio_path, audio_start, hook_text, platform, output_path, *a, **kw):
+                captured["segments"] = content_segments
+                Path(output_path).touch()
+            mock_render.side_effect = fake_render
+
+            (tmp_path / "output").mkdir(parents=True)
+            build_daily_clips(
+                config, _make_brief(), _make_weights(), _make_track(),
+                peak_sections=[0.0], output_dir=str(tmp_path / "output"),
+            )
+
+    assert any("LUC9222.MP4" in s for s in captured.get("segments", [])), (
+        "Performance footage nested in subdirectory was not found. "
+        "iterdir() is one level deep — fix by using rglob()."
+    )
+
+
 def test_no_story_variant_files_generated(tmp_path):
     """build_daily_clips must not create any *_story.mp4 files."""
     config = DailyPipelineConfig(

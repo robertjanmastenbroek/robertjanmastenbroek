@@ -444,13 +444,13 @@ def build_daily_clips(
         str(PROJECT_DIR / "content" / "videos" / "performances"),
     ]
 
-    # Collect available videos
+    # Collect available videos — rglob so nested subdirectories are included
     all_videos = []
     for vd in video_dirs:
         vd_path = Path(vd)
         if vd_path.exists():
-            for f in vd_path.iterdir():
-                if f.suffix.lower() in (".mp4", ".mov"):
+            for f in vd_path.rglob("*"):
+                if f.is_file() and f.suffix.lower() in (".mp4", ".mov"):
                     all_videos.append(str(f))
 
     if not all_videos:
