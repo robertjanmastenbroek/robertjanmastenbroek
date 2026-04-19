@@ -43,6 +43,7 @@ _USER_AGENT = (
 _HTTP_TIMEOUT = 15
 _RATE_LIMIT_S = 2.0
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+_HEX_RE   = re.compile(r"^[0-9a-f]{16,}$")  # catches hash-style local parts
 
 _BAD_DOMAINS = {
     "example.com", "sentry.io", "wixpress.com", "squarespace.com",
@@ -111,6 +112,20 @@ def _extract_emails(html: str) -> list[str]:
         if local in _BAD_PREFIXES:
             continue
         if "." not in domain:
+            continue
+        # Reject hex-hash local parts (e.g. 04c118fab6a345f7b4009aafe33d8b52)
+        if _HEX_RE.match(local):
+            continue
+        segments = domain.split(".")
+        tld = segments[-1]
+        # TLD must be pure alpha, 2–10 chars (rejects .ru.js, .d58f…)
+        if not tld.isalpha() or not (2 <= len(tld) <= 10):
+            continue
+        # Reject any domain segment that looks like a hex hash
+        if any(_HEX_RE.match(seg) for seg in segments):
+            continue
+        # Reject test. subdomains (e.g. test.rutube.ru)
+        if segments[0] == "test":
             continue
         result.append(e.lower())
     return list(dict.fromkeys(result))
@@ -249,7 +264,7 @@ def mine(limit: int = 10, dry_run: bool = False) -> dict:
                         (
                             email.lower(), name, "curator",
                             "melodic techno / psytrance / world electronic",
-                            notes, "verified", "fan_miner",
+                            notes, "new", "fan_miner",
                             "genre_fan", "music_share",
                             7, 0,
                         ),

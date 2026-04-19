@@ -168,9 +168,23 @@ def _send_batch(batch_size: int) -> dict:
         name  = contact.get("name", "")
         ctype = contact.get("type", "curator")
 
-        # Final pre-send dead-list check (catches bounces found in this cycle)
+        # Last-resort format sanity: reject malformed addresses before touching Gmail
         email_lc = email.lower()
-        domain   = email_lc.split("@")[1]
+        _parts = email_lc.split("@")
+        if len(_parts) != 2 or not _parts[0] or not _parts[1]:
+            log.warning("Skipping %s — malformed address (no @)", email)
+            db.update_contact(email, status="skip")
+            skipped += 1
+            continue
+        _tld = _parts[1].split(".")[-1]
+        if not _tld.isalpha() or len(_tld) < 2:
+            log.warning("Skipping %s — invalid TLD '%s'", email, _tld)
+            db.update_contact(email, status="skip")
+            skipped += 1
+            continue
+
+        # Final pre-send dead-list check (catches bounces found in this cycle)
+        domain   = _parts[1]
         if email_lc in bounce._dead_addresses or domain in bounce._dead_domains:
             log.info("Skipping %s — confirmed dead (caught before send)", email)
             db.update_contact(email, status="skip")
