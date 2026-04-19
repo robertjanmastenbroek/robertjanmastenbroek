@@ -40,13 +40,25 @@ def scrub(limit: int = 100, dry_run: bool = False) -> dict:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 
     with db.get_conn() as conn:
-        rows = conn.execute(
-            """SELECT email, name FROM contacts
-               WHERE status IN ('new', 'verified')
-               AND (bounce IS NULL OR bounce = 'no')
-               LIMIT ?""",
-            (limit,),
-        ).fetchall()
+        try:
+            rows = conn.execute(
+                """SELECT email, name, COALESCE(warmth_score, 0) FROM contacts
+                   WHERE status IN ('new', 'verified')
+                   AND (bounce IS NULL OR bounce = 'no')
+                   LIMIT ?""",
+                (limit,),
+            ).fetchall()
+        except Exception:
+            # warmth_score column absent in older schemas — default to 0
+            rows = [
+                (e, n, 0) for e, n in conn.execute(
+                    """SELECT email, name FROM contacts
+                       WHERE status IN ('new', 'verified')
+                       AND (bounce IS NULL OR bounce = 'no')
+                       LIMIT ?""",
+                    (limit,),
+                ).fetchall()
+            ]
 
     log.info("Scrubbing %d pending contacts...", len(rows))
 
@@ -55,12 +67,20 @@ def scrub(limit: int = 100, dry_run: bool = False) -> dict:
     confirmed_valid = 0
     inconclusive = 0
 
-    for email, name in rows:
+    for email, name, warmth in rows:
         result, reason = bounce.verify_email(email)
         checked += 1
 
-        if result == "invalid":
-            log.info("❌ Invalid: %s (%s) — %s", email, name, reason)
+        is_catchall = result == "unknown" and "catch-all" in reason.lower()
+
+        # Skip catch-all unknowns only for low-warmth auto-mined contacts.
+        # High-warmth contacts (warmth_score >= 6) are hand-researched or
+        # manually added — catch-all on their domain is normal for orgs.
+        skip_catchall = is_catchall and (warmth or 0) < 6
+
+        if result == "invalid" or skip_catchall:
+            label = "Catch-all (low warmth)" if skip_catchall else "Invalid"
+            log.info("❌ %s: %s (%s) — %s", label, email, name, reason)
             marked_skip += 1
             if not dry_run:
                 with db.get_conn() as conn:

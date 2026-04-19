@@ -58,6 +58,93 @@ def test_scrub_keeps_valid(temp_db, monkeypatch):
     assert row[0] == "verified"
 
 
+def test_scrub_skips_catchall_low_warmth(temp_db, monkeypatch):
+    import db
+    import email_scrub
+
+    with db.get_conn() as conn:
+        try:
+            conn.execute("ALTER TABLE contacts ADD COLUMN warmth_score INTEGER DEFAULT 0")
+        except Exception:
+            pass
+        conn.execute(
+            "INSERT INTO contacts (email, name, type, status, warmth_score) VALUES (?,?,?,?,?)",
+            ("anyone@catchall.org", "Auto-mined Contact", "curator", "verified", 5),
+        )
+
+    monkeypatch.setattr(
+        "bounce.verify_email",
+        lambda e: ("unknown", "Catch-all domain — mailbox existence unverifiable"),
+    )
+
+    result = email_scrub.scrub(limit=10, dry_run=False)
+    assert result["marked_skip"] == 1
+
+    with db.get_conn() as conn:
+        row = conn.execute(
+            "SELECT status, bounce FROM contacts WHERE email=?",
+            ("anyone@catchall.org",),
+        ).fetchone()
+    assert row[0] == "skip"
+    assert row[1] == "pre-check"
+
+
+def test_scrub_keeps_catchall_high_warmth(temp_db, monkeypatch):
+    import db
+    import email_scrub
+
+    with db.get_conn() as conn:
+        try:
+            conn.execute("ALTER TABLE contacts ADD COLUMN warmth_score INTEGER DEFAULT 0")
+        except Exception:
+            pass
+        conn.execute(
+            "INSERT INTO contacts (email, name, type, status, warmth_score) VALUES (?,?,?,?,?)",
+            ("info@realorg.eu", "Hillsong Chapter", "curator", "verified", 8),
+        )
+
+    monkeypatch.setattr(
+        "bounce.verify_email",
+        lambda e: ("unknown", "Catch-all domain — mailbox existence unverifiable"),
+    )
+
+    result = email_scrub.scrub(limit=10, dry_run=False)
+    assert result["marked_skip"] == 0
+    assert result["inconclusive"] == 1
+
+    with db.get_conn() as conn:
+        row = conn.execute(
+            "SELECT status FROM contacts WHERE email=?", ("info@realorg.eu",)
+        ).fetchone()
+    assert row[0] == "verified"  # untouched
+
+
+def test_scrub_keeps_genuinely_inconclusive(temp_db, monkeypatch):
+    import db
+    import email_scrub
+
+    with db.get_conn() as conn:
+        conn.execute(
+            "INSERT INTO contacts (email, name, type, status) VALUES (?,?,?,?)",
+            ("maybe@unknown.tld", "Unknown Contact", "curator", "verified"),
+        )
+
+    monkeypatch.setattr(
+        "bounce.verify_email",
+        lambda e: ("unknown", "DNS unreachable — allowing through"),
+    )
+
+    result = email_scrub.scrub(limit=10, dry_run=False)
+    assert result["inconclusive"] == 1
+    assert result["marked_skip"] == 0
+
+    with db.get_conn() as conn:
+        row = conn.execute(
+            "SELECT status FROM contacts WHERE email=?", ("maybe@unknown.tld",)
+        ).fetchone()
+    assert row[0] == "verified"  # untouched
+
+
 def test_scrub_dry_run_does_not_write(temp_db, monkeypatch):
     import db
     import email_scrub
