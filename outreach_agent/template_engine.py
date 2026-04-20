@@ -155,86 +155,61 @@ Output ONLY valid JSON: {{"subject": "...", "body": "..."}}
 _TYPE_ADDONS = {
 
     "curator": """
-═══ CURATOR EMAIL — COMPLETE SYSTEM ═══
+═══ CURATOR EMAIL ═══
 
-PSYCHOLOGICAL FRAME:
-The curator's fear is not "this track is bad" — it is "I missed something good."
-Every sentence reinforces one of two curator self-images:
-  A. "I have good ears — this person noticed what I noticed."
-  B. "This artist is moving — I found them before they blew up."
-RJM's independent status (no label, no manager, owns all masters) is DISCOVERY UPSIDE.
-The biblical depth is a category differentiator — surface it as texture, not sermon:
-"Hebrew text as subtext," "ancient percussion architecture" — the curator FEELS something underneath.
+THE FRAME:
+A curator's fear is not "this track is bad" — it is "I missed something good." Every sentence should quietly reinforce one of two self-images: "I have good ears — this person noticed what I noticed" OR "This artist is moving — I found them early." You're not petitioning a gatekeeper. You're one selector writing to another.
 
-SUBJECT LINE — DO NOT use the old formula "[Track] ([BPM]) for [Playlist]". That is a filing system, not a hook.
+SUBJECT LINE — not a filing system, a hook:
 
-Use ONE of these three formulas (rotate, never repeat):
+Use ONE of these formulas:
+  Contrarian Fact: "[Track name]: [one unexpected true thing]"
+    GOOD: "Jericho: psytrance built around a 3,000-year-old battle cry"
+    GOOD: "Renamed: tribal techno that ends in 8 seconds of silence"
+  Proof-of-Ears: "noticed [one specific curatorial choice] — built something for that slot"
+    GOOD: "noticed you mix tribal percussion with downtempo exits — have something for that gap"
+  Credibility Leakage: "[social proof] / [track] / [micro-genre]"
+    GOOD: "290K IG / Renamed / tribal psytrance"
 
-FORMULA A — Contrarian Fact:
-  "[Track name]: [one unexpected true thing about the track]"
-  GOOD: "Jericho: psytrance built around a 3,000-year-old battle cry"
-  GOOD: "Renamed: tribal techno that ends in 8 seconds of silence"
-  GOOD: "Living Water: afro house with an untranslated scripture sample"
+DEAD SUBJECTS: anything formatted like "[Track] ([BPM] BPM) for [Playlist Name]" — that is a form submission, not a message.
 
-FORMULA B — Proof-of-Ears:
-  "noticed [one specific curatorial behavior] — built something for that slot"
-  GOOD: "noticed you mix tribal percussion with downtempo exits — have something for that gap"
-  GOOD: "noticed your afro house sets always end slow — built a track for that slot"
-
-FORMULA C — Credibility Leakage (no "for", use "/" as separator):
-  "[social proof] / [track name] / [micro-genre]"
-  GOOD: "290K IG / Renamed / tribal psytrance"
-  GOOD: "1.9M video views / Jericho / dark psytrance"
-
-WHEN RESEARCH IS AVAILABLE (specific playlist track, playlist name, or vibe known):
-  GOOD: "[Track already on their playlist] reminded me why I made Jericho"
-  GOOD: "[Playlist name] is missing a breakdown that breathes — Renamed does this"
-
-DEAD SUBJECTS — NEVER produce these:
-  ✗ "Renamed (130 BPM tribal) for Tribal Drums Music"  — filing system, bot-detectable
-  ✗ "Living Water (124 BPM Afro House) for Afro House Mix 2026"  — genre mislabel + flat
-  ✗ "Renamed (130 BPM tribal house) for Tribal House Top Hits"  — no tension, no differentiation
-
-EMAIL ARCHITECTURE (55–75 words body — ruthless):
-
-SENTENCE 1 — PROOF SENTENCE (10–18 words):
-Show you listened with ONE SPECIFIC, EARNED OBSERVATION. Must name something a curator DID — a choice only a listener could know. If no research: go directly to BPM/genre match (honest generic beats fabricated specific).
-  GOOD: "You kept [track X] at position 4 for four months — same BPM register as what I'm sending."
-  GOOD: "Three of your last five adds are tribal percussion with no drop — Jericho breaks that pattern once, and earns it."
+OPENING — show you listened AND connect it to your own work:
+The observation must land in your world, not just cite theirs. Not "you added [track X] — great taste." Instead: "You kept [track X] at position 4 for four months — that patience is what I tried to build into Renamed." Research + how it connects to your music = a person, not a bot.
+If no research: go straight to the sonic match. "Renamed sits at 130 BPM in the tribal space — same register as what you've been building toward." Honest generic beats fabricated specific.
   DEAD: "I love your playlist and think your curation is really unique."
   DEAD: "I've been listening to your playlist for a while."
 
-SENTENCE 2 — TRACK SENTENCE (three data points inline):
-"[Track name] — [BPM] BPM — [one phrase that sounds like music writing, not a press release] → [Spotify link]"
-  GOOD: "Jericho — 140 BPM — tribal percussion that builds like a siege and breaks like one → [link]"
-  GOOD: "Renamed — 130 BPM — raw percussive foundation, Isaiah 62 as the subtext → [link]"
-  DEAD: "I'd love for you to check out my track Jericho on Spotify here: [link]"
+THE TRACK — music writing, not a press release:
+Name + BPM + one line that sounds like a listener wrote it, not a publicist. Then the link inline.
+  GOOD: "Jericho — 140 BPM — percussion that builds like a siege and breaks exactly when it should → [link]"
+  GOOD: "Renamed — 130 BPM — I buried a Hebrew text in the low end. Three months before anyone mentioned it → [link]"
+  DEAD: "My track Jericho is 140 BPM and would be a great fit for your playlist → [link]"
 
-SENTENCE 3 — BRIDGE (optional — only if specific enough):
-Connect to a track or sonic characteristic already on their playlist. Skip if vague.
+BRIDGE (optional — only if genuinely true):
+One sentence connecting their existing taste to what you're sending. Skip if you're reaching.
   GOOD: "Sits in the same register as [Track X] you added in February — same patience, different scripture."
-  SKIP if you cannot make it that specific.
 
-SENTENCE 4 — ASK (one sentence, peer-to-peer):
-  GOOD: "Worth 90 seconds if the BPM sits right for you."
-  GOOD: "One listen is all I'm asking."
-  DEAD: "I would be so honored if you would consider adding it."
+THE CLOSE — vary it, keep it short, keep it peer-to-peer:
+  "Worth one listen?"
+  "I'm curious what you make of the percussion architecture."
+  "Worth 90 seconds if the BPM sits right."
+  "Does this sit in the same register as what you've been building toward?"
+  DEAD: "I would be so honored if you would consider adding it to your wonderful playlist."
   DEAD: "I hope this is a good fit and look forward to hearing from you!"
 
 SIGNATURE (exact format):
 Robert-Jan
 robertjanmastenbroek.com  |  @holyraveofficial (290K)  |  Tenerife, CET
-(The 290K goes in the signature, not the body — it signals discovery upside as they decide, not as a barter offer.)
+(290K in the signature, not the body — signals discovery upside quietly, not as a barter offer.)
 
-FINAL CHECKLIST before outputting:
+FINAL CHECK:
 □ Subject: tension or specificity? (not a form submission)
-□ First sentence: could a bot write this? (if yes, rewrite)
-□ Track description: music writing or press release?
-□ Spotify link: inline, not on its own sentence
-□ Ask: fellow selector tone or supplicant tone?
-□ Banned phrases: none
-□ Word count: 55–75 body words
-□ Does the email make the curator feel like a discoverer, not a gatekeeper?
+□ Opening: could a bot write this? (if yes, rewrite — add the connection to your work)
+□ Track line: music writing or press release copy?
+□ Human Moment: one line that could only come from RJM's life (see STORY FRAGMENTS)
+□ Spotify link: inline with the track, not on its own line
+□ Close: selector tone or supplicant tone?
+□ Word count: 55–80 body words
 """,
 
     "label": """
@@ -374,10 +349,13 @@ TRANSITION — the sentence the host screenshots and sends to their producer. Sl
   GOOD: "I make tribal psytrance for ravers, own every master, and haven't touched alcohol in [X] years — and I think that combination is an episode your audience hasn't heard."
   GOOD: "I'm a Dutch DJ who lost €6M and found Jesus — not as a redemption arc, just as the actual order of events."
 
+HUMAN MOMENT — one image, never a list:
+The story works because of ONE specific detail, not because of the full arc. "I was on my knees in a camper van on the south coast of Tenerife" is an image. "I went through a difficult period and discovered my faith" is a category. Choose the image. Let the host's imagination complete the arc.
+
 HIDDEN OBJECTION — scarcity framing, not "I'm different":
   GOOD: "If your inbox has another guest who walked away from a label deal at 21, lost €6M to blackmail at 30, and still credits Jesus without running a ministry — book them first. I'll wait."
 
-CLOSE — create FOMO: make the host feel they're missing a specific episode type if they don't reply:
+CLOSE — make the host feel they're missing a specific episode if they don't reply:
   GOOD: "Has anyone on your show walked away from a deal and kept the faith while the money burned?"
   GOOD: "Is the 'sober in the rave' angle something your audience has asked about, or is it a gap nobody's named yet?"
   DEAD: "Would I be a good fit for your show?" / "Happy to jump on a call"
@@ -443,7 +421,12 @@ def _is_christian_contact(genre: str, notes: str) -> bool:
 
 
 _CHRISTIAN_ADDON = """
-FAITH-FOCUSED CONTACT: Lead with faith openly. Jesus-loving raver is a feature not a footnote. Hook = losing everything, on his knees, found Jesus. Scripture-rooted music is the core identity. Use: faith, surrender, redemption, worship, testimony. Biblical track titles/Hebrew lyrics are selling points. Churches as venues: worship experience that reaches people who'd never enter a church. Tone: warm, genuine, brother-to-brother."""
+FAITH-FOCUSED CONTACT: Lead with faith openly — it's the story, not a footnote.
+Tone: warm, genuine, human. Not a pitch. Not a testimony on a stage. More like: talking to someone at a church you both showed up to.
+The hook is not "Jesus-loving raver" as a brand statement — it's the specific moment. "I was on my knees in Tenerife. That's where it changed." One image. Let it breathe.
+Biblical track titles and Hebrew lyrics are details, not selling points — mention them because they're true and interesting, not because they're marketable.
+Churches as venues: the music reaches people who wouldn't walk into a church. That's not a value prop — it's just what happens. Say it plainly.
+Banned in this context: "passionate worship experience" / "spirit-filled" / "anointed" / "this aligns with your ministry vision" — sound like a person, not a ministry brochure."""
 
 
 def _build_prompt(contact: dict, learning_context: str = "") -> str:
@@ -501,6 +484,9 @@ _FOLLOWUP_SYSTEM = """You write follow-up emails as Robert-Jan Mastenbroek (Dutc
 POSTURE RULE (read before writing a single word):
 You are not apologizing for emailing. You are not asking if they got the last email. You are not "just checking in." You are re-entering because something has changed, something new is available, or the window is closing. Every follow-up must have a reason to exist that is NOT "I didn't hear back."
 
+HUMAN VOICE RULE:
+A follow-up should feel like a genuine addition — something you actually noticed, not a process step. "Wanted to add this" beats "following up on my previous email." One new thing, told like a person would tell it. "The track landed on [playlist] last week — thought you'd want to know." / "Almost deleted this track twice. It hit 40K streams this month." One image, one fact, one honest thought. Not a strategy.
+
 Sign off: Robert-Jan | robertjanmastenbroek.com | https://instagram.com/robertjanmastenbroek"""
 
 
@@ -519,45 +505,41 @@ def _build_followup_prompt(contact: dict, is_second: bool = False) -> str:
         # ── FOLLOWUP FINAL (21 days) — last contact, genuine urgency ───────────
         mode_instructions = """MODE: FINAL CONTACT (last email — 21 days since first send)
 
-JOB: Create genuine urgency and close the loop gracefully. This is the last email.
-TONE: Calm, direct, no resentment. "I'm moving on after this — here's one last clean shot."
+JOB: Close the loop with genuine warmth and one last clean shot. No resentment. No performance of urgency.
+TONE: Calm, real, direct. Like telling a friend you're moving on — no drama, just honesty.
 
-STRUCTURE (3 parts):
-1. ACKNOWLEDGE the silence without blame: "I'll take the silence as a no for now — no hard feelings."
-2. RE-STATE the offer in ONE sentence — the most commercially concrete version. Lead with the money or the track, not with yourself.
-3. CLOSE with a SPECIFIC, time-limited reason to act today. Use ONE of:
-   - Content ID window: "I'm re-enabling Content ID on [track] at the end of [current month] — after that, the 100% revenue promise is gone."
-   - Exclusivity: "I'm only keeping this offer open to one channel in the [genre] space — whoever responds first."
-   - New track: "I have a new track dropping soon — happy to offer both, but only to whoever's in first."
-   Then step back completely.
+HOW IT FLOWS:
+Open by acknowledging the silence simply — not with blame, not with passive aggression. "I'll take the silence as a no for now — no hard feelings." That's the tone: a person, not a process.
 
-NEVER use:
-- "I just wanted to follow up one last time" (no urgency)
-- "No worries if not" (deflates everything)
-- Manufactured countdown language
+Then restate the offer in its most concrete form — lead with what's in it for them, not with yourself.
 
+Close with ONE specific, time-limited reason to act. Use whichever is true:
+  - Content ID: "I'm re-enabling Content ID on [track] at end of [month] — after that, the 100% revenue offer is gone."
+  - Exclusivity: "Keeping this offer open to one channel in the [genre] space — whoever responds first."
+  - New track: "New track dropping soon — happy to offer both, but only to whoever's in first."
+
+Then step back. No postscript. No "no worries if not." Just done.
+
+NEVER: "I just wanted to follow up one last time" / manufactured countdown / "Sorry to bother you again."
 LENGTH: 60–80 words."""
 
     else:
         # ── FOLLOWUP #1 (7-10 days) — bring ONE new piece of information ────────
         mode_instructions = """MODE: FOLLOW-UP #1 (7–10 days after first email)
 
-JOB: Bring ONE new piece of information that makes the original offer feel more alive, not more desperate.
-DO NOT ask "did you see my last email" — that is not new information.
+JOB: Add one genuine thing. Not "did you see my last email" — something that actually happened or something you actually noticed.
 
-NEW VALUE to introduce (choose one that fits):
-- A Spotify milestone or stream count on the track since the first email
-- A playlist placement the track landed on
-- A second track option if the first was a genre mismatch
-- A real deadline: "I'm keeping Content ID off through the end of the month"
-- Social proof: another creator who already uploaded it and the views it earned
+ONE NEW THING to bring (choose whichever is true):
+  - A Spotify milestone: "The track hit [X] streams this week."
+  - A playlist placement: "It landed on [playlist] since I wrote."
+  - An honest observation: "Almost deleted this track twice — it's the one that keeps getting found."
+  - A second track if the first was a genre mismatch.
+  - A real window closing: "Keeping Content ID off through end of month."
 
-STRUCTURE:
-1. ONE callback sentence — reference the most compelling line from the original email (the revenue offer, the track, the specific detail they would have registered). NOT a recap — a callback.
-2. ONE sentence of new information. Concrete. Dated if possible.
-3. ONE zero-friction CTA: "Reply 'yes' and the WAV is in your inbox within the hour."
+HOW IT FLOWS:
+Start with a callback to the most memorable line from the original email — not a recap, a reference. One sentence. Then the new thing. Then a short, frictionless ask. It should read like a quick message, not a scheduled follow-up sequence.
 
-LENGTH: 50–70 words. Shorter than the original pitch."""
+LENGTH: 50–70 words. Shorter than the original."""
 
     if orig_body:
         context_section = f"Original email body (mine the most compelling line for the callback):\n{orig_body}\n"
