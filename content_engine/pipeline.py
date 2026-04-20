@@ -754,6 +754,7 @@ def build_daily_clips(
             "caption": caption,
             "caption_by_platform": caption_by_platform,
             "track_title": track.title,
+            "bpm": track.bpm,
             "clip_length": duration,
             "visual_type": visual_type,
             "transitional_category": visual_context.get("category", ""),

@@ -228,13 +228,24 @@ def caption_has_scripture_anchor(caption: str, track_title: str) -> bool:
     """Return True if the caption mentions the track's scripture anchor (when one exists).
 
     Returns True unconditionally if the track has no configured anchor — we
-    can't flag what doesn't exist. Match is lenient: anywhere in the caption,
-    case-insensitive.
+    can't flag what doesn't exist.
+
+    Match is intentionally lenient — accepts both the spaced form ("Isaiah 62")
+    and the hashtag/compact form ("#Isaiah62", "Isaiah62") since the caption
+    prompt encourages subtle hashtag inclusion rather than preachy in-line
+    quotation.
     """
+    import re as _re
+
     anchor = _SCRIPTURE_ANCHORS.get((track_title or "").lower(), "")
     if not anchor:
         return True
-    return anchor.lower() in caption.lower()
+
+    def _alphanum(s: str) -> str:
+        return _re.sub(r"[^a-z0-9]", "", s.lower())
+
+    # Accept spaced ("Isaiah 62") OR compact/hashtag ("#Isaiah62", "Isaiah62")
+    return anchor.lower() in caption.lower() or _alphanum(anchor) in _alphanum(caption)
 
 
 def validate_tiktok_caption(caption: str) -> dict:

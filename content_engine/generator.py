@@ -417,6 +417,55 @@ def _caption_is_usable(text: str, track_title: str) -> bool:
     return True
 
 
+# Six title templates that rotate by clip_index to prevent every YouTube Short
+# from having an identical title. Hook-first templates fire when hook_text is
+# available; track-info templates serve as fallbacks.
+_YOUTUBE_TITLE_TEMPLATES = [
+    # 0 — hook-first (most click-worthy when hook is strong)
+    lambda t, h, bpm, fmt: f"{h[:55].rstrip()} · {t} | Holy Rave" if h else f"{t} — {bpm} BPM | Holy Rave #shorts",
+    # 1 — track + BPM + genre marker
+    lambda t, h, bpm, fmt: f"{t} — {bpm} BPM Melodic Techno | Holy Rave #shorts",
+    # 2 — artist-first
+    lambda t, h, bpm, fmt: f"Robert-Jan Mastenbroek — {t} | Holy Rave",
+    # 3 — format-aware vibe (performance vs sacred arc)
+    lambda t, h, bpm, fmt: (
+        f"{t} | Live Energy · Holy Rave 2026 #shorts"
+        if fmt == "performance_fast_cut"
+        else f"Holy Rave: {t} // {bpm} BPM #shorts"
+    ),
+    # 4 — genre marker + artist shorthand
+    lambda t, h, bpm, fmt: f"Tribal Techno · {t} · RJM | Holy Rave",
+    # 5 — hook-and-track combined (shorter hook excerpt)
+    lambda t, h, bpm, fmt: f"{h[:40].rstrip()} — {t} | RJM Holy Rave" if h else f"{t} | Tenerife · Holy Rave #shorts",
+]
+
+
+def generate_youtube_title(
+    track_title: str,
+    hook_text: str,
+    clip_index: int,
+    bpm: int = 0,
+    format_type: str = "",
+) -> str:
+    """Return a varied YouTube Short title, rotating through 6 templates by clip_index.
+
+    Titles are capped at 100 characters (YouTube limit). The hook text, BPM, and
+    format type are used to make each clip's title distinct.
+    """
+    display = _title_case_track(track_title) or "Holy Rave"
+    hook = (hook_text or "").strip()
+    bpm_str = str(int(bpm)) if bpm else "128"
+    fmt = (format_type or "").lower()
+
+    template = _YOUTUBE_TITLE_TEMPLATES[clip_index % len(_YOUTUBE_TITLE_TEMPLATES)]
+    title = template(display, hook, bpm_str, fmt)
+
+    # Hard cap at 100 chars — truncate at last word boundary
+    if len(title) > 100:
+        title = title[:97].rsplit(" ", 1)[0] + "..."
+    return title
+
+
 def generate_caption(
     track_title: str,
     hook_text: str,
@@ -462,10 +511,22 @@ def generate_caption(
             "- Casual, almost-private voice. Not promotional.\n"
             "- First line MUST be the hook or a dead-honest observation.\n"
             "- Max 2 emojis total.\n"
-            "- End with 'full track: link in bio' or the Spotify URL — nothing else.\n"
+            "- End with 'full track: link in bio' — nothing else.\n"
         )
     else:
         tiktok_rules = ""
+
+    # Instagram and TikTok do not make URLs clickable in captions — pasting a
+    # raw Spotify link just adds visual noise. Use "link in bio" instead.
+    # YouTube and Facebook support clickable links, so include the URL verbatim.
+    _no_link_platforms = {"instagram", "tiktok", "instagram_story", "facebook_story"}
+    if platform in _no_link_platforms:
+        spotify_instruction = (
+            "Spotify CTA: write 'link in bio' or 'Spotify (link in bio)' — "
+            "do NOT paste the URL (links are not clickable on this platform)"
+        )
+    else:
+        spotify_instruction = f"Spotify link to include verbatim: {SPOTIFY_ARTIST_URL}"
 
     visual_line = _visual_block(visual_context)
 
@@ -475,8 +536,8 @@ Track: {display_title} by Robert-Jan Mastenbroek (RJM / Holy Rave).
 BPM: {int(bpm) if bpm else 'unknown'}
 Genre: melodic techno / tribal psytrance
 Hook shown on-screen: {hook_text or 'none'}
-{visual_line}Scripture anchor (REQUIRED — weave in subtly, do not quote chapter:verse literally): {scripture or 'none'}
-Spotify link to include verbatim: {SPOTIFY_ARTIST_URL}
+{visual_line}Scripture anchor (REQUIRED — include as a hashtag e.g. #{scripture.replace(" ", "").replace(":", "") if scripture else ""} or a brief thematic allusion; never preachy, never a full verse citation): {scripture or 'none'}
+{spotify_instruction}
 
 Caption voice:
 - Dark, Holy, Futuristic. Ancient truth, future sound.
@@ -491,7 +552,7 @@ MUST include (in this order):
 1. Line with track title and 'Robert-Jan Mastenbroek'
 2. Line with BPM + genre (e.g. '{int(bpm) if bpm else 130} BPM tribal techno · Holy Rave')
 3. A 1-2 line creative hook/body that references a visual detail from the hook or scripture
-4. A call-to-action line that includes 'Spotify' and either the URL or 'link in bio'
+4. A call-to-action line that includes 'Spotify' and 'link in bio' (Instagram/TikTok) or the full URL (YouTube/Facebook)
 5. A final line with exactly 5 hashtags — must include #holyrave and #RobertJanMastenbroek
    (TIKTOK EXCEPTION: no hashtag block — embed 2-3 hashtags inline in the body)
 

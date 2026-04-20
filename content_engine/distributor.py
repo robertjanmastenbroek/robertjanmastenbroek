@@ -595,9 +595,20 @@ def _ensure_tokens_fresh() -> None:
     _refresh_youtube_token()
 
 
-def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_token: str) -> dict:
+def post_instagram_reel(
+    video_path: str,
+    caption: str,
+    ig_user_id: str,
+    access_token: str,
+    scheduled_at: str = "",
+) -> dict:
     """
     Upload Reel via Instagram Graph API.
+
+    When scheduled_at is a future ISO-8601 UTC string, uses publish_type=SCHEDULED
+    so Instagram publishes at that time automatically — media_publish is NOT called.
+    When scheduled_at is empty or in the past, publishes immediately.
+
     Returns {success: bool, post_id: str|None, platform: 'instagram', error: str|None}
     """
     try:
@@ -605,16 +616,33 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
         access_token = refresh_instagram_token(access_token)
         video_url = _upload_video_for_instagram(video_path)
 
+        # Determine whether this is a scheduled post.
+        # scheduled_publish_time must be at least 10 minutes in the future per Meta policy.
+        schedule_unix: int | None = None
+        if scheduled_at:
+            try:
+                sched_dt = datetime.fromisoformat(scheduled_at.replace("Z", "+00:00"))
+                margin = timedelta(minutes=10)
+                if sched_dt > datetime.now(timezone.utc) + margin:
+                    schedule_unix = int(sched_dt.timestamp())
+            except Exception:
+                pass  # fall back to immediate publish
+
         # 1. Create media container
+        container_params: dict = {
+            "access_token": access_token,
+            "media_type": "REELS",
+            "video_url": video_url,
+            "caption": caption,
+            "share_to_feed": "true",
+        }
+        if schedule_unix:
+            container_params["publish_type"] = "SCHEDULED"
+            container_params["scheduled_publish_time"] = str(schedule_unix)
+
         resp = requests.post(
             f"{INSTAGRAM_GRAPH_BASE}/{ig_user_id}/media",
-            params={
-                "access_token": access_token,
-                "media_type": "REELS",
-                "video_url": video_url,
-                "caption": caption,
-                "share_to_feed": "true",
-            },
+            params=container_params,
             timeout=30,
         )
         if resp.status_code != 200:
@@ -670,7 +698,17 @@ def post_instagram_reel(video_path: str, caption: str, ig_user_id: str, access_t
             )
             return {"success": False, "platform": "instagram", "error": "container timed out before FINISHED"}
 
-        # 3. Publish
+        # 3. Publish (or confirm scheduled)
+        if schedule_unix:
+            # Scheduled posts: Instagram auto-publishes at scheduled_publish_time.
+            # Do NOT call media_publish — that would publish immediately.
+            logger.info(
+                f"[distributor] Instagram Reel {creation_id} scheduled for "
+                f"{scheduled_at} (unix {schedule_unix}) — skipping immediate publish"
+            )
+            return {"success": True, "post_id": creation_id, "platform": "instagram",
+                    "scheduled_at": scheduled_at}
+
         pub_resp = requests.post(
             f"{INSTAGRAM_GRAPH_BASE}/{ig_user_id}/media_publish",
             params={"creation_id": creation_id, "access_token": access_token},
@@ -923,7 +961,14 @@ def _buffer_fallback(clip: dict, scheduled_at: str = "") -> dict:
                 "facebook", video_url, scheduled_at=scheduled_at or None,
             )
         elif platform == "youtube":
-            title = clip.get("track_title", "RJM") + " | Holy Rave #shorts"
+            from content_engine.generator import generate_youtube_title
+            title = generate_youtube_title(
+                clip.get("track_title", "RJM"),
+                clip.get("hook_text", ""),
+                clip.get("clip_index", 0),
+                bpm=clip.get("bpm", 0),
+                format_type=clip.get("format_type", ""),
+            )
             post_id = buffer_poster._create_video_post(
                 "youtube", video_url, caption,
                 title=title, description=caption,
@@ -1011,7 +1056,7 @@ def distribute_clip(clip: dict) -> dict:
         if _instagram_native_available():
             ig_user_id   = os.environ.get("INSTAGRAM_USER_ID", "")
             access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
-            result = post_instagram_reel(path, caption, ig_user_id, access_token)
+            result = post_instagram_reel(path, caption, ig_user_id, access_token, scheduled_at)
             if result.get("success"):
                 _record_native_post(platform, clip_index, result.get("post_id", ""))
             else:
@@ -1047,7 +1092,14 @@ def distribute_clip(clip: dict) -> dict:
     elif platform == "youtube":
         api_key     = os.environ.get("YOUTUBE_API_KEY", "")
         oauth_token = os.environ.get("YOUTUBE_OAUTH_TOKEN", "")
-        title       = f"{clip.get('track_title', 'RJM')} | Holy Rave #shorts"
+        from content_engine.generator import generate_youtube_title
+        title = generate_youtube_title(
+            clip.get("track_title", "RJM"),
+            clip.get("hook_text", ""),
+            clip_index,
+            bpm=clip.get("bpm", 0),
+            format_type=clip.get("format_type", ""),
+        )
         if api_key and oauth_token:
             result = post_youtube_short(path, title, caption, api_key, oauth_token,
                                         publish_at=scheduled_at)
