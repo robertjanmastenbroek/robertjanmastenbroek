@@ -30,6 +30,7 @@ from content_engine.audio_engine import (
 from content_engine.youtube_longform import config as cfg
 from content_engine.youtube_longform import (
     image_gen,
+    motion as motion_mod,
     prompt_builder,
     registry,
     render,
@@ -267,18 +268,41 @@ def publish_track(req: PublishRequest) -> PublishResult:
                 audio_path,
                 public_id=f"audio_{prompt.track_title.lower().replace(' ', '_')}",
             )
-            hero_public = render.upload_image_for_render(
-                result.hero_image.local_path,
-                public_id=f"hero_{prompt.track_title.lower().replace(' ', '_')}",
-            )
             duration = _audio_duration_seconds(audio_path)
-            spec = RenderSpec(
-                audio_url=audio_public,
-                hero_image_url=hero_public,
-                duration_seconds=duration,
-                output_label=prompt.track_title.lower().replace(" ", "_"),
-            )
-            result.video = render.composite(spec)
+            output_label = prompt.track_title.lower().replace(" ", "_")
+
+            if req.motion:
+                # Motion path: Kling O3 keyframe-chain morph loop rendered
+                # across the full track duration on Shotstack v1 (PAYG).
+                story = motion_mod.story_for_track(req.track_title)
+                logger.info(
+                    "Motion path: story '%s' with %d keyframes / %d morphs",
+                    story.story_id, len(story.keyframes), len(story.morphs),
+                )
+                keyframes, morph_clips = motion_mod.generate_morph_loop(
+                    story_id=story.story_id,
+                    track_prompt=prompt,
+                )
+                result.video = motion_mod.stitch_full_track(
+                    clips=morph_clips,
+                    audio_url=audio_public,
+                    target_duration_s=duration,
+                    output_label=f"{output_label}_motion",
+                    shotstack_env="v1",   # PAYG, no watermark
+                )
+            else:
+                # Stills-only path: single hero image held for full duration.
+                hero_public = render.upload_image_for_render(
+                    result.hero_image.local_path,
+                    public_id=f"hero_{output_label}",
+                )
+                spec = RenderSpec(
+                    audio_url=audio_public,
+                    hero_image_url=hero_public,
+                    duration_seconds=duration,
+                    output_label=output_label,
+                )
+                result.video = render.composite(spec)
 
         # 4. Smart link
         result.smart_link = registry.build_smart_link(req.track_title)
@@ -325,7 +349,16 @@ def publish_track(req: PublishRequest) -> PublishResult:
 
         # 7. Cost estimate + registry
         cost = image_gen.estimate_cost_usd(hero_count=1, thumb_count=len(result.thumbnails))
-        result.cost_usd = cost
+        if req.motion:
+            story = motion_mod.story_for_track(req.track_title)
+            cost += motion_mod.estimate_cost_usd(
+                keyframe_count=len(story.keyframes),
+                duration_s=10,
+            )
+            # Shotstack PAYG for full-track render: $0.40/min
+            if result.video:
+                cost += round(0.40 * result.video.duration / 60, 4)
+        result.cost_usd = round(cost, 4)
         result.elapsed_seconds = round(time.time() - t_start, 1)
 
     except Exception as e:

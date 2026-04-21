@@ -205,11 +205,38 @@ def youtube_oauth_is_holyrave() -> bool:
 # Consolidated to TWO playlists per user direction (2026-04-21):
 #   - YT_PLAYLIST_ETHNIC_TRIBAL  → 128-136 BPM organic-house / ethnic / world
 #   - YT_PLAYLIST_TRIBAL_PSY     → 140+ BPM tribal psytrance
-YT_PLAYLIST_ETHNIC_TRIBAL = os.getenv("YOUTUBE_PLAYLIST_ETHNIC_TRIBAL", "")
-YT_PLAYLIST_TRIBAL_PSY    = os.getenv("YOUTUBE_PLAYLIST_TRIBAL_PSY", "")
+#
+# Env can contain either the raw PL… ID or a full
+# https://youtube.com/playlist?list=PL… URL — we normalize below.
+
+
+def _parse_playlist_id(env_value: str) -> str:
+    """
+    Accept either a raw PL… playlist ID or a full YouTube playlist URL
+    and return just the ID. Empty/missing → "".
+
+    Examples accepted:
+      ""                                                       → ""
+      "PL2_UQSKEGgv4TmbcWeMbf_mdvjZ1f74TW"                     → "PL2_UQSKEGgv4TmbcWeMbf_mdvjZ1f74TW"
+      "https://www.youtube.com/playlist?list=PL2_UQSKEGgv4T…"  → "PL2_UQSKEGgv4T…"
+      "https://youtu.be/…?list=PL…&index=3"                    → "PL…"
+    """
+    if not env_value:
+        return ""
+    v = env_value.strip()
+    # If it contains 'list=' extract the value after it
+    if "list=" in v:
+        after = v.split("list=", 1)[1]
+        # Strip subsequent & params
+        return after.split("&", 1)[0]
+    return v
+
+
+YT_PLAYLIST_ETHNIC_TRIBAL  = _parse_playlist_id(os.getenv("YOUTUBE_PLAYLIST_ETHNIC_TRIBAL", ""))
+YT_PLAYLIST_TRIBAL_PSY     = _parse_playlist_id(os.getenv("YOUTUBE_PLAYLIST_TRIBAL_PSY", ""))
 # Legacy (deprecated, kept for back-compat) — remove after full migration:
-YT_PLAYLIST_ORGANIC_HOUSE = os.getenv("YOUTUBE_PLAYLIST_ORGANIC_HOUSE", "")
-YT_PLAYLIST_MIDDLE_EASTERN = os.getenv("YOUTUBE_PLAYLIST_MIDDLE_EASTERN", "")
+YT_PLAYLIST_ORGANIC_HOUSE  = _parse_playlist_id(os.getenv("YOUTUBE_PLAYLIST_ORGANIC_HOUSE", ""))
+YT_PLAYLIST_MIDDLE_EASTERN = _parse_playlist_id(os.getenv("YOUTUBE_PLAYLIST_MIDDLE_EASTERN", ""))
 
 # Quota budgeting (default 10,000 units/day)
 YT_DAILY_QUOTA_CAP       = int(os.getenv("YOUTUBE_DAILY_QUOTA_CAP", "10000"))

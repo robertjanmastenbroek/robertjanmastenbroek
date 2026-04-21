@@ -122,6 +122,12 @@ class PublishRequest:
     force:            bool = False          # Bypass registry dedup (for re-publishes after fixes)
     channel_id:       Optional[str] = None  # Target channel (Holy Rave) override
     notes:            str = ""
+    # Motion path — when True, publisher uses motion.TRACK_STORIES[track_title]
+    # (or DEFAULT motion story fallback) to generate a keyframe-chain morph
+    # loop via Kling O3, then renders the full-track MP4 by looping the chain
+    # to match audio duration. Premium path: ~$5.50-$7.50 per publish vs
+    # ~$0.15 for stills-only. Use for launch drops where motion matters.
+    motion:           bool = False
 
 
 @dataclass

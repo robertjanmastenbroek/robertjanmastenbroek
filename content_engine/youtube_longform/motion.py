@@ -164,63 +164,101 @@ class RenderedMorphClip:
 #     NOT Mesoamerican, NOT Hindu, NOT New Age cosmic
 #   · Character persistency within a scene — same face the whole clip
 
+#
+# ─── v2 prompts — positive-only discipline ───────────────────────────────────
+# RJM critique (2026-04-21 post-first-test):
+#   "focus on avoiding using negative prompts, but mainly on positive prompts
+#    that should do the trick much better."
+#
+# Insight: diffusion models respond better to positive specificity than
+# negatives. A "no modern clothing, no T-shirt" clause still puts T-shirt in
+# the attention space. Better to describe the ancient period so fully that
+# wrong things have no space to emerge.
+#
+# Every keyframe below is anchored to:
+#   · Iron Age Levant c. 1400-1200 BCE (Joshua-era biblical period)
+#   · Specific fabric language (rough-spun linen, hand-woven wool, bronze fibula)
+#   · Specific jewelry language (hammered silver, lapis-lazuli, carnelian, copper)
+#   · Specific motif anchor (Paleo-Canaanite, Iron Age Levantine, ancient Hebrew)
+#   · Locked palette tokens (terracotta, indigo-night, gold, ochre)
+#
+# Every motion prompt below uses drone-camera language (orbiting, arcing,
+# sweeping, tunneling, ascending) — continuous cinematic movement, never
+# static. This is what RJM called out as the Omiki 'Wana' signature.
+
 RJM_HERO_STORY: MorphStory = MorphStory(
     story_id="rjm_hero_hebrew_bedouin",
     keyframes=[
         Keyframe(
             keyframe_id="rjm_warrior",
             still_prompt=(
-                "Close-up heroic portrait of a young Hebrew nomad warrior in his "
-                "late twenties, piercing direct eye contact with the camera, "
-                "deep brown eyes, strong bearded jaw, weathered sun-darkened skin, "
-                "fine tribal geometric face paint in gold and ochre under his "
-                "eyes (simple straight lines in a Paleo-Hebrew / Bedouin motif — "
-                "absolutely no Mesoamerican, no Aztec, no Mayan patterns), a "
-                "large silver and turquoise forehead diadem with hand-wrought "
-                "Hebrew-inspired geometric engraving, dark curled hair with "
-                "small silver beads woven in, layered necklaces of hand-wrought "
-                "silver and lapis-lazuli and carnelian beads, a hand-woven dark "
-                "indigo robe with gold trim at the shoulder, ancient desert dusk "
-                "backdrop with warm dust sparks drifting, shallow depth of "
-                "field, cinematic heroic framing, terracotta and indigo-night "
-                "and gold palette, photographic realism, 16:9, --style raw"
+                "Close-up heroic cinematic portrait of an Iron Age Hebrew "
+                "nomad warrior in his late twenties, piercing direct eye "
+                "contact with the camera, deep brown eyes, strong bearded "
+                "jaw with thick dark beard, weathered sun-darkened skin of a "
+                "desert traveler, fine Paleo-Canaanite geometric face paint "
+                "in gold and ochre painted in clean straight vertical lines "
+                "beneath each eye, a hammered silver forehead diadem set "
+                "with polished lapis-lazuli and turquoise in ancient "
+                "Levantine geometric pattern, dark curled hair with small "
+                "hand-wrought silver beads woven through the locks, layered "
+                "necklaces of hand-wrought silver links interwoven with "
+                "lapis-lazuli and carnelian and polished copper beads, a "
+                "hand-woven dark indigo wool robe with gold-thread trim at "
+                "the shoulder, a thick woolen cloak pinned at the collarbone "
+                "with a bronze fibula brooch, the ancient desert at dusk "
+                "behind him with warm gold dust sparks drifting through the "
+                "air, shallow depth of field, heroic low-angle cinematic "
+                "framing, terracotta and indigo-night and gold palette, "
+                "Iron Age Levant c. 1200 BCE biblical period, photographic "
+                "realism, 16:9, --style raw"
             ),
         ),
         Keyframe(
             keyframe_id="rjm_priestess",
             still_prompt=(
-                "Close-up heroic portrait of a Bedouin priestess in her early "
-                "thirties, piercing direct eye contact with the camera, deep "
-                "brown eyes rimmed with kohl, strong jawline, warm olive skin, "
-                "fine tribal gold face paint straight beneath her eyes (Bedouin "
-                "/ Hebrew motif, absolutely no Mesoamerican, no Aztec, no Mayan "
-                "patterns), ornate silver-and-turquoise headpiece cascading "
-                "silver chains across her forehead, silver nose-ring connected "
-                "by a delicate chain to her ear, multiple layered silver "
-                "necklaces set with lapis and carnelian, a hand-woven black "
-                "veil with gold embroidery draped softly over her head, "
-                "ephod-style ornate gold-and-terracotta vestment across her "
-                "chest, warm firelight side-lighting carving her features, "
-                "sparks drifting in the dark background, shallow depth of "
-                "field, cinematic heroic framing, terracotta and indigo-night "
-                "and gold palette, photographic realism, 16:9, --style raw"
+                "Close-up heroic cinematic portrait of an Iron Age Hebrew "
+                "priestess in her early thirties, piercing direct eye "
+                "contact with the camera, deep brown eyes rimmed with dark "
+                "kohl, strong jawline, warm olive skin, fine gold face paint "
+                "in clean straight horizontal lines beneath each eye "
+                "(ancient Levantine ceremonial motif), an ornate hammered "
+                "silver-and-turquoise headpiece cascading hand-wrought "
+                "silver chains across her forehead and temples, a delicate "
+                "silver nose-ring connected by a silver chain to her ear, "
+                "multiple layered silver necklaces set with polished "
+                "lapis-lazuli and carnelian and amethyst, a hand-woven "
+                "black wool veil with gold-thread embroidery draped softly "
+                "over her head and shoulders, an ornate ephod-style "
+                "vestment of hand-woven gold and terracotta linen across "
+                "her chest with braided linen shoulder straps, warm "
+                "firelight side-lighting carving her features from the "
+                "right, fine warm gold sparks drifting through the dark "
+                "air behind her, shallow depth of field, heroic cinematic "
+                "framing, terracotta and indigo-night and gold palette, "
+                "Iron Age Levant c. 1200 BCE biblical period, photographic "
+                "realism, 16:9, --style raw"
             ),
         ),
         Keyframe(
             keyframe_id="rjm_temple",
             still_prompt=(
-                "Wide cinematic establishing shot of an ancient Abrahamic "
-                "desert temple at night — a stepped stone ziggurat resembling "
-                "the ancient temples of Ur-of-the-Chaldees, weathered "
-                "sandstone blocks with subtle carved geometric patterns, the "
-                "structure rising into a starry desert sky, a single bronze "
-                "altar fire burning at the base with golden flames licking "
-                "upward, a small hooded figure in dark indigo robe silhouetted "
-                "beside the altar facing the flame, warm sparks drifting into "
-                "the night sky, distant desert mountains in blue shadow, "
-                "deep atmospheric depth, no humans in close-up, cinematic "
-                "wide heroic framing, terracotta and indigo-night and gold "
-                "palette, photographic realism, 16:9, --style raw"
+                "Wide cinematic establishing shot of an ancient Iron Age "
+                "Abrahamic desert temple at night — a stepped stone "
+                "ziggurat of weathered sandstone reminiscent of the great "
+                "temples of Ur-of-the-Chaldees, hand-carved ancient "
+                "Levantine geometric patterns traced along each tier, the "
+                "massive structure rising into a deep indigo starry desert "
+                "sky with a distant crescent moon, a single tall bronze "
+                "altar brazier burning at the base with warm golden flames "
+                "licking upward, a small hooded figure in a dark indigo "
+                "wool robe silhouetted beside the altar facing the flame, "
+                "warm gold sparks drifting upward into the night sky, "
+                "distant desert mountains in indigo-night shadow beyond, "
+                "deep atmospheric haze, cinematic wide heroic framing from "
+                "below, terracotta and indigo-night and gold palette, Iron "
+                "Age Mesopotamia / Canaan c. 1400 BCE, photographic "
+                "realism, 16:9, --style raw"
             ),
         ),
     ],
@@ -230,13 +268,15 @@ RJM_HERO_STORY: MorphStory = MorphStory(
             from_kf_id="rjm_warrior",
             to_kf_id="rjm_priestess",
             motion_prompt=(
-                "Very slow cinematic morph transition: the warrior's eyes "
-                "gently close, warm gold dust swirls outward from his silver "
-                "diadem filling the frame, the camera travels forward through "
-                "the gold dust cloud, and as the dust clears we emerge at the "
-                "priestess's face — her eyes slowly opening to meet the "
-                "camera. Continuous hypnotic flow, no cuts, psychedelic "
-                "dissolve. The eyes remain locked on camera throughout."
+                "Sweeping cinematic drone camera orbiting slowly around the "
+                "warrior's head as his eyes gently close, warm gold dust "
+                "swirls outward from his silver diadem and fills the frame, "
+                "the drone continues forward through the gold dust cloud in "
+                "a smooth curving aerial arc, and as the dust clears the "
+                "drone swings into a slow orbital arc around the priestess "
+                "whose eyes slowly open to meet the camera. Continuous "
+                "cinematic drone motion throughout, never static, always "
+                "flying."
             ),
         ),
         MorphClip(
@@ -244,13 +284,16 @@ RJM_HERO_STORY: MorphStory = MorphStory(
             from_kf_id="rjm_priestess",
             to_kf_id="rjm_temple",
             motion_prompt=(
-                "Very slow cinematic zoom-in into the priestess's right pupil, "
-                "the pupil expanding until the frame is dark, then a single "
-                "distant warm flame appears in the black, the camera keeps "
-                "pulling backward and the flame resolves into the bronze altar "
-                "fire of an ancient desert ziggurat at night, the full wide "
-                "temple scene coming into view as stars emerge in the sky "
-                "above. Continuous hypnotic flow, no cuts, seamless zoom."
+                "Cinematic drone camera orbiting the priestess while slowly "
+                "pushing into her right pupil, the drone tunneling through "
+                "darkness with perpetual subtle arcing motion, a single "
+                "distant warm flame appears in the black, the drone "
+                "continues pulling backward in a wide arcing aerial sweep, "
+                "the flame resolving into the bronze altar fire of an "
+                "ancient Iron Age ziggurat at night, the full wide temple "
+                "scene coming into view as stars emerge in the deep indigo "
+                "sky. Continuous cinematic drone motion throughout, never "
+                "static."
             ),
         ),
         MorphClip(
@@ -258,13 +301,16 @@ RJM_HERO_STORY: MorphStory = MorphStory(
             from_kf_id="rjm_temple",
             to_kf_id="rjm_warrior",
             motion_prompt=(
-                "Very slow cinematic zoom-in toward the bronze altar flame at "
-                "the base of the desert temple, the flame growing until it "
-                "fills the frame, the flame shape slowly reshaping into the "
-                "silver-and-turquoise geometric ornament of a warrior's "
-                "diadem, the camera pulls back revealing the warrior's "
-                "forehead then his full face — his eyes opening to meet the "
-                "camera. Continuous hypnotic flow, no cuts, seamless zoom."
+                "Sweeping cinematic drone camera pushing in toward the "
+                "bronze altar flame at the base of the ancient ziggurat "
+                "while orbiting around the flame, the flame growing until "
+                "it fills the frame and reshaping into the hammered "
+                "silver-and-turquoise geometric ornament on the warrior's "
+                "diadem, the drone pulls back with sweeping orbital motion "
+                "revealing the warrior's forehead and then his full face, "
+                "his eyes opening to meet the camera. Continuous cinematic "
+                "drone motion throughout, seamlessly closing the hypnotic "
+                "loop."
             ),
         ),
     ],
@@ -296,34 +342,44 @@ RJM_HERO_STORY: MorphStory = MorphStory(
 _JERICHO_WALL_KEYFRAME = Keyframe(
     keyframe_id="rjm_jericho_wall",
     still_prompt=(
-        "Wide cinematic heroic establishing shot of a massive ancient "
-        "Abrahamic stone wall at dawn — weathered sandstone blocks "
-        "towering into a golden-amber sky, subtle carved Hebrew-inspired "
-        "geometric patterns along the upper courses, the base meeting a "
-        "sand-swept desert floor with warm dust drifting upward across "
-        "the wall face, distant desert mountains in indigo-night shadow, "
-        "no human figures, no Mesoamerican elements, no Islamic calligraphy, "
-        "cinematic ultra-wide heroic framing, terracotta and indigo-night "
-        "and gold palette, photographic realism, 16:9, --style raw"
+        "Wide cinematic heroic establishing shot of the ancient Iron Age "
+        "walls of Jericho at dawn — a massive weathered sandstone "
+        "fortification towering into a warm golden-amber sky, hand-carved "
+        "Paleo-Canaanite geometric patterns running along the upper "
+        "courses, fine stonemason chisel marks on every block, the base "
+        "meeting a sand-swept desert floor with warm gold dust drifting "
+        "upward across the weathered stone face, distant desert mountains "
+        "in indigo-night shadow beyond the wall, deep atmospheric warmth, "
+        "cinematic ultra-wide heroic framing from below, terracotta and "
+        "indigo-night and gold palette, Canaan period c. 1400 BCE, "
+        "photographic realism, 16:9, --style raw"
     ),
 )
 
 _JERICHO_SHOFAR_KEYFRAME = Keyframe(
     keyframe_id="rjm_jericho_shofar",
     still_prompt=(
-        "Close-up heroic portrait of a weathered bearded Hebrew shofar "
-        "player in his fifties, piercing direct eye contact with the "
+        "Close-up heroic cinematic portrait of an Iron Age Hebrew priest "
+        "shofar-blower in his fifties, weathered Mediterranean face with "
+        "a long gray-streaked beard, piercing direct eye contact with the "
         "camera lifted just above the horn's curve, a large curved ram's "
-        "horn shofar raised to his lips, sun-aged hands gripping the "
-        "horn, hand-woven indigo-and-gold head wrap with tribal geometric "
-        "pattern (Hebrew / Bedouin motif, absolutely no Mesoamerican, no "
-        "Aztec, no Mayan, no Islamic calligraphy), silver beaded "
-        "necklaces with lapis-lazuli and carnelian, a massive ancient "
-        "sandstone wall rising in soft warm blur behind him, golden hour "
-        "side-lighting carving his profile, fine warm dust drifting "
-        "through the air, shallow depth of field, cinematic heroic "
-        "framing, terracotta and indigo-night and gold palette, "
-        "photographic realism, 16:9, --style raw"
+        "horn shofar raised firmly to his lips with both sun-aged hands "
+        "gripping the horn, he wears a rough-spun ancient linen tunic "
+        "ankle-length in natural undyed ivory, a thick woolen priestly "
+        "shoulder cloak hand-woven in earth-tone stripes of indigo and "
+        "terracotta and gold thread, tzitzit prayer tassels knotted at "
+        "each of the four corners of his tallit-style outer mantle, a "
+        "braided leather rope belt tied at the waist, bare weathered "
+        "sun-darkened forearms, a hand-woven indigo-and-gold linen head "
+        "wrap patterned with ancient Levantine geometric motif, "
+        "hand-wrought silver beaded necklaces strung with lapis-lazuli "
+        "and carnelian, a massive ancient sandstone wall rising in soft "
+        "warm blur behind him, golden hour side-lighting carving his "
+        "profile from the right, fine warm gold dust drifting through "
+        "the air, shallow depth of field, heroic cinematic framing, "
+        "terracotta and indigo-night and gold palette, Iron Age Levant "
+        "c. 1400 BCE Canaan period biblical priesthood, photographic "
+        "realism, 16:9, --style raw"
     ),
 )
 
@@ -398,11 +454,38 @@ JERICHO_EXTENDED_STORY: MorphStory = MorphStory(
 )
 
 
-# Registry of named stories callable by the test script / publisher
+# ─── Stories + per-track routing ─────────────────────────────────────────────
+# STORIES is the named registry — any story can be referenced by ID from the
+# CLI (`test_morph_loop.py --story <id>`) or from publisher.
+#
+# TRACK_STORIES maps lowercase track title → story. The publisher consults
+# this when req.motion=True and falls back to DEFAULT_STORY if no per-track
+# story exists. Add a new entry here every time a track gets its own
+# scripture-anchored narrative.
+#
+# DEFAULT_STORY is the universal RJM hero-portrait chain — usable for any
+# track while its dedicated story is still being written. Always safe as
+# a fallback.
+
 STORIES: dict[str, MorphStory] = {
     "rjm_hero_hebrew_bedouin":   RJM_HERO_STORY,          # 30s, 3 keyframes
     "jericho_joshua6_extended":  JERICHO_EXTENDED_STORY,  # 60s, 5 keyframes
 }
+
+DEFAULT_STORY: MorphStory = RJM_HERO_STORY
+
+# Per-track narrative override. Lowercase keys. Scripture-anchored where
+# applicable. Add new tracks as their stories are written — Selah, Halleluyah,
+# Kadosh, Not By Might, etc. each get their own dedicated chain.
+TRACK_STORIES: dict[str, MorphStory] = {
+    "jericho":   JERICHO_EXTENDED_STORY,
+    # Add future tracks here as their stories are written.
+}
+
+
+def story_for_track(track_title: str) -> MorphStory:
+    """Return the MorphStory for a track, or the default fallback."""
+    return TRACK_STORIES.get(track_title.lower().strip(), DEFAULT_STORY)
 
 
 # ─── Kling O3 client (the morph engine) ──────────────────────────────────────
@@ -725,6 +808,158 @@ def stitch_loop(
                     f.write(chunk)
     logger.info("Preview written: %s", local)
     return local
+
+
+# ─── Full-track render (the publisher-path stitch) ───────────────────────────
+
+def stitch_full_track(
+    clips:              list[RenderedMorphClip],
+    audio_url:          str,
+    target_duration_s:  int,
+    output_label:       str,
+    shotstack_env:      str = "v1",     # v1 = production PAYG, no watermark
+) -> "RenderedVideo":
+    """
+    Render the final publish MP4: motion chain looped to cover `target_duration_s`
+    with `audio_url` as soundtrack, at 1080p via Shotstack PAYG.
+
+    Clip-cycling logic:
+      For target_duration_s = 312 (Jericho 5:12) and a 6-clip 60s chain,
+      we emit 31 clip slots cycling [c0..c5, c0..c5, …]. The first 30 slots
+      are full 10s; the final slot is truncated to 2s so the video ends
+      exactly at 312s matching the audio.
+
+    Uses Shotstack v1 (production) by default — the stage env has
+    watermarks + time caps and is unsuitable for real publishes. Stage
+    stays free for our test_morph_loop.py runs.
+
+    Returns a RenderedVideo dataclass so it slots into existing publisher
+    flow (same shape as render.composite()).
+    """
+    # Defer import to keep render dep optional in test-only paths
+    from content_engine.youtube_longform.types import RenderedVideo
+
+    if not cfg.SHOTSTACK_API_KEY:
+        raise MotionError("SHOTSTACK_API_KEY not set — cannot render.")
+    if not clips:
+        raise MotionError("Cannot render empty clip list.")
+    if target_duration_s <= 0:
+        raise MotionError(f"target_duration_s must be positive, got {target_duration_s}")
+
+    # Rehydrate cached clips if they lack remote_url (happens when pulled
+    # from Path cache with no fresh Kling URL). Upload each to Cloudinary.
+    if any(not c.remote_url for c in clips):
+        from content_engine.youtube_longform.render import _upload_to_cloudinary
+        rehydrated: list[RenderedMorphClip] = []
+        for c in clips:
+            if c.remote_url:
+                rehydrated.append(c)
+                continue
+            url = _upload_to_cloudinary(
+                c.local_path,
+                resource_type="video",
+                public_id=f"motion_{c.clip_id}",
+            )
+            rehydrated.append(RenderedMorphClip(
+                clip_id=c.clip_id,
+                from_kf_id=c.from_kf_id,
+                to_kf_id=c.to_kf_id,
+                local_path=c.local_path,
+                remote_url=url,
+                duration_s=c.duration_s,
+                width=c.width,
+                height=c.height,
+            ))
+        clips = rehydrated
+
+    base_url = f"https://api.shotstack.io/edit/{shotstack_env}"
+    headers = {
+        "x-api-key":    cfg.SHOTSTACK_API_KEY,
+        "Content-Type": "application/json",
+    }
+
+    # Build the cycled clip sequence. Most clips are full-duration; the
+    # LAST clip may be truncated so total = target_duration_s exactly.
+    clip_len = clips[0].duration_s
+    shotstack_clips = []
+    cursor = 0.0
+    i = 0
+    while cursor < target_duration_s:
+        src = clips[i % len(clips)].remote_url
+        remaining = target_duration_s - cursor
+        length = clip_len if remaining >= clip_len else remaining
+        shotstack_clips.append({
+            "asset":  {"type": "video", "src": src},
+            "start":  round(cursor, 3),
+            "length": round(length, 3),
+            "fit":    "cover",
+        })
+        cursor += length
+        i += 1
+
+    timeline = {
+        "timeline": {
+            "soundtrack": {
+                "src":    audio_url,
+                "effect": "fadeInFadeOut",
+            },
+            "tracks": [{"clips": shotstack_clips}],
+        },
+        "output": {
+            "format":     "mp4",
+            "resolution": "1080",
+            "fps":        cfg.VIDEO_FPS,
+        },
+    }
+
+    logger.info(
+        "Shotstack %s | full-track render %s | %d clips → %ds",
+        shotstack_env, output_label, len(shotstack_clips), target_duration_s,
+    )
+    r = requests.post(f"{base_url}/render", headers=headers, json=timeline, timeout=60)
+    if not r.ok:
+        raise MotionError(
+            f"Shotstack {shotstack_env} render {r.status_code}: "
+            f"{r.text[:600]}\nPayload preview: {json.dumps(timeline)[:500]}"
+        )
+    job_id = r.json()["response"]["id"]
+    logger.info("Shotstack job id: %s", job_id)
+
+    deadline = time.time() + cfg.SHOTSTACK_TIMEOUT
+    final_url = None
+    while time.time() < deadline:
+        time.sleep(5)
+        s = requests.get(f"{base_url}/render/{job_id}", headers=headers, timeout=30)
+        s.raise_for_status()
+        status = s.json()["response"]["status"]
+        logger.info("Shotstack status: %s", status)
+        if status == "done":
+            final_url = s.json()["response"]["url"]
+            break
+        if status == "failed":
+            raise MotionError(f"Shotstack render failed: {s.json()!r}")
+    if not final_url:
+        raise MotionError(f"Shotstack render timed out after {cfg.SHOTSTACK_TIMEOUT}s")
+
+    local_path = cfg.VIDEO_DIR / f"{output_label}.mp4"
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    with requests.get(final_url, stream=True, timeout=cfg.SHOTSTACK_TIMEOUT) as resp:
+        resp.raise_for_status()
+        with open(local_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+    logger.info("Full-track render written: %s", local_path)
+
+    return RenderedVideo(
+        local_path=local_path,
+        remote_url=final_url,
+        width=cfg.VIDEO_WIDTH,
+        height=cfg.VIDEO_HEIGHT,
+        duration=target_duration_s,
+        codec=cfg.VIDEO_CODEC,
+        audio_codec=cfg.AUDIO_CODEC,
+    )
 
 
 # ─── Cost helpers ────────────────────────────────────────────────────────────
