@@ -182,6 +182,20 @@ def _send_batch(batch_size: int) -> dict:
             db.update_contact(email, status="skip")
             skipped += 1
             continue
+        # Reject addresses whose TLD is a media/file extension — these are
+        # scraped filenames masquerading as emails (e.g. foo@bar.jpg, x@y.png).
+        _FILE_EXT_TLDS = {
+            "jpg", "jpeg", "png", "gif", "svg", "webp", "ico", "bmp", "tiff", "tif",
+            "mp3", "mp4", "wav", "avi", "mov", "mkv", "webm", "ogg", "flac",
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv",
+            "js", "ts", "jsx", "tsx", "css", "html", "htm", "php", "py", "rb",
+            "zip", "gz", "tar", "rar", "7z", "json", "xml", "yaml", "yml",
+        }
+        if _tld in _FILE_EXT_TLDS:
+            log.warning("Skipping %s — TLD '%s' is a file extension, not a real domain", email, _tld)
+            db.update_contact(email, status="skip")
+            skipped += 1
+            continue
 
         # Final pre-send dead-list check (catches bounces found in this cycle)
         domain   = _parts[1]

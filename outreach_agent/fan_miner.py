@@ -51,6 +51,7 @@ _BAD_DOMAINS = {
     "instagram.com", "twitter.com", "tiktok.com", "spotify.com",
     "w3.org", "schema.org", "apple.com", "google.com", "youtube.com",
 }
+_IMAGE_EXTS = {"jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "tiff", "tif", "avif"}
 _BAD_PREFIXES = {
     "noreply", "no-reply", "privacy", "abuse", "support",
     "admin", "postmaster", "webmaster", "donotreply",
@@ -76,6 +77,13 @@ _QUERIES = [
     'psytrance festival community organizer newsletter contact email Europe 2026',
     '"melodic techno" podcast OR mix series contact booking email 2026',
     '"ecstatic dance music" playlist curator blog newsletter contact email 2026',
+    # Direct site targets — higher email yield than generic DDG queries
+    'site:submithub.com "melodic techno" OR "psytrance" OR "tribal" curator email',
+    'site:soundplate.com "melodic techno" OR "tribal" OR "psytrance" curator contact',
+    'site:ra.co "melodic techno" OR "psytrance" label OR podcast contact email',
+    '"submit your music" "melodic techno" OR "psytrance" playlist curator email 2026',
+    'indiemono.com OR mysphera.com OR music-gateway.com melodic techno psytrance curator contact email',
+    '"conscious electronic" OR "sacred bass" community newsletter blog creator email contact 2026',
 ]
 
 _UNSAFE_SIGNALS = re.compile(
@@ -120,6 +128,9 @@ def _extract_emails(html: str) -> list[str]:
         tld = segments[-1]
         # TLD must be pure alpha, 2–10 chars (rejects .ru.js, .d58f…)
         if not tld.isalpha() or not (2 <= len(tld) <= 10):
+            continue
+        # Reject image file extensions masquerading as TLDs
+        if tld in _IMAGE_EXTS:
             continue
         # Reject any domain segment that looks like a hex hash
         if any(_HEX_RE.match(seg) for seg in segments):
@@ -286,7 +297,7 @@ def mine(limit: int = 10, dry_run: bool = False) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Mine genre fan contacts for music sharing")
-    parser.add_argument("--limit", type=int, default=10, help="Max contacts to add")
+    parser.add_argument("--limit", type=int, default=15, help="Max contacts to add")
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
     args = parser.parse_args()
 

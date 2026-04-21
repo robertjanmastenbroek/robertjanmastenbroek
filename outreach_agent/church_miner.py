@@ -60,6 +60,8 @@ _BAD_PREFIXES = {
     "noreply", "no-reply", "privacy", "abuse", "support",
     "admin", "postmaster", "webmaster", "donotreply",
 }
+_IMAGE_EXTS = {"jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "tiff", "tif", "avif"}
+_HEX_RE = re.compile(r"^[0-9a-f]{16,}$")
 
 # Europe-priority region list for church bookings
 _CHURCH_REGIONS = [
@@ -125,6 +127,16 @@ def _extract_emails(html: str) -> list[str]:
         if local in _BAD_PREFIXES:
             continue
         if "." not in domain:
+            continue
+        if _HEX_RE.match(local):
+            continue
+        segments = domain.split(".")
+        tld = segments[-1]
+        if not tld.isalpha() or not (2 <= len(tld) <= 10):
+            continue
+        if tld in _IMAGE_EXTS:
+            continue
+        if any(_HEX_RE.match(seg) for seg in segments):
             continue
         result.append(e.lower())
     return list(dict.fromkeys(result))

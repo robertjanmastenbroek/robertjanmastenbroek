@@ -258,8 +258,12 @@ def scan_inbox_for_replies(sent_thread_ids: list[str]) -> dict[str, dict]:
                 headers = {h["name"].lower(): h["value"]
                            for h in msg.get("payload", {}).get("headers", [])}
                 from_header = headers.get("from", "")
-                if FROM_EMAIL.lower() not in from_header.lower():
-                    # Found a reply from someone else
+                from_lower = from_header.lower()
+                is_delivery_failure = any(
+                    s in from_lower for s in ("mailer-daemon", "postmaster", "mail delivery")
+                )
+                if FROM_EMAIL.lower() not in from_lower and not is_delivery_failure:
+                    # Found a genuine reply (not a bounce notification)
                     snippet = msg.get("snippet", "")
                     replies_found[thread_id] = {
                         "message_id": msg["id"],

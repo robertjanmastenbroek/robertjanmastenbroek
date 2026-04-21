@@ -22,6 +22,7 @@ from config import (
     BATCH_SIZE,
     CRON_INTERVAL_MINUTES,
     BOUNCE_RATE_LIMIT,
+    BOUNCE_RATE_SEND_BASELINE,
 )
 from db import today_send_count, get_last_send_timestamp
 
@@ -139,7 +140,7 @@ def bounce_rate_safe() -> tuple[bool, str]:
             FROM contacts
         """).fetchone()
 
-    total_sent     = row["total_sent"] or 0
+    total_sent     = max(row["total_sent"] or 0, BOUNCE_RATE_SEND_BASELINE)
     actual_bounces = row["actual_bounces"] or 0
 
     if total_sent < 10:

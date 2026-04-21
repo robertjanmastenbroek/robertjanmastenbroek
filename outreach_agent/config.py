@@ -279,7 +279,8 @@ GROWTH_WEIGHT_PROFILES = {
 # automatically. Uses all-time data so a long clean history isn't erased by a
 # short noisy window. Denominator includes bounced contacts so rate is never
 # artificially inflated.
-BOUNCE_RATE_LIMIT       = 0.15   # 15% — pause sends if all-time bounce rate exceeds this
+BOUNCE_RATE_LIMIT            = 0.15   # 15% — pause sends if all-time bounce rate exceeds this
+BOUNCE_RATE_SEND_BASELINE    = 2550   # Historical sends not captured in DB — floors the denominator
 
 # ─── Warm-up Buffer ───────────────────────────────────────────────────────────
 # agent_discovered contacts go to 'warm_up' status after verification.

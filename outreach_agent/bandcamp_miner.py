@@ -87,6 +87,8 @@ _BAD_PREFIXES = {
     "noreply", "no-reply", "privacy", "abuse", "support",
     "admin", "postmaster", "webmaster", "donotreply",
 }
+_IMAGE_EXTS = {"jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "tiff", "tif", "avif"}
+_HEX_RE = re.compile(r"^[0-9a-f]{16,}$")
 
 _UNSAFE_SIGNALS = re.compile(
     r"\b(ayahuasca ceremony|psilocybin ceremony|drug ritual|"
@@ -265,6 +267,16 @@ def _extract_emails(text: str) -> list[str]:
             continue
         if "." not in domain:
             continue
+        if _HEX_RE.match(local):
+            continue
+        segments = domain.split(".")
+        tld = segments[-1]
+        if not tld.isalpha() or not (2 <= len(tld) <= 10):
+            continue
+        if tld in _IMAGE_EXTS:
+            continue
+        if any(_HEX_RE.match(seg) for seg in segments):
+            continue
         result.append(e)
     return list(dict.fromkeys(result))
 
@@ -324,17 +336,17 @@ def mine(
     skipped_unsafe = 0
     skipped_processed = 0
 
-    # Tag rotation: each of 6 daily runs hits 2 different tags
+    # Tag rotation: each of 6 daily runs hits 3 different tags
     if tag:
         tags_to_try = [tag]
     else:
         now = datetime.datetime.now()
         hour_bucket = now.hour // 4  # 6 buckets: 0=00-04, 1=04-08, ..., 5=20-24
         day_offset = now.toordinal() % len(_TARGET_TAGS)
-        start_idx = (day_offset + hour_bucket * 2) % len(_TARGET_TAGS)
+        start_idx = (day_offset + hour_bucket * 3) % len(_TARGET_TAGS)
         tags_to_try = [
             _TARGET_TAGS[(start_idx + i) % len(_TARGET_TAGS)]
-            for i in range(2)
+            for i in range(3)
         ]
 
     log.info("Bandcamp miner starting — tags=%s limit=%d", tags_to_try, limit)
@@ -343,7 +355,7 @@ def mine(
         if added >= limit:
             break
 
-        for pg in range(page, page + 4):  # Up to 4 pages per tag
+        for pg in range(page, page + 6):  # Up to 6 pages per tag
             if added >= limit:
                 break
 
@@ -484,7 +496,7 @@ def main() -> None:
         description="Mine Bandcamp tag pages for music community contacts"
     )
     parser.add_argument("--tag", type=str, default=None, help="Bandcamp tag slug (e.g. melodic-techno)")
-    parser.add_argument("--limit", type=int, default=20, help="Max contacts to add per run")
+    parser.add_argument("--limit", type=int, default=40, help="Max contacts to add per run")
     parser.add_argument("--page", type=int, default=1, help="Starting page number")
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
     args = parser.parse_args()
