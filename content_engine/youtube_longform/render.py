@@ -223,7 +223,10 @@ def _render_shotstack(spec: RenderSpec) -> RenderedVideo:
     """
     Shotstack JSON timeline render. Uses PAYG endpoint; polls for completion.
     """
-    base_url = f"https://api.shotstack.io/{cfg.SHOTSTACK_ENV}"
+    # Shotstack URL pattern (verified from dashboard 2026-04-21):
+    #   https://api.shotstack.io/edit/stage/render   (SANDBOX / free tier)
+    #   https://api.shotstack.io/edit/v1/render      (PRODUCTION / PAYG)
+    base_url = f"https://api.shotstack.io/edit/{cfg.SHOTSTACK_ENV}"
     headers = {
         "x-api-key":    cfg.SHOTSTACK_API_KEY,
         "Content-Type": "application/json",

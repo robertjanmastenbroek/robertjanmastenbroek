@@ -139,3 +139,54 @@ def test_thumbnail_variants_preserve_genre_family():
     base = prompt_builder.build_prompt("Jericho")
     for v in prompt_builder.build_thumbnail_variants(base, count=3):
         assert v.genre_family == base.genre_family == "tribal_psytrance"
+
+
+def test_selah_defaults_to_instrument_forward():
+    """
+    Selah's sonic identity IS the handpan + oud. Per the instrument-research
+    evidence, performer-niche tracks should default to instrument-visible.
+    """
+    p = prompt_builder.build_prompt("Selah")
+    # handpan + oud must appear in the hero phrase (from HERO_BY_FAMILY_WITH_INSTRUMENT)
+    assert "handpan" in p.flux_prompt.lower() or "oud" in p.flux_prompt.lower(), (
+        "Selah should default to instrument-forward hero phrase. "
+        f"Got prompt: {p.flux_prompt[:200]}"
+    )
+
+
+def test_non_performer_tracks_default_to_no_instrument():
+    """
+    Jericho/Halleluyah/Renamed sit in DJ-mix niche — no-instrument matches
+    proven-viral majority. Explicitly verify those prompts don't mention
+    handpan in the hero phrase by default.
+    """
+    for title in ["Jericho", "Halleluyah", "Renamed", "Fire In Our Hands"]:
+        p = prompt_builder.build_prompt(title)
+        # Check the hero slot specifically — the scripture hook may still
+        # reference instruments (e.g. shofars in Joshua 6) and that's fine.
+        # We look at the first 200 chars of the prompt which is the hero slot.
+        hero_section = p.flux_prompt[:250].lower()
+        assert "handpan" not in hero_section, (
+            f"{title} default prompt hero mentions handpan — should be no-instrument by default"
+        )
+        # Only the LoRA/WITH_INSTRUMENT variant mentions frame-drum; baseline should not
+        assert "cradling" not in hero_section and "held" not in hero_section, (
+            f"{title} default prompt hero mentions an instrument — should match proven-viral no-instrument majority"
+        )
+
+
+def test_explicit_with_instrument_override_wins():
+    """Explicit with_instrument=True or False overrides the track-specific default."""
+    # Jericho default (False) → explicit True switches to instrument variant
+    p_true = prompt_builder.build_prompt("Jericho", with_instrument=True)
+    assert "shofar" in p_true.flux_prompt.lower() or "drum" in p_true.flux_prompt.lower()
+
+    # Selah default (True) → explicit False switches to no-instrument variant
+    p_false = prompt_builder.build_prompt("Selah", with_instrument=False)
+    # Scripture hook for Psalm 46 mentions handpan/oud on basalt — that stays.
+    # But the HERO slot should be the no-instrument variant (single veiled
+    # nomad walking through dune ridge, etc.)
+    hero_section = p_false.flux_prompt[:250].lower()
+    assert "cradling" not in hero_section and "held" not in hero_section, (
+        "Explicit with_instrument=False should pick the no-instrument hero variant"
+    )

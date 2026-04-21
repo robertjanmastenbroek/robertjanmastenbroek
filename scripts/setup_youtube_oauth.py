@@ -57,8 +57,23 @@ except ImportError:
     print("    python3.13 -m pip install google-auth-oauthlib")
     sys.exit(1)
 
+def _find_env() -> Path:
+    """
+    Walk up from this file to find the nearest .env. Required when running
+    from a git worktree where the .env lives at the main project root, not
+    in the worktree itself.
+    """
+    here = Path(__file__).resolve()
+    for parent in [here.parent, *here.parents]:
+        candidate = parent / ".env"
+        if candidate.exists():
+            return candidate
+    # Fallback — worktree root
+    return here.parent.parent / ".env"
+
+
 PROJECT_ROOT = Path(__file__).parent.parent
-ENV_FILE     = PROJECT_ROOT / ".env"
+ENV_FILE     = _find_env()
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
@@ -98,10 +113,23 @@ def _write_env(updates: dict[str, str]) -> None:
 
 
 def _prompt(label: str, existing: str | None = None) -> str:
+    """
+    Ask for a value interactively. If stdin is not a TTY (background run),
+    silently accept the existing value from .env when present, or fail fast.
+    """
+    non_interactive = not sys.stdin.isatty()
     if existing:
+        if non_interactive:
+            print(f"  {label}: (using value from .env)")
+            return existing
         masked = existing[:6] + "…" + existing[-4:] if len(existing) > 12 else "(set)"
         reply = input(f"  {label} [{masked}] (Enter to keep): ").strip()
         return reply or existing
+    if non_interactive:
+        raise RuntimeError(
+            f"Missing {label} — set it in .env before running non-interactively, "
+            f"or run this script in a terminal with a TTY."
+        )
     return input(f"  {label}: ").strip()
 
 

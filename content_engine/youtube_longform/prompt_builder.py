@@ -172,6 +172,30 @@ def _hero_slot(family: GenreFamily, mood: MoodTier, with_instrument: bool = Fals
     return dct[family].get(mood) or HERO_BY_FAMILY["organic_house"][mood]
 
 
+# ─── Per-track instrument override ───────────────────────────────────────────
+# Based on 2026-04-21 instrument-in-thumbnail evidence research:
+#   - DJ-mix niche (Cercle, Cafe de Anatolia, Anjunadeep) → no-instrument wins
+#   - Performer niche (Hang Massive 60M, Estas Tonne 116M) → instrument helps
+#
+# Most of RJM's catalog sits in the DJ-mix niche — default is no-instrument.
+# Tracks where the instrument IS the sonic identity cross into the performer
+# niche and default to instrument-forward. Only Selah qualifies today
+# (handpan + oud + Middle-Eastern modes + Psalm 46 "be still" anchor).
+#
+# Opt out per-call by passing with_instrument=False explicitly.
+# Opt in for any other track by passing with_instrument=True.
+TRACKS_WITH_INSTRUMENT_DEFAULT: set[str] = {
+    "selah",
+}
+
+
+def _default_with_instrument(track_title_lower: str, explicit: Optional[bool]) -> bool:
+    """Resolve whether to include an instrument in the hero phrase."""
+    if explicit is not None:
+        return explicit
+    return track_title_lower in TRACKS_WITH_INSTRUMENT_DEFAULT
+
+
 # ─── Scripture anchor → specific visual hook ─────────────────────────────────
 # Each anchor maps to an OBJECT/SCENE visual phrase that encodes the scripture
 # subtly. Never quote the verse. Show the thing the verse describes.
@@ -313,7 +337,7 @@ def build_prompt(
     bpm: Optional[int] = None,
     scripture_anchor: Optional[str] = None,
     seed: Optional[int] = None,
-    with_instrument: bool = False,
+    with_instrument: Optional[bool] = None,
 ) -> TrackPrompt:
     """
     Build a Flux 2 prompt for a single track.
@@ -335,6 +359,7 @@ def build_prompt(
     mood_tier: MoodTier = _derive_mood_tier(resolved_bpm)
     genre_family: GenreFamily = _derive_genre_family(resolved_bpm)
     genre = _derive_genre(resolved_bpm, key)
+    resolved_with_instrument = _default_with_instrument(key, with_instrument)
 
     # Stable environment selection per track title (consistent across regenerations)
     env_index = int(hashlib.md5(key.encode()).hexdigest(), 16) % len(ENVIRONMENTS)
@@ -342,7 +367,7 @@ def build_prompt(
 
     # Assemble the prompt — family-routed slots replace the old mood-only
     # slots after 2026-04-21 viral research (see proven_viral/ bucket analysis).
-    hero            = _hero_slot(genre_family, mood_tier, with_instrument=with_instrument)
+    hero            = _hero_slot(genre_family, mood_tier, with_instrument=resolved_with_instrument)
     scripture_viz   = SCRIPTURE_HOOKS.get(resolved_anchor, SCRIPTURE_HOOKS[""])
     lighting        = LIGHTING_BY_MOOD[mood_tier]
     sacred_object   = SACRED_OBJECT_BY_MOOD[mood_tier]
