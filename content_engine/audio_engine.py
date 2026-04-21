@@ -23,15 +23,159 @@ logger = logging.getLogger(__name__)
 # ─── Scripture anchors (artist-curated, cannot be automated) ─────────────────
 
 SCRIPTURE_ANCHORS = {
-    "renamed": "Isaiah 62",
-    "halleluyah": "",
-    "jericho": "Joshua 6",
+    "renamed":                "Isaiah 62",
+    "halleluyah":             "",
+    "jericho":                "Joshua 6",
+    "fire in our hands":      "",
+    "living water":           "John 4",
+    "he is the light":        "John 8",
+    "exodus":                 "Exodus 14",
+    "abba":                   "Romans 8:15",
+    "selah":                  "Psalm 46",
+    "kadosh":                 "Isaiah 6:3",      # "Holy, Holy, Holy is the Lord"
+    "side by side":           "",
+    # Added 2026-04-21 (user classification for Holy Rave):
+    "shema":                  "Deuteronomy 6:4", # "Hear, O Israel"
+    "not by might":           "Zechariah 4:6",   # "Not by might nor by power"
+    "kavod":                  "Numbers 14:21",   # "the glory of the LORD"
+    "ruach":                  "Genesis 1:2",     # Spirit hovering over waters
+    "it is written":          "Matthew 4:4",     # Jesus' wilderness response
+    "on all flesh":           "Joel 2:28",       # "I will pour out my Spirit"
+    "strong tower":           "Proverbs 18:10",  # "name of the LORD"
+    "have mercy on me":       "Psalm 51:1",
+    "step by step":           "Psalm 119:133",
+    "rise up my love":        "Song of Songs 2:10",
+    "how good and pleasant":  "Psalm 133:1",
+}
+
+
+# ─── Per-track audio language (ISO 639-1, YouTube defaultAudioLanguage) ─────
+# Multilingual catalogue — set per-track rather than channel-wide so YouTube
+# classifies each upload correctly. Affects caption eligibility + discovery.
+# Fallback for missing entries: "en".
+TRACK_LANGUAGES: dict[str, str] = {
+    "halleluyah":        "he",    # Hebrew chant
+    "jericho":           "he",    # Hebrew vocals
+    "kadosh":            "he",    # Hebrew — "Holy"
+    "selah":             "he",    # Hebrew word + handpan/oud
+    "renamed":           "en",    # English + chanting
+    "fire in our hands": "en",
+    "living water":      "en",    # English (John 4)
+    "he is the light":   "en",    # English (John 8)
+    "exodus":            "en",
+    "abba":              "en",    # "Abba" is Aramaic but lyrics are English
+    "side by side":      "en",    # English (unreleased)
+}
+
+
+# ─── Per-track lyrics block for YouTube description SEO ─────────────────────
+# @osso-so puts the full lyrics (20-40 lines) in every video description.
+# This drives (a) engaged watch-time (viewers read while listening), and
+# (b) long-tail search SEO (lyric keywords are a major search vector).
+#
+# Empty string → publisher falls back to scripture-verse rendering when a
+# SCRIPTURE_ANCHOR is set. If both are empty, the lyrics block is skipped.
+# ─── Per-track Spotify / Apple Music URLs ─────────────────────────────────────
+# Canonical source of truth for per-track DSP links. Used by publisher and
+# registry to emit track-specific Spotify/Apple/Odesli links in the YouTube
+# description (instead of the less-useful artist page links).
+#
+# Empty string = track not yet distributed / URL not known. The smart-link
+# resolver falls back to the artist URL + UTM when a track URL is missing.
+TRACK_SPOTIFY_URLS: dict[str, str] = {
+    "halleluyah":             "https://open.spotify.com/track/4ysTzCDCezKhxIDOKIV4gG",
+    "jericho":                "https://open.spotify.com/track/2M7cL3KynPGzE1DonuldrN",
+    "renamed":                "https://open.spotify.com/track/0JDiFWqAa7exA8zh53D4JG",
+    "fire in our hands":      "https://open.spotify.com/track/4BGImHDdceYIAWg2MIftfR",
+    "living water":           "https://open.spotify.com/track/4VlJcvP0RvEkzysAkDuKPa",
+    "he is the light":        "https://open.spotify.com/track/0tad6gpKfmvHszruHYr7Lm",
+    "you see it all":         "https://open.spotify.com/track/5Vxewgp7pyaTTFa3HDxDSx",
+    # Unreleased / URL not yet on file — fill in as tracks drop on DSPs:
+    "kadosh":                 "",
+    "side by side":           "",
+    "kavod":                  "",
+    "ruach":                  "",
+    "shema":                  "",
+    "not by might":           "",
+    "selah":                  "https://open.spotify.com/track/2qNWk6iuxmsYktVhAQGsiD",
+    "abba":                   "",
+    "it is written":          "",
+    "on all flesh":           "",
+    "strong tower":           "",
+    "have mercy on me":       "",
+    "step by step":           "",
+    "rise up my love":        "",
+    "how good and pleasant":  "",
+    "exodus":                 "",
+}
+
+TRACK_APPLE_MUSIC_URLS: dict[str, str] = {
+    # Fill in as tracks are verified on Apple Music. When empty, the smart-link
+    # resolver falls back to the Apple Music artist page.
+    "selah":                  "https://music.apple.com/us/album/selah-single/1894209788",
+}
+
+
+TRACK_LYRICS: dict[str, str] = {
+    # Fill in as we confirm the actual vocal content per track.
+    # For now: empty → scripture fallback kicks in.
+    "halleluyah":        "",
+    "jericho":           "",
+    "kadosh":            "",
+    "selah":             "",
+    "renamed":           "",
     "fire in our hands": "",
-    "living water": "John 4",
-    "he is the light": "John 8",
-    "exodus": "Exodus 14",
-    "abba": "Romans 8:15",
-    "selah": "Psalm 46",
+    "living water":      "",
+    "he is the light":   "",
+    "exodus":            "",
+    "abba":              "",
+    "side by side":      "",
+}
+
+
+# ─── Holy Rave channel whitelist ─────────────────────────────────────────────
+# The autonomous watcher (content_engine.youtube_longform.watcher) ONLY
+# considers tracks in this set for auto-publish to the Holy Rave channel.
+# This is decoupled from TRACK_BPMS (which is the BPM metadata database) so
+# that older / slower / off-brand tracks in the catalogue are never auto-
+# uploaded to Holy Rave even if they have BPM metadata on file.
+#
+# Inclusion rule: Holy Rave = 130–145 BPM Nomadic Electronic (organic house
+# through tribal psytrance). Tracks in this band get included by default.
+# Borderline tracks (128 BPM) are OUT by default — flip them in explicitly
+# if the user decides they fit the channel brand.
+#
+# Rationale: YouTube's recommender builds channel-level audience embeddings;
+# publishing a 124 BPM track next to a 140 BPM track confuses the cluster.
+# Keeping the channel genre-tight protects algorithmic momentum.
+HOLY_RAVE_TRACKS: set[str] = {
+    # User classification — 2026-04-21. 19 tracks approved for Holy Rave.
+    # BPM range: 128-144. Anything below 128 excluded (too slow for the
+    # channel's genre promise); Exodus corrected to 120 and removed.
+    "jericho",                # 140 — tribal psytrance (Joshua 6)  ← ALREADY PUBLISHED
+    "halleluyah",             # 140 — tribal psytrance
+    "kadosh",                 # 142 — tribal psytrance, Hebrew (unreleased)
+    "shema",                  # 140 — Hebrew, Deut 6:4
+    "not by might",           # 140 — Zech 4:6
+    "kavod",                  # 144 — Hebrew ("glory")
+    "ruach",                  # 144 — Hebrew ("spirit")
+    "selah",                  # 130 — handpan/oud, Psalm 46
+    "fire in our hands",      # 130 — organic tribal house
+    "side by side",           # 130 — organic house (unreleased, English)
+    "abba",                   # 132 — Rom 8:15
+    "renamed",                # 128 — organic house, Isaiah 62
+    "it is written",          # 136 — Matt 4:4
+    "on all flesh",           # 136 — Joel 2:28
+    "strong tower",           # 136 — Prov 18:10
+    "have mercy on me",       # 129 — Ps 51
+    "step by step",           # 129 — Ps 119:133
+    "rise up my love",        # 129 — Song 2:10
+    "how good and pleasant",  # 136 — Ps 133
+    # Explicitly EXCLUDED (off-brand or too slow):
+    # "exodus"        — 120 BPM, too slow (corrected from erroneous 138)
+    # "he is the light" — 128 but user excluded
+    # "living water"  — 124, too slow
+    # plus ~29 older worship tracks (at the door, be still, holy holy holy, etc.)
 }
 
 # ─── Active track seed (top 4 by save rate) ─────────────────────────────────
@@ -41,15 +185,31 @@ SEED_TRACKS = ["halleluyah", "renamed", "jericho", "fire in our hands", "selah"]
 # Artist-verified BPMs — never rely on librosa for these (librosa doubles psytrance
 # BPMs: half-time detection reports ~92 BPM → doubled to 185 for a 140 BPM track).
 TRACK_BPMS: dict[str, int] = {
-    "halleluyah":        140,
-    "renamed":           128,
-    "jericho":           140,
-    "fire in our hands": 130,
-    "selah":             130,
-    "living water":      124,
-    "he is the light":   128,
-    "exodus":            138,
-    "abba":              132,
+    # Originals (artist-verified):
+    "halleluyah":             140,
+    "renamed":                128,
+    "jericho":                140,
+    "fire in our hands":      130,
+    "selah":                  130,
+    "living water":           124,
+    "he is the light":        128,
+    "abba":                   132,
+    "exodus":                 120,   # Corrected 2026-04-21 (was 138)
+    # Unreleased:
+    "kadosh":                 142,
+    "side by side":           130,
+    # Added 2026-04-21 — user-classified for Holy Rave:
+    "shema":                  140,   # user-confirmed (librosa said 92, half-time detect)
+    "not by might":           140,   # user-confirmed (librosa said 92, half-time detect)
+    "kavod":                  144,   # librosa — verify by ear
+    "ruach":                  144,   # librosa — verify by ear
+    "it is written":          136,   # librosa — verify by ear
+    "on all flesh":           136,   # librosa
+    "strong tower":           136,   # librosa
+    "have mercy on me":       129,   # librosa
+    "step by step":           129,   # librosa
+    "rise up my love":        129,   # librosa
+    "how good and pleasant":  136,   # librosa
 }
 
 

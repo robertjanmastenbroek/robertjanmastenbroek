@@ -475,7 +475,7 @@ def cmd_add():
     name  = input("Name / Organisation: ").strip()
     print("Type: label | curator | youtube | festival | podcast")
     ctype = input("Type: ").strip().lower()
-    genre = input("Genre (e.g. Melodic Techno, Psytrance): ").strip()
+    genre = input("Genre (e.g. Organic House, Tribal Psytrance, Nomadic Electronic): ").strip()
     notes = input("Notes (playlist name, show focus, etc.): ").strip()
 
     ok, result = db.add_contact(email, name, ctype, genre, notes, source="manual")

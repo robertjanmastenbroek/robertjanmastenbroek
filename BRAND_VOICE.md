@@ -113,9 +113,9 @@ They go searching. They stay curious. They are suspicious of institutions but no
 - **Regular techno/psytrance:** The escape. The forgetting. Moving your body to forget the week, forget the rules, forget yourself for a few hours.
 
 ### What Doesn't Exist (Until Now)
-A room where ancient biblical truth is encoded into 140 BPM tribal psytrance and 130 BPM ethnic electronic music — and people experience the sacred without needing the vocabulary.
+A room where ancient biblical truth is encoded into 145 BPM tribal psytrance and 130 BPM organic-nomadic electronic music — Bedouin rhythm, oud, handpan, Hebrew prayer mantras, sacred geometry — and people experience the sacred without needing the vocabulary.
 
-**Not better church. Not better techno. A third thing.**
+**Not better church. Not better rave. A third thing.**
 
 ### The Positioning in One Sentence (StoryBrand format)
 *For people who feel something sacred when they lose themselves on a dance floor — but have never found a place where both could exist at the same time.*
@@ -186,7 +186,7 @@ The voice is *in the moment.* It reports from inside the experience, not from ab
 Not urgency. Not scarcity. Not hustle. Joy. Child-like, unworried, free joy. "I feel happy as a child all day, every day now." That is what the voice conveys — not "here's what you're missing" but "here is what I found and I want you to feel it too."
 
 ### Words We Use
-free / alive / ancient / together / real / present / seeds / feel / move / body / joy / sacred / tribal / raw / love / honest / found / searching / unexpected / everywhere
+free / alive / ancient / nomadic / tribal / together / real / present / seeds / feel / move / body / joy / sacred / raw / love / honest / found / searching / unexpected / everywhere / desert / wilderness / fire
 
 ### Words We Never Use
 blessed (in the Christianese sense) / anointed / spiritual journey / elevated consciousness / manifestation / vibration / safe space / worship music / Christian music / sober rave / exclusive / ascend / better version of yourself / curated / intentional (as a performance word) / authentic (ironic — people who claim it rarely are)
@@ -208,12 +208,12 @@ The value proposition in under 2 seconds. If you have to explain it for 30 secon
 *DJ, singer, and creator of Holy Rave — proving that Jesus shows up even where you'd least expect Him.*
 
 ### The Bio (Medium — 3 sentences)
-*Robert-Jan Mastenbroek is a Dutch DJ, singer, and producer based in Tenerife. His sets blend 130–140 BPM tribal psytrance and melodic techno with live vocals and biblical lyrics — creating experiences people describe as unlike anything they've ever felt on a dance floor. Ancient truth. Future sound.*
+*Robert-Jan Mastenbroek is a Dutch DJ, singer, and producer based in Tenerife. His sets blend 130 BPM organic-nomadic house through 145 BPM tribal psytrance — oud, handpan, tribal drums, Hebrew prayer mantras, live vocals and biblical lyrics — creating experiences people describe as unlike anything they've ever felt on a dance floor. Ancient truth. Future sound.*
 
 ### The Bio (Long — for press / booking)
 *Robert-Jan Mastenbroek has walked away from a record deal, a million-dollar business, and a spiritual school with 1,200 students — each time for the same reason: it wasn't how it was supposed to be. After six years living in a campervan across Europe and Tenerife, building himself back from nothing through busking to 750€/hour private events, he got on his knees on a beach and asked Jesus to make him happy again — like he was as a child, before the money, the status, and the noise.*
 
-*What emerged was Holy Rave: a DJ/live show concept built on the belief that Jesus is everywhere, even in places where you think He wouldn't be. His sets combine 130–140 BPM tribal psytrance and melodic techno with live vocals, Hebrew prayer mantras, and biblical lyrics — tracks like Jericho, Renamed, Living Water, and Halleluyah — alongside spoken prayers between songs, thanking God for the bodies we dance with and the voices we sing with.*
+*What emerged was Holy Rave: a DJ/live show concept built on the belief that Jesus is everywhere, even in places where you think He wouldn't be. His sets span 130 BPM organic-nomadic house through 145 BPM tribal psytrance — oud, handpan, tribal drums, live vocals, Hebrew prayer mantras, and biblical lyrics — tracks like Jericho, Renamed, Living Water, Selah, and Halleluyah — alongside spoken prayers between songs, thanking God for the bodies we dance with and the voices we sing with.*
 
 *He plays preferably for free. Because the people who might need this most are usually the ones who can't afford a ticket.*
 

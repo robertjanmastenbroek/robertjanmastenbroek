@@ -1,0 +1,22 @@
+# YouTube Long-Form Publisher — Python Dependencies
+# Install: pip install -r content_engine/youtube_longform/requirements.txt
+#
+# Merge these into a project-level requirements.txt if you prefer —
+# kept separate for now so the outreach_agent install stays focused.
+
+# Image generation (fal.ai Flux 2 Pro + LoRA)
+fal-client>=0.5.0
+
+# Render backend (primary: Cloudinary free tier)
+cloudinary>=1.40.0
+
+# Audio duration probe (pure-Python — no ffmpeg dependency)
+mutagen>=1.47.0
+
+# YouTube Data API v3
+google-auth>=2.27.0
+google-auth-oauthlib>=1.2.0
+google-api-python-client>=2.118.0
+
+# HTTP primitives (already a transitive dep; explicit for clarity)
+requests>=2.31.0

@@ -1,11 +1,12 @@
 # Robert-Jan Mastenbroek — Command Centre
 
 ## Identity
-Dutch DJ/producer, 36, Tenerife. Melodic Techno + Tribal Psytrance. 290K IG (@holyraveofficial). 30+ original tracks, independently owned. No label, no manager.
+Dutch DJ/producer, 36, Tenerife. **Nomadic Electronic** — organic powerful house (130 BPM) through tribal psytrance (145 BPM). Rooted in ethnic rhythms, Middle Eastern instrumentation (oud, handpan, tribal drums), sacred geometry, and ancient melodies given modern production. 290K IG (@holyraveofficial). 30+ original tracks, independently owned. No label, no manager.
 
 - Spotify artist ID: `2Seaafm5k1hAuCkpdq7yds`
 - Gmail: motomotosings@gmail.com
 - Brand: "Ancient Truth. Future Sound."
+- Sound references: Café de Anatolia · Sol Selectas / Sabo · Bedouin · Acid Arab · Ace Ventura · Vertex · Aioaska · Symbolic · Ranji · Astrix
 
 ## North Star
 **1,000,000 Spotify monthly listeners.** Every deliverable — content, email, caption, agent run — is evaluated against this goal. Always ask: does this drive streams?
@@ -28,12 +29,15 @@ Every caption, email, and output must pass all 5 tests:
 Tone: modern, professional, cool, credible. Never preachy. Lead with music; the story surfaces naturally.
 
 ## Visual Identity
-Dark, Holy, Futuristic. References: Anyma (visual scale), Rüfüs Du Sol (mood/depth), Argy (tribal/techno texture). Sacred geometry aesthetics. High contrast, centered subjects. Visual objects over abstract concepts (a candle in a dark club > "spiritual").
+**Nomadic, Sacred, Tribal.** Warm-dark with earth-gold accents. Desert at dusk, Bedouin ceremony, ancient stone temples, handpan under moonlight, tribal dancers around fire, Wadi Rum, Petra, fractal sacred geometry for psytrance moments. High contrast, centered subjects. Visual objects over abstract concepts (dust on the handpan > "spiritual").
+
+**Visual references:** Café de Anatolia thumbnails, Sol Selectas / Sabo tribal-house imagery, psytrance album art (Ace Ventura / Vertex / Aioaska / Symbolic), Bedouin / Berber ethnographic photography, Wadi Rum / Petra / ancient temple cinematography. Skip Balenciaga-editorial dark-cosmic — that's the wrong scene for this sound.
 
 **Locked design tokens** (do not change without explicit user approval):
-- Dark: `#0a0a0a` · Gold: `#d4af37` · Text: `#ffffff` · Muted: `#a0a0a0`
+- **Core:** Dark `#0a0a0a` · Liturgical gold `#d4af37` · Text `#ffffff` · Muted `#a0a0a0`
+- **Earth accents** (new — approved 2026-04-21): Terracotta `#b8532a` · Indigo night `#1a2a4a` · Ochre `#c8883a`
 - Serif: `Cormorant Garamond` · Sans: `Inter`
-- No Cinzel, no Spectral, no teal, no constellation/canvas animations, no overflow-text heroes.
+- No Cinzel, no Spectral, no teal, no purple gradients, no constellation/canvas animations, no overflow-text heroes.
 
 **Visual change discipline.** Any edit to `index.html`, `offering/index.html`, `/story`, `/links`, or any other public-facing visual asset MUST:
 1. Land in its own dedicated commit — never bundled with content-engine, pipeline, outreach, or "chore" work.
@@ -48,13 +52,15 @@ If an agent (rjm-master, frontend-design, or any other) is about to touch these 
 ## Track Catalogue
 | Track | BPM | Style | Scripture anchor |
 |-------|-----|-------|-----------------|
-| Renamed | 128 | Melodic Techno | Isaiah 62 |
-| Halleluyah | 140 | Psytrance | — |
-| Jericho | 140 | Psytrance | Joshua 6 |
-| Fire In Our Hands | 130 | — | — |
+| Renamed | 128 | Organic House | Isaiah 62 |
+| Halleluyah | 140 | Tribal Psytrance | — |
+| Jericho | 140 | Tribal Psytrance | Joshua 6 |
+| Fire In Our Hands | 130 | Organic Tribal House | — |
 | Selah | 130 | Handpan / Oud / Middle Eastern | Psalm 46 |
-| Living Water | 124 | — | John 4 |
-| He Is The Light | 128 | — | John 8 |
+| Living Water | 124 | Organic House | John 4 |
+| He Is The Light | 128 | Organic House | John 8 |
+| Kadosh (unreleased) | 142 | Tribal Psytrance (Hebrew) | — |
+| Side By Side (unreleased) | 130 | Organic House (English) | — |
 
 When promoting a specific track, find its scripture anchor and lead with it — subtly.
 
@@ -120,8 +126,8 @@ Trigger each at the right moment — mandatory gates, not suggestions:
 
 ### frontend-design — `/frontend-design`
 Use for: `index.html`, `selah.html`, any Holy Rave visual assets or social media UI.
-Visual identity: Dark, Holy, Futuristic (Anyma / Rüfüs Du Sol / Argy references).
-No generic fonts (no Inter, no Arial). No purple gradients. Sacred geometry aesthetics.
+Visual identity: **Nomadic, Sacred, Tribal** — Café de Anatolia / Sol Selectas / Psytrance-scene references. Warm-dark with earth-gold accents.
+No generic fonts (no Arial). No purple gradients. No teal. Sacred geometry aesthetics. Desert-at-dusk moods over Balenciaga-editorial dark-cosmic.
 
 ### code-review — `/code-review <PR-number>`
 Mandatory after any changes to `outreach_agent/` (Gmail OAuth, bounce logic, rate limiting),

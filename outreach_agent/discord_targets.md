@@ -74,7 +74,7 @@ Rules:
 |-----|--------|---------------|
 | Monday | Psytrance & Chill | Halleluyah or Jericho |
 | Tuesday | EDMP | Living Water or Fire In Our Hands |
-| Wednesday | Collective Details | Melodic Techno tracks |
+| Wednesday | Collective Details | Organic-tribal house tracks (Renamed, Living Water) |
 | Thursday | Convolva | Psytrance tracks |
 | Friday | TECHNO × OFFICIAL | Any track — pick based on recent engagement |
 

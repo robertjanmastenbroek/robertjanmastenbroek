@@ -45,7 +45,7 @@ logging.basicConfig(
 # ─── Standard submission data ─────────────────────────────────────────────────
 # One source of truth — edit here, propagates everywhere.
 
-_PRIMARY   = TRACKS["tribal_techno"][0]   # Renamed — 130 BPM
+_PRIMARY   = TRACKS["organic_tribal"][0]   # Renamed — 130 BPM
 _SECONDARY = TRACKS["psytrance"][0]       # Halleluyah — 140 BPM
 
 SUBMISSION = {
@@ -57,20 +57,23 @@ SUBMISSION = {
     "track_bpm":        str(_PRIMARY["bpm"]),
     "track_title_2":    _SECONDARY["title"],
     "track_spotify_2":  _SECONDARY["spotify"],
-    "genre":            "Tribal Psytrance / Melodic Techno",
+    "genre":            "Nomadic Electronic / Organic-Tribal House / Tribal Psytrance",
     "location":         "Tenerife, Spain",
     "instagram":        "@robertjanmastenbroek",
     "website":          ARTIST["website"],
     "followers":        "290000",
     "bio_short": (
         "Dutch DJ/producer based in Tenerife. 30+ original tracks, fully independent. "
-        "Tribal psytrance and melodic techno with biblical depth. 130–140 BPM. "
-        "290K Instagram followers. Ancient truth. Future sound."
+        "Nomadic electronic — organic-tribal house (130 BPM) through tribal psytrance "
+        "(145 BPM), with oud, handpan, tribal drums, and Middle Eastern modes. "
+        "Biblical depth. 290K Instagram followers. Ancient truth. Future sound."
     ),
     "description": (
-        "Renamed is a 130 BPM tribal techno track with ethnic percussion and English vocals. "
-        "Part of a catalogue that blends ancient scripture with modern electronic production — "
-        "sounds like Argy meets Vini Vici. All tracks independently owned."
+        "Renamed is a 130 BPM organic-tribal house track with ethnic percussion, "
+        "Middle Eastern modes, and English vocals. Part of a catalogue that blends "
+        "ancient scripture with modern electronic production — sits alongside "
+        "Café de Anatolia, Sol Selectas / Sabo, Bedouin, Ace Ventura, and Ranji. "
+        "All tracks independently owned."
     ),
     "press_kit": "https://robertjanmastenbroek.com",
 }

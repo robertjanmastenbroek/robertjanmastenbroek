@@ -595,6 +595,12 @@ def build_daily_clips(
         str(PROJECT_DIR / "content" / "videos" / "b-roll"),
         str(PROJECT_DIR / "content" / "videos" / "phone-footage"),
         str(PROJECT_DIR / "content" / "videos" / "performances"),
+        # Kling O3 motion clips from Holy Rave long-form publishes. Every
+        # 10s morph clip we pay for on fal.ai gets copied here after the
+        # long-form publish completes (see publisher._add_motion_clips_to_shorts_pool).
+        # Re-using these as Shorts source footage amortizes the ~$8/track
+        # Kling spend across both long-form AND Shorts output.
+        str(PROJECT_DIR / "content" / "videos" / "holy-rave-motion"),
     ]
     # Performance-anchored pool = performances/ + phone-footage/. Used by
     # SACRED_ARC and PERFORMANCE_FAST_CUT so the music-source signal stays

@@ -80,10 +80,11 @@ Based on the gap analysis from Step 0, assemble exactly 8 queries. Prioritize ga
 - `"spiritual not religious podcast" music rave DJ interview`
 
 **Curator/blog query templates (use when curator/blog is a gap):**
-- `"melodic techno blog" submit demos contact email 2025`
+- `"organic house" OR "tribal psytrance" blog submit demos contact email 2025`
 - `"[genre] curator" mixcloud soundcloud contact booking email`
-- `"ethnic electronic music" world fusion rave curator blog 2025`
-- `"underground techno" editorial blog playlist curator email submit`
+- `"ethnic electronic" OR "nomadic electronic" world fusion rave curator blog 2025`
+- `"underground psytrance" OR "Goa trance" editorial blog playlist curator email submit`
+- `"Middle Eastern electronic" OR "desert electronic" curator blog 2025`
 
 **Target markets (inject into queries for geographic diversification):**
 Spain, Germany, Netherlands, UK, Poland, France, Brazil, US
@@ -173,11 +174,11 @@ Count current total. If ≥ 200, log skipped and exit immediately.
 
 Use WebSearch. Run all 6 simultaneously:
 
-1. `site:open.spotify.com/playlist "melodic techno" followers`
-2. `site:open.spotify.com/playlist "psytrance" OR "tribal" followers`
+1. `site:open.spotify.com/playlist "organic house" OR "tribal psytrance" followers`
+2. `site:open.spotify.com/playlist "psytrance" OR "tribal" OR "Goa" followers`
 3. `site:open.spotify.com/playlist "consciousness" OR "flow state" electronic`
-4. `site:open.spotify.com/playlist "ethnic electronic" OR "world electronic"`
-5. `"spotify playlist" melodic techno curator contact submit 2025`
+4. `site:open.spotify.com/playlist "ethnic electronic" OR "world electronic" OR "desert electronic"`
+5. `"spotify playlist" organic house OR Middle Eastern electronic curator contact submit 2025`
 6. `"spotify playlist" psytrance tribal rave consciousness 5000 followers`
 
 ---

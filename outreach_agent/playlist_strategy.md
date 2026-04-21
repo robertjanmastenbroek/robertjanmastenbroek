@@ -149,7 +149,7 @@ Spotify's discovery algorithm surfaces playlists in search. When someone searche
 **Exact playlist description (156 chars):**
 `Organic electronic for golden hour. The sound of the Atlantic at dusk — warm bass, tribal percussion, melodies that feel like sky. Friday Sunset Sessions, Tenerife.`
 
-**Vibe:** Organic house, melodic techno, deep melodic — 118–126 BPM
+**Vibe:** Organic house, nomadic electronic, desert-house — 118–130 BPM
 **RJM track:** Living Water (position 9) + You See It All (position 16)
 
 **20 tracks:**
@@ -181,7 +181,7 @@ Spotify's discovery algorithm surfaces playlists in search. When someone searche
 > "Every Friday I play this music for free on a rooftop in Tenerife. This is the playlist."
 > Post: golden hour photo from Tenerife + playlist embed in Story.
 > This is the most shareable / widest-audience playlist — promote it hardest.
-> Works for: Tenerife tourism accounts, melodic house fans, ambient listeners.
+> Works for: Tenerife tourism accounts, organic house fans, ambient listeners.
 
 ---
 

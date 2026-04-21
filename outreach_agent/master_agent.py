@@ -292,14 +292,14 @@ def cmd_gaps():
 
     if curator_count < 100:
         print(f"\n⚠️  CURATOR GAP: Only {curator_count} curator contacts. Target 200+.")
-        print("   → Expand genre searches: tribal, psytrance, organic house, melodic techno")
+        print("   → Expand genre searches: tribal, psytrance, organic house, nomadic electronic, desert house")
 
     # Genre gaps
     print("\nGenre coverage in pipeline:")
     target_genres = [
-        "tribal techno", "psytrance", "melodic techno", "organic house",
-        "afro house", "progressive house", "christian edm", "deep techno",
-        "ambient techno", "world music"
+        "tribal psytrance", "psytrance", "nomadic electronic", "organic house",
+        "desert house", "tribal house", "ethnic electronic", "middle eastern electronic",
+        "christian edm", "ambient electronic", "world music"
     ]
     genre_names = {r["genre"].lower() for r in genre_rows}
     for g in target_genres:
@@ -1141,7 +1141,7 @@ def _print_action_plan(strategy_id: str):
             "   - r/WeAreTheMusicMakers: share production tips",
             "   - r/melodictechno: participate in recommendation threads",
             "3. After 2 weeks: post in weekly 'Share Your Music' thread",
-            "4. Story hook for Reddit: 'I make tribal techno inspired by the Bible — here's why'",
+            "4. Story hook for Reddit: 'I make nomadic electronic — organic-tribal house through tribal psytrance — inspired by the Bible — here's why'",
             "5. r/ChristianEDM: this is a perfect fit — engage authentically",
             "6. Never post links without context — always tell the story first",
         ],

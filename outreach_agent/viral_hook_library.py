@@ -79,10 +79,10 @@ CONTRAST_TEMPLATES: list[HookTemplate] = [
         mechanism="claim",
         template="Everyone said {thing}. {proof}.",
         slots={
-            "thing": "a thing people say is dead / over / done (melodic techno, raves in churches, 140 BPM)",
+            "thing": "a thing people say is dead / over / done (tribal house, raves in churches, 140 BPM, oud in electronic music)",
             "proof": "a concrete specific counter-proof (400 strangers at sunset, a Tenerife cliffside at 3am)",
         },
-        example_fill="Everyone said melodic techno was dead. 400 strangers at a Tenerife sunset said otherwise.",
+        example_fill="Everyone said the oud didn't belong in a rave. 400 strangers at a Tenerife sunset said otherwise.",
         source_credit="Ben Böhmer, ARTBAT tour recaps — disproof-by-specific-footage.",
         priority=1.2,
         tags=["claim"],
@@ -108,10 +108,10 @@ CONTRAST_TEMPLATES: list[HookTemplate] = [
         mechanism="scene",
         template="A {profile} walked into {place}",
         slots={
-            "profile": "a short character profile of RJM (Dutch techno producer, a 36-year-old with Scripture on his synth)",
+            "profile": "a short character profile of RJM (Dutch nomadic-electronic producer, a 36-year-old with an oud and Scripture on his synth)",
             "place": "an unexpected place (Joshua 6, a psalm at 4am, a sunset church in Tenerife)",
         },
-        example_fill="A Dutch techno producer walked into Joshua 6",
+        example_fill="A Dutch nomadic-electronic producer walked into Joshua 6",
         source_credit="Setup/reveal joke format — proven for 'this shouldn't work but does' content.",
         priority=1.0,
         tags=["setup_reveal"],
@@ -122,7 +122,7 @@ CONTRAST_TEMPLATES: list[HookTemplate] = [
         mechanism="tension",
         template="You think {assumption}. Play this at {moment}. Report back.",
         slots={
-            "assumption": "a common assumption about the genre (techno is cold, 140 BPM is aggressive)",
+            "assumption": "a common assumption about the genre (psytrance is noise, 140 BPM is aggressive, tribal rhythms are primitive)",
             "moment": "a specific listening context (cliff edge at sunrise, headphones at 3am in your car)",
         },
         example_fill="You think 140 BPM can't hold a psalm. Play this at sunrise. Report back.",
@@ -151,7 +151,7 @@ CONTRAST_TEMPLATES: list[HookTemplate] = [
         mechanism="claim",
         template="Nobody asked for {thing}. {specific_defiance}.",
         slots={
-            "thing": "the specific thing the track is (a 140 BPM psalm, a techno track with Joshua 6)",
+            "thing": "the specific thing the track is (a 140 BPM psalm, a tribal psytrance track with Joshua 6, a handpan over 130 BPM kick)",
             "specific_defiance": "what the creator did anyway (kept the verse in the drop, played it at a sunset rave)",
         },
         example_fill="Nobody asked for a 140 BPM psalm. Kept it in the drop anyway.",
@@ -194,7 +194,7 @@ BODY_DROP_TEMPLATES: list[HookTemplate] = [
             "timestamp": "a specific timecode in the clip (0:09, 0:12, the second the bass drops)",
         },
         example_fill="Watch the front row at 0:12",
-        source_credit="Concert-clip callout format — Anyma, Argy, Rüfüs Du Sol aftermovies. Highest-converting callout on reels.",
+        source_credit="Concert-clip callout format — Café de Anatolia, Sol Selectas, Bedouin, Ace Ventura aftermovies. Highest-converting callout on reels.",
         priority=1.3,
         tags=["callout"],
     ),
@@ -223,7 +223,7 @@ BODY_DROP_TEMPLATES: list[HookTemplate] = [
             "body_consequence": "what the body does (shoulders stopped asking, the jaw dropped first, knees gave out)",
         },
         example_fill="The drop at 2:14. Shoulders stopped asking.",
-        source_credit="Timestamp-callout format — proven on melodic techno TikTok (Massano, Argy, Massive Attack edits).",
+        source_credit="Timestamp-callout format — proven on tribal-psytrance and organic-house TikTok (Vertex, Aioaska, Sabo, Bedouin edits).",
         priority=1.1,
         tags=["timestamp"],
     ),
@@ -306,7 +306,7 @@ IDENTITY_TEMPLATES: list[HookTemplate] = [
             "why": "a specific one-sentence reason",
         },
         example_fill="Made this for the friend who texted at 3am and said 'play me something that doesn't lie.' Found it in Jericho.",
-        source_credit="Dedication format — proven on singer-songwriter TikTok (Noah Kahan, Phoebe Bridgers), rewired for techno.",
+        source_credit="Dedication format — proven on singer-songwriter TikTok (Noah Kahan, Phoebe Bridgers), rewired for nomadic electronic.",
         priority=1.2,
         tags=["dedication"],
     ),
@@ -444,7 +444,7 @@ def get_template_by_id(template_id: str) -> Optional[HookTemplate]:
 TRACK_FACTS: dict[str, dict] = {
     "fire in our hands": {
         "bpm": 130,
-        "style": "melodic techno with psytrance edges",
+        "style": "organic-tribal house with psytrance edges",
         "scripture_anchor": "Jeremiah 23:29",
         "scripture_note": "Is not my word like fire, says the Lord",
         "title_nouns": ["fire", "hands", "flame", "spark"],
@@ -468,7 +468,7 @@ TRACK_FACTS: dict[str, dict] = {
     },
     "renamed": {
         "bpm": 128,
-        "style": "melodic techno",
+        "style": "organic house with tribal percussion",
         "scripture_anchor": "Isaiah 62",
         "scripture_note": "You shall be called by a new name",
         "title_nouns": ["name", "new name", "renaming"],
@@ -476,7 +476,7 @@ TRACK_FACTS: dict[str, dict] = {
     },
     "living water": {
         "bpm": 124,
-        "style": "melodic techno",
+        "style": "organic house with handpan and oud",
         "scripture_anchor": "John 4",
         "scripture_note": "Water that quenches forever",
         "title_nouns": ["water", "well", "spring", "river"],
@@ -484,7 +484,7 @@ TRACK_FACTS: dict[str, dict] = {
     },
     "he is the light": {
         "bpm": 126,
-        "style": "melodic techno",
+        "style": "organic house with Middle Eastern modes",
         "scripture_anchor": "John 8",
         "scripture_note": "I am the light of the world",
         "title_nouns": ["light", "dawn", "lamp"],
@@ -510,7 +510,7 @@ def get_track_facts(track_title: str) -> dict:
 
 _DEFAULT_FACTS = {
     "bpm": 140,
-    "style": "melodic techno",
+    "style": "nomadic electronic",
     "scripture_anchor": "",
     "scripture_note": "",
     "title_nouns": [],

@@ -83,7 +83,7 @@ This is the single piece of copy the rest of the campaign flows from. Memorise i
 
 *Last summer I sold the van. I thought I was meant to settle here. I was wrong — things are growing faster than I can stay still for, and I'm being sent further than the island.*
 
-*Now I make music. 140 BPM tribal psytrance. 130 BPM melodic techno. Hebrew lyrics over the drop. The Psalms at a rave. Tracks called Jericho and Living Water and Halleluyah. I play preferably for free, because the people who might need this most are usually the ones who can't afford a ticket.*
+*Now I make music. 145 BPM tribal psytrance. 130 BPM organic-nomadic house. Oud and handpan over tribal drums. Hebrew lyrics over the drop. The Psalms at a rave. Tracks called Jericho and Living Water and Halleluyah. I play preferably for free, because the people who might need this most are usually the ones who can't afford a ticket.*
 
 *Something happens in those rooms. People who came to escape end up screaming IN THE NAME OF JESUS at 140 BPM and don't know why. Nobody knows the truth, until we die — but I believe. And the rooms feel like I'm not the only one who has figured out something was happening.*
 
@@ -205,7 +205,7 @@ Replace everything inside `<body>` from `<!-- Hero -->` down to the end of `<!--
 
     <p>Last summer I sold the van. I thought I was meant to settle here. I was wrong — things are growing faster than I can stay still for, and I'm being sent further than the island.</p>
 
-    <p>Now I make music. 140 BPM tribal psytrance. 130 BPM melodic techno. Hebrew lyrics over the drop. The Psalms at a rave. Tracks called Jericho and Living Water and Halleluyah.</p>
+    <p>Now I make music. 145 BPM tribal psytrance. 130 BPM organic-nomadic house. Oud and handpan over tribal drums. Hebrew lyrics over the drop. The Psalms at a rave. Tracks called Jericho and Living Water and Halleluyah.</p>
 
     <p>I play preferably for free. Because the people who might need this most are usually the ones who can't afford a ticket.</p>
 
@@ -392,7 +392,7 @@ Same story, more room to breathe. This version lives embedded on the offering pa
 ### Differences from the 60-sec
 
 - **Horizontal 16:9** (for email, desktop, YouTube).
-- **Expands 0:18–0:32** into a longer confessional — include the moment you describe Holy Rave: *"I play melodic techno and tribal psytrance. Hebrew lyrics over 140 BPM. The Psalms as a drop. People who came to escape end up screaming Hallelujah and don't know why."*
+- **Expands 0:18–0:32** into a longer confessional — include the moment you describe Holy Rave: *"I play organic-nomadic house and tribal psytrance. Oud and handpan over 140 BPM. Hebrew lyrics. The Psalms as a drop. People who came to escape end up screaming Hallelujah and don't know why."*
 - **Adds a specific scene** — name ONE night, one location, one moment. Real details. ("Last week in the cave. Two hours. A girl came up crying afterward and said she hadn't felt anything in months.")
 - **Adds the WhatsApp community invitation** at the end.
 - **Closes same way:** *Here am I. Send me.*

@@ -160,7 +160,7 @@ CSV format (any delimiter):
 ```
 email,name,type,genre,notes
 booking@festival.com,Festival Name,festival,Psytrance,2027 lineup open
-curator@spotify.com,Playlist Name,curator,Melodic Techno,42K saves
+curator@spotify.com,Playlist Name,curator,Organic House,42K saves
 host@podcast.com,Podcast Name,podcast,Music Business,Indie artist episodes
 ```
 

@@ -51,7 +51,7 @@ Since you already have Railway's $5/mo plan, follow the detailed guide:
 
 ✅ **Auto-updates** with your latest YouTube videos (pulls 6 most recent)
 ✅ **Auto-updates** with your latest Spotify releases (embedded player)
-✅ **Dark/Holy/Futuristic** aesthetic (Anyma scale, Rüfüs mood, Argy texture)
+✅ **Nomadic / Sacred / Tribal** aesthetic (Café de Anatolia / Sol Selectas / psytrance-scene references — Bedouin, Wadi Rum, handpan-under-moonlight)
 ✅ **Subtle Salt** storytelling (discovery over announcement)
 ✅ **Fully responsive** (perfect on phone, tablet, desktop)
 ✅ **One-file deployment** (no build process, no dependencies)
@@ -84,12 +84,18 @@ Example from the Story section:
 ## Customization
 
 ### Change Colors:
-Edit lines 18-24 in `index.html`:
+Edit the `:root` block in `index.html`:
 ```css
 :root {
+    /* Core */
     --dark-bg: #0a0a0a;
     --accent-gold: #d4af37;
-    --accent-blue: #4a90e2;
+    --text: #ffffff;
+    --muted: #a0a0a0;
+    /* Earth accents (nomadic/sacred/tribal) */
+    --terracotta: #b8532a;
+    --indigo-night: #1a2a4a;
+    --ochre: #c8883a;
 }
 ```
 
