@@ -238,15 +238,48 @@ def publish_track(req: PublishRequest) -> PublishResult:
         # the viewer's "what I clicked on is what plays" promise intact and
         # cuts 3 extra image-gen calls worth of fal.ai spend (~\$0.13/publish).
         #
+        # Two paths:
+        #   Motion publish: the FIRST motion keyframe IS the thumbnail — no
+        #   separate hero gen. This guarantees the thumbnail exactly matches
+        #   the video's opening frame (the viewer promise) and avoids using
+        #   the still-hero prompt_builder vocabulary which is tuned to the
+        #   older festival-psytrance slot (can trigger fal.ai content filter
+        #   on some families; also off-brand for the Hebrew/Bedouin motion
+        #   keyframes).
+        #
+        #   Stills-only publish: prompt_builder → image_gen.generate_hero
+        #   produces the single image held for the full track duration.
+        #
         # If YouTube Test & Compare A/B variants are desired later, call
         # image_gen.generate_thumbnails() explicitly — it still exists and
         # samples fresh references per variant.
         if not req.skip_image_gen:
-            result.hero_image = image_gen.generate_hero(prompt)
-            # Thumbnails list is still populated so downstream code (registry
-            # serialization, reviewer etc.) has something to inspect — but
-            # it contains the hero file, not a separate generation.
             from content_engine.youtube_longform.types import ImageAsset
+
+            if req.motion:
+                # Motion publish: use the first motion keyframe as the
+                # hero/thumbnail. We generate it HERE so it's ready before
+                # the Kling morph pass (which needs all keyframes anyway).
+                story = motion_mod.story_for_track(req.track_title)
+                first_kf = story.keyframes[0]
+                logger.info(
+                    "Motion path: first keyframe '%s' will serve as thumbnail",
+                    first_kf.keyframe_id,
+                )
+                rendered = motion_mod._generate_keyframe(first_kf, prompt)
+                result.hero_image = ImageAsset(
+                    role="hero",
+                    local_path=rendered.local_path,
+                    remote_url=rendered.remote_url,
+                    width=cfg.HERO_WIDTH,
+                    height=cfg.HERO_HEIGHT,
+                    prompt_used=first_kf.still_prompt,
+                    variant_index=0,
+                )
+            else:
+                # Stills-only publish: use prompt_builder's hero slot.
+                result.hero_image = image_gen.generate_hero(prompt)
+
             result.thumbnails = [
                 ImageAsset(
                     role="thumbnail",
