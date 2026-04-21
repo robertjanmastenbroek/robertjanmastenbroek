@@ -23,17 +23,29 @@ logger = logging.getLogger(__name__)
 # ─── Scripture anchors (artist-curated, cannot be automated) ─────────────────
 
 SCRIPTURE_ANCHORS = {
-    "renamed": "Isaiah 62",
-    "halleluyah": "",
-    "jericho": "Joshua 6",
-    "fire in our hands": "",
-    "living water": "John 4",
-    "he is the light": "John 8",
-    "exodus": "Exodus 14",
-    "abba": "Romans 8:15",
-    "selah": "Psalm 46",
-    "kadosh": "Isaiah 6:3",         # "Holy, Holy, Holy is the Lord"
-    "side by side": "",
+    "renamed":                "Isaiah 62",
+    "halleluyah":             "",
+    "jericho":                "Joshua 6",
+    "fire in our hands":      "",
+    "living water":           "John 4",
+    "he is the light":        "John 8",
+    "exodus":                 "Exodus 14",
+    "abba":                   "Romans 8:15",
+    "selah":                  "Psalm 46",
+    "kadosh":                 "Isaiah 6:3",      # "Holy, Holy, Holy is the Lord"
+    "side by side":           "",
+    # Added 2026-04-21 (user classification for Holy Rave):
+    "shema":                  "Deuteronomy 6:4", # "Hear, O Israel"
+    "not by might":           "Zechariah 4:6",   # "Not by might nor by power"
+    "kavod":                  "Numbers 14:21",   # "the glory of the LORD"
+    "ruach":                  "Genesis 1:2",     # Spirit hovering over waters
+    "it is written":          "Matthew 4:4",     # Jesus' wilderness response
+    "on all flesh":           "Joel 2:28",       # "I will pour out my Spirit"
+    "strong tower":           "Proverbs 18:10",  # "name of the LORD"
+    "have mercy on me":       "Psalm 51:1",
+    "step by step":           "Psalm 119:133",
+    "rise up my love":        "Song of Songs 2:10",
+    "how good and pleasant":  "Psalm 133:1",
 }
 
 
@@ -96,20 +108,33 @@ TRACK_LYRICS: dict[str, str] = {
 # publishing a 124 BPM track next to a 140 BPM track confuses the cluster.
 # Keeping the channel genre-tight protects algorithmic momentum.
 HOLY_RAVE_TRACKS: set[str] = {
-    "jericho",             # 140 — tribal psytrance (Joshua 6)
-    "halleluyah",          # 140 — tribal psytrance
-    "kadosh",              # 142 — tribal psytrance, Hebrew (unreleased)
-    "selah",               # 130 — handpan / oud / Middle Eastern (Psalm 46)
-    "fire in our hands",   # 130 — organic tribal house
-    "exodus",              # 138 — fits tribal tier
-    "abba",                # 132 — fits organic tier
-    "side by side",        # 130 — organic house (unreleased)
-    # ↓ Borderline — edge tracks. Flip in by uncommenting if you want them on Holy Rave.
-    # "renamed",           # 128 — organic house, just under the 130 cutoff
-    # "he is the light",   # 128 — same
-    # ↓ Explicitly OFF Holy Rave — too slow for the channel's genre promise.
-    # Publish these to the main @robertjanmastenbroekofficial channel instead.
-    # "living water",      # 124 — organic house, below Holy Rave BPM floor
+    # User classification — 2026-04-21. 19 tracks approved for Holy Rave.
+    # BPM range: 128-144. Anything below 128 excluded (too slow for the
+    # channel's genre promise); Exodus corrected to 120 and removed.
+    "jericho",                # 140 — tribal psytrance (Joshua 6)  ← ALREADY PUBLISHED
+    "halleluyah",             # 140 — tribal psytrance
+    "kadosh",                 # 142 — tribal psytrance, Hebrew (unreleased)
+    "shema",                  # 140 — Hebrew, Deut 6:4
+    "not by might",           # 140 — Zech 4:6
+    "kavod",                  # 144 — Hebrew ("glory")
+    "ruach",                  # 144 — Hebrew ("spirit")
+    "selah",                  # 130 — handpan/oud, Psalm 46
+    "fire in our hands",      # 130 — organic tribal house
+    "side by side",           # 130 — organic house (unreleased, English)
+    "abba",                   # 132 — Rom 8:15
+    "renamed",                # 128 — organic house, Isaiah 62
+    "it is written",          # 136 — Matt 4:4
+    "on all flesh",           # 136 — Joel 2:28
+    "strong tower",           # 136 — Prov 18:10
+    "have mercy on me",       # 129 — Ps 51
+    "step by step",           # 129 — Ps 119:133
+    "rise up my love",        # 129 — Song 2:10
+    "how good and pleasant",  # 136 — Ps 133
+    # Explicitly EXCLUDED (off-brand or too slow):
+    # "exodus"        — 120 BPM, too slow (corrected from erroneous 138)
+    # "he is the light" — 128 but user excluded
+    # "living water"  — 124, too slow
+    # plus ~29 older worship tracks (at the door, be still, holy holy holy, etc.)
 }
 
 # ─── Active track seed (top 4 by save rate) ─────────────────────────────────
@@ -119,15 +144,31 @@ SEED_TRACKS = ["halleluyah", "renamed", "jericho", "fire in our hands", "selah"]
 # Artist-verified BPMs — never rely on librosa for these (librosa doubles psytrance
 # BPMs: half-time detection reports ~92 BPM → doubled to 185 for a 140 BPM track).
 TRACK_BPMS: dict[str, int] = {
-    "halleluyah":        140,
-    "renamed":           128,
-    "jericho":           140,
-    "fire in our hands": 130,
-    "selah":             130,
-    "living water":      124,
-    "he is the light":   128,
-    "exodus":            138,
-    "abba":              132,
+    # Originals (artist-verified):
+    "halleluyah":             140,
+    "renamed":                128,
+    "jericho":                140,
+    "fire in our hands":      130,
+    "selah":                  130,
+    "living water":           124,
+    "he is the light":        128,
+    "abba":                   132,
+    "exodus":                 120,   # Corrected 2026-04-21 (was 138)
+    # Unreleased:
+    "kadosh":                 142,
+    "side by side":           130,
+    # Added 2026-04-21 — user-classified for Holy Rave:
+    "shema":                  140,   # user-confirmed (librosa said 92, half-time detect)
+    "not by might":           140,   # user-confirmed (librosa said 92, half-time detect)
+    "kavod":                  144,   # librosa — verify by ear
+    "ruach":                  144,   # librosa — verify by ear
+    "it is written":          136,   # librosa — verify by ear
+    "on all flesh":           136,   # librosa
+    "strong tower":           136,   # librosa
+    "have mercy on me":       129,   # librosa
+    "step by step":           129,   # librosa
+    "rise up my love":        129,   # librosa
+    "how good and pleasant":  136,   # librosa
 }
 
 
