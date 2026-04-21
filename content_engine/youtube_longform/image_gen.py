@@ -91,23 +91,41 @@ def _generate_one(
     width: int,
     height: int,
     seed: Optional[int],
+    reference_urls: Optional[list[str]] = None,
 ) -> str:
     """
     Run one fal.ai generation. Returns the URL of the resulting image.
 
-    Primary path: `fal-ai/flux-2-pro` — supports ImageSize (width/height) but
-    NOT num_inference_steps, guidance_scale, negative_prompt, or loras.
-    Negatives are merged into the positive prompt.
+    Three paths, in priority order:
 
-    LoRA path (when FAL_BRAND_LORA_URL is set): `fal-ai/flux-lora` — accepts
-    width/height, loras array, num_inference_steps, guidance_scale, and
-    negative_prompt. Note: this is Flux 1 with LoRA (Flux 2 Dev LoRA
-    inference requires a different endpoint + training pipeline; opt in
-    only if you've trained specifically for that endpoint).
+    1. Reference-conditioned (when reference_urls is non-empty):
+       `fal-ai/flux-2-pro/edit` — accepts image_urls for style anchoring.
+       Output cost same as flux-2-pro; inputs charge $0.015/MP.
+
+    2. LoRA (when FAL_BRAND_LORA_URL is set):
+       `fal-ai/flux-lora` — Flux 1 with LoRA, accepts loras array, negative
+       prompt, and inference params.
+
+    3. Baseline (default):
+       `fal-ai/flux-2-pro` — text-only. Does NOT accept num_inference_steps,
+       guidance_scale, negative_prompt, or loras. Negatives are merged into
+       the positive prompt.
+
+    Reference conditioning wins over LoRA when both are available — references
+    are more flexible (per-generation style anchoring) than a baked-in LoRA.
     """
     client = _fal_client()
 
-    if cfg.FAL_BRAND_LORA_URL:
+    if reference_urls:
+        # Reference-conditioned path (fal-ai/flux-2-pro/edit)
+        endpoint = cfg.FAL_FLUX_2_PRO_EDIT_EP
+        arguments = {
+            "prompt":        _merge_negative_into_prompt(prompt, negative_prompt),
+            "image_urls":    reference_urls[:9],    # Hard API cap: 9 refs, 9 MP total
+            "image_size":    {"width": width, "height": height},
+            "output_format": "jpeg",
+        }
+    elif cfg.FAL_BRAND_LORA_URL:
         endpoint = cfg.FAL_FLUX_LORA_EP
         arguments = {
             "prompt":              prompt,
@@ -164,11 +182,57 @@ def _download(url: str, dest: Path, timeout: int = 60) -> None:
 
 # ─── Public API ──────────────────────────────────────────────────────────────
 
-def generate_hero(prompt: TrackPrompt) -> ImageAsset:
-    """Generate the 1920x1080 hero still used as the video background."""
+def generate_hero(
+    prompt: TrackPrompt,
+    use_references: bool = True,
+) -> ImageAsset:
+    """
+    Generate the 1920x1080 hero still used as the video background.
+
+    When use_references=True (default) and the proven-viral pool has
+    images available for the track's genre_family, this function:
+      1. Picks N references via reference_pool.pick_references
+      2. Uploads them to Cloudinary to get public URLs
+      3. Routes to fal-ai/flux-2-pro/edit with image_urls
+    Otherwise falls back to plain fal-ai/flux-2-pro text-to-image.
+
+    Pass use_references=False for a baseline generation (useful for
+    quality A/B — reference-conditioned vs not).
+    """
     cfg.ensure_workspace()
     slug = _slug(prompt.track_title)
-    digest = _hash(prompt.flux_prompt, prompt.seed)
+
+    # Reference resolution — if the pool is empty, we silently fall back
+    reference_urls: list[str] = []
+    if use_references:
+        from content_engine.youtube_longform import reference_pool
+        from content_engine.youtube_longform.render import upload_image_for_render
+
+        refs = reference_pool.pick_references(prompt.genre_family)
+        if refs:
+            logger.info(
+                "Reference-conditioning hero with %d refs from %s bucket",
+                len(refs), prompt.genre_family,
+            )
+            # Upload each reference to Cloudinary for a public URL
+            # (fal.ai requires URLs, not local paths)
+            for ref_path in refs:
+                try:
+                    ref_url = upload_image_for_render(
+                        ref_path,
+                        public_id=f"ref_{ref_path.stem}",
+                    )
+                    reference_urls.append(ref_url)
+                except Exception as e:
+                    logger.warning(
+                        "Skipping reference %s (Cloudinary upload failed: %s)",
+                        ref_path.name, e,
+                    )
+        else:
+            logger.info("No references available for %s — baseline path", prompt.genre_family)
+
+    # Hash includes references so the cache key differs for ref vs no-ref
+    digest = _hash(prompt.flux_prompt + "".join(reference_urls), prompt.seed)
     local_path = cfg.IMAGE_DIR / f"{slug}_hero_{digest}.jpg"
 
     if local_path.exists():
@@ -190,9 +254,13 @@ def generate_hero(prompt: TrackPrompt) -> ImageAsset:
         width=cfg.HERO_WIDTH,
         height=cfg.HERO_HEIGHT,
         seed=prompt.seed,
+        reference_urls=reference_urls or None,
     )
     _download(url, local_path)
-    logger.info("Hero generated in %.1fs → %s", time.time() - t0, local_path.name)
+    logger.info(
+        "Hero generated in %.1fs (%s refs) → %s",
+        time.time() - t0, len(reference_urls), local_path.name,
+    )
 
     return ImageAsset(
         role="hero",
@@ -208,15 +276,47 @@ def generate_hero(prompt: TrackPrompt) -> ImageAsset:
 def generate_thumbnails(
     variants: list[TrackPrompt],
     count: Optional[int] = None,
+    use_references: bool = True,
 ) -> list[ImageAsset]:
-    """Generate 3 thumbnail variants (1280x720) for YouTube Test & Compare."""
+    """Generate 3 thumbnail variants (1280x720) for YouTube Test & Compare.
+
+    When use_references=True (default), each variant samples fresh references
+    from the proven-viral pool — this means the 3 thumbnails will not only
+    use different seeds but also be anchored on different reference
+    composition-archetypes, producing genuinely distinct A/B candidates.
+    """
     cfg.ensure_workspace()
     target_count = count or cfg.THUMB_VARIANT_COUNT
     assets: list[ImageAsset] = []
 
+    # Resolve per-variant references once per call to share Cloudinary uploads
+    reference_urls_per_variant: list[list[str]] = []
+    if use_references and variants:
+        from content_engine.youtube_longform import reference_pool
+        from content_engine.youtube_longform.render import upload_image_for_render
+        for i, v in enumerate(variants[:target_count]):
+            # Use variant index as seed into reference_pool so each variant
+            # gets a deterministic-but-different reference set
+            refs = reference_pool.pick_references(
+                v.genre_family,
+                seed=(v.seed or 0) + i * 101,
+            )
+            urls = []
+            for ref_path in refs:
+                try:
+                    urls.append(upload_image_for_render(
+                        ref_path, public_id=f"ref_{ref_path.stem}",
+                    ))
+                except Exception as e:
+                    logger.warning("Skipping ref %s: %s", ref_path.name, e)
+            reference_urls_per_variant.append(urls)
+    else:
+        reference_urls_per_variant = [[] for _ in range(len(variants[:target_count]))]
+
     for i, v in enumerate(variants[:target_count]):
         slug = _slug(v.track_title)
-        digest = _hash(v.flux_prompt, v.seed)
+        ref_urls = reference_urls_per_variant[i] if i < len(reference_urls_per_variant) else []
+        digest = _hash(v.flux_prompt + "".join(ref_urls), v.seed)
         local_path = cfg.IMAGE_DIR / f"{slug}_thumb_{i}_{digest}.jpg"
 
         if local_path.exists():
@@ -239,6 +339,7 @@ def generate_thumbnails(
             width=cfg.THUMB_WIDTH,
             height=cfg.THUMB_HEIGHT,
             seed=v.seed,
+            reference_urls=ref_urls or None,
         )
         _download(url, local_path)
         logger.info(

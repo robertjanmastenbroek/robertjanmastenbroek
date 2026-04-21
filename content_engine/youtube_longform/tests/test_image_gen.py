@@ -53,7 +53,7 @@ def test_baseline_flux_2_pro_call_shape(monkeypatch, tmp_path):
     monkeypatch.setattr(image_gen, "_download", lambda url, dest, timeout=60: dest.write_bytes(b"fake"))
 
     prompt = prompt_builder.build_prompt("Jericho", seed=42)
-    image_gen.generate_hero(prompt)
+    image_gen.generate_hero(prompt, use_references=False)
 
     assert len(endpoints) == 1
     assert endpoints[0] == "fal-ai/flux-2-pro"
@@ -86,7 +86,7 @@ def test_baseline_merges_negative_into_positive_prompt(monkeypatch, tmp_path):
     monkeypatch.setattr(image_gen, "_download", lambda url, dest, timeout=60: dest.write_bytes(b"fake"))
 
     prompt = prompt_builder.build_prompt("Jericho")
-    image_gen.generate_hero(prompt)
+    image_gen.generate_hero(prompt, use_references=False)
 
     merged = args[0]["prompt"]
     assert "Avoid:" in merged, "Negative prompt should be merged with 'Avoid:' marker"
@@ -111,7 +111,7 @@ def test_lora_path_routes_to_flux_lora_endpoint(monkeypatch, tmp_path):
     monkeypatch.setattr(image_gen, "_download", lambda url, dest, timeout=60: dest.write_bytes(b"fake"))
 
     prompt = prompt_builder.build_prompt("Jericho", seed=99)
-    image_gen.generate_hero(prompt)
+    image_gen.generate_hero(prompt, use_references=False)
 
     assert endpoints[0] == "fal-ai/flux-lora"
     call_args = args[0]
@@ -136,9 +136,9 @@ def test_generate_cached_image_is_not_regenerated(monkeypatch, tmp_path):
     monkeypatch.setattr(image_gen, "_download", lambda url, dest, timeout=60: dest.write_bytes(b"fake"))
 
     prompt = prompt_builder.build_prompt("Jericho", seed=42)
-    image_gen.generate_hero(prompt)       # First call generates
+    image_gen.generate_hero(prompt, use_references=False)       # First call generates
     first_call_count = len(endpoints)
-    image_gen.generate_hero(prompt)       # Second call should cache
+    image_gen.generate_hero(prompt, use_references=False)       # Second call should cache
     assert len(endpoints) == first_call_count, "Cached image should skip fal.ai call"
 
 
@@ -149,6 +149,54 @@ def test_estimate_cost_math():
     cost = image_gen.estimate_cost_usd(hero_count=1, thumb_count=3)
     # (0.045 * 1) + (0.03 * 3) = 0.045 + 0.09 = 0.135
     assert abs(cost - 0.135) < 0.001
+
+
+def test_reference_conditioning_routes_to_edit_endpoint(monkeypatch, tmp_path):
+    """
+    When reference URLs are supplied (non-empty), image gen routes to
+    fal-ai/flux-2-pro/edit with image_urls — not the baseline endpoint.
+    """
+    endpoints: list[str] = []
+    args: list[dict] = []
+    fake = _fake_fal(endpoints, args)
+    monkeypatch.setenv("FAL_KEY", "test-key")
+    monkeypatch.setitem(sys.modules, "fal_client", fake)
+    monkeypatch.setattr("content_engine.youtube_longform.config.FAL_BRAND_LORA_URL", "")
+    monkeypatch.setattr("content_engine.youtube_longform.config.FAL_KEY", "test-key")
+
+    refs = ["https://fake.cdn/ref1.jpg", "https://fake.cdn/ref2.jpg"]
+    image_gen._generate_one(
+        prompt="test prompt",
+        negative_prompt="test neg",
+        width=1920,
+        height=1080,
+        seed=42,
+        reference_urls=refs,
+    )
+
+    assert endpoints[0] == "fal-ai/flux-2-pro/edit", (
+        "With references supplied, must route to the Edit endpoint"
+    )
+    assert args[0]["image_urls"] == refs
+    assert "output_format" in args[0]
+
+
+def test_reference_conditioning_caps_at_9_refs(monkeypatch):
+    """fal-ai/flux-2-pro/edit hard cap is 9 references — we truncate."""
+    endpoints: list[str] = []
+    args: list[dict] = []
+    fake = _fake_fal(endpoints, args)
+    monkeypatch.setenv("FAL_KEY", "test-key")
+    monkeypatch.setitem(sys.modules, "fal_client", fake)
+    monkeypatch.setattr("content_engine.youtube_longform.config.FAL_BRAND_LORA_URL", "")
+    monkeypatch.setattr("content_engine.youtube_longform.config.FAL_KEY", "test-key")
+
+    refs = [f"https://fake/{i}.jpg" for i in range(15)]
+    image_gen._generate_one(
+        prompt="p", negative_prompt="", width=1024, height=1024,
+        seed=None, reference_urls=refs,
+    )
+    assert len(args[0]["image_urls"]) == 9
 
 
 def test_no_fal_key_raises_helpful_error(monkeypatch):

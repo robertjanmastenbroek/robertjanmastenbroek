@@ -63,6 +63,14 @@ FAL_KEY             = os.getenv("FAL_KEY", "")
 # the positive prompt via _merge_negative_into_prompt().
 FAL_FLUX_2_PRO_EP   = "fal-ai/flux-2-pro"
 
+# Flux 2 Pro Edit — reference-image conditioning. Up to 9 references, 9 MP
+# input total. Output cost same as flux-2-pro ($0.03 first MP), input cost
+# $0.015 per MP of reference image. A 2-reference generation @ 1920x1080
+# typically costs ~$0.075. Used when reference_urls is supplied to
+# image_gen.generate_hero() — anchors style on proven-viral thumbnails
+# from content/images/proven_viral/.
+FAL_FLUX_2_PRO_EDIT_EP = "fal-ai/flux-2-pro/edit"
+
 # LoRA-inference path: Flux 1 with LoRA support at $0.035/MP. Accepts
 # loras array, width/height, num_inference_steps, guidance_scale,
 # negative_prompt. Used ONLY when FAL_BRAND_LORA_URL is set.
@@ -85,6 +93,11 @@ FAL_IDEOGRAM_EP     = "fal-ai/ideogram/v3"
 # If set, generation switches to fal-ai/flux-lora (Flux 1) + the brand LoRA.
 FAL_BRAND_LORA_URL  = os.getenv("FAL_BRAND_LORA_URL", "")
 FAL_BRAND_LORA_SCALE = float(os.getenv("FAL_BRAND_LORA_SCALE", "0.80"))
+
+# Reference-image pool — CLIP-style anchoring for quality lift
+PROVEN_VIRAL_DIR    = CONTENT_DIR / "images" / "proven_viral"
+REFERENCE_COUNT_PER_GEN = 2       # Number of references per fal-ai/flux-2-pro/edit call
+                                  # Higher = stronger style lock, also pricier
 
 # Image gen parameters (defaults match research recommendations)
 HERO_WIDTH, HERO_HEIGHT        = 1920, 1080
@@ -218,15 +231,23 @@ def ensure_workspace() -> None:
 
 def config_summary() -> dict[str, bool]:
     """Health-check dict for `rjm.py content youtube status`."""
+    pool_dir_130 = PROVEN_VIRAL_DIR / "bucket_130_organic"
+    pool_dir_140 = PROVEN_VIRAL_DIR / "bucket_140_psytrance"
+    pool_130 = len(list(pool_dir_130.glob("*.[jp][pn]g"))) if pool_dir_130.exists() else 0
+    pool_140 = len(list(pool_dir_140.glob("*.[jp][pn]g"))) if pool_dir_140.exists() else 0
     return {
         "fal_key":                 bool(FAL_KEY),
         "fal_brand_lora":          bool(FAL_BRAND_LORA_URL),
         "cloudinary":              cloudinary_configured(),
         "shotstack":               bool(SHOTSTACK_API_KEY),
+        "shotstack_env":           SHOTSTACK_ENV,
         "youtube_oauth":           all((YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN)),
         "youtube_oauth_isolated":  youtube_oauth_is_holyrave(),
         "holy_rave_channel_id":    bool(YT_HOLY_RAVE_CHANNEL_ID),
         "featurefm":               bool(FEATUREFM_API_KEY),
         "audio_masters_present":   AUDIO_MASTERS.exists(),
         "lora_training_set_size":  len(list(LORA_TRAINING_DIR.glob("*.[jp][pn]g"))) if LORA_TRAINING_DIR.exists() else 0,
+        "proven_viral_130_count":  pool_130,
+        "proven_viral_140_count":  pool_140,
+        "proven_viral_total":      pool_130 + pool_140,
     }
