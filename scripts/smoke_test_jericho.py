@@ -2,24 +2,16 @@
 """
 smoke_test_jericho.py — One-shot smoke test for the image gen pipeline.
 
-Spends $0.045 on fal.ai Flux 2 Pro. Generates a single 1920x1080 Jericho
-hero image using the calibrated prompt. Opens it in Preview. No upload,
-no render, no thumbnails, no LoRA. Just the image.
+Spends $0.045 on fal.ai Flux 2 Pro. Generates a single 1920x1080 hero
+image for any track using the calibrated prompt. Opens it in Preview.
+No upload, no render, no thumbnails, no LoRA. Just the image.
 
-Purpose: verify (a) the prompt produces Biblically-Nomadic Jericho imagery
-that passes the brand gate, and (b) the fal.ai integration actually works
-end-to-end against the live API.
-
-If the image looks right, we know:
-  - Flux 2 Pro + our prompt template works without LoRA
-  - The $16-51 LoRA training step can be skipped entirely
-  - We're ready to expand to the full publisher flow
-
-If the image is close but off, we iterate the prompt ($0.045 per retry).
-If the image is way off, we discuss whether LoRA is worth the spend.
+Script name is historical (originally Jericho-only). Now accepts any
+track title via --track.
 """
 from __future__ import annotations
 
+import argparse
 import sys
 import subprocess
 from pathlib import Path
@@ -31,11 +23,15 @@ from content_engine.youtube_longform import config as cfg, image_gen, prompt_bui
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--track", default="Jericho", help="Track title (default Jericho)")
+    args = parser.parse_args()
+
     if not cfg.FAL_KEY:
         print("✗ FAL_KEY not set", file=sys.stderr)
         return 1
 
-    prompt = prompt_builder.build_prompt("Jericho")
+    prompt = prompt_builder.build_prompt(args.track)
     print("─" * 70)
     print(f"Track:           {prompt.track_title}")
     print(f"BPM:             {prompt.bpm}")

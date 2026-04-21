@@ -211,10 +211,14 @@ SCRIPTURE_HOOKS = {
         "a single carved stone slab under gold dawn light, Hebrew characters "
         "freshly chiseled, chisel and hammer laid aside in the dust",
     # Psalm 46 — "Be still, and know that I am God"
+    # Flux 2 doesn't know what an oud looks like — it renders a classical
+    # guitar or lute. Describe the instrument visually instead of naming it.
     "Psalm 46":
         "a handpan resting on black basalt at the center of a moonlit desert "
-        "canyon, oud leaning against the stone, incense smoke rising in a "
-        "single vertical line of perfect stillness",
+        "canyon, a Middle Eastern short-necked fretless stringed instrument "
+        "with a deep bulbous bowl-shaped wooden body (an oud) leaning against "
+        "the stone, incense smoke rising in a single vertical line of "
+        "perfect stillness",
     # John 4 — woman at the well, living water
     "John 4":
         "a clay water jar resting on the rim of an ancient stone well at "
@@ -331,7 +335,10 @@ NEGATIVE_PROMPT = (
     "Mayan temple, Aztec carvings, Aztec warrior, Incan ruins, Mesoamerican "
     "architecture, Chichen Itza, Tenochtitlan, stepped pyramids, jaguar god, "
     "feathered serpent Quetzalcoatl, Native American plains-tribe feather "
-    "war bonnet, multicolored parrot feathers"
+    "war bonnet, multicolored parrot feathers, "
+    # Oud drift — added 2026-04-21 after Selah test rendered classical guitar
+    "classical guitar, acoustic guitar, steel-string guitar, electric guitar, "
+    "long-necked lute, fretted neck, flat-back guitar body, modern guitar pickup"
 )
 
 
