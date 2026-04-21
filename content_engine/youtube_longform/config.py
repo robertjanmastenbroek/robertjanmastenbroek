@@ -88,6 +88,41 @@ FAL_FLUX_1_TRAINER_EP = "fal-ai/flux-lora-fast-training"     # Cheaper fallback
 # Text-overlay thumbnail fallback (not currently used in default path)
 FAL_IDEOGRAM_EP     = "fal-ai/ideogram/v3"
 
+# ─── Motion (image → video loops) ────────────────────────────────────────────
+# Two Kling tiers; we use them for different roles.
+#
+# Kling 2.1 Standard — image-to-video with a SINGLE input frame. Good for
+# per-scene subtle motion (flutter, blink, drift). Pricing: $0.28/5s clip.
+# Used ONLY for ambient in-scene motion — not for scene-to-scene morph.
+#
+# Kling O3 Standard — image-to-video with start AND end frame. This is
+# the tool for seamless scene-to-scene morph chaining: feed the end frame
+# of scene N as "image_url" and the first frame of scene N+1 as
+# "end_image_url", and Kling generates the morphing transition between
+# them. Pricing (verified 2026-04-21): $0.084/second → $0.84 per 10s clip.
+# For a 30s seamless hypnotic loop (Omiki 'Wana' style), we chain 3×10s
+# O3 clips where the last clip's end frame = the first clip's start frame.
+#
+# Kling O3 schema:
+#   prompt         str  — what transforms, and how (morph type, camera)
+#   image_url      str  — START frame (public URL)
+#   end_image_url  str  — END frame (public URL)
+#   duration       int  — "5" or "10"  seconds
+#   aspect_ratio   str  — "16:9" | "9:16" | "1:1"
+FAL_KLING_21_STANDARD_EP = "fal-ai/kling-video/v2.1/standard/image-to-video"
+FAL_KLING_O3_STANDARD_EP = "fal-ai/kling-video/o3/standard/image-to-video"
+
+# Veo 3.1 first-last-frame-to-video — Google's premium keyframe-chain
+# engine. 2.4× the cost of Kling O3 but often higher fidelity on faces.
+# Reserved for a later quality A/B; not used in the default morph path.
+FAL_VEO_31_FIRSTLAST_EP  = "fal-ai/veo3.1/first-last-frame-to-video"
+
+KLING_CLIP_SECONDS_DEFAULT = 5         # 5s keeps Standard cost at $0.28/clip
+KLING_O3_CLIP_SECONDS      = 10        # 10s at $0.084/s = $0.84 per morph
+KLING_ASPECT_16_9          = "16:9"    # Long-form background
+KLING_ASPECT_9_16          = "9:16"    # Shorts repurpose path
+KLING_MOTION_TIMEOUT_SECONDS = 360     # O3 morphs can run 3-5 min
+
 # Brand LoRA — populated after training. Leave empty to use pure prompt baseline.
 # If empty, generation uses fal-ai/flux-2-pro (baseline).
 # If set, generation switches to fal-ai/flux-lora (Flux 1) + the brand LoRA.
