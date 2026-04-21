@@ -5,7 +5,7 @@
 ---
 
 ## Objective
-Build a YouTube presence with long-form DJ mixes that drive Spotify streams, attract playlist curators, and establish RJM as a credible name in melodic techno and tribal psytrance. Every video routes back to Spotify.
+Build a YouTube presence with long-form DJ mixes that drive Spotify streams, attract playlist curators, and establish RJM as a credible name in nomadic electronic — organic-tribal house through tribal psytrance (130–145 BPM). Every video routes back to Spotify.
 
 ---
 
@@ -19,26 +19,26 @@ Build a YouTube presence with long-form DJ mixes that drive Spotify streams, att
 - **Scripture hook (subtle):** "The sound broke the silence. The silence never came back." — no Bible citation in the video.
 - **Tracklist arc:** 10 min psybient intro → 40 min peak tribal psytrance → 10 min comedown
 
-### 2. "Living Water Sessions" — Organic House & Deep Melodic Techno (90 min)
-- **Concept:** Late-night set for people who are thirsty without knowing why. "Living Water" anchors the middle of the mix — not the opener.
-- **SEO Title:** `Living Water Sessions — Organic House & Melodic Techno Mix 2026 | Robert-Jan Mastenbroek`
+### 2. "Living Water Sessions" — Organic-Tribal House (90 min)
+- **Concept:** Late-night set for people who are thirsty without knowing why. Handpan, oud, and Middle Eastern modes anchor the middle of the mix — not the opener.
+- **SEO Title:** `Living Water Sessions — Organic-Tribal House Mix 2026 | Robert-Jan Mastenbroek`
 - **Hook:** "For when the party ends and the real music begins."
 - **Thumbnail:** Close-up of water drops on a studio surface, blue tones, backlit.
-- **Tracklist arc:** Deep organic house opener → melodic techno peak → "Living Water" at 45 min → cinematic comedown
+- **Tracklist arc:** Deep organic house opener → 130 BPM tribal-house peak → "Living Water" at 45 min → cinematic handpan comedown
 
 ### 3. "Holy Rave — Live Set Tenerife 2026" (45 min)
 - **Concept:** Recorded live set from Tenerife. Real crowd, real energy. Even if it's a smaller venue — the footage matters. Authenticity > production quality.
-- **SEO Title:** `Holy Rave Live Set — Tenerife 2026 | Robert-Jan Mastenbroek [Melodic Techno / Tribal]`
+- **SEO Title:** `Holy Rave Live Set — Tenerife 2026 | Robert-Jan Mastenbroek [Nomadic Electronic / Tribal]`
 - **Hook:** "The rave became holy. No one planned it."
 - **Thumbnail:** Real crowd photo with light beam cutting through smoke. No posed shots.
 - **Format:** Full live recording, no studio edits. Raw cuts are fine — they're proof of authenticity.
 
 ### 4. "Ancient Future" — Tribal + Progressive Hybrid Mix (75 min)
 - **Concept:** RJM's unique sound is the bridge between ancient rhythms and future production. This mix lives in that gap. Tribal percussion + modern synthesis.
-- **SEO Title:** `Ancient Future — Tribal Techno & Progressive Mix 2026 | Robert-Jan Mastenbroek`
+- **SEO Title:** `Ancient Future — Tribal Psytrance & Organic House Mix 2026 | Robert-Jan Mastenbroek`
 - **Hook:** "Before the algorithm, before the playlist — there was the drum."
 - **Thumbnail:** Sacred geometry layered over a dense forest. Gold + dark tones.
-- **Tracklist arc:** World music / tribal percussive intro → rising tribal techno → full progressive peak → loop back to stillness
+- **Tracklist arc:** World music / tribal percussive intro → rising tribal house → full tribal psytrance peak → loop back to stillness
 
 ### 5. "Deep Space Selah" — Ambient Psytrance & Downtempo (120 min)
 - **Concept:** Two-hour journey for late night, headphones, introspection. Not a party mix — a presence mix. RJM's downtempo and psychill side.
@@ -54,7 +54,7 @@ Build a YouTube presence with long-form DJ mixes that drive Spotify streams, att
 **Title formula:** `[Evocative Name] — [Genre + Genre] Mix [YEAR] | Robert-Jan Mastenbroek`
 
 **Tags (use all):**
-`melodic techno`, `tribal techno`, `psytrance`, `organic techno`, `progressive psytrance`, `DJ mix 2026`, `Robert-Jan Mastenbroek`, `Holy Rave`, `psytrance mix`, `tribal psytrance`, `melodic house mix`, `underground techno`, `Tenerife DJ`, `live techno set`
+`nomadic electronic`, `organic house`, `tribal house`, `tribal psytrance`, `psytrance`, `ethnic electronic`, `handpan`, `oud`, `Middle Eastern electronic`, `DJ mix 2026`, `Robert-Jan Mastenbroek`, `Holy Rave`, `psytrance mix`, `Café de Anatolia`, `Sol Selectas`, `Tenerife DJ`, `desert house`
 
 **Description Template:**
 ```
@@ -74,7 +74,7 @@ Booking: motomotosings@gmail.com
 
 [SUBTLE CLOSING LINE — one sentence, not preachy, visual. E.g.: "The dust settles. The frequency remains."]
 
-#MelodicTechno #TribalTechno #Psytrance #HolyRave #DJMix2026
+#NomadicElectronic #OrganicHouse #TribalPsytrance #Psytrance #Handpan #MiddleEasternElectronic #HolyRave #DJMix2026
 ```
 
 ---

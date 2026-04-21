@@ -1,5 +1,5 @@
 # Artist Collaboration Targets — Robert-Jan Mastenbroek
-*Last updated: 2026-04-12 | Target: 20 psytrance/melodic techno artists, 10K–200K listeners*
+*Last updated: 2026-04-12 | Target: 20 tribal psytrance / nomadic electronic artists, 10K–200K listeners*
 
 ## Priority Tier 1 — Direct Email, Best Fit (10K–100K listeners)
 
@@ -53,7 +53,7 @@ Hey [Name],
 
 [1 sentence on their music — specific track or sound, not generic compliment].
 
-I'm Robert-Jan Mastenbroek — tribal psytrance and melodic techno, based in Tenerife.
+I'm Robert-Jan Mastenbroek — nomadic electronic (organic-tribal house through tribal psytrance, 130–145 BPM) with oud, handpan, and Middle Eastern modes, based in Tenerife.
 Tracks: Jericho (140 BPM), Halleluyah (140 BPM psytrance), Living Water (124 BPM).
 Spotify: open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds
 

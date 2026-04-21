@@ -31,7 +31,7 @@ FACTS (never invent, never exaggerate):
 - 30: hack + blackmail + national media storm destroyed everything — businesses, properties, Bitcoin, reputation. Repaid every creditor despite no legal obligation.
 - Tenerife: chose the island over rebuilding in NL where my name was destroyed. Lived in a camper van on the south coast. Performed as a €750/hr vocalist at weddings. Found more peace than I'd had in years.
 - Faith: church age 10–19, left (the people, not God). One night alone in Tenerife, on my knees, I prayed one thing: to be happy again the way I was as a child. That was the return. Everything changed.
-- Music: faith + dance floor. Hebrew lyrics, Biblical texts, Psalms in electronic production. Not worship music in the traditional sense — but for me it is worship. Jesus-loving raver.
+- Music: faith + dance floor. Nomadic electronic — organic powerful house (130 BPM) through tribal psytrance (145 BPM). Oud, handpan, tribal drums, Middle Eastern modes. Hebrew lyrics, Biblical texts, Psalms in electronic production. Not worship music in the traditional sense — but for me it is worship. Jesus-loving raver.
 - Now: 290K IG, 30+ tracks all owned, weekly releases, free Sunset Sessions every Friday in Tenerife. No label, no manager, no agent.
 - Mission: ancient truth, carried by future sound, to people who need it most.
 - I don't make Christian music. I make electronic music with Christian depth.
@@ -232,43 +232,50 @@ TRACK_SCRIPTURE: dict[str, dict] = {
         "ref":     "Isaiah 62",
         "angle":   "new name, new identity — the moment everything changed",
         "bpm":     130,
-        "genre":   "tribal techno",
+        "genre":   "organic house",
         "spotify": _track_spotify("Renamed"),
     },
     "Halleluyah": {
         "ref":     None,
         "angle":   "pure praise, 140 BPM — the body as an act of worship",
         "bpm":     140,
-        "genre":   "psytrance",
+        "genre":   "tribal psytrance",
         "spotify": _track_spotify("Halleluyah"),
     },
     "Jericho": {
         "ref":     "Joshua 6",
         "angle":   "walls come down — eventually, always",
         "bpm":     140,
-        "genre":   "psytrance",
+        "genre":   "tribal psytrance",
         "spotify": _track_spotify("Jericho"),
     },
     "Fire In Our Hands": {
         "ref":     None,
         "angle":   "130 BPM tribal — the call to act",
         "bpm":     130,
-        "genre":   "tribal techno",
+        "genre":   "organic tribal house",
         "spotify": _track_spotify("Fire In Our Hands"),
     },
     "Living Water": {
         "ref":     "John 4",
         "angle":   "what the soul is actually thirsty for",
         "bpm":     124,
-        "genre":   "melodic techno",
+        "genre":   "organic house",
         "spotify": _track_spotify("Living Water"),
     },
     "He Is The Light": {
         "ref":     "John 8",
         "angle":   "light in every room, including this one",
         "bpm":     122,
-        "genre":   "melodic techno",
+        "genre":   "organic house",
         "spotify": _track_spotify("He Is The Light"),
+    },
+    "Selah": {
+        "ref":     "Psalm 46",
+        "angle":   "the sacred pause — handpan and oud against Middle Eastern modes",
+        "bpm":     130,
+        "genre":   "handpan / oud / Middle Eastern",
+        "spotify": _track_spotify("Selah"),
     },
 }
 
@@ -286,13 +293,15 @@ def get_track_for_contact(genre: str = "", notes: str = "") -> dict:
         TRACK_SCRIPTURE entry dict with title included as 'title' key.
     """
     combined = (genre + " " + notes).lower()
-    if any(w in combined for w in ("psytrance", "goa", "140")):
+    if any(w in combined for w in ("psytrance", "goa", "140", "145")):
         title = "Halleluyah"
-    elif any(w in combined for w in ("tribal", "ethnic", "130")):
+    elif any(w in combined for w in ("handpan", "oud", "middle eastern", "anatolia", "world", "ethnic", "nomadic")):
+        title = "Selah"
+    elif any(w in combined for w in ("tribal", "sol selectas", "afro", "bedouin", "130")):
         title = "Renamed"
     elif any(w in combined for w in ("faith", "christian", "worship", "church")):
         title = "He Is The Light"
-    elif any(w in combined for w in ("melodic", "house", "124", "deep")):
+    elif any(w in combined for w in ("organic", "melodic", "house", "124", "deep")):
         title = "Living Water"
     else:
         title = "Renamed"  # default crossover track
@@ -345,7 +354,8 @@ def get_discovery_filter() -> str:
     return """DISCOVERY FILTER — RJM Brand Fit (Subtle Salt Principle)
 
 TARGET audiences — music leads, faith surfaces naturally:
-- Melodic techno, tribal psytrance, world/ethnic electronic listeners
+- Organic house, tribal psytrance, Goa / progressive psytrance, ethnic / nomadic electronic listeners
+- Middle Eastern / Café de Anatolia / Sol Selectas / Bedouin / Acid Arab / world-fusion audiences
 - Rave culture, consciousness, flow state, secular wellness audiences
 - People who feel something sacred without having a vocabulary for it
 - "Spiritual but not religious" communities

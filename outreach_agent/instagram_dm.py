@@ -188,9 +188,9 @@ def _get_cli() -> str:
 def _pick_track(best_track_match: str, genre_tags: str) -> dict:
     """Pick the most relevant track for this playlist's genre."""
     all_tracks = (
-        TRACKS["tribal_techno"]
+        TRACKS["organic_tribal"]
         + TRACKS["psytrance"]
-        + TRACKS["melodic_techno"]
+        + TRACKS["organic_house"]
     )
     # Try exact match on best_track_match first
     if best_track_match:
@@ -202,8 +202,8 @@ def _pick_track(best_track_match: str, genre_tags: str) -> dict:
     if any(w in tags for w in ["psy", "trance", "140"]):
         return TRACKS["psytrance"][0]   # Halleluyah
     if any(w in tags for w in ["melodic", "house", "minimal"]):
-        return TRACKS["melodic_techno"][0]  # Living Water
-    return TRACKS["tribal_techno"][0]   # Renamed — default
+        return TRACKS["organic_house"][0]  # Living Water
+    return TRACKS["organic_tribal"][0]   # Renamed — default
 
 
 def generate_dm(playlist: dict) -> str:

@@ -23,12 +23,12 @@ ARTIST = {
 
 # ─── Music ────────────────────────────────────────────────────────────────────
 MUSIC = {
-    "genres":        ["Melodic Techno", "Tribal Psytrance", "Electronic Worship"],
-    "bpm_ranges":    ["120–125 BPM (Melodic Techno/House)", "130 BPM (Ethnic/Tribal)", "140 BPM (Psytrance)"],
+    "genres":        ["Organic House", "Tribal Psytrance", "Ethnic / Nomadic Electronic", "Middle Eastern Electronic"],
+    "bpm_ranges":    ["122–128 BPM (Organic House)", "130 BPM (Organic Tribal House / Middle Eastern)", "140–145 BPM (Tribal Psytrance)"],
     "lyric_source":  "Bible-inspired — ancient scripture embedded in modern electronic production",
     "approach":      "Subtle Salt — the faith anchor is present but not announced. Music first.",
     "total_tracks":  "30+ original tracks on Spotify, all independently released and fully owned",
-    "sound_refs":    "Anyma (scale), Rüfüs Du Sol (depth/mood), Vini Vici (psy energy), Argy (tribal texture)",
+    "sound_refs":    "Café de Anatolia (Middle Eastern / ethnic house), Sol Selectas / Sabo (tribal-organic house), Bedouin (tribal tech-house), Acid Arab (Middle Eastern electronic), Ace Ventura / Vertex / Aioaska / Symbolic / Ranji / Astrix (melodic to Goa psytrance)",
     "tagline":       "Ancient Truth. Future Sound.",
     "instagram_followers": "290K",
     "label_status":  "Fully independent — no label, no manager, no agent. All masters owned.",
@@ -44,11 +44,11 @@ TRACKS = {
         {"title": "Kavod",          "bpm": 140, "spotify": "", "notes": "Hebrew 'glory', driving psytrance — PASTE SPOTIFY URL HERE TO ACTIVATE"},
         {"title": "Jericho",        "bpm": 140, "spotify": "https://open.spotify.com/track/2M7cL3KynPGzE1DonuldrN", "notes": "Hebrew lyrics, heavy psytrance energy"},
     ],
-    "tribal_techno": [
+    "organic_tribal": [
         {"title": "Renamed",        "bpm": 130, "spotify": "https://open.spotify.com/track/0JDiFWqAa7exA8zh53D4JG", "notes": "English + chanting, ethnic percussion"},
         {"title": "Fire In Our Hands", "bpm": 130, "spotify": "https://open.spotify.com/track/4BGImHDdceYIAWg2MIftfR", "notes": "130 BPM tribal energy"},
     ],
-    "melodic_techno": [
+    "organic_house": [
         {"title": "Living Water",   "bpm": 124, "spotify": "https://open.spotify.com/track/4VlJcvP0RvEkzysAkDuKPa", "notes": "Most accessible crossover track"},
         {"title": "He Is The Light","bpm": 122, "spotify": "https://open.spotify.com/track/0tad6gpKfmvHszruHYr7Lm", "notes": "Faith angle most visible"},
         {"title": "You See It All", "bpm": 120, "spotify": "https://open.spotify.com/track/5Vxewgp7pyaTTFa3HDxDSx", "notes": "English lyrics, worship-adjacent"},

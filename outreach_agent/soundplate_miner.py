@@ -201,8 +201,9 @@ def _extract_curator_from_page(html: str, page_url: str) -> str:
 
 def _extract_genre_from_page(html: str, page_url: str, fallback_genre: str) -> str:
     """Extract or infer genre from page content."""
-    for gk in ["psytrance", "tribal", "melodic techno", "progressive", "organic house",
-               "afro house", "downtempo", "ethnic"]:
+    for gk in ["tribal psytrance", "psytrance", "tribal", "organic house", "desert house",
+               "middle eastern", "ethnic electronic", "progressive", "afro house",
+               "downtempo", "ethnic", "melodic techno"]:
         if gk in html.lower():
             return gk
     return fallback_genre.replace("-", " ")

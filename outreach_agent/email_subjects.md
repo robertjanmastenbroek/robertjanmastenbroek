@@ -9,7 +9,7 @@
 1. `126 BPM. Tribal. Sounds like?`
 2. `Walls fell at 140 BPM`
 3. `This one hit 37K plays`
-4. `Playlist gap: tribal melodic techno`
+4. `Playlist gap: nomadic electronic`
 5. `The beat arrived before the words`
 
 ### Podcast Outreach
@@ -39,7 +39,7 @@
 
 ### Curator Outreach
 1. `124 BPM. Atlantic coast. Spotify.`
-2. `Tribal techno no one's heard yet`
+2. `Tribal psytrance no one's heard yet`
 3. `This week's drop: Jericho`
 4. `7 priests. 7 trumpets. 140 BPM.`
 5. `Fresh from Tenerife — fits your genre`

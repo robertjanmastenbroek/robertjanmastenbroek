@@ -74,7 +74,7 @@ Label deal = Beatport presence + free PR + potential advance
 - [ ] WAV file (minimum 24-bit/44.1kHz — SoundCloud masters at 128kbps but stores original)
 - [ ] Proper metadata: Title, Artist, Genre, BPM, Key, Label
 - [ ] Description: 3–4 lines about the track's story/inspiration (biblical angle — subtle salt)
-- [ ] Tags: psytrance, tribal techno, melodic techno, Robert-Jan Mastenbroek, Tenerife, [BPM]bpm, [key]
+- [ ] Tags: nomadic electronic, organic-tribal house, tribal psytrance, ethnic electronic, handpan, oud, Robert-Jan Mastenbroek, Tenerife, [BPM]bpm, [key]
 - [ ] Set Release Date to match Spotify release
 - [ ] Private preview link for demo sends (to labels/curators before public release)
 

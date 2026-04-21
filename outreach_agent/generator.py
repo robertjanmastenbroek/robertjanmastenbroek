@@ -72,8 +72,9 @@ WHO HE IS (feel this, don't just read it):
 Robert-Jan Mastenbroek is a Dutch producer who moved to the Atlantic edge of Tenerife and never
 left. He plays abandoned lots, cliff edges, rooftops, beach bars — anywhere a speaker fits and a
 crowd finds its way. Every week he runs Sunset Sessions: free gatherings in unexpected outdoor
-locations, no ticket, no stage, no church bulletin. He makes Hebrew psytrance, melodic techno,
-tribal psytrance — all of it rooted in Scripture, none of it sounds like it should be.
+locations, no ticket, no stage, no church bulletin. He makes nomadic electronic — organic-tribal
+house at 130 BPM through tribal psytrance at 145 BPM, with oud, handpan, tribal drums, and
+Middle Eastern modes — all of it rooted in Scripture, none of it sounds like it should be.
 
 THE TENSION THAT MAKES THIS INTERESTING:
 He is not trying to bring you to God. He is making music from inside his relationship with God,
@@ -1039,16 +1040,16 @@ For EACH clip length, write platform captions:
 
 3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences) + 3-5 hashtags
    - Title patterns: "[Bible ref] at [BPM] BPM — Tenerife" | "Holy Rave Tenerife — [what's unique]"
-     | "[Song title] — Sacred Melodic Techno"
+     | "[Song title] — Sacred Tribal House" | "[Song title] — Nomadic Electronic"
    - Description: name the track, mention Sunset Sessions / free events / Tenerife
    - Hashtags: append at end of description field as space-separated tags (YouTube renders first 3 above title)
-     Mix: 1-2 broad (#techno #shorts) + 2-3 niche (#holyrave #melodictechno #sacredtechno)
+     Mix: 1-2 broad (#organichouse #shorts) + 2-3 niche (#holyrave #nomadicelectronic #tribalhouse)
 
 CAPTION RULES:
 - Never include a URL. CTAs are text only.
 - Never open caption with the track name or artist name — earn the mention.
 - Tenerife, Atlantic coast, or Sunset Sessions should surface naturally where relevant.
-- Content quality benchmark: must sit alongside Anyma, Rüfüs Du Sol, Argy.
+- Content quality benchmark: must sit alongside Café de Anatolia, Sol Selectas / Sabo, Bedouin, Ace Ventura, Vertex, Aioaska, Symbolic, Ranji, Astrix.
 - Biblical references woven in naturally — never forced. Subtle Salt principle.
 
 Return ONLY valid JSON, no explanation, no markdown fences:
@@ -1132,11 +1133,11 @@ def _fallback_content(filename: str, clip_lengths: list,
             "hook_c": abc.get('c', 'Spine knows before the mind does.'),
             "tiktok": {
                 "caption": f"Free events. Atlantic coast. In the name of Jesus. {cta}",
-                "hashtags": "#holyrave #sunsetsessions #sacredmusic #melodictechno #tenerife",
+                "hashtags": "#holyrave #sunsetsessions #sacredmusic #nomadicelectronic #organichouse #tribalpsytrance #tenerife",
             },
             "instagram": {
                 "caption": f"Every week. Free. Tenerife. {cta} — link in bio",
-                "hashtags": "#holyrave #sunsetsessions #sacredmusic #melodictechno #tenerife #psytrance #electronicmusic #dancefloor #atlantic #robertjanmastenbroek",
+                "hashtags": "#holyrave #sunsetsessions #sacredmusic #nomadicelectronic #organichouse #tribalpsytrance #handpan #tenerife #psytrance #electronicmusic #dancefloor #atlantic #robertjanmastenbroek",
             },
             "youtube": {
                 "title": f"Holy Rave — {track_name or 'Sacred Music'} | Robert-Jan Mastenbroek",
@@ -1216,7 +1217,7 @@ CAPTION RULES:
 6. No URLs. Text CTAs only.
 7. Tenerife / Atlantic coast / Sunset Sessions can appear — but only in ONE of the three clips.
 8. Biblical references woven in naturally where they fit — never forced.
-9. Content quality benchmark: must sit alongside Anyma, Rüfüs Du Sol, Argy.
+9. Content quality benchmark: must sit alongside Café de Anatolia, Sol Selectas / Sabo, Bedouin, Ace Ventura, Vertex, Aioaska, Symbolic, Ranji, Astrix.
 
 HUMAN VOICE — this is the most important rule:
 Write like a real person who just got home from a session, not a brand manager.
@@ -1239,9 +1240,9 @@ For EACH clip:
 
 3. YOUTUBE SHORTS title (50-60 chars) + description (2-3 sentences) + 3-5 hashtags
    - Title patterns: "[Bible ref] at [BPM] BPM" | "Holy Rave Tenerife — [specific]"
-                     | "[Song title] — Sacred Melodic Techno"
+                     | "[Song title] — Sacred Tribal House" | "[Song title] — Nomadic Electronic"
    - Hashtags: space-separated, appended in the hashtags field (YouTube shows first 3 above title)
-     Mix: 1-2 broad (#techno #shorts) + 2-3 niche (#holyrave #melodictechno)
+     Mix: 1-2 broad (#organichouse #shorts) + 2-3 niche (#holyrave #nomadicelectronic)
 
 Return ONLY valid JSON, no explanation, no markdown:
 
@@ -1316,9 +1317,9 @@ def _fallback_run_captions(track_title: str, clips_data: list) -> dict:
         else:
             cap = f"Free events. Tenerife. Every week. {cta}"
         result[c['length']] = {
-            'tiktok':    {'caption': cap, 'hashtags': '#holyrave #sunsetsessions #melodictechno'},
-            'instagram': {'caption': cap + ' — link in bio', 'hashtags': '#holyrave #sunsetsessions #sacredmusic #melodictechno #tenerife'},
-            'youtube':   {'title': f"Holy Rave — {track_title} | Robert-Jan Mastenbroek", 'description': 'Weekly Sunset Sessions in Tenerife. Free entry, always.', 'hashtags': '#holyrave #melodictechno #shorts #techno #tenerife'},
+            'tiktok':    {'caption': cap, 'hashtags': '#holyrave #sunsetsessions #nomadicelectronic #organichouse'},
+            'instagram': {'caption': cap + ' — link in bio', 'hashtags': '#holyrave #sunsetsessions #sacredmusic #nomadicelectronic #organichouse #tribalpsytrance #tenerife'},
+            'youtube':   {'title': f"Holy Rave — {track_title} | Robert-Jan Mastenbroek", 'description': 'Weekly Sunset Sessions in Tenerife. Free entry, always.', 'hashtags': '#holyrave #nomadicelectronic #organichouse #tribalpsytrance #shorts #tenerife'},
         }
     return result
 

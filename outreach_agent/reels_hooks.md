@@ -115,9 +115,9 @@
 
 ### Hook 14 — The Light Track
 **Visual:** Extreme sunrise time-lapse from Tenerife peak (Teide), then cut to dark club
-**Text on screen:** "John 8:12 — built into 4 minutes of melodic techno."
+**Text on screen:** "John 8:12 — built into 4 minutes of nomadic electronic."
 **Spoken (3 sec):** "He Is The Light. I didn't name it. The verse did."
-**Caption:** He Is The Light — available on Spotify. Link in bio. #heisthelight #melodictechno
+**Caption:** He Is The Light — available on Spotify. Link in bio. #heisthelight #nomadicelectronic
 
 ---
 
@@ -179,7 +179,7 @@
 **Visual:** Interior of a campervan at dusk — dashboard, sleeping bag, laptop with a DAW open
 **Text on screen:** "I was a millionaire. I chose the van."
 **Spoken (3 sec):** "Six years. Tenerife. The music I couldn't make when I had money."
-**Caption:** Some things only happen when you lose everything first. New track — link in bio. #djlife #tenerife #melodictechno
+**Caption:** Some things only happen when you lose everything first. New track — link in bio. #djlife #tenerife #nomadicelectronic #organichouse
 
 ---
 

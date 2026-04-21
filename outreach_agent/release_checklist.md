@@ -33,10 +33,11 @@
 
 ```
 Dutch producer who rebuilt his life in Tenerife after losing a €6M startup. 
-Robert-Jan Mastenbroek makes Bible-inspired tribal techno — ancient truth carried 
-by future sound. [TRACK NAME] is [brief track description: e.g. "a 140 BPM 
-psytrance exploration of the Hebrew name for rebirth" or "a 124 BPM organic 
-techno meditation on John 4"]. Pitched for: [target playlist names].
+Robert-Jan Mastenbroek makes Nomadic Electronic — organic powerful house through 
+tribal psytrance, oud and handpan over ancient Middle Eastern rhythms. Ancient 
+truth carried by future sound. [TRACK NAME] is [brief track description: e.g. 
+"a 140 BPM tribal psytrance exploration of the Hebrew name for rebirth" or 
+"a 124 BPM organic house meditation on John 4"]. Pitched for: [target playlist names].
 ```
 
 **GENRE FIELD:**
@@ -76,7 +77,7 @@ Complete these fields exactly before submitting to distributor:
 - Bad: "Track 01", "Demo Final 3", "New Mix 2026", "WIP Psytrance"
 
 **Genre tags to use in distributor system:**
-`Tribal Techno, Psytrance, Dark Psytrance, Ethnic Electronic, Sacred Electronic, Organic Techno, Spiritual Techno, Melodic Techno, Underground Electronic`
+`Nomadic Electronic, Organic-Tribal House, Tribal Psytrance, Ethnic Electronic, Sacred Electronic, Desert House, Middle Eastern Electronic, Handpan Electronic, Underground Electronic`
 
 ---
 

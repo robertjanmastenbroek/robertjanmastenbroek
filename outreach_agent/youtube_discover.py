@@ -186,10 +186,11 @@ def _genre_score(text: str) -> float:
     target genres.
 
     Psytrance keywords (primary focus) score 2 points each; secondary genre
-    keywords (melodic techno, progressive house, Christian EDM, organic house,
-    plus promo-intent terms like 'mix', 'set') score 1 point each. Full score
+    keywords (organic house, tribal house, nomadic electronic, Middle Eastern /
+    desert house, Christian EDM, plus promo-intent terms like 'mix', 'set')
+    score 1 point each. Full score
     is reached at 5 points — so a psytrance channel matching 3 primary keywords
-    (6 points, capped at 1.0) outranks a melodic channel matching 5 secondary
+    (6 points, capped at 1.0) outranks an organic-house channel matching 5 secondary
     keywords (5 points = 1.0 tied, BUT more fine-grained ordering via the raw
     score below the cap).
 

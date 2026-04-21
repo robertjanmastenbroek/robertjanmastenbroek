@@ -100,7 +100,7 @@ CONTACT_PERSONAS = {
     "digital_nomad":      "Digital nomad creator (Tenerife / location-independent)",
     "surfer":             "Surf / ocean lifestyle creator",
     "sacred_artist":      "Sacred geometry, dark aesthetic visual artist",
-    "genre_creator":      "YouTube / TikTok melodic techno or psytrance creator",
+    "genre_creator":      "YouTube / TikTok organic house, tribal psytrance or ethnic-electronic creator",
     # Relationship-upgraded legacy
     "community_leader":   "Reddit / Discord / Facebook group admin or mod",
     "event_promoter":     "Underground venue or festival promoter",
@@ -157,51 +157,52 @@ YOUTUBE_MIN_TOTAL_VIEWS  = 30_000
 YOUTUBE_MIN_VIDEO_COUNT  = 20        # still signals active channel, not brand-new
 YOUTUBE_MAX_UPLOAD_AGE_DAYS = 30
 
-# Discovery seed queries — primary focus is (progressive) psytrance, with
-# secondary melodic techno / progressive house and tertiary Christian EDM /
-# organic house coverage. Ordered by priority; search budget = 100 units per
-# query × ~25 queries = 2500 units per discovery run (well under 8K cap).
+# Discovery seed queries — primary focus is tribal psytrance + organic house
+# (RJM's core 130–145 BPM range), with secondary Middle Eastern / ethnic
+# electronic / world fusion (Café de Anatolia / Sol Selectas scene) and
+# tertiary Christian EDM coverage. Ordered by priority; search budget = 100
+# units per query × ~25 queries = 2500 units per discovery run (well under 8K cap).
 YOUTUBE_DISCOVERY_QUERIES = [
-    # ── PRIMARY: psytrance / progressive psytrance ──
+    # ── PRIMARY: tribal psytrance / progressive psytrance ──
+    "tribal psytrance mix 2026",
     "progressive psytrance mix 2026",
-    "tribal psytrance mix",
     "psytrance promo channel",
     "psytrance 2026",
-    "progressive psytrance 2026",
-    # Psytrance sound-reference artists (from story.py:31 sound_refs)
-    "Vini Vici",
+    "Goa psytrance mix",
+    # Psytrance sound-reference artists (from story.py sound_refs)
     "Astrix",
+    "Vertex psytrance",
     "Symphonix",
+    "Aioaska",
     "Ranji",
     "Ace Ventura",
 
-    # ── SECONDARY: melodic techno / progressive house ──
-    "melodic techno mix 2026",
-    "melodic house mix 2026",
-    "progressive house mix 2026",
-    "Afterlife melodic techno",
-    # Melodic/progressive artists
-    "Colyn",
-    "Massano",
-    "Argy",
-    "Anyma",
+    # ── PRIMARY: organic house / tribal house (130 BPM core) ──
+    "organic house mix 2026",
+    "tribal house mix",
+    "all day i dream mix",
+    "Sol Selectas Sabo",
+    "Bedouin tribal tech",
+
+    # ── SECONDARY: Middle Eastern / ethnic / nomadic electronic ──
+    "Cafe de Anatolia mix",
+    "Middle Eastern electronic",
+    "ethnic electronic mix",
+    "Acid Arab",
+    "desert electronic",
 
     # ── TERTIARY: Christian EDM ──
     "christian edm mix",
     "worship edm",
     "christian electronic music",
-
-    # ── TERTIARY: organic house ──
-    "organic house mix",
-    "all day i dream mix",
-    "afro house mix",
 ]
 
 # Channel titles that match these names exactly are rejected as artist-owned
 # (they won't upload our music regardless of how good the pitch is).
 YOUTUBE_ARTIST_CHANNEL_BLOCKLIST = {
-    "vini vici", "astrix", "symphonix", "ranji", "ace ventura",
-    "colyn", "massano", "argy", "anyma", "rufus du sol",
+    "astrix", "vertex", "symphonix", "ranji", "ace ventura", "aioaska",
+    "vini vici", "ovnimoon", "burn in noise",  # psytrance reference artists
+    "sabo", "bedouin", "acid arab", "anyma", "argy",  # tribal/nomadic adjacents
     "robert-jan mastenbroek",  # don't re-discover RJM's own channel
 }
 # Regex OR'd into the reject heuristic for channel descriptions
@@ -243,12 +244,13 @@ YOUTUBE_GENRE_KEYWORDS_PRIMARY = [
     "tribal psytrance", "psy",
 ]
 YOUTUBE_GENRE_KEYWORDS_SECONDARY = [
-    # Melodic techno / progressive / Christian EDM / organic house — all welcome
+    # Organic house / Middle Eastern / tribal / Christian EDM — all welcome
     # but these score lower than primary psytrance keywords.
-    "progressive", "tribal", "melodic techno", "melodic house",
-    "progressive house", "techno", "trance", "melodic",
+    "organic house", "tribal house", "ethnic electronic", "nomadic electronic",
+    "middle eastern", "anatolia", "sol selectas", "bedouin", "afro house",
+    "progressive", "tribal", "melodic", "melodic techno", "melodic house",
+    "deep house", "world fusion", "ritual", "shamanic",
     "christian", "worship", "gospel", "christian edm",
-    "organic house", "afro house", "deep house",
     # Channel-type indicators (not genre per se, but signal promo intent)
     "mix", "promo", "compilation", "set", "dj set",
 ]

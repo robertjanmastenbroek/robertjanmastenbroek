@@ -23,11 +23,14 @@ log = logging.getLogger(__name__)
 TRACKING_FILE = Path(BASE_DIR).parent / "data" / "competitor_tracking.json"
 
 SEED_ARTISTS = [
-    {"name": "Anyma", "genre": "Melodic Techno", "reason": "Visual scale reference"},
-    {"name": "Argy", "genre": "Tribal/Techno", "reason": "Tribal texture overlap"},
-    {"name": "Agents Of Time", "genre": "Melodic Techno", "reason": "Similar production style"},
-    {"name": "Colyn", "genre": "Melodic Techno", "reason": "Independent growth trajectory"},
-    {"name": "Innellea", "genre": "Melodic Techno", "reason": "Similar visual aesthetic"},
+    {"name": "Sabo", "genre": "Organic/Tribal House", "reason": "Sol Selectas — tribal-organic house reference"},
+    {"name": "Bedouin", "genre": "Tribal Tech-House", "reason": "Desert/nomadic aesthetic overlap"},
+    {"name": "Acid Arab", "genre": "Middle Eastern Electronic", "reason": "Middle Eastern instrumentation reference"},
+    {"name": "Ace Ventura", "genre": "Progressive Psytrance", "reason": "Progressive psytrance benchmark"},
+    {"name": "Vertex", "genre": "Progressive Psytrance", "reason": "Tribal psytrance production style"},
+    {"name": "Symbolic", "genre": "Progressive Psytrance", "reason": "Independent growth trajectory"},
+    {"name": "Aioaska", "genre": "Tribal Psytrance", "reason": "Tribal texture overlap"},
+    {"name": "Ranji", "genre": "Full-On / Progressive Psy", "reason": "Similar visual aesthetic"},
 ]
 
 

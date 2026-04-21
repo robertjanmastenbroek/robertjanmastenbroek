@@ -32,7 +32,7 @@ Spotify's algorithm uses these fields to decide which editorial playlists to con
 | **Story** | 500-char max — use the template below |
 | **Language** | English |
 | **Genre** | Electronic → Techno or Psy-Trance depending on track |
-| **Sub-genre** | Psytrance, Tribal Techno, Progressive House (match to track) |
+| **Sub-genre** | Psytrance, Tribal Psytrance, Organic House (match to track) |
 | **Culture** | Leave blank unless applicable |
 | **Song Birthplace** | Tenerife, Canary Islands, Spain |
 | **Release Date** | The exact Friday it drops |
@@ -41,9 +41,9 @@ Spotify's algorithm uses these fields to decide which editorial playlists to con
 
 ## Story Field Template (500 chars max — copy and customize)
 
-### Template A — Tribal Techno Track:
+### Template A — Tribal Psytrance Track:
 ```
-Born from silence in Tenerife, [TRACK NAME] was written after [brief personal moment/inspiration]. It pulses at [BPM] BPM — tribal percussion layered over ancient frequencies. Robert-Jan Mastenbroek builds music as prayer: every drop is a declaration, every breakdown a surrender. This track fits perfectly alongside Drumcode, Afterlife, and Psy-Fi editorial playlists.
+Born from silence in Tenerife, [TRACK NAME] was written after [brief personal moment/inspiration]. It pulses at [BPM] BPM — tribal percussion, oud, and handpan layered over Middle Eastern modes. Robert-Jan Mastenbroek builds music as prayer: every drop is a declaration, every breakdown a surrender. This track fits perfectly alongside Café de Anatolia, Sol Selectas, and Psy-Fi editorial playlists.
 ```
 
 ### Template B — Psytrance Track:
@@ -63,8 +63,8 @@ Crafted from personal loss and spiritual rebuilding, [TRACK NAME] moves at [BPM]
 | Track | BPM | Best Pitch Genre | Target Spotify Playlist |
 |-------|-----|-----------------|------------------------|
 | Halleluyah | 140 | Psytrance | Psy-Fi, Psychedelic Trance |
-| Jericho | 140 | Tribal Techno | Techno Bunker, Tribal Gathering |
-| Renamed | 130 | Melodic Techno | Afterlife Mix, Melodic Techno |
+| Jericho | 140 | Tribal Psytrance | Psy-Fi, Tribal Gathering, Café de Anatolia |
+| Renamed | 130 | Organic-Tribal House | Café de Anatolia, Sol Selectas, Desert Hearts |
 | Living Water | 124 | Progressive House | Pulse of the Earth, Progressive House |
 
 **Pitch your next Friday release 7 days before drop date.** Spotify needs the full week to review.
@@ -76,7 +76,7 @@ Crafted from personal loss and spiritual rebuilding, [TRACK NAME] moves at [BPM]
 Based on RJM's sound profile, use these combos:
 
 - **Psytrance tracks**: Mood = [Hypnotic, Euphoric, Spiritual] | Style = [Otherworldly, Atmospheric, Energetic]
-- **Tribal Techno**: Mood = [Aggressive, Intense, Hypnotic] | Style = [Gritty, Dark, Otherworldly]
+- **Tribal Psytrance**: Mood = [Aggressive, Intense, Hypnotic] | Style = [Gritty, Dark, Otherworldly]
 - **Progressive House**: Mood = [Peaceful, Spiritual, Euphoric] | Style = [Atmospheric, Dreamy, Emotional]
 
 ---

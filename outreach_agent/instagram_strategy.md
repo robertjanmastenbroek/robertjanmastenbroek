@@ -321,7 +321,7 @@ This is it.
 
 🎧 Link in bio. Save it if it hits.
 
-#livingWater #newMusic #tribalTechno #organicHouse #melodicTechno #tenerife #dutchDJ #bibleInspired #john4 #sacredMusic #electronicMusic #producer #rave #underground #ambient #spiritual #newRelease #fridayRelease #techno #124bpm #electronicMusicProducer #music2026 #newMusicFriday
+#livingWater #newMusic #nomadicElectronic #organicHouse #tribalPsytrance #tenerife #dutchDJ #bibleInspired #john4 #sacredMusic #electronicMusic #producer #rave #underground #ambient #spiritual #newRelease #fridayRelease #handpan #124bpm #electronicMusicProducer #music2026 #newMusicFriday
 ```
 
 ---
@@ -585,7 +585,7 @@ Tag these types of accounts when relevant — they have overlapping audiences:
 - Tenerife-based accounts (@visitTenerife, local venue accounts)
 - Faith + music crossover accounts (Christian music blogs, faith-based creators)
 - Festival accounts where the genre fits (Ozora, BoomFestival, Hadra)
-- Organic house / melodic techno accounts (larger audience, accessible entry)
+- Organic house / desert-house / nomadic electronic accounts (Café de Anatolia, Sol Selectas — larger audience, accessible entry)
 
 **Rule:** Only tag when genuinely relevant — forced tags hurt reach.
 

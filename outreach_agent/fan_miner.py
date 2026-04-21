@@ -1,7 +1,8 @@
 """
 fan_miner.py — Mine music fan contacts: genre bloggers, newsletter editors,
-YouTube channel owners, and community managers who cover melodic techno,
-psytrance, tribal, and world electronic music.
+YouTube channel owners, and community managers who cover nomadic electronic,
+organic-tribal house, tribal psytrance, ethnic electronic, desert house,
+and Middle Eastern / world electronic music.
 
 These people already love RJM's genre — outreach is music sharing,
 not a cold pitch. They can amplify, review, or simply stream the track.
@@ -58,23 +59,23 @@ _BAD_PREFIXES = {
 
 # Each query targets a different genre-fan angle — cycle through them per day
 _QUERIES = [
-    '"melodic techno" blog OR newsletter writer contact email 2026',
+    '"nomadic electronic" OR "organic house" blog OR newsletter writer contact email 2026',
     '"psytrance" OR "psy trance" community blog newsletter contact email 2026',
-    '"tribal techno" OR "world electronic" music blog contact email 2026',
+    '"tribal house" OR "world electronic" music blog contact email 2026',
     '"conscious rave" OR "sacred dance" community newsletter OR blog contact email 2026',
-    '"Burning Man" music blog OR newsletter "melodic techno" OR "organic house" contact email 2026',
-    '"Anyma" OR "Tale of Us" OR "KSHMR" fan blog review contact email 2026',
+    '"Burning Man" music blog OR newsletter "organic house" OR "desert house" contact email 2026',
+    '"Café de Anatolia" OR "Sol Selectas" OR "Bedouin" fan blog review contact email 2026',
     '"Ozora" OR "Boom festival" music blog community newsletter contact email 2026',
-    '"melodic techno" YouTube channel creator business email contact 2026',
+    '"handpan" OR "oud" electronic music YouTube channel creator business email contact 2026',
     '"psytrance" YouTube channel OR newsletter creator contact email 2026',
     '"ethnic electronic" OR "world bass" music blog reviewer contact email 2026',
     '"flow state" OR "consciousness music" blog newsletter curator contact email 2026',
     '"desert hearts" OR "All Day I Dream" fan blog music community contact email 2026',
-    '"organic house" OR "melodic house" music blog newsletter contact email 2026',
+    '"organic house" OR "desert house" OR "tribal house" music blog newsletter contact email 2026',
     '"festival culture" OR "rave culture" blog newsletter creator contact email 2026',
     '"underground techno" blog writer journalist contact email 2026',
     'psytrance festival community organizer newsletter contact email Europe 2026',
-    '"melodic techno" podcast OR mix series contact booking email 2026',
+    '"Middle Eastern electronic" OR "nomadic electronic" podcast OR mix series contact booking email 2026',
     '"ecstatic dance music" playlist curator blog newsletter contact email 2026',
 ]
 
@@ -243,8 +244,9 @@ def mine(limit: int = 10, dry_run: bool = False) -> dict:
                 continue
 
             notes = (
-                f"Genre fan / music community contact. Covers melodic techno / "
-                f"psytrance / world electronic. Outreach: share RJM track + story. "
+                f"Genre fan / music community contact. Covers nomadic electronic / "
+                f"organic-tribal house / tribal psytrance / world electronic. "
+                f"Outreach: share RJM track + story. "
                 f"Source query: {query[:100]}. URL: {url}"
             )
 
@@ -263,7 +265,7 @@ def mine(limit: int = 10, dry_run: bool = False) -> dict:
                            VALUES (?,?,?,?,?,?,?,?,?,?,?,date('now'))""",
                         (
                             email.lower(), name, "curator",
-                            "melodic techno / psytrance / world electronic",
+                            "nomadic electronic / organic-tribal house / tribal psytrance / world electronic",
                             notes, "new", "fan_miner",
                             "genre_fan", "music_share",
                             7, 0,

@@ -7,7 +7,7 @@
     {
       "id": "curator_email_outreach",
       "name": "Spotify Playlist Curator Email Outreach",
-      "description": "Direct email outreach to Spotify playlist curators in tribal techno, psytrance, melodic techno, organic house, and related genres. Personalised pitches to land track placements that drive streaming numbers.",
+      "description": "Direct email outreach to Spotify playlist curators in organic-tribal house, tribal psytrance, nomadic electronic, desert house, ethnic electronic, and related genres. Personalised pitches to land track placements that drive streaming numbers.",
       "status": "active",
       "priority": 8,
       "estimated_impact": "high",
@@ -87,7 +87,7 @@
     {
       "id": "tiktok_reels_content",
       "name": "TikTok & Instagram Reels Short-Form Content Engine",
-      "description": "Consistent short-form video content showing: studio production sessions (tribal techno making-of), spiritual journey through music, Tenerife life and landscape, faith-inspired creative process, candid behind-the-scenes. Each video ends with Spotify CTA. Post 3-5x/week.",
+      "description": "Consistent short-form video content showing: studio production sessions (tribal psytrance and organic-house making-of, oud/handpan layering), spiritual journey through music, Tenerife life and landscape, faith-inspired creative process, candid behind-the-scenes. Each video ends with Spotify CTA. Post 3-5x/week.",
       "status": "active",
       "priority": 8,
       "estimated_impact": "very_high",
@@ -108,7 +108,7 @@
     {
       "id": "artist_collaborations",
       "name": "Artist Collaborations \u2014 Remixes & Features",
-      "description": "Reach out to artists in the 50K-500K Spotify listener range for remixes and features. Strategy: offer to remix their tracks (they get a free remix, you get exposure to their fanbase). Also pursue feature spots on other artists' tracks. Target genres: psytrance, tribal techno, organic house, melodic techno.",
+      "description": "Reach out to artists in the 50K-500K Spotify listener range for remixes and features. Strategy: offer to remix their tracks (they get a free remix, you get exposure to their fanbase). Also pursue feature spots on other artists' tracks. Target genres: tribal psytrance, organic-tribal house, nomadic electronic, desert house, ethnic electronic.",
       "status": "active",
       "priority": 7,
       "estimated_impact": "very_high",
@@ -121,7 +121,7 @@
       "notes": "Collaborations expose you to entire fanbases. A remix with a 200K-listener artist can funnel 2K-10K new listeners. Build a remix offer email template similar to curator outreach. Priority targets: Merkaba, Hilight Tribe, Desert Dwellers, Shpongle-adjacent artists.",
       "last_updated": "2026-04-15",
       "actions_taken": [
-        "Built collab_targets.md: 20 psytrance/melodic techno artists with listener counts, emails, pitch template, 3 priority tiers",
+        "Built collab_targets.md: 20 tribal psytrance / nomadic electronic artists with listener counts, emails, pitch template, 3 priority tiers",
         "Marked active 2026-04-15: all build artifacts confirmed present"
       ]
     },
@@ -221,7 +221,7 @@
     {
       "id": "spotify_playlist_creation",
       "name": "Own Spotify Playlist Strategy",
-      "description": "Create and grow Spotify playlists curated by Robert-Jan featuring similar artists alongside own tracks. Titles should be searchable: 'Tribal Techno 2026', 'Sacred Psytrance', 'Spiritual Electronic Music'. Cross-promote playlists on IG and TikTok. Follow-for-follow with featured artists.",
+      "description": "Create and grow Spotify playlists curated by Robert-Jan featuring similar artists alongside own tracks. Titles should be searchable: 'Nomadic Electronic 2026', 'Tribal Psytrance Prayers', 'Organic House Ceremonies', 'Sacred Psytrance', 'Desert House Sessions'. Cross-promote playlists on IG and TikTok. Follow-for-follow with featured artists.",
       "status": "active",
       "priority": 7,
       "estimated_impact": "high",
@@ -270,7 +270,7 @@
       "actual_listeners_gained": 0,
       "agent_file": null,
       "scheduled_task_id": null,
-      "notes": "Discord communities are tight-knit and convert well when trust is built. Psytrance and tribal techno have dedicated Discord communities. Consider creating own community server once follower base is larger (5K+ Spotify).",
+      "notes": "Discord communities are tight-knit and convert well when trust is built. Psytrance, tribal psytrance, and organic house have dedicated Discord communities. Consider creating own community server once follower base is larger (5K+ Spotify).",
       "last_updated": "2026-04-15",
       "actions_taken": [
         "Built discord_targets.md: 10 verified servers (Psytrance & Chill, EDMP 21K members, Collective Details, Convolva + 6 more), weekly drop schedule, drop script template, Holy Rave Discord concept for future"

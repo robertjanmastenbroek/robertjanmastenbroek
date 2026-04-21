@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-04-12
 **Strategy:** Genuine engagement first (2-4 weeks), then carefully placed music shares.
-**Angle:** Dutch DJ/producer based in Tenerife. Tribal psytrance + melodic techno. Bible-rooted sound without being preachy — the rare "Jesus at the rave" story that no one else has.
+**Angle:** Dutch DJ/producer based in Tenerife. Nomadic electronic — organic-tribal house (130 BPM) through tribal psytrance (145 BPM) with oud, handpan, and Middle Eastern modes. Bible-rooted sound without being preachy — the rare "Jesus at the rave" story that no one else has.
 
 ---
 
@@ -33,7 +33,7 @@ Post NO music. Only comment. Goal: establish a recognizable name.
 **Share opportunity:** New track posts on "Self-Promo Saturday."
 
 **Week 1 comment starter (on "what makes melodic techno melodic" discussion):**
-> "The melodic part isn't just the chord sequence — it's the emotional arc. The best melodic techno I've made starts with a question in the intro and answers it at the breakdown. If the melody resolves at the drop, you've done something. If it just loops, you've made background music."
+> "The melodic part isn't the chord sequence — it's the emotional arc. My own stuff leans tribal/nomadic (oud, handpan, 130 BPM), but the structural question is the same: start with a question in the intro, answer it at the breakdown. If the melody resolves at the drop, you've done something. If it just loops, you've made background music."
 
 **Week 2 comment starter (on gear/production thread):**
 > "I produce in Tenerife, which means sun and isolation. That combination does something to the reverb decisions — everything gets longer tails because the space around you is enormous. I think environment shapes sound more than gear does."
@@ -49,7 +49,7 @@ Post NO music. Only comment. Goal: establish a recognizable name.
 > "I've tried both ways — writing explicitly Christian lyrics and embedding it subtly. The subtle way works better for reaching people outside the church. When someone who's never opened a Bible tells me my track 'feels sacred,' that's the thing I was going for. Salt, not sugar."
 
 **Self-promo post (week 3-4):**
-> "I play tribal psytrance and melodic techno at raves in Tenerife. Every track I make is anchored in a specific Bible verse — not lyrically, but structurally. Jericho (140 BPM) is built around Joshua 6: the tension before the walls fall. Living Water is built around John 4. The rave becomes the sanctuary. Here's [track link] — curious what you hear in it."
+> "I play nomadic electronic — organic-tribal house at 130 BPM through tribal psytrance at 145 BPM — at raves in Tenerife. Oud, handpan, Middle Eastern modes. Every track is anchored in a specific Bible verse — not lyrically, but structurally. Jericho (140 BPM) is built around Joshua 6: the tension before the walls fall. Living Water is built around John 4. The rave becomes the sanctuary. Here's [track link] — curious what you hear in it."
 
 ---
 

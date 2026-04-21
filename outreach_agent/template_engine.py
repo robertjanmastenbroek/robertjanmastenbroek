@@ -569,8 +569,9 @@ Return ONLY valid JSON with 'subject' and 'body' keys."""
 def _get_track_recs(ctype: str, genre: str, notes: str) -> str:
     """
     Track priority: 80% Renamed (130 BPM tribal) + Halleluyah (140 BPM psytrance).
-    Melodic techno (Living Water etc.) only for explicitly melodic/house contexts.
-    Default fallback always returns Renamed + Halleluyah — never melodic as default.
+    Organic house / nomadic-electronic tracks (Living Water etc.) only for
+    explicitly organic/house/accessible contexts. Default fallback always returns
+    Renamed + Halleluyah — never organic house as default.
 
     Tracks with empty spotify URLs are silently filtered (placeholders like Kavod
     before its URL is pasted into story.py). The brand rule requires "never name
@@ -578,7 +579,8 @@ def _get_track_recs(ctype: str, genre: str, notes: str) -> str:
 
     For ctype='youtube', the psytrance branch is forced regardless of genre — all
     channels in the YouTube pipeline are filtered to psytrance/tribal/progressive
-    at discovery time, so melodic techno is never the right pitch here.
+    at discovery time, so organic-house / nomadic-electronic tracks are never the
+    right pitch here.
     """
     genre_lower = (genre + " " + notes).lower()
     is_psy    = any(w in genre_lower for w in ["psy", "psytrance", "trance", "140"])
@@ -603,8 +605,8 @@ def _get_track_recs(ctype: str, genre: str, notes: str) -> str:
 
     if is_psy or is_tribal:
         # Lead with the matching genre, pair with its complement
-        primary   = TRACKS["psytrance"]    if is_psy    else TRACKS["tribal_techno"]
-        secondary = TRACKS["tribal_techno"] if is_psy    else TRACKS["psytrance"]
+        primary   = TRACKS["psytrance"]    if is_psy    else TRACKS["organic_tribal"]
+        secondary = TRACKS["organic_tribal"] if is_psy    else TRACKS["psytrance"]
         for t in primary + secondary:
             if not _has_url(t):
                 continue
@@ -613,7 +615,7 @@ def _get_track_recs(ctype: str, genre: str, notes: str) -> str:
                 lines.append(entry)
 
     if is_faith:
-        for t in TRACKS["melodic_techno"]:
+        for t in TRACKS["organic_house"]:
             if not _has_url(t):
                 continue
             entry = _fmt(t)
@@ -621,16 +623,16 @@ def _get_track_recs(ctype: str, genre: str, notes: str) -> str:
                 lines.append(entry)
 
     if is_melodic and not is_psy and not is_tribal:
-        for t in TRACKS["melodic_techno"]:
+        for t in TRACKS["organic_house"]:
             if not _has_url(t):
                 continue
             entry = _fmt(t)
             if entry not in lines:
                 lines.append(entry)
 
-    # Default: Renamed + Halleluyah — never fall back to melodic techno by default
+    # Default: Renamed + Halleluyah — never fall back to slower organic house by default
     if not lines:
-        for t in TRACKS["tribal_techno"] + TRACKS["psytrance"]:
+        for t in TRACKS["organic_tribal"] + TRACKS["psytrance"]:
             if not _has_url(t):
                 continue
             lines.append(_fmt(t))

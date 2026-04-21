@@ -1,5 +1,5 @@
 # SubmitHub Curator Targets — Robert-Jan Mastenbroek
-### 30 curators to target across tribal techno, psytrance, melodic techno, organic house, ethnic electronic, Christian EDM, ambient electronic, progressive trance
+### 30 curators to target across organic-tribal house, tribal psytrance, nomadic electronic, desert house, ethnic electronic, Middle Eastern electronic, Christian EDM, ambient electronic, progressive trance
 
 ---
 
@@ -26,7 +26,7 @@
 |----------|-------------|---------|-----------|
 | 1st | Psytrance playlists (Spotify) | 25 credits | Highest genre alignment, biggest audience |
 | 2nd | Tribal / ethnic electronic playlists | 20 credits | Most unique positioning for RJM |
-| 3rd | Melodic techno / organic house | 20 credits | Largest general audience, accessible tracks |
+| 3rd | Organic house / desert house | 20 credits | Largest general audience, accessible tracks |
 | 4th | Christian EDM / faith electronic | 20 credits | Niche but zero competition — blue ocean |
 | 5th | Music blogs (for SEO + press) | 15 credits | Google discovery, long-tail value |
 
@@ -99,8 +99,10 @@ and 140 BPM structure sits directly beside your existing Vini Vici and
 Hilight Tribe selections"].
 
 Robert-Jan Mastenbroek is a Dutch producer based in Tenerife making 
-Bible-inspired tribal techno — ancient scripture carried by future sound. 
-He rebuilt his music career after losing a €6M company. 
+Nomadic Electronic — organic powerful house through tribal psytrance, 
+oud and handpan over ancient Middle Eastern rhythms. Bible-inspired; 
+ancient scripture carried by future sound. He rebuilt his music career 
+after losing a €6M company. 
 
 This track is his most [accessible / hypnotic / dark] work to date.
 ```
@@ -117,12 +119,12 @@ This track is his most [accessible / hypnotic / dark] work to date.
 
 | Track | Best curator types to target |
 |-------|------------------------------|
-| Living Water (124 BPM) | Organic electronic, chill, melodic techno, Christian EDM, ambient |
+| Living Water (124 BPM) | Organic electronic, desert house, nomadic electronic, Christian EDM, ambient |
 | Renamed (130 BPM) | Tribal, ethnic electronic, Hebrew/world, psytrance |
 | Halleluyah (140 BPM) | Psytrance, sacred psytrance, progressive trance |
 | Jericho (140 BPM) | Dark psytrance, dark techno, underground techno |
 | He Is The Light (122 BPM) | Christian EDM, spiritual music, electronic worship, ambient |
-| Fire In Our Hands (130 BPM) | Tribal techno, ethnic electronic, festival psytrance |
+| Fire In Our Hands (130 BPM) | Organic tribal house, ethnic electronic, festival psytrance |
 | You See It All (120 BPM) | Deep focus, ambient, organic house, conscious electronic |
 
 ---
@@ -131,7 +133,7 @@ This track is his most [accessible / hypnotic / dark] work to date.
 
 1. Open submithub.com — create account under Robert-Jan Mastenbroek
 2. Add Spotify track URL — SubmitHub pulls track data automatically
-3. Filter curators by genre: use tags "psytrance", "tribal", "techno", "electronic", "Christian", "organic"
+3. Filter curators by genre: use tags "psytrance", "tribal", "organic house", "ethnic electronic", "desert house", "Middle Eastern", "Christian", "melodic techno" (fallback for 128 BPM tracks)
 4. Sort by: **Acceptance Rate** (prioritise curators with 15%+ acceptance rate)
 5. Read each curator's "What I'm looking for" before submitting — skip if genre clearly doesn't match
 6. Write customised pitch (use template above, personalise the "fits because" line)

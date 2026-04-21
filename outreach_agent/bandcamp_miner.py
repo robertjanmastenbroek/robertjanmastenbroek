@@ -1,8 +1,9 @@
 """
 bandcamp_miner.py — Mine Bandcamp tag pages for music community contacts.
 
-Bandcamp hosts tens of thousands of artists releasing melodic techno,
-psytrance, tribal, and world electronic music. These are pre-qualified
+Bandcamp hosts tens of thousands of artists releasing nomadic electronic,
+organic-tribal house, tribal psytrance, ethnic electronic, and world
+electronic music. These are pre-qualified
 music peers who would genuinely appreciate RJM's sound — and many
 publish contact emails directly on their artist page.
 
@@ -19,7 +20,7 @@ Target: 20 per run × 6 runs = 120/day from Bandcamp alone
 
 Usage:
   python3 bandcamp_miner.py              # auto-tag rotation
-  python3 bandcamp_miner.py --tag melodic-techno
+  python3 bandcamp_miner.py --tag tribal-psytrance
   python3 bandcamp_miner.py --limit 20
   python3 bandcamp_miner.py --dry-run
 """
@@ -61,19 +62,29 @@ _MAILTO_RE = re.compile(
 
 # Tags to cycle through — each run picks 2-3 based on time of day + day ordinal
 _TARGET_TAGS = [
-    "melodic-techno",
+    # Primary — nomadic electronic core
+    "tribal-psytrance",
     "psytrance",
-    "tribal",
     "organic-house",
-    "world-music",
+    "tribal-house",
+    "desert-house",
+    "middle-eastern-electronic",
     "ethnic-electronic",
+    "handpan",
+    "oud",
+    "world-music",
+    "progressive-psytrance",
+    "goa-trance",
     "progressive-trance",
     "downtempo",
     "afrobeat",
     "progressive-house",
-    "melodic-house",
     "psychedelic",
     "sacred-geometry",
+    # Fallback — adjacent scenes for 128 BPM tracks
+    "melodic-techno",
+    "melodic-house",
+    "tribal",
 ]
 
 _BAD_DOMAINS = {
@@ -483,7 +494,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Mine Bandcamp tag pages for music community contacts"
     )
-    parser.add_argument("--tag", type=str, default=None, help="Bandcamp tag slug (e.g. melodic-techno)")
+    parser.add_argument("--tag", type=str, default=None, help="Bandcamp tag slug (e.g. tribal-psytrance, organic-house, melodic-techno)")
     parser.add_argument("--limit", type=int, default=20, help="Max contacts to add per run")
     parser.add_argument("--page", type=int, default=1, help="Starting page number")
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
