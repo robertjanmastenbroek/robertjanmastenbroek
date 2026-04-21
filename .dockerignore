@@ -1,9 +1,14 @@
 # Exclude everything except the website files Railway needs
+# NOTE: do NOT add `images/` here — server.js serves the Holy Rave
+# brand photos, favicons, portraits, and OG preview images from
+# /images/*. Excluding the directory makes /images/* 404 through
+# the Express catch-all → the home page HTML is served for every
+# image request, which silently breaks <img> tags and og:image
+# social previews (discovered 2026-04-21 after favicon commit).
 ruflo/
 continuous-claude/
 outreach_agent/
 agents/
-images/
 
 # Docs and non-web files
 *.md
