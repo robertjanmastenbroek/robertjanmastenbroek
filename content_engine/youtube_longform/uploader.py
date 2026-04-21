@@ -2,9 +2,11 @@
 uploader.py — YouTube Data API v3 long-form uploader.
 
 Builds on the existing YouTube OAuth setup (scripts/setup_youtube_oauth.py
-+ content_engine/distributor.py:521 _refresh_youtube_token). Same Google
-account can authorize multiple channels — the Holy Rave channel is
-selected via the `onBehalfOfContentOwner` and channel ID logic.
++ content_engine/distributor.py:521 _refresh_youtube_token). Which channel
+the upload targets is determined by which channel was selected during the
+OAuth consent flow — one refresh token authorizes one channel. To upload
+to a different channel, rerun setup_youtube_oauth.py while that channel
+is the active one in the Google account switcher.
 
 Responsibilities:
   1. Refresh access token.
@@ -231,8 +233,11 @@ def upload(spec: UploadSpec) -> str:
         status["publishAt"] = spec.publish_at_iso
 
     metadata = {"snippet": snippet, "status": status}
-    if spec.channel_id:
-        metadata["onBehalfOfContentOwner"] = spec.channel_id
+    # NOTE: YouTube's `onBehalfOfContentOwner` field is reserved for Content
+    # ID partner accounts (labels, MCNs). For regular user uploads it returns
+    # 403 Forbidden. The target channel is determined by the OAuth refresh
+    # token's channel scope, not by any insert-time parameter. spec.channel_id
+    # is kept on the spec for logging/dedup but NOT sent in the insert body.
 
     logger.info("YouTube upload starting: %s (%s)", spec.title, spec.video_path.name)
     video_id = _resumable_upload(token, spec.video_path, metadata)

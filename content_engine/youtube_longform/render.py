@@ -1,19 +1,29 @@
 """
-render.py — Still image + audio → MP4 via Cloudinary (Shotstack fallback).
+render.py — Still image + audio → MP4 via Shotstack.
 
 CRITICAL CONSTRAINT: No ffmpeg, PyAV, OpenCV, or MoviePy anywhere. Any
-local encoder pins CPU. See memory: feedback_no_ffmpeg.md.
+local encoder pins CPU. All composition happens off-machine via
+cloud-render API.
 
 The composite is trivial: hold one image for the duration of the audio
-track, at 1920x1080 H.264 + AAC 48kHz. Both providers do this natively.
+track, at 1920×1080 H.264 + AAC 48kHz.
 
-Primary: Cloudinary (free tier, 25 credits/month ≈ 60+ 6-min renders).
-Fallback: Shotstack PAYG ($0.40/min ≈ $2.40 per 6-min render).
+Architecture:
+  - Cloudinary is used ONLY for hosting/public-URL access of the inputs
+    (audio file + hero image). It cannot natively composite image+audio
+    into video — verified against Cloudinary docs 2026-04-21.
+  - Shotstack does the actual render from those URLs.
+    PAYG cost: $0.40/min → ~$2.40 per 6-minute render.
+    Cheaper alternatives (JSON2Video at ~$0.025/min) are a TODO and
+    would slot in as an additional backend without changing the
+    _upload_*_for_render helpers.
 
 Selection logic:
-  - If CLOUDINARY_* creds configured → Cloudinary
-  - Else if SHOTSTACK_API_KEY set   → Shotstack
-  - Else                             → RenderError
+  - If SHOTSTACK_API_KEY is set → Shotstack (the only working render path)
+  - Else                        → RenderError with actionable message
+
+Cloudinary is still required as input-hosting layer. Set either
+CLOUDINARY_URL or the three split vars.
 """
 from __future__ import annotations
 
@@ -39,14 +49,22 @@ class RenderError(Exception):
 # ─── Backend selection ───────────────────────────────────────────────────────
 
 def _backend() -> str:
-    if cfg.cloudinary_configured():
-        return "cloudinary"
-    if cfg.SHOTSTACK_API_KEY:
+    """
+    The only working render backend is Shotstack. Cloudinary is required
+    for hosting inputs but cannot produce the composite MP4 (verified
+    against Cloudinary docs 2026-04-21 — no image+audio→video transform).
+    """
+    if cfg.SHOTSTACK_API_KEY and cfg.cloudinary_configured():
         return "shotstack"
+    missing = []
+    if not cfg.SHOTSTACK_API_KEY:
+        missing.append("SHOTSTACK_API_KEY (sign up at shotstack.io/pricing)")
+    if not cfg.cloudinary_configured():
+        missing.append("CLOUDINARY_URL (or CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET)")
     raise RenderError(
-        "No render backend configured. Set either CLOUDINARY_URL "
-        "(or the three split CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET vars) "
-        "or SHOTSTACK_API_KEY in .env."
+        "Render backend not fully configured. Missing: "
+        + ", ".join(missing)
+        + ". Cloudinary hosts the inputs (audio + hero); Shotstack composites the MP4."
     )
 
 
@@ -99,16 +117,23 @@ def _upload_to_cloudinary(
 
 def _render_cloudinary(spec: RenderSpec) -> RenderedVideo:
     """
-    Cloudinary image+audio → video via URL transformation.
+    NOT IMPLEMENTED. Cloudinary does not natively support image+audio→video
+    compositing as a delivery transformation (verified against Cloudinary
+    video_manipulation_and_delivery docs, 2026-04-21).
 
-    Flow:
-      1. Upload audio as `video` resource_type (Cloudinary's "video"
-         category accepts audio-only files too).
-      2. Upload image as `image` resource_type.
-      3. Build a transformation URL that overlays the audio on a
-         duration-stretched image.
-      4. Download the rendered MP4 and return.
+    Cloudinary DOES work for:
+      - Hosting inputs (audio as resource_type=video, image as image)
+      - Generating the public URLs that Shotstack consumes
+
+    This function is preserved as a stub to document the attempt and to
+    avoid reintroducing the broken path. Use composite() which routes to
+    _render_shotstack.
     """
+    raise RenderError(
+        "Cloudinary does not support image+audio→video compositing. "
+        "Use Shotstack (SHOTSTACK_API_KEY) or JSON2Video (not yet wired)."
+    )
+    # -- Archived former implementation (broken; do not resurrect as-is) --
     try:
         import cloudinary  # type: ignore
         import cloudinary.utils  # type: ignore
@@ -270,11 +295,9 @@ def _render_shotstack(spec: RenderSpec) -> RenderedVideo:
 # ─── Public API ──────────────────────────────────────────────────────────────
 
 def composite(spec: RenderSpec) -> RenderedVideo:
-    """Route to the first available backend."""
+    """Route to the first available backend. Currently only Shotstack works."""
     backend = _backend()
     logger.info("Render backend selected: %s", backend)
-    if backend == "cloudinary":
-        return _render_cloudinary(spec)
     return _render_shotstack(spec)
 
 

@@ -72,6 +72,19 @@ def _hash(prompt: str, seed: Optional[int]) -> str:
 
 # ─── fal.ai generation primitive ─────────────────────────────────────────────
 
+def _merge_negative_into_prompt(prompt: str, negative: str) -> str:
+    """
+    Flux 2 Pro has no `negative_prompt` field. We fold negatives into the
+    positive prompt as "--no" / "avoid:" clauses. Flux 2 respects these
+    as soft guidance.
+    """
+    if not negative:
+        return prompt
+    # Trim noise whitespace
+    neg = " ".join(w.strip() for w in negative.split() if w.strip())
+    return f"{prompt}. Avoid: {neg}"
+
+
 def _generate_one(
     prompt: str,
     negative_prompt: str,
@@ -82,19 +95,26 @@ def _generate_one(
     """
     Run one fal.ai generation. Returns the URL of the resulting image.
 
-    Uses the LoRA endpoint when FAL_BRAND_LORA_URL is configured; falls
-    back to plain Flux 2 Pro otherwise.
+    Primary path: `fal-ai/flux-2-pro` — supports ImageSize (width/height) but
+    NOT num_inference_steps, guidance_scale, negative_prompt, or loras.
+    Negatives are merged into the positive prompt.
+
+    LoRA path (when FAL_BRAND_LORA_URL is set): `fal-ai/flux-lora` — accepts
+    width/height, loras array, num_inference_steps, guidance_scale, and
+    negative_prompt. Note: this is Flux 1 with LoRA (Flux 2 Dev LoRA
+    inference requires a different endpoint + training pipeline; opt in
+    only if you've trained specifically for that endpoint).
     """
     client = _fal_client()
 
     if cfg.FAL_BRAND_LORA_URL:
-        endpoint = cfg.FAL_FLUX_2_LORA_EP
+        endpoint = cfg.FAL_FLUX_LORA_EP
         arguments = {
-            "prompt":          prompt,
-            "negative_prompt": negative_prompt,
-            "image_size": {"width": width, "height": height},
+            "prompt":              prompt,
+            "negative_prompt":     negative_prompt,
+            "image_size":          {"width": width, "height": height},
             "num_inference_steps": 28,
-            "guidance_scale":  3.5,
+            "guidance_scale":      3.5,
             "loras": [
                 {"path": cfg.FAL_BRAND_LORA_URL, "scale": cfg.FAL_BRAND_LORA_SCALE},
             ],
@@ -102,11 +122,9 @@ def _generate_one(
     else:
         endpoint = cfg.FAL_FLUX_2_PRO_EP
         arguments = {
-            "prompt":          prompt,
-            "negative_prompt": negative_prompt,
-            "image_size": {"width": width, "height": height},
-            "num_inference_steps": 28,
-            "guidance_scale":  3.5,
+            "prompt":          _merge_negative_into_prompt(prompt, negative_prompt),
+            "image_size":      {"width": width, "height": height},
+            "output_format":   "jpeg",
         }
 
     if seed is not None:

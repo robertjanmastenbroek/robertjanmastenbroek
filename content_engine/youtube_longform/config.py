@@ -53,13 +53,36 @@ REGISTRY_DIR    = PROJECT_DIR / "data" / "youtube_longform"
 # LoRA training set lives here (NOT uploaded anywhere by this pipeline)
 LORA_TRAINING_DIR = CONTENT_DIR / "images" / "lora_training" / "holy_rave_v1"
 
-# ─── fal.ai (Flux 2 Pro + LoRA) ──────────────────────────────────────────────
+# ─── fal.ai endpoints ────────────────────────────────────────────────────────
+# Verified against fal.ai live docs 2026-04-21.
 FAL_KEY             = os.getenv("FAL_KEY", "")
-FAL_FLUX_2_PRO_EP   = "fal-ai/flux-2-pro"          # Primary image gen
-FAL_FLUX_2_LORA_EP  = "fal-ai/flux-2/lora"         # Flux 2 with LoRA support
-FAL_IDEOGRAM_EP     = "fal-ai/ideogram/v3"         # Fallback for text-overlay thumbnails
+
+# Primary: Flux 2 Pro — $0.03 for 1st MP + $0.015/extra MP. Accepts
+# width/height as ImageSize object. Does NOT accept num_inference_steps,
+# guidance_scale, negative_prompt, or loras. Negatives are merged into
+# the positive prompt via _merge_negative_into_prompt().
+FAL_FLUX_2_PRO_EP   = "fal-ai/flux-2-pro"
+
+# LoRA-inference path: Flux 1 with LoRA support at $0.035/MP. Accepts
+# loras array, width/height, num_inference_steps, guidance_scale,
+# negative_prompt. Used ONLY when FAL_BRAND_LORA_URL is set.
+#
+# NOTE: Flux 2 Dev LoRA inference is a separate endpoint not yet wired in;
+# if we train on the Flux 2 trainer, inference path needs revisiting.
+FAL_FLUX_LORA_EP    = "fal-ai/flux-lora"
+
+# LoRA training (optional; expensive). $0.0255 per step on Flux 2 Trainer V2:
+#   1000 steps = $25.50, 2000 steps = $51.
+# Consider Flux 1 lora-fast-training for cheaper LoRAs ($0.008/step) if needed.
+FAL_FLUX_2_TRAINER_EP = "fal-ai/flux-2-trainer-v2"
+FAL_FLUX_1_TRAINER_EP = "fal-ai/flux-lora-fast-training"     # Cheaper fallback
+
+# Text-overlay thumbnail fallback (not currently used in default path)
+FAL_IDEOGRAM_EP     = "fal-ai/ideogram/v3"
 
 # Brand LoRA — populated after training. Leave empty to use pure prompt baseline.
+# If empty, generation uses fal-ai/flux-2-pro (baseline).
+# If set, generation switches to fal-ai/flux-lora (Flux 1) + the brand LoRA.
 FAL_BRAND_LORA_URL  = os.getenv("FAL_BRAND_LORA_URL", "")
 FAL_BRAND_LORA_SCALE = float(os.getenv("FAL_BRAND_LORA_SCALE", "0.80"))
 

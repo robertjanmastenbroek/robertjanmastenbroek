@@ -16,9 +16,16 @@ Usage:
     python3 scripts/train_holy_rave_lora.py --dry-run   # Validate inputs only, no API call
     python3 scripts/train_holy_rave_lora.py --steps 2000  # Override training steps
 
-Cost reference (fal.ai Flux 2 Trainer, April 2026):
-    ~$0.008 per step; 1,500–2,500 steps = $12–$20 one-time.
+Cost reference (fal.ai Flux 2 Trainer V2, verified 2026-04-21):
+    $0.0255 per step. Examples:
+      1000 steps = $25.50
+      1500 steps = $38.25
+      2000 steps = $51.00
     Total wall-clock: ~1 hour.
+
+    CHEAPER ALTERNATIVE: Flux 1 lora-fast-training at $0.008/step
+    (fal-ai/flux-lora-fast-training). Lower quality than Flux 2 but
+    ~3× cheaper. Use --fast to route through the Flux 1 trainer.
 
 The trainer creates a LoRA (Low-Rank Adaptation) that teaches Flux 2 to
 produce images matching the Holy Rave visual universe 95% of the time,
@@ -42,9 +49,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from content_engine.youtube_longform import config as cfg
 
 
-TRAINER_ENDPOINT = "fal-ai/flux-2-trainer"
-DEFAULT_TRAIN_STEPS = 2000
+TRAINER_ENDPOINT_FLUX_2 = "fal-ai/flux-2-trainer-v2"           # $0.0255/step
+TRAINER_ENDPOINT_FLUX_1 = "fal-ai/flux-lora-fast-training"     # $0.008/step (cheaper)
+DEFAULT_TRAIN_STEPS = 1000                                     # Sensible default given cost
 DEFAULT_TRIGGER_WORD = "hr_brand"
+
+COST_PER_STEP_FLUX_2 = 0.0255
+COST_PER_STEP_FLUX_1 = 0.008
 
 logger = logging.getLogger("train_lora")
 
@@ -116,6 +127,7 @@ def submit_training_job(
     steps: int,
     trigger_word: str,
     dry_run: bool,
+    use_fast: bool = False,
 ) -> str:
     """Submit the LoRA training job. Returns the safetensors URL on success."""
     try:
@@ -130,14 +142,18 @@ def submit_training_job(
     zip_size_mb = len(zip_bytes) / 1024 / 1024
     logger.info("Training zip: %d images, %.1f MB", len(images), zip_size_mb)
 
+    endpoint = TRAINER_ENDPOINT_FLUX_1 if use_fast else TRAINER_ENDPOINT_FLUX_2
+    cost_per_step = COST_PER_STEP_FLUX_1 if use_fast else COST_PER_STEP_FLUX_2
+
     if dry_run:
         print("\n✓ Dry run complete. Training set passed validation.")
         print(f"  Images:         {len(images)}")
         print(f"  Zip size:       {zip_size_mb:.1f} MB")
         print(f"  Steps:          {steps}")
         print(f"  Trigger word:   {trigger_word}")
-        print(f"  Endpoint:       {TRAINER_ENDPOINT}")
-        print(f"  Estimated cost: ~${steps * 0.008:.2f}")
+        print(f"  Endpoint:       {endpoint}")
+        print(f"  Cost per step:  ${cost_per_step:.4f}")
+        print(f"  Estimated cost: ~${steps * cost_per_step:.2f}")
         return ""
 
     # 1) Upload the zip to fal storage
@@ -147,14 +163,14 @@ def submit_training_job(
     logger.info("Zip uploaded: %s", zip_url)
 
     # 2) Kick off the training job
-    logger.info("Submitting training job (%d steps)…", steps)
+    logger.info("Submitting training job (%d steps) to %s…", steps, endpoint)
     arguments = {
         "images_data_url":  zip_url,
         "trigger_word":     trigger_word,
         "steps":            steps,
         "learning_rate":    0.0004,
     }
-    handler = fal_client.submit(TRAINER_ENDPOINT, arguments=arguments)
+    handler = fal_client.submit(endpoint, arguments=arguments)
     request_id = handler.request_id
     logger.info("Training job submitted. request_id=%s", request_id)
 
@@ -164,7 +180,7 @@ def submit_training_job(
     poll_interval = 30
     while time.time() < deadline:
         time.sleep(poll_interval)
-        status = fal_client.status(TRAINER_ENDPOINT, request_id, with_logs=False)
+        status = fal_client.status(endpoint, request_id, with_logs=False)
         # fal's status object: queue_position, status string, logs
         state = getattr(status, "status", None) or (status if isinstance(status, str) else "UNKNOWN")
         logger.info("Training status: %s", state)
@@ -176,7 +192,7 @@ def submit_training_job(
         raise RuntimeError("Training did not complete within 3 hours. Check fal dashboard.")
 
     # 4) Fetch result
-    result = fal_client.result(TRAINER_ENDPOINT, request_id)
+    result = fal_client.result(endpoint, request_id)
     lora_url = None
     if isinstance(result, dict):
         lora_url = (
@@ -203,6 +219,7 @@ def main() -> int:
     parser.add_argument("--steps", type=int, default=DEFAULT_TRAIN_STEPS, help=f"Training steps (default {DEFAULT_TRAIN_STEPS})")
     parser.add_argument("--trigger", type=str, default=DEFAULT_TRIGGER_WORD, help=f"Trigger word baked into the LoRA (default {DEFAULT_TRIGGER_WORD})")
     parser.add_argument("--training-dir", type=Path, default=cfg.LORA_TRAINING_DIR, help="Override training directory")
+    parser.add_argument("--fast", action="store_true", help="Use Flux 1 lora-fast-training ($0.008/step) instead of Flux 2 ($0.0255/step). Lower quality but ~3× cheaper.")
     args = parser.parse_args()
 
     if not cfg.FAL_KEY and not args.dry_run:
@@ -220,7 +237,12 @@ def main() -> int:
 
     validate_training_set(images)
 
-    print(f"\nEstimated cost: ~${args.steps * 0.008:.2f} ({args.steps} steps at $0.008/step)")
+    cost_per_step = COST_PER_STEP_FLUX_1 if args.fast else COST_PER_STEP_FLUX_2
+    endpoint_label = "Flux 1 (fast)" if args.fast else "Flux 2 V2 (full quality)"
+    total_cost = args.steps * cost_per_step
+    print(f"\nEstimated cost: ~${total_cost:.2f} ({args.steps} steps × ${cost_per_step:.4f}/step on {endpoint_label})")
+    if total_cost > 5 and not args.dry_run:
+        print(f"⚠  This will spend ~${total_cost:.2f} on fal.ai.")
     if not args.dry_run:
         reply = input("\nProceed with training? [y/N]: ").strip().lower()
         if reply != "y":
@@ -232,6 +254,7 @@ def main() -> int:
         steps=args.steps,
         trigger_word=args.trigger,
         dry_run=args.dry_run,
+        use_fast=args.fast,
     )
 
     if lora_url:
