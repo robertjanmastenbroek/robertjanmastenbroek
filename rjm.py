@@ -698,10 +698,117 @@ def cmd_content(args: list[str]):
             print(f"  No circuit breaker state found at {cb_path}")
         sys.exit(0)
 
+    elif subcommand == "youtube":
+        # Long-form YouTube publishing — still-image + full-track uploads
+        # to the Holy Rave channel (HOLY RAVE still-image format, 130–145
+        # BPM tribal psytrance / organic house). See content_engine/
+        # youtube_longform/ for the full pipeline.
+        cmd_content_youtube(args[1:])
+        sys.exit(0)
+
     else:
         print(f"✗ Unknown content subcommand: {subcommand!r}")
-        print("  Valid: viral (default), trend-scan, learning, backfill [days], retry, reset-platform <platform>")
+        print("  Valid: viral (default), trend-scan, learning, backfill [days], retry, reset-platform <platform>, youtube <sub>")
         sys.exit(1)
+
+
+def cmd_content_youtube(args: list[str]):
+    """
+    YouTube long-form publishing — Holy Rave still-image pipeline.
+
+    Usage:
+      rjm.py content youtube status                        # Health check on all APIs
+      rjm.py content youtube explain <track>               # Preview prompt + metadata (no API calls)
+      rjm.py content youtube publish <track> [--dry-run] [--schedule YYYY-MM-DDTHH:MMZ]
+      rjm.py content youtube budget                        # Quota cost estimate
+    """
+    import json
+    if not args:
+        print("Usage: rjm.py content youtube <status|explain|publish|budget> [...]")
+        sys.exit(1)
+    sub, rest = args[0], args[1:]
+
+    sys.path.insert(0, str(PROJECT_ROOT))
+    import logging
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+
+    if sub == "status":
+        from content_engine.youtube_longform import config as yt_cfg
+        summary = yt_cfg.config_summary()
+        print(json.dumps(summary, indent=2))
+        any_missing = not all((summary["fal_key"], summary["youtube_oauth"]))
+        ok = all((summary["fal_key"], summary["youtube_oauth"]))
+        ok = ok and (summary["cloudinary"] or summary["shotstack"])
+        print("\nOverall:", "READY" if ok else "MISSING DEPS")
+        sys.exit(0 if ok else 1)
+
+    if sub == "explain":
+        if not rest:
+            print("Usage: rjm.py content youtube explain <track>")
+            sys.exit(1)
+        from content_engine.youtube_longform.prompt_builder import explain as pb_explain
+        print(pb_explain(" ".join(rest)))
+        sys.exit(0)
+
+    if sub == "budget":
+        from content_engine.youtube_longform import config as yt_cfg
+        from content_engine.youtube_longform.image_gen import estimate_cost_usd
+        from content_engine.youtube_longform.uploader import estimate_quota_cost
+        per_upload = estimate_cost_usd(hero_count=1, thumb_count=yt_cfg.THUMB_VARIANT_COUNT)
+        quota_per = estimate_quota_cost(upload_count=1)
+        print(json.dumps({
+            "fal_cost_usd_per_upload": per_upload,
+            "monthly_usd_at_3_per_week": round(per_upload * 13, 2),
+            "monthly_usd_at_7_per_week": round(per_upload * 30, 2),
+            "youtube_quota_per_upload":  quota_per,
+            "daily_quota_cap":           yt_cfg.YT_DAILY_QUOTA_CAP,
+            "max_uploads_per_day":       yt_cfg.YT_DAILY_QUOTA_CAP // quota_per,
+        }, indent=2))
+        sys.exit(0)
+
+    if sub == "publish":
+        if not rest:
+            print("Usage: rjm.py content youtube publish <track> [--dry-run] [--schedule ISO]")
+            sys.exit(1)
+        dry_run = "--dry-run" in rest
+        schedule_iso = None
+        if "--schedule" in rest:
+            idx = rest.index("--schedule")
+            if idx + 1 < len(rest):
+                schedule_iso = rest[idx + 1]
+        # Track name = all non-flag tokens joined
+        track_tokens = [t for t in rest if not t.startswith("--") and t != schedule_iso]
+        if "--schedule" in rest:
+            # Remove the value token too
+            idx = rest.index("--schedule")
+            if idx + 1 < len(track_tokens):
+                pass
+        track = " ".join(t for t in rest if not t.startswith("--") and t != schedule_iso).strip()
+        if not track:
+            print("✗ Track name required")
+            sys.exit(1)
+        from content_engine.youtube_longform.publisher import publish_track
+        from content_engine.youtube_longform.types import PublishRequest
+        req = PublishRequest(track_title=track, dry_run=dry_run, publish_at_iso=schedule_iso)
+        result = publish_track(req)
+        print(json.dumps({
+            "track":           result.request.track_title,
+            "dry_run":         result.request.dry_run,
+            "youtube_id":      result.youtube_id,
+            "youtube_url":     result.youtube_url,
+            "smart_link":      result.smart_link,
+            "hero_image":      str(result.hero_image.local_path) if result.hero_image else None,
+            "thumbnails":      [str(t.local_path) for t in result.thumbnails],
+            "video":           str(result.video.local_path) if result.video else None,
+            "elapsed_seconds": result.elapsed_seconds,
+            "cost_usd":        result.cost_usd,
+            "error":           result.error,
+        }, indent=2))
+        sys.exit(0 if not result.error else 1)
+
+    print(f"✗ Unknown youtube subcommand: {sub!r}")
+    print("  Valid: status, explain <track>, publish <track> [--dry-run] [--schedule ISO], budget")
+    sys.exit(1)
 
 
 def cmd_playlist(args: list[str]):
