@@ -25,7 +25,7 @@ import logging
 from typing import Optional
 
 from content_engine.audio_engine import SCRIPTURE_ANCHORS, TRACK_BPMS
-from content_engine.youtube_longform.types import MoodTier, TrackPrompt
+from content_engine.youtube_longform.types import GenreFamily, MoodTier, TrackPrompt
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,15 @@ def _derive_mood_tier(bpm: int) -> MoodTier:
     if bpm <= 138:
         return "gathering"
     return "ecstatic"
+
+
+def _derive_genre_family(bpm: int) -> GenreFamily:
+    """
+    Bigger-picture visual culture split. 139+ BPM routes to the tribal
+    psytrance family (Goa/tribal — rejecting New Age cosmic imagery);
+    below that routes to the organic house / Cafe de Anatolia family.
+    """
+    return "tribal_psytrance" if bpm >= 139 else "organic_house"
 
 
 # ─── Track genre inferred from BPM + title ───────────────────────────────────
@@ -210,6 +219,7 @@ def build_prompt(
     resolved_anchor = scripture_anchor if scripture_anchor is not None \
         else SCRIPTURE_ANCHORS.get(key, "")
     mood_tier: MoodTier = _derive_mood_tier(resolved_bpm)
+    genre_family: GenreFamily = _derive_genre_family(resolved_bpm)
     genre = _derive_genre(resolved_bpm, key)
 
     # Stable environment selection per track title (consistent across regenerations)
@@ -234,6 +244,7 @@ def build_prompt(
         bpm=resolved_bpm,
         genre=genre,
         mood_tier=mood_tier,
+        genre_family=genre_family,
         scripture_anchor=resolved_anchor,
         scripture_hook=scripture_viz,
         flux_prompt=positive_prompt,
@@ -263,6 +274,7 @@ def build_thumbnail_variants(
             bpm=base.bpm,
             genre=base.genre,
             mood_tier=base.mood_tier,
+            genre_family=base.genre_family,
             scripture_anchor=base.scripture_anchor,
             scripture_hook=base.scripture_hook,
             flux_prompt=base.flux_prompt,

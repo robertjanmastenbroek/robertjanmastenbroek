@@ -46,16 +46,23 @@ class ReviewResult:
 
 # ─── Image viewer (cross-platform) ──────────────────────────────────────────
 
-def _open_image(path: Path) -> None:
-    """Open an image in the OS default viewer (macOS: Preview, Linux: xdg-open)."""
+def _open_images(paths: list[Path]) -> None:
+    """Open all images in a single viewer window/session. Best for review."""
+    if not paths:
+        return
+    str_paths = [str(p) for p in paths]
     if sys.platform == "darwin":
-        subprocess.Popen(["open", str(path)])
+        # -a Preview forces all into one Preview instance; Preview tiles them
+        subprocess.Popen(["open", "-a", "Preview", *str_paths])
     elif sys.platform.startswith("linux"):
-        subprocess.Popen(["xdg-open", str(path)])
+        # xdg-open doesn't support multi-args; spawn one process per file (best-effort)
+        for p in str_paths:
+            subprocess.Popen(["xdg-open", p])
     elif sys.platform == "win32":
-        subprocess.Popen(["start", str(path)], shell=True)
+        for p in str_paths:
+            subprocess.Popen(["start", p], shell=True)
     else:
-        print(f"  (unsupported platform; open manually: {path})")
+        print(f"  (unsupported platform; open manually: {', '.join(str_paths)})")
 
 
 # ─── Interactive loop ────────────────────────────────────────────────────────
@@ -75,10 +82,8 @@ def _show_and_ask(
         print(f"  Thumb variant {i}:   {t.local_path}")
     print()
 
-    # Open hero + all thumbnails
-    _open_image(hero.local_path)
-    for t in thumbs:
-        _open_image(t.local_path)
+    # Open hero + all thumbnails in one Preview session so you can tile and compare
+    _open_images([hero.local_path, *(t.local_path for t in thumbs)])
 
     print("\nOptions:")
     print("  [a] approve — proceed to render + upload")

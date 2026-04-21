@@ -117,3 +117,25 @@ def test_no_scripture_anchor_falls_back_gracefully():
     assert p.scripture_anchor == ""     # SCRIPTURE_ANCHORS has "" for halleluyah
     # Should fall back to the "" hook (nomadic encampment)
     assert "Bedouin" in p.flux_prompt or "nomadic" in p.flux_prompt.lower()
+
+
+def test_genre_family_routing():
+    """BPM cleanly bucketed into one of two visual DNAs (organic_house / tribal_psytrance)."""
+    # 139+ = tribal psytrance family
+    assert prompt_builder.build_prompt("Jericho").genre_family == "tribal_psytrance"
+    assert prompt_builder.build_prompt("Halleluyah").genre_family == "tribal_psytrance"
+    assert prompt_builder.build_prompt("Test", bpm=145).genre_family == "tribal_psytrance"
+    assert prompt_builder.build_prompt("Test", bpm=139).genre_family == "tribal_psytrance"
+    # 138 and below = organic house family
+    assert prompt_builder.build_prompt("Test", bpm=138).genre_family == "organic_house"
+    assert prompt_builder.build_prompt("Renamed").genre_family == "organic_house"
+    assert prompt_builder.build_prompt("Selah").genre_family == "organic_house"
+    assert prompt_builder.build_prompt("Living Water").genre_family == "organic_house"
+    assert prompt_builder.build_prompt("Test", bpm=124).genre_family == "organic_house"
+
+
+def test_thumbnail_variants_preserve_genre_family():
+    """Seed-varied variants must keep the same BPM-derived family."""
+    base = prompt_builder.build_prompt("Jericho")
+    for v in prompt_builder.build_thumbnail_variants(base, count=3):
+        assert v.genre_family == base.genre_family == "tribal_psytrance"

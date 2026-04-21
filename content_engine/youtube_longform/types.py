@@ -23,6 +23,18 @@ MoodTier = Literal[
 ]
 
 
+# ─── Genre family — bigger-picture visual culture split ─────────────────────
+# Two proven-viral visual DNAs in our niche:
+#   - organic_house:   Cafe de Anatolia / Sol Selectas / Bedouin — warm earth
+#                      palette, human cultural dress, Middle Eastern ornament,
+#                      contemplative/ceremonial mood. 122–138 BPM band.
+#   - tribal_psytrance: Goa/tribal psy that stays tribal-ancient rather than
+#                      neo-pagan/cosmic (reject New Age). Sacred-geometry
+#                      rooted in Temple/Tabernacle rather than OM/yantra.
+#                      139–145 BPM band.
+GenreFamily = Literal["organic_house", "tribal_psytrance"]
+
+
 @dataclass(frozen=True)
 class TrackPrompt:
     """Output of prompt_builder — everything the image model needs."""
@@ -31,6 +43,7 @@ class TrackPrompt:
     bpm:                int
     genre:              str                # "tribal psytrance", "organic house", etc.
     mood_tier:          MoodTier
+    genre_family:       GenreFamily        # Bigger-picture visual DNA routing
     scripture_anchor:   str                # "Joshua 6", may be ""
     scripture_hook:     str                # Rendered visual phrase for the scene
     flux_prompt:        str                # The full positive prompt
