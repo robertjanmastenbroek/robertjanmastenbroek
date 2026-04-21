@@ -8,6 +8,37 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+
+def _load_env_walking_up() -> None:
+    """
+    Load .env from the nearest ancestor directory that contains one.
+    When this module runs from a git worktree, the real .env often lives
+    at the main project root (two levels above the worktree). Without
+    this, CLOUDINARY_URL etc. silently fail to resolve.
+    """
+    here = Path(__file__).resolve()
+    for parent in [here.parent, *here.parents]:
+        candidate = parent / ".env"
+        if candidate.exists():
+            for line in candidate.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                k = k.strip()
+                v = v.strip()
+                if len(v) >= 2 and (
+                    (v[0] == '"' and v[-1] == '"')
+                    or (v[0] == "'" and v[-1] == "'")
+                ):
+                    v = v[1:-1]
+                os.environ.setdefault(k, v)
+            return
+
+
+_load_env_walking_up()
+
+
 # ─── Project paths ────────────────────────────────────────────────────────────
 PROJECT_DIR     = Path(__file__).resolve().parent.parent.parent
 CONTENT_DIR     = PROJECT_DIR / "content"
@@ -40,9 +71,20 @@ FAL_TIMEOUT_SECONDS            = 180
 FAL_POLL_INTERVAL_SECONDS      = 2
 
 # ─── Cloudinary (primary render) ─────────────────────────────────────────────
+# The cloudinary Python SDK auto-parses CLOUDINARY_URL in the form
+#   cloudinary://<api_key>:<api_secret>@<cloud_name>
+# We accept either the consolidated URL OR the three split vars for flexibility.
+CLOUDINARY_URL        = os.getenv("CLOUDINARY_URL", "")
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
 CLOUDINARY_API_KEY    = os.getenv("CLOUDINARY_API_KEY", "")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
+
+
+def cloudinary_configured() -> bool:
+    """True if either CLOUDINARY_URL or the three split vars are set."""
+    return bool(CLOUDINARY_URL) or all(
+        (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)
+    )
 
 # ─── Shotstack (fallback render) ─────────────────────────────────────────────
 SHOTSTACK_API_KEY   = os.getenv("SHOTSTACK_API_KEY", "")
@@ -135,7 +177,7 @@ def config_summary() -> dict[str, bool]:
     return {
         "fal_key":                 bool(FAL_KEY),
         "fal_brand_lora":          bool(FAL_BRAND_LORA_URL),
-        "cloudinary":              all((CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)),
+        "cloudinary":              cloudinary_configured(),
         "shotstack":               bool(SHOTSTACK_API_KEY),
         "youtube_oauth":           all((YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN)),
         "holy_rave_channel_id":    bool(YT_HOLY_RAVE_CHANNEL_ID),

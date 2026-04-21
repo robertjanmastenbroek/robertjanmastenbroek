@@ -766,6 +766,40 @@ def cmd_content_youtube(args: list[str]):
         }, indent=2))
         sys.exit(0)
 
+    if sub == "schedule":
+        # Plan the coming week's uploads based on rotation + BPM tier spread.
+        #   rjm.py content youtube schedule                 # Print the plan
+        #   rjm.py content youtube schedule --queue         # Also queue via publisher (scheduled)
+        from content_engine.youtube_longform.scheduler import plan_week, format_schedule
+        plans = plan_week()
+        print(format_schedule(plans))
+        if "--queue" in rest:
+            from content_engine.youtube_longform.publisher import publish_track
+            for p in plans:
+                req = p.as_publish_request()
+                print(f"\nQueuing: {req.track_title} @ {req.publish_at_iso}")
+                result = publish_track(req)
+                print(f"  → {result.youtube_url or result.error}")
+        sys.exit(0)
+
+    if sub == "review":
+        # Interactive pre-publish review gate (generate images + approve/regenerate/abort)
+        if not rest:
+            print("Usage: rjm.py content youtube review <track>")
+            sys.exit(1)
+        track = " ".join(rest).strip()
+        from content_engine.youtube_longform.reviewer import review_track
+        result = review_track(track)
+        print(json.dumps({
+            "track":          result.track_title,
+            "approved":       result.approved,
+            "regenerations":  result.regenerations,
+            "notes":          result.notes,
+            "hero":           str(result.hero_image.local_path) if result.hero_image else None,
+            "thumbs":         [str(t.local_path) for t in result.thumbnails],
+        }, indent=2))
+        sys.exit(0 if result.approved else 1)
+
     if sub == "publish":
         if not rest:
             print("Usage: rjm.py content youtube publish <track> [--dry-run] [--schedule ISO]")
@@ -807,7 +841,8 @@ def cmd_content_youtube(args: list[str]):
         sys.exit(0 if not result.error else 1)
 
     print(f"✗ Unknown youtube subcommand: {sub!r}")
-    print("  Valid: status, explain <track>, publish <track> [--dry-run] [--schedule ISO], budget")
+    print("  Valid: status, explain <track>, publish <track> [--dry-run] [--schedule ISO],")
+    print("         budget, schedule [--queue], review <track>")
     sys.exit(1)
 
 

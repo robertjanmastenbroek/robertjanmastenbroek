@@ -39,15 +39,30 @@ class RenderError(Exception):
 # ─── Backend selection ───────────────────────────────────────────────────────
 
 def _backend() -> str:
-    if all((cfg.CLOUDINARY_CLOUD_NAME, cfg.CLOUDINARY_API_KEY, cfg.CLOUDINARY_API_SECRET)):
+    if cfg.cloudinary_configured():
         return "cloudinary"
     if cfg.SHOTSTACK_API_KEY:
         return "shotstack"
     raise RenderError(
-        "No render backend configured. Set either CLOUDINARY_* "
-        "or SHOTSTACK_API_KEY in .env. See "
-        "content_engine/youtube_longform/config.py."
+        "No render backend configured. Set either CLOUDINARY_URL "
+        "(or the three split CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET vars) "
+        "or SHOTSTACK_API_KEY in .env."
     )
+
+
+def _configure_cloudinary() -> None:
+    """Call cloudinary.config with whichever credential format is present."""
+    import cloudinary  # type: ignore
+    if cfg.CLOUDINARY_URL:
+        # SDK auto-reads CLOUDINARY_URL from env; explicit call to be safe
+        cloudinary.config(secure=True)
+    else:
+        cloudinary.config(
+            cloud_name=cfg.CLOUDINARY_CLOUD_NAME,
+            api_key=cfg.CLOUDINARY_API_KEY,
+            api_secret=cfg.CLOUDINARY_API_SECRET,
+            secure=True,
+        )
 
 
 # ─── Cloudinary backend ──────────────────────────────────────────────────────
@@ -67,12 +82,7 @@ def _upload_to_cloudinary(
             "`pip install cloudinary>=1.40.0`"
         ) from e
 
-    cloudinary.config(
-        cloud_name=cfg.CLOUDINARY_CLOUD_NAME,
-        api_key=cfg.CLOUDINARY_API_KEY,
-        api_secret=cfg.CLOUDINARY_API_SECRET,
-        secure=True,
-    )
+    _configure_cloudinary()
 
     logger.info("Cloudinary upload | %s | %s", resource_type, file_path.name)
     upload_kwargs = {
@@ -105,12 +115,7 @@ def _render_cloudinary(spec: RenderSpec) -> RenderedVideo:
     except ImportError as e:
         raise RenderError("cloudinary package missing") from e
 
-    cloudinary.config(
-        cloud_name=cfg.CLOUDINARY_CLOUD_NAME,
-        api_key=cfg.CLOUDINARY_API_KEY,
-        api_secret=cfg.CLOUDINARY_API_SECRET,
-        secure=True,
-    )
+    _configure_cloudinary()
 
     # Generate a composite video URL: image held for audio.duration,
     # with audio overlaid. Cloudinary's transformation chain:
