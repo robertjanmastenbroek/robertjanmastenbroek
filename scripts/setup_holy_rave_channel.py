@@ -48,11 +48,23 @@ from content_engine.youtube_longform import config as cfg
 logger = logging.getLogger("setup_hr_channel")
 
 CHANNEL_DESCRIPTION = (
-    "Nomadic Electronic — organic powerful house through tribal psytrance. "
-    "Oud, handpan, tribal drums, Middle Eastern modes. 130–145 BPM rooted in scripture.\n\n"
-    "Ancient Truth. Future Sound.\n\n"
+    "Nomadic electronic — organic house through tribal psytrance. "
+    "128–145 BPM of oud, handpan, darbuka, tribal drums, and Middle Eastern "
+    "modes. Ancient melodies given modern electronic production.\n\n"
+
+    "If you love Café de Anatolia, Sol Selectas, Sabo, Bedouin, Acid Arab, "
+    "Keinemusik, All Day I Dream, Anjunadeep, Monolink, Be Svendsen, "
+    "Innellea — or Astrix, Ace Ventura, Vini Vici, Symphonix, Vertex, "
+    "Ranji, Tristan, Infected Mushroom, Iboga Records — this is the same "
+    "sonic family, rooted in Abrahamic-nomadic imagery and Hebrew "
+    "scripture.\n\n"
+
+    "140 BPM where the walls come down. 130 BPM where the dust settles.\n\n"
+
+    "Ancient truth. Future sound.\n\n"
+
     "— Robert-Jan Mastenbroek\n"
-    f"Web: {cfg.ARTIST_WEBSITE}\n"
+    f"Website: {cfg.ARTIST_WEBSITE}\n"
     f"Spotify: {cfg.SPOTIFY_ARTIST_URL}\n"
     f"Apple Music: {cfg.APPLE_MUSIC_URL}\n"
     f"Instagram: {cfg.ARTIST_INSTAGRAM}\n"
@@ -62,8 +74,12 @@ CHANNEL_DESCRIPTION = (
 CHANNEL_KEYWORDS = (
     '"nomadic electronic" "organic house" "tribal psytrance" '
     '"ethnic electronic" "Middle Eastern electronic" "Cafe de Anatolia" '
-    '"Sol Selectas" "Holy Rave" handpan oud "tribal drums" '
-    '"sacred geometry" "desert rave" "Robert-Jan Mastenbroek" RJM'
+    '"Sol Selectas" "Sabo" "Bedouin" "Acid Arab" "Keinemusik" '
+    '"All Day I Dream" "Anjunadeep" "Monolink" "Astrix" "Ace Ventura" '
+    '"Vini Vici" "Symphonix" "Vertex" "Ranji" "Infected Mushroom" '
+    '"Iboga Records" "Holy Rave" handpan oud "tribal drums" darbuka '
+    '"sacred geometry" "desert rave" "Abrahamic nomadic" '
+    '"Robert-Jan Mastenbroek" RJM'
 )
 
 # Consolidated 2-playlist structure (2026-04-21).
