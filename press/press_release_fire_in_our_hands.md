@@ -14,7 +14,7 @@ Mastenbroek doesn't describe what the track is "about." He talks about what it *
 
 "People have always gathered around fire," he says from his base in Tenerife. "There's something in the body that knows fire means something real is happening. That's what 130 BPM does — it wakes something up that's been asleep for a long time."
 
-The track draws on the same sonic vocabulary that defines his Holy Rave project: ethnic percussion layered over melodic techno architecture, live vocals, and a production approach that treats restraint as a feature. Not a breakdown that arrives on schedule. A heat that builds until it becomes something the listener doesn't have words for — only a feeling they'll recognize when it comes back.
+The track draws on the same sonic vocabulary that defines his Holy Rave project: Bedouin-rooted tribal percussion, oud and handpan, live vocals layered over organic-house architecture, and a production approach that treats restraint as a feature. Not a breakdown that arrives on schedule. A heat that builds until it becomes something the listener doesn't have words for — only a feeling they'll recognize when it comes back.
 
 *Fire in Our Hands* follows a catalogue of tracks built around the same premise: that a dance floor can hold more than an escape. That a body moving at 130 BPM is also, in some way that resists explanation, a body in prayer.
 

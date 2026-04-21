@@ -21,7 +21,7 @@ DJ · Singer · Producer · Creator of Holy Rave
 
 ## The Short Bio
 
-Robert-Jan Mastenbroek is a Dutch DJ, singer, and producer based in Tenerife. His sets blend 130–140 BPM tribal psytrance and melodic techno with live vocals and biblical lyrics — creating experiences people describe as unlike anything they've ever felt on a dance floor.
+Robert-Jan Mastenbroek is a Dutch DJ, singer, and producer based in Tenerife. His sets blend 130 BPM organic-nomadic house through 145 BPM tribal psytrance — oud, handpan, tribal drums, live vocals, Hebrew prayer mantras, and biblical lyrics — creating experiences people describe as unlike anything they've ever felt on a dance floor.
 
 Ancient truth. Future sound.
 
@@ -51,7 +51,7 @@ He now plays wherever he can. Preferably free. Because the people who might need
 
 Wherever Robert-Jan plays, the rave becomes holy.
 
-His sets combine 130–140 BPM tribal psytrance and melodic techno with live vocals, Hebrew prayer mantras, and biblical lyrics. Between tracks: a short prayer — never a sermon, always specific, always under 30 seconds.
+His sets span 130 BPM organic-nomadic house through 145 BPM tribal psytrance — oud, handpan, tribal drums, Middle Eastern modes, live vocals, Hebrew prayer mantras, and biblical lyrics. Between tracks: a short prayer — never a sermon, always specific, always under 30 seconds.
 
 *"Thank you God for these bodies we can dance with. For the sunshine, the ocean, the voices we can sing with. In the name of Jesus — let's go."*
 
@@ -69,13 +69,13 @@ All tracks written and produced in Tenerife. 30+ originals released independentl
 
 | Track | BPM | Style | Scripture Anchor |
 |-------|-----|-------|-----------------|
-| Renamed | 128 | Melodic Techno | Isaiah 62 |
-| Halleluyah | 140 | Psytrance | — |
-| Jericho | 140 | Psytrance | Joshua 6 |
-| Fire In Our Hands | 130 | Melodic Techno | — |
+| Renamed | 128 | Organic House | Isaiah 62 |
+| Halleluyah | 140 | Tribal Psytrance | — |
+| Jericho | 140 | Tribal Psytrance | Joshua 6 |
+| Fire In Our Hands | 130 | Organic Tribal House | — |
 | Selah | 130 | Handpan / Oud / Middle Eastern | Psalm 46 |
 | Living Water | 124 | Organic House | John 4 |
-| He Is The Light | 128 | Melodic Techno | John 8 |
+| He Is The Light | 128 | Organic House | John 8 |
 
 **Listen:** [Spotify Artist Page](https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds)
 
@@ -112,7 +112,7 @@ Robert-Jan is an open book. His story — the millionaire, the campervan, the bu
 - How his music career emerged *from* losing everything, not building toward something
 - The difference between spiritual performance and actual faith (and why that distinction shapes everything he makes)
 - Why he plays free shows — and what happens in the room when the barrier comes down
-- The experience of encoding biblical meaning into 140 BPM tribal beats without announcing it
+- The experience of encoding biblical meaning into 145 BPM tribal psytrance and 130 BPM nomadic-electronic beats without announcing it
 - What it feels like to watch a secular crowd encounter something sacred without knowing what hit them
 
 **Available for interview:** Tuesday, Wednesday, Thursday, 11:00–17:00 CET (Tenerife, Spain — UTC+1)

@@ -253,13 +253,13 @@ Form submissions are too slow (bot detection, CAPTCHAs, broken sites). Email is 
 
 ### Version A — For Playlist Curators
 
-**Subject:** Robert-Jan Mastenbroek — Melodic Techno / Ethnic Electronic | 130 BPM
+**Subject:** Robert-Jan Mastenbroek — Nomadic Electronic / Tribal Psytrance | 130–145 BPM
 
 Hi,
 
-I'm Robert-Jan Mastenbroek — I produce melodic techno and psytrance using ancient Hebrew and Aramaic scripture as vocals. Tribal percussion, Middle Eastern modal scales, 128–140 BPM. Made for the dancefloor.
+I'm Robert-Jan Mastenbroek — I produce nomadic electronic music: organic powerful house through tribal psytrance, with ancient Hebrew and Aramaic scripture as vocals. Oud, handpan, tribal drums, Middle Eastern modal scales, 130–145 BPM. Made for the dancefloor.
 
-My latest single "Renamed" — 8 minutes of driving melodic techno with Aramaic vocals over tribal drums:
+My latest single "Renamed" — 8 minutes of driving organic-tribal house with Aramaic vocals over ethnic percussion:
 https://open.spotify.com/album/483H3KEPYMYfeo8BTqQ72p
 
 290K Instagram followers. Weekly releases. Top Spotify markets: Spain, US, Germany, UK.
@@ -271,13 +271,13 @@ https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds
 
 ### Version B — For Labels (Demo Submission)
 
-**Subject:** Demo Submission — Robert-Jan Mastenbroek | Melodic Techno / Ethnic Electronic
+**Subject:** Demo Submission — Robert-Jan Mastenbroek | Nomadic Electronic / Tribal Psytrance
 
 Hi,
 
-Robert-Jan Mastenbroek here — melodic techno and psytrance producer. My sound: ancient Hebrew and Aramaic scripture over tribal percussion and Middle Eastern modal scales, 128–140 BPM. Dark, hypnotic, driving.
+Robert-Jan Mastenbroek here — nomadic electronic and tribal psytrance producer. My sound: ancient Hebrew and Aramaic scripture over oud, handpan, tribal drums and Middle Eastern modal scales, 130–145 BPM. Dark, hypnotic, driving.
 
-Latest release "Renamed" (8 min, melodic techno):
+Latest release "Renamed" (8 min, organic-tribal house):
 https://open.spotify.com/album/483H3KEPYMYfeo8BTqQ72p
 
 Full catalog: https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds
@@ -291,11 +291,11 @@ motomotosings@gmail.com
 
 ### Version C — For Blogs / Press
 
-**Subject:** Feature Pitch — Ancient Scripture Meets Melodic Techno | Robert-Jan Mastenbroek
+**Subject:** Feature Pitch — Ancient Scripture Meets Nomadic Electronic | Robert-Jan Mastenbroek
 
 Hi,
 
-Robert-Jan Mastenbroek here. I make melodic techno and psytrance with a twist that no one else is doing — the lyrics are ancient Hebrew and Aramaic scripture, the actual language Jesus spoke, set to tribal percussion and Middle Eastern modal scales at 128–140 BPM.
+Robert-Jan Mastenbroek here. I make nomadic electronic music and tribal psytrance with a twist that no one else is doing — the lyrics are ancient Hebrew and Aramaic scripture, the actual language Jesus spoke, set to oud, handpan, tribal drums and Middle Eastern modal scales at 130–145 BPM.
 
 You may have seen the "Holy Rave" story that went viral in late 2025 — Pope Leo XIV blessing a DJ priest at a Gothic cathedral. My music is exactly what that moment was about. I've been building this world for years.
 
@@ -311,7 +311,7 @@ Robert-Jan Mastenbroek
 ## 🎯 SPOTIFY ALGORITHM REPOSITIONING STRATEGY (CRITICAL)
 
 **Problem diagnosed 2026-04-03 (Session 4):**
-Spotify has classified Robert-Jan Mastenbroek as a **Christian worship/gospel artist**, not a melodic techno/psytrance artist. This means the algorithm suggests worship music after your tracks play, puts you in worship-oriented playlists, and will never recommend you to electronic music listeners. Every stream you get from a worship listener reinforces the wrong classification. This is the single biggest barrier to growth.
+Spotify has classified Robert-Jan Mastenbroek as a **Christian worship/gospel artist**, not a nomadic-electronic / tribal-psytrance artist. This means the algorithm suggests worship music after your tracks play, puts you in worship-oriented playlists, and will never recommend you to electronic music listeners. Every stream you get from a worship listener reinforces the wrong classification. This is the single biggest barrier to growth.
 
 ### Root Causes (All fixable)
 
@@ -319,10 +319,10 @@ Spotify has classified Robert-Jan Mastenbroek as a **Christian worship/gospel ar
 You have never submitted genre/mood/BPM metadata through Spotify for Artists' editorial pitch tool. This means Spotify has had to guess your genre purely from audio analysis and listener behavior — and it guessed wrong because your early listeners came from spiritual/worship communities.
 
 **2. Track titles send worship signals to NLP**
-Spotify's Natural Language Processing scans track titles, album names, and artist bios. Titles like "Shema," "Better Is One Day," "Living Water," "He Is The Light," "Halleluyah" all read as worship music. The audio might be 130 BPM melodic techno, but the text metadata screams gospel.
+Spotify's Natural Language Processing scans track titles, album names, and artist bios. Titles like "Shema," "Better Is One Day," "Living Water," "He Is The Light," "Halleluyah" all read as worship music. The audio might be 130 BPM organic-tribal house or 140 BPM tribal psytrance, but the text metadata screams gospel.
 
 **3. Bio has zero electronic genre signals**
-Your current bio mentions "Professional singer. Millionaire. Spiritual guru. Street performer" — none of these words help Spotify's algorithm place you in electronic music. No mention of melodic techno, psytrance, BPM, electronic production, or any genre keywords.
+Your current bio mentions "Professional singer. Millionaire. Spiritual guru. Street performer" — none of these words help Spotify's algorithm place you in electronic music. No mention of nomadic electronic, tribal psytrance, organic house, BPM, electronic production, or any genre keywords.
 
 **4. Current playlists reinforce worship classification**
 "Discovered on" shows "This is Electronic Worship" — meaning Spotify is actively serving you to worship playlist listeners, who then stream you, which further cements the worship classification. It's a feedback loop.
@@ -335,7 +335,7 @@ At 333 monthly listeners, Spotify hasn't built enough collaborative filtering da
 **STEP 1: Spotify for Artists Editorial Pitch (Do this IMMEDIATELY for every release)**
 - Log into artists.spotify.com
 - For EVERY upcoming release, go to Music → Upcoming → Pitch to Editorial
-- Genre tags to select: **Melodic Techno, Progressive House, Psytrance, Electronic**
+- Genre tags to select: **Organic House, Tribal Psytrance, Progressive Psytrance, Ethnic Electronic, World / Middle Eastern, Electronic**
 - Mood tags: **Energetic, Dark, Hypnotic, Spiritual, Driving**
 - Description (500 chars max): "Melodic techno and psytrance with ancient Hebrew and Aramaic vocals. Tribal percussion, Middle Eastern modal scales, 128-140 BPM. Produced for the dancefloor — dark, hypnotic, driving. Think Anyma meets ancient ritual. Not worship music — this is club-ready electronic music that happens to use sacred text as its lyrical source."
 - **Submit at least 7 days before release date, ideally 4 weeks**
