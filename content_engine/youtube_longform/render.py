@@ -246,14 +246,22 @@ def _render_shotstack(spec: RenderSpec) -> RenderedVideo:
         },
         "output": {
             "format":     "mp4",
-            "resolution": "fhd",   # 1920x1080
+            # Shotstack resolution enum (verified 2026-04-21):
+            #   "preview" "mobile" "sd" "hd" "1080" "4k"
+            # "1080" maps to 1920x1080. Do NOT use "fhd" — rejected by API.
+            "resolution": "1080",
             "fps":        cfg.VIDEO_FPS,
         },
     }
 
     logger.info("Shotstack queue render | %s", spec.output_label)
+    logger.debug("Shotstack payload: %s", json.dumps(timeline)[:500])
     r = requests.post(f"{base_url}/render", headers=headers, json=timeline, timeout=60)
-    r.raise_for_status()
+    if not r.ok:
+        raise RenderError(
+            f"Shotstack {r.status_code} {r.reason}: {r.text[:800]}\n"
+            f"Payload sent: {json.dumps(timeline)[:400]}"
+        )
     job_id = r.json()["response"]["id"]
     logger.info("Shotstack job id: %s", job_id)
 
