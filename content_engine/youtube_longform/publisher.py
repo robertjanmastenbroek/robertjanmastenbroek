@@ -400,6 +400,23 @@ def publish_track(req: PublishRequest) -> PublishResult:
             result.youtube_id = video_id
             result.youtube_url = f"https://youtube.com/watch?v={video_id}"
 
+        # 6b. Shorts pool amortization — on motion publishes (dry-run or
+        # live), copy every Kling O3 clip generated for this track into
+        # content/videos/holy-rave-motion/ so the Shorts pipeline can
+        # reuse them as source footage. We pay for the clips anyway;
+        # this doubles their utility across long-form + Shorts.
+        if req.motion and not req.dry_run:
+            try:
+                n = _add_motion_clips_to_shorts_pool(req.track_title)
+                if n:
+                    logger.info(
+                        "Shorts pool amortized: +%d clips from %s now reusable "
+                        "in Shorts/Reels/TikTok pipeline",
+                        n, req.track_title,
+                    )
+            except Exception as e:
+                logger.warning("Shorts pool copy failed (non-fatal): %s", e)
+
         # 7. Cost estimate + registry
         cost = image_gen.estimate_cost_usd(hero_count=1, thumb_count=len(result.thumbnails))
         if req.motion:
@@ -421,6 +438,70 @@ def publish_track(req: PublishRequest) -> PublishResult:
 
     registry.append(result)
     return result
+
+
+# ─── Shorts pool amortization ────────────────────────────────────────────────
+
+def _add_motion_clips_to_shorts_pool(track_title: str) -> int:
+    """
+    After a successful motion publish, copy every motion_*.mp4 that belongs
+    to this track into content/videos/holy-rave-motion/ so the existing
+    Shorts pipeline (content_engine.pipeline) can use them as source footage.
+
+    Rationale: we pay for each 10s Kling O3 clip (~$0.84 each). A single
+    Selah publish spends $7.56 on 9 motion clips. Re-using those clips
+    as Shorts source footage amortizes the spend across BOTH long-form
+    YouTube AND the daily Shorts pipeline that feeds IG/TikTok/Shorts.
+
+    Returns the number of clips copied. Idempotent — skips files that
+    already exist in the pool (by filename).
+
+    Files are COPIED (not symlinked) so that cleanup of the long-form
+    output directory doesn't break the Shorts pool.
+    """
+    import shutil
+    slug = track_title.lower().strip().replace(" ", "_")
+    src_dir = cfg.VIDEO_DIR  # content/output/youtube_longform/videos
+    dst_dir = cfg.PROJECT_DIR / "content" / "videos" / "holy-rave-motion"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+
+    # Match motion_<track-related-id>_<hash>.mp4 — include any clip whose
+    # filename contains a keyframe ID starting with rjm_<slug> or rjm_<track
+    # keyword>. To keep it simple we match by the track's keyframe-id prefix.
+    # For Jericho: rjm_warrior, rjm_priestess, rjm_temple, rjm_jericho_*
+    # For Selah:   rjm_selah_*
+    # We collect any motion_*.mp4 whose name contains the track slug OR
+    # matches the RJM hero keyframes (warrior/priestess/temple) which are
+    # shared across stories.
+    patterns = [
+        f"rjm_{slug}_",            # rjm_selah_… / rjm_jericho_…
+        "rjm_warrior",             # universal hero keyframes shared across stories
+        "rjm_priestess",
+        "rjm_temple",
+    ]
+
+    copied = 0
+    # motion.py writes these files as morph_<clip_id>_<hash>.mp4
+    for src in src_dir.glob("morph_*.mp4"):
+        if not any(p in src.name for p in patterns):
+            continue
+        dst = dst_dir / src.name
+        if dst.exists():
+            continue
+        try:
+            shutil.copy2(src, dst)
+            copied += 1
+            logger.info("Shorts pool: copied %s", src.name)
+        except Exception as e:
+            logger.warning("Could not copy %s to shorts pool: %s", src.name, e)
+
+    if copied:
+        logger.info(
+            "Shorts pool: +%d clips from %s publish now available to "
+            "the Shorts pipeline (content/videos/holy-rave-motion/)",
+            copied, track_title,
+        )
+    return copied
 
 
 def _select_playlist(genre_key: str) -> Optional[str]:
