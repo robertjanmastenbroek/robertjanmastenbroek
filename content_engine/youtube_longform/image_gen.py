@@ -118,20 +118,36 @@ def _generate_one(
 
     if reference_urls:
         # Reference-conditioned path (fal-ai/flux-2-pro/edit).
-        # IMPORTANT: skip the "Avoid: X, Y, Z" negative-prompt merge on
+        #
+        # IMPORTANT #1: skip the "Avoid: X, Y, Z" negative-prompt merge on
         # this endpoint. The content checker scans the full prompt text and
         # flags religious/drug terms even when they appear inside an Avoid
         # clause (Catholic saints, ayahuasca imagery, DMT fractals, Buddha
         # statues, etc. are all negatives for us but trigger the filter).
-        # The references themselves anchor style away from those aesthetics
-        # — no negative clause needed here.
+        #
+        # IMPORTANT #2: many reference thumbnails from proven-viral channels
+        # (Astrix, Omiki, Indian Spirit, Ozora) have artist/festival LOGOS
+        # and TEXT burned into them. Without explicit instruction, Flux 2
+        # Pro Edit bleeds that text into our generated output. We append a
+        # strong "ignore text in references, no text in output" clause to
+        # every ref-conditioned prompt. This is observably effective.
         endpoint = cfg.FAL_FLUX_2_PRO_EDIT_EP
+        anti_text_clause = (
+            " Clean image with absolutely no text, no words, no typography, "
+            "no logos, no watermarks, no festival names, no artist names, "
+            "no captions, no signage. Ignore any text or logos that appear in "
+            "the reference images — do not reproduce them. Output a pure "
+            "photographic image of the subject and scene only."
+        )
         arguments = {
-            "prompt":           prompt,                 # Clean positive prompt only
-            "image_urls":       reference_urls[:9],     # Hard API cap: 9 refs, 9 MP total
+            "prompt":           prompt + anti_text_clause,
+            # Use only 1 reference per generation — multiple refs compound
+            # text-bleed risk and muddy the composition. Single ref gives
+            # cleaner style anchor.
+            "image_urls":       reference_urls[:1],
             "image_size":       {"width": width, "height": height},
             "output_format":    "jpeg",
-            "safety_tolerance": "4",                    # More permissive for artistic content
+            "safety_tolerance": "4",
         }
     elif cfg.FAL_BRAND_LORA_URL:
         endpoint = cfg.FAL_FLUX_LORA_EP

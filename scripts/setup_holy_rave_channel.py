@@ -66,31 +66,37 @@ CHANNEL_KEYWORDS = (
     '"sacred geometry" "desert rave" "Robert-Jan Mastenbroek" RJM'
 )
 
+# Consolidated 2-playlist structure (2026-04-21).
+# Rich descriptions with reference-artist names for SEO — YouTube's search
+# algorithm weighs playlist descriptions for recommendation clustering.
 PLAYLISTS_TO_CREATE = [
+    {
+        "key":   "YOUTUBE_PLAYLIST_ETHNIC_TRIBAL",
+        "title": "Holy Rave — Ethnic / Tribal Organic House",
+        "description": (
+            "128–136 BPM ethnic-tribal organic house by Robert-Jan Mastenbroek. "
+            "Oud, handpan, darbuka, tribal drums, Middle Eastern modes — ancient "
+            "melodies given modern electronic production.\n\n"
+            "If you love Café de Anatolia, Sol Selectas, Sabo, Bedouin, Acid "
+            "Arab, Keinemusik, All Day I Dream, Anjunadeep, Monolink, Be "
+            "Svendsen, Innellea — you'll recognize the sonic family here.\n\n"
+            "Rooted in Hebrew scripture, Aramaic prayer, and Abrahamic-nomadic "
+            "imagery. Ancient truth. Future sound."
+        ),
+        "privacy": "public",
+    },
     {
         "key":   "YOUTUBE_PLAYLIST_TRIBAL_PSY",
         "title": "Holy Rave — Tribal Psytrance",
         "description": (
-            "140–145 BPM tribal psytrance from Robert-Jan Mastenbroek. "
-            "Ancient rhythm, Hebrew lyrics, sacred geometry in motion."
-        ),
-        "privacy": "public",
-    },
-    {
-        "key":   "YOUTUBE_PLAYLIST_ORGANIC_HOUSE",
-        "title": "Holy Rave — Organic House",
-        "description": (
-            "128–132 BPM organic-tribal house. Oud, handpan, tribal drums, "
-            "Middle Eastern modes woven through modern electronic production."
-        ),
-        "privacy": "public",
-    },
-    {
-        "key":   "YOUTUBE_PLAYLIST_MIDDLE_EASTERN",
-        "title": "Holy Rave — Middle Eastern",
-        "description": (
-            "Middle Eastern instrumentation at the heart of every track. "
-            "Handpan, oud, Nabataean modes, Bedouin rhythms — the sound of Holy Rave's deepest roots."
+            "140–145 BPM tribal psytrance by Robert-Jan Mastenbroek. "
+            "Hebrew vocals, shofar rhythms, temple-courtyard geometry, "
+            "desert-ritual intensity.\n\n"
+            "If you love Astrix, Ace Ventura, Vini Vici, Ranji, Symphonix, "
+            "Vertex, Atmos, Blisargon Demogorgon, Tristan, Infected Mushroom, "
+            "Berg, Avalon, Iboga Records — this is the same frequency with "
+            "an Abrahamic spine.\n\n"
+            "140 BPM where the walls come down. Ancient truth. Future sound."
         ),
         "privacy": "public",
     },

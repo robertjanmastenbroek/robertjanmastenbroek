@@ -75,6 +75,46 @@ TRACK_LANGUAGES: dict[str, str] = {
 #
 # Empty string → publisher falls back to scripture-verse rendering when a
 # SCRIPTURE_ANCHOR is set. If both are empty, the lyrics block is skipped.
+# ─── Per-track Spotify / Apple Music URLs ─────────────────────────────────────
+# Canonical source of truth for per-track DSP links. Used by publisher and
+# registry to emit track-specific Spotify/Apple/Odesli links in the YouTube
+# description (instead of the less-useful artist page links).
+#
+# Empty string = track not yet distributed / URL not known. The smart-link
+# resolver falls back to the artist URL + UTM when a track URL is missing.
+TRACK_SPOTIFY_URLS: dict[str, str] = {
+    "halleluyah":             "https://open.spotify.com/track/4ysTzCDCezKhxIDOKIV4gG",
+    "jericho":                "https://open.spotify.com/track/2M7cL3KynPGzE1DonuldrN",
+    "renamed":                "https://open.spotify.com/track/0JDiFWqAa7exA8zh53D4JG",
+    "fire in our hands":      "https://open.spotify.com/track/4BGImHDdceYIAWg2MIftfR",
+    "living water":           "https://open.spotify.com/track/4VlJcvP0RvEkzysAkDuKPa",
+    "he is the light":        "https://open.spotify.com/track/0tad6gpKfmvHszruHYr7Lm",
+    "you see it all":         "https://open.spotify.com/track/5Vxewgp7pyaTTFa3HDxDSx",
+    # Unreleased / URL not yet on file — fill in as tracks drop on DSPs:
+    "kadosh":                 "",
+    "side by side":           "",
+    "kavod":                  "",
+    "ruach":                  "",
+    "shema":                  "",
+    "not by might":           "",
+    "selah":                  "",
+    "abba":                   "",
+    "it is written":          "",
+    "on all flesh":           "",
+    "strong tower":           "",
+    "have mercy on me":       "",
+    "step by step":           "",
+    "rise up my love":        "",
+    "how good and pleasant":  "",
+    "exodus":                 "",
+}
+
+TRACK_APPLE_MUSIC_URLS: dict[str, str] = {
+    # Fill in as tracks are verified on Apple Music. When empty, the smart-link
+    # resolver falls back to the Apple Music artist page.
+}
+
+
 TRACK_LYRICS: dict[str, str] = {
     # Fill in as we confirm the actual vocal content per track.
     # For now: empty → scripture fallback kicks in.

@@ -26,7 +26,7 @@ def test_utm_suffix_formats_correctly():
 
 
 def test_build_smart_link_falls_back_to_spotify_utm_when_no_services(monkeypatch):
-    """No Feature.fm key + Odesli fails → UTM-suffixed Spotify URL."""
+    """No Feature.fm key + Odesli fails → UTM-suffixed per-track Spotify URL."""
     monkeypatch.setattr("content_engine.youtube_longform.config.FEATUREFM_API_KEY", "")
 
     # Stub Odesli to fail
@@ -36,8 +36,12 @@ def test_build_smart_link_falls_back_to_spotify_utm_when_no_services(monkeypatch
     with patch("content_engine.youtube_longform.registry.requests.get", side_effect=fail):
         url = registry.build_smart_link("Jericho")
 
-    assert "open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" in url
+    # Post-2026-04-21: we now emit the per-TRACK Spotify URL, not the artist
+    # page, whenever a track URL is on file in audio_engine.TRACK_SPOTIFY_URLS.
+    # Jericho is known (2M7cL3KynPGzE1DonuldrN) so the fallback is the track.
+    assert "open.spotify.com/track/2M7cL3KynPGzE1DonuldrN" in url
     assert "utm_source=youtube" in url
+    assert "utm_campaign=hr_jericho" in url
 
 
 def test_build_smart_link_uses_odesli_when_available(monkeypatch):

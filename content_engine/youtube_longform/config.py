@@ -166,8 +166,13 @@ def youtube_oauth_is_holyrave() -> bool:
     """True if the dedicated Holy Rave refresh token is set (vs falling back to main)."""
     return bool(os.getenv("HOLYRAVE_REFRESH_TOKEN"))
 
-# Playlist IDs for auto-add (optional — publisher skips gracefully if empty)
-YT_PLAYLIST_TRIBAL_PSY   = os.getenv("YOUTUBE_PLAYLIST_TRIBAL_PSY", "")
+# Playlist IDs for auto-add (optional — publisher skips gracefully if empty).
+# Consolidated to TWO playlists per user direction (2026-04-21):
+#   - YT_PLAYLIST_ETHNIC_TRIBAL  → 128-136 BPM organic-house / ethnic / world
+#   - YT_PLAYLIST_TRIBAL_PSY     → 140+ BPM tribal psytrance
+YT_PLAYLIST_ETHNIC_TRIBAL = os.getenv("YOUTUBE_PLAYLIST_ETHNIC_TRIBAL", "")
+YT_PLAYLIST_TRIBAL_PSY    = os.getenv("YOUTUBE_PLAYLIST_TRIBAL_PSY", "")
+# Legacy (deprecated, kept for back-compat) — remove after full migration:
 YT_PLAYLIST_ORGANIC_HOUSE = os.getenv("YOUTUBE_PLAYLIST_ORGANIC_HOUSE", "")
 YT_PLAYLIST_MIDDLE_EASTERN = os.getenv("YOUTUBE_PLAYLIST_MIDDLE_EASTERN", "")
 

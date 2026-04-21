@@ -177,12 +177,23 @@ def test_reference_conditioning_routes_to_edit_endpoint(monkeypatch, tmp_path):
     assert endpoints[0] == "fal-ai/flux-2-pro/edit", (
         "With references supplied, must route to the Edit endpoint"
     )
-    assert args[0]["image_urls"] == refs
+    # Post-2026-04-21 text-bleed fix: we now cap refs at 1 per generation
+    # (multiple refs compounded text-bleed risk from proven-viral thumbnails
+    # with burned-in ASTRIX/OMIKI/festival logos). Single ref gives cleanest
+    # style anchor.
+    assert len(args[0]["image_urls"]) == 1
+    assert args[0]["image_urls"][0] == refs[0]
     assert "output_format" in args[0]
+    # Must include the anti-text clause so Flux doesn't reproduce logos/text
+    assert "no text" in args[0]["prompt"].lower()
 
 
-def test_reference_conditioning_caps_at_9_refs(monkeypatch):
-    """fal-ai/flux-2-pro/edit hard cap is 9 references — we truncate."""
+def test_reference_conditioning_caps_refs_to_prevent_text_bleed(monkeypatch):
+    """
+    Even when many refs are supplied, we cap to 1 per gen to prevent text-
+    bleed-through from proven-viral thumbnails (which have artist/festival
+    logos burned into them). Was 9 prior to 2026-04-21 fix; now 1.
+    """
     endpoints: list[str] = []
     args: list[dict] = []
     fake = _fake_fal(endpoints, args)
@@ -196,7 +207,7 @@ def test_reference_conditioning_caps_at_9_refs(monkeypatch):
         prompt="p", negative_prompt="", width=1024, height=1024,
         seed=None, reference_urls=refs,
     )
-    assert len(args[0]["image_urls"]) == 9
+    assert len(args[0]["image_urls"]) == 1
 
 
 def test_no_fal_key_raises_helpful_error(monkeypatch):

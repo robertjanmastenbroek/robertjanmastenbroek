@@ -24,6 +24,7 @@ from typing import Optional
 
 import requests
 
+from content_engine.audio_engine import TRACK_APPLE_MUSIC_URLS, TRACK_SPOTIFY_URLS
 from content_engine.youtube_longform import config as cfg
 from content_engine.youtube_longform.types import PublishResult
 
@@ -108,8 +109,22 @@ def _utm_suffix(track_title: str) -> str:
     )
 
 
+def track_spotify_url(track_title: str) -> str:
+    """Per-track Spotify URL if known, else the artist URL as fallback."""
+    url = TRACK_SPOTIFY_URLS.get(track_title.lower().strip(), "")
+    return url if url else cfg.SPOTIFY_ARTIST_URL
+
+
+def track_apple_music_url(track_title: str) -> str:
+    """Per-track Apple Music URL if known, else the artist URL as fallback."""
+    url = TRACK_APPLE_MUSIC_URLS.get(track_title.lower().strip(), "")
+    return url if url else cfg.APPLE_MUSIC_URL
+
+
 def _build_utm_spotify_url(track_title: str) -> str:
-    return f"{cfg.SPOTIFY_ARTIST_URL}{_utm_suffix(track_title)}"
+    """Spotify TRACK URL (or artist fallback) + UTM suffix."""
+    base = track_spotify_url(track_title)
+    return f"{base}{_utm_suffix(track_title)}"
 
 
 def _build_featurefm(track_title: str, spotify_url: str) -> Optional[str]:
@@ -155,19 +170,33 @@ def _build_odesli(spotify_url: str) -> Optional[str]:
 
 def build_smart_link(track_title: str) -> str:
     """
-    Resolve the best smart link for a track, in priority order:
-      1. Feature.fm  (tracked, paid tier only if subscription active)
-      2. Odesli/Songlink (free)
-      3. Raw Spotify URL with UTM suffix (always works)
-    """
-    utm_url = _build_utm_spotify_url(track_title)
+    Resolve the best "Listen everywhere" smart link for a track, in
+    priority order:
+      1. Feature.fm         — paid tier, tracked per-platform analytics
+      2. Odesli/Songlink    — free, cross-DSP, routes to user's preferred DSP
+      3. Track-specific Spotify URL + UTM — works as direct Spotify link
+      4. Artist page + UTM  — final fallback when track URL unknown
 
+    CRITICAL: Odesli is called with the per-TRACK Spotify URL, not the
+    artist URL. Odesli uses the track URL to find equivalents on Apple
+    Music / YouTube Music / Deezer / Tidal / etc. Calling with the artist
+    URL returns a cross-platform artist page, which is what we had before
+    and is near-useless for "Listen everywhere."
+    """
+    track_sp_url = track_spotify_url(track_title)
+    is_track_url = "/track/" in track_sp_url
+
+    # Priority 1: Feature.fm (if configured)
+    utm_url = _build_utm_spotify_url(track_title)
     feature_url = _build_featurefm(track_title, utm_url)
     if feature_url:
         return feature_url
 
-    odesli_url = _build_odesli(cfg.SPOTIFY_ARTIST_URL)
-    if odesli_url:
-        return f"{odesli_url}{_utm_suffix(track_title)}"
+    # Priority 2: Odesli — only if we have a genuine track URL to feed it
+    if is_track_url:
+        odesli_url = _build_odesli(track_sp_url)
+        if odesli_url:
+            return f"{odesli_url}{_utm_suffix(track_title)}"
 
+    # Priority 3 / 4: UTM-suffixed Spotify URL (track-specific if available)
     return utm_url

@@ -99,9 +99,11 @@ def _compose_description(
     elif scripture_verse:
         lyrics_block = f"\nScripture:\n{scripture_verse}\n"
 
-    # Link stack — UTM on every outbound link
-    spotify_url = _tagged(cfg.SPOTIFY_ARTIST_URL, track_title)
-    apple_url   = _tagged(cfg.APPLE_MUSIC_URL, track_title)
+    # Link stack — per-track URLs where known, artist page fallback otherwise.
+    # UTM tag every outbound link so we can measure YouTube → DSP conversion
+    # in each platform's native analytics dashboard.
+    spotify_url = _tagged(registry.track_spotify_url(track_title), track_title)
+    apple_url   = _tagged(registry.track_apple_music_url(track_title), track_title)
     web_url     = _tagged(cfg.ARTIST_WEBSITE, track_title)
     ig_url      = cfg.ARTIST_INSTAGRAM   # IG + TikTok tracked separately via Linktree in bio
     tt_url      = cfg.ARTIST_TIKTOK
@@ -222,12 +224,31 @@ def publish_track(req: PublishRequest) -> PublishResult:
         )
 
         # 2. Images
+        # @osso-so pattern: thumbnail IS the hero — same image, same promise.
+        # YouTube auto-downsamples 1920x1080 → thumbnail sizes it needs. Keeps
+        # the viewer's "what I clicked on is what plays" promise intact and
+        # cuts 3 extra image-gen calls worth of fal.ai spend (~\$0.13/publish).
+        #
+        # If YouTube Test & Compare A/B variants are desired later, call
+        # image_gen.generate_thumbnails() explicitly — it still exists and
+        # samples fresh references per variant.
         if not req.skip_image_gen:
             result.hero_image = image_gen.generate_hero(prompt)
-            thumb_variants = prompt_builder.build_thumbnail_variants(
-                prompt, count=cfg.THUMB_VARIANT_COUNT,
-            )
-            result.thumbnails = image_gen.generate_thumbnails(thumb_variants)
+            # Thumbnails list is still populated so downstream code (registry
+            # serialization, reviewer etc.) has something to inspect — but
+            # it contains the hero file, not a separate generation.
+            from content_engine.youtube_longform.types import ImageAsset
+            result.thumbnails = [
+                ImageAsset(
+                    role="thumbnail",
+                    local_path=result.hero_image.local_path,
+                    remote_url=result.hero_image.remote_url,
+                    width=result.hero_image.width,
+                    height=result.hero_image.height,
+                    prompt_used=result.hero_image.prompt_used,
+                    variant_index=0,
+                )
+            ]
 
         # 3. Render (requires publicly reachable URLs for audio + image)
         if not req.dry_run:
@@ -309,9 +330,23 @@ def publish_track(req: PublishRequest) -> PublishResult:
 
 
 def _select_playlist(genre_key: str) -> Optional[str]:
-    """Pick a playlist to append the video to based on genre bucket."""
+    """
+    Pick which Holy Rave playlist to append the new video to.
+
+    Two playlists, per the 2026-04-21 consolidation:
+      - Tribal Psytrance (140+ BPM)   → psytrance bucket
+      - Ethnic / Tribal / Organic (<140 BPM) → everything else
+
+    Legacy 3-playlist fallback kept for back-compat in case older env vars
+    are still set (ORGANIC_HOUSE / MIDDLE_EASTERN).
+    """
     if genre_key == "psytrance":
         return cfg.YT_PLAYLIST_TRIBAL_PSY or None
+    # Everything else routes to Ethnic / Tribal
+    primary = cfg.YT_PLAYLIST_ETHNIC_TRIBAL
+    if primary:
+        return primary
+    # Legacy fallback
     if genre_key == "middle_eastern":
         return cfg.YT_PLAYLIST_MIDDLE_EASTERN or None
     return cfg.YT_PLAYLIST_ORGANIC_HOUSE or None
