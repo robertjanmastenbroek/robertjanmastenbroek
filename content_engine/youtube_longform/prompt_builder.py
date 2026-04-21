@@ -64,22 +64,64 @@ def _derive_genre(bpm: int, title_lower: str) -> str:
     return "organic house"
 
 
-# ─── Mood-tier → hero/subject slot ───────────────────────────────────────────
+# ─── Family + mood-tier → hero slot ──────────────────────────────────────────
+# Calibrated against proven-viral YouTube thumbnails (2026-04-21 research).
+#
+# 130 BPM organic-house winners (Café de Anatolia, Sol Selectas): still
+# contemplative veiled or jewelry-clad human subject, direct eye contact,
+# telephoto ultra-close crop, instrument sometimes held in hand.
+#
+# 140 BPM tribal-psytrance winners (Astrix Ozora, Boom, Universo Paralello):
+# warrior face-paint dancer mid-ecstasy, eyes closed or piercing gaze,
+# dreadlocks or feather headpiece, shoulder tattoo, sunset/festival bokeh.
+# (Rejecting the Hindu/cosmic/neon 60% of the scene that is off-brand.)
 
-MOOD_HERO = {
-    "meditative":
-        "a solitary robed figure seated cross-legged on basalt stone, "
-        "face obscured by head covering, hands resting open on the knees",
-    "processional":
-        "a small caravan of cloaked nomads moving slowly across a dune ridge, "
-        "staffs in hand, robes trailing dust",
-    "gathering":
-        "a circle of cloaked figures around a rising fire, arms beginning to lift, "
-        "the moment before movement becomes ecstatic",
-    "ecstatic":
-        "a vast crowd of silhouetted nomads with arms raised toward a split sky, "
-        "ram's-horn trumpets aloft, dust plume catching the gold light",
+HERO_BY_FAMILY: dict[GenreFamily, dict[MoodTier, str]] = {
+    "organic_house": {
+        "meditative":
+            "a single Bedouin woman in a hand-woven patterned niqab with "
+            "gold-thread embroidery, silver tribal diadem across her forehead, "
+            "nose ring and stacked cuff bracelets, a weathered ney flute or "
+            "small oud resting in her hands, piercing contemplative eye "
+            "contact with the camera",
+        "processional":
+            "a single veiled nomad walking through a dune ridge at golden "
+            "hour, silver-embroidered robes trailing sand, one hand resting on "
+            "a handpan carried at her side, eyes closed in quiet procession",
+        "gathering":
+            "a small circle of four or five robed nomads seated on basalt "
+            "stone around a low fire, one holding a tribal frame-drum, "
+            "another a handpan, warm amber firelight on faces, ceremonial stillness",
+        "ecstatic":
+            "a solitary veiled figure at the edge of a desert dance circle, "
+            "dust-gold light pouring from behind, silver jewelry catching the "
+            "sunset, hand raised in slow measured praise",
+    },
+    "tribal_psytrance": {
+        "meditative":
+            "a serene dancer with eyes closed, tribal-stone earrings and "
+            "loose dreadlocks, soft sunset bokeh sparkle behind, shoulder "
+            "tattoo of a geometric Tabernacle motif",
+        "processional":
+            "a cloaked figure approaching an ancient stone temple ruin at "
+            "dusk, single shaft of cool blue-gold light through an arched "
+            "window, weathered sandstone columns receding",
+        "gathering":
+            "a circle of shamanic dancers with blue-ochre warrior stripes "
+            "painted across their faces, feather headpieces, arms lifting in "
+            "unison at golden hour, dust and ember suspended in the air",
+        "ecstatic":
+            "an ecstatic warrior-painted dancer mid-leap, eyes closed and "
+            "face tilted toward the sky, blue ochre stripes across the "
+            "cheekbones, dreadlocks and feather headpiece airborne, crowd "
+            "silhouettes behind at sunset, arms overhead in V-shape",
+    },
 }
+
+
+def _hero_slot(family: GenreFamily, mood: MoodTier) -> str:
+    """Pick the hero phrase for a given family + mood. Falls back to organic_house if needed."""
+    return HERO_BY_FAMILY[family].get(mood) or HERO_BY_FAMILY["organic_house"][mood]
 
 
 # ─── Scripture anchor → specific visual hook ─────────────────────────────────
@@ -153,28 +195,51 @@ LIGHTING_BY_MOOD = {
     "ecstatic":    "multiple shafts of liturgical gold light piercing clouds of dust, high-contrast edge rim on every figure",
 }
 
-SACRED_GEOMETRY_BY_MOOD = {
-    "meditative":  "a single faint Flower-of-Life pattern etched into the stone behind the figure, almost invisible",
-    "processional": "the cloaks fold in slow hexagonal symmetry echoing Tabernacle courtyard geometry",
-    "gathering":   "hexagonal sacred geometry faintly glowing in the embers and fire-pit stones",
-    "ecstatic":    "a vast Metatron-cube of light suspended above the crowd, liturgical gold, semi-transparent, partially obscured by dust and smoke",
+SACRED_OBJECT_BY_MOOD = {
+    # Research finding: winners show PHYSICAL sacred objects, not abstract
+    # Platonic-solid overlays. Flower-of-Life / Metatron cube / OM mandala
+    # all pull the image toward New Age aesthetic. Physical objects pull
+    # it toward the Abrahamic-nomadic aesthetic that wins.
+    "meditative":   "silver tribal diadem across the forehead, hand-woven patterned scarf with gold-thread embroidery, stacked silver cuff bracelets",
+    "processional": "weathered leather-bound prayer scroll held in one hand, oil-polished ram's-horn shofar slung across the back, worn sandal leather",
+    "gathering":    "carved stone libation bowl at the circle's center, copper oil lamp in the firelight, frankincense smoke rising",
+    "ecstatic":     "ram's-horn shofar raised overhead, feather headpiece catching the last gold light, stone amulet on a leather cord against the chest",
 }
 
 
-# ─── Locked palette + cinematic specs (every prompt gets this) ───────────────
+# ─── Cinematography by family ────────────────────────────────────────────────
+# Research finding: 130 BPM winners are 85-135mm shallow-DOF portraits.
+# 140 BPM winners split between close dancer portraits and wide festival
+# drone shots. Both anchor on telephoto compression rather than ultra-wide.
 
-CINEMATOGRAPHY = (
-    "centered composition, cinematic ultra-wide 24mm, "
-    "shot on ARRI Alexa 65, 35mm film grain, subtle chromatic aberration, "
-    "editorial photography, cathedral-scale awe, "
-    "volumetric atmosphere of incense smoke and fine desert dust"
-)
+CINEMATOGRAPHY_BY_FAMILY: dict[GenreFamily, str] = {
+    "organic_house":
+        "shot on ARRI Alexa 65 with 85mm lens, shallow depth of field, "
+        "background softly blurred dunes or stone, cinematic telephoto "
+        "portrait compression, 35mm film grain, subtle chromatic aberration, "
+        "editorial Café de Anatolia aesthetic, centered subject composition",
+    "tribal_psytrance":
+        "shot on ARRI Alexa 65 with 50mm lens, medium-tight crop on the "
+        "dancer, soft sunset bokeh behind, dust and ember particles suspended "
+        "in the air, 35mm film grain, editorial Ozora / Universo Paralello "
+        "festival-documentary aesthetic",
+}
 
-PALETTE = (
-    "color palette of obsidian black #0a0a0a, liturgical gold #d4af37, "
-    "cold moonlight white #ffffff, terracotta #b8532a, indigo night #1a2a4a, "
-    "ochre #c8883a"
-)
+
+# ─── Palette by family — ONE accent per image, not five stacked ──────────────
+# Research finding: winners anchor on a single accent + earth base. Stacking
+# all 5 brand colors in one prompt muddies the output.
+
+PALETTE_BY_FAMILY: dict[GenreFamily, str] = {
+    "organic_house":
+        "dominant warm earth palette of ochre #c8883a and terracotta #b8532a, "
+        "deep obsidian black #0a0a0a shadows, single liturgical gold #d4af37 "
+        "highlight on jewelry or fabric embroidery, peach sunset sky accent",
+    "tribal_psytrance":
+        "dominant obsidian black #0a0a0a and indigo night #1a2a4a, single "
+        "gold #d4af37 highlight on skin or jewelry, a single stripe of cool "
+        "blue-ochre warrior paint as the only saturated hue",
+}
 
 
 # ─── Negative prompt — the AI-slop + wrong-scene blacklist ───────────────────
@@ -226,16 +291,20 @@ def build_prompt(
     env_index = int(hashlib.md5(key.encode()).hexdigest(), 16) % len(ENVIRONMENTS)
     environment = ENVIRONMENTS[env_index]
 
-    # Assemble the prompt
-    hero          = MOOD_HERO[mood_tier]
-    scripture_viz = SCRIPTURE_HOOKS.get(resolved_anchor, SCRIPTURE_HOOKS[""])
-    lighting      = LIGHTING_BY_MOOD[mood_tier]
-    geometry      = SACRED_GEOMETRY_BY_MOOD[mood_tier]
+    # Assemble the prompt — family-routed slots replace the old mood-only
+    # slots after 2026-04-21 viral research (see proven_viral/ bucket analysis).
+    hero            = _hero_slot(genre_family, mood_tier)
+    scripture_viz   = SCRIPTURE_HOOKS.get(resolved_anchor, SCRIPTURE_HOOKS[""])
+    lighting        = LIGHTING_BY_MOOD[mood_tier]
+    sacred_object   = SACRED_OBJECT_BY_MOOD[mood_tier]
+    cinematography  = CINEMATOGRAPHY_BY_FAMILY[genre_family]
+    palette         = PALETTE_BY_FAMILY[genre_family]
 
     positive_prompt = (
-        f"{hero}, with {scripture_viz}, set in {environment}, "
-        f"{lighting}, {geometry}, "
-        f"{CINEMATOGRAPHY}, {PALETTE}, "
+        f"{hero}, with {scripture_viz}, "
+        f"adorned with {sacred_object}, "
+        f"set in {environment}, {lighting}, "
+        f"{cinematography}, {palette}, "
         f"--ar 16:9 --style raw"
     )
 
