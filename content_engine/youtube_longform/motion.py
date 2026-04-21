@@ -97,10 +97,19 @@ class MorphStory:
     for multi-chapter stories where a "home" character anchors each
     chapter (e.g. warrior → priestess → temple → warrior → wall → shofar
     → warrior, which loops back to warrior cleanly).
+
+    thumbnail_keyframe is a SEPARATE keyframe used only as the YouTube
+    thumbnail. Optional — if None, the first in-chain keyframe is used.
+    Define a dedicated thumbnail when you want CTR-optimized composition
+    (tighter crop, stronger contrast, ultra-close face) that doesn't need
+    to morph into another frame. The thumbnail is rendered via the same
+    Flux 2 Pro /edit path so it picks up the proven-viral reference pool
+    but it's NEVER fed into Kling O3 — it lives outside the morph chain.
     """
-    story_id:   str
-    keyframes:  list[Keyframe]
-    morphs:     list[MorphClip]
+    story_id:            str
+    keyframes:           list[Keyframe]
+    morphs:              list[MorphClip]
+    thumbnail_keyframe:  Optional[Keyframe] = None
 
     def __post_init__(self):
         if not self.keyframes:
@@ -474,11 +483,381 @@ STORIES: dict[str, MorphStory] = {
 
 DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 
+# ─── SELAH — Psalm 46, 130 BPM meditative, 9-keyframe 90s no-repeat ──────────
+# Selah is the contemplative counterpart to Jericho's ecstatic storm. Where
+# Jericho revisits the warrior as its anchor (3x in the chain), Selah has
+# NO repeats — all 9 keyframes are unique, giving 90s of fresh content per
+# loop cycle. The camera moves slower (130 BPM vs 140) to match the track's
+# meditative pace.
+#
+# Psalm 46:10 — "Be still, and know that I am God."
+# Visual arc: handpan → water → oud → cave → ridge → prayer → caravan →
+#             scroll → cedars → (loop back to handpan)
+#
+# Cost: 9 keyframes + 1 thumbnail = 10 × $0.075 = $0.75
+#       9 morphs × $0.84 = $7.56
+#       Shotstack 6:14 full-track render ≈ $2.50
+#       Total per publish: ≈ $10.81
+
+_SELAH_KEYFRAMES: list[Keyframe] = [
+    Keyframe(
+        keyframe_id="rjm_selah_handpan",
+        still_prompt=(
+            "Close-up heroic cinematic portrait of an Iron Age Hebrew "
+            "contemplative in his forties seated cross-legged on a desert "
+            "stone at golden hour, a hand-hammered steel handpan resting "
+            "between his knees, his weathered olive-skinned hands poised "
+            "just above the sound-dimples mid-strike, eyes softly closed "
+            "in quiet meditation, warm terracotta dust drifting slowly "
+            "through the air around him, he wears a simple rough-spun "
+            "ivory linen tunic with a hand-woven indigo shoulder sash "
+            "striped in gold thread, a braided leather rope belt, a "
+            "single hand-wrought silver pendant on a leather cord at his "
+            "neck, one small silver earring in the lit ear, dark curled "
+            "hair with a single indigo ribbon woven through, the distant "
+            "sandstone cliffs of ancient Canaan softly blurred behind, "
+            "warm golden-hour side light carving his face from the right, "
+            "shallow depth of field, heroic contemplative framing, "
+            "terracotta and indigo-night and gold palette, Iron Age "
+            "Levant c. 1000 BCE biblical contemplative, photographic "
+            "realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_selah_still_water",
+        still_prompt=(
+            "Wide cinematic establishing shot of an ancient Iron Age "
+            "desert oasis at pre-dawn, a perfectly still pool of dark "
+            "water mirror-flat reflecting the surrounding weathered "
+            "sandstone cliffs and the fading stars of a deep indigo sky, "
+            "tall reeds along the pool edges catching the first warm "
+            "light of the coming dawn, fine warm mist rising from the "
+            "water surface, no human figures, no animals, deep "
+            "atmospheric stillness, cinematic wide heroic framing from "
+            "low angle, terracotta and indigo-night and gold palette, "
+            "Iron Age Canaan c. 1000 BCE, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_selah_oud_player",
+        still_prompt=(
+            "Close-up heroic cinematic portrait of an Iron Age Hebrew "
+            "elder oud player in his sixties, a wooden oud with a deep "
+            "bulbous bowl-shaped back held close against his chest, his "
+            "weathered olive-skinned hands gently plucking the double "
+            "courses of strings with a polished-wood plectrum, eyes "
+            "softly lowered to the instrument in quiet focus, long "
+            "gray-streaked beard, he wears a rough-spun ivory linen "
+            "tunic beneath a hand-woven dark indigo woolen mantle with "
+            "gold-thread trim at the edges, a hand-woven head wrap in "
+            "indigo and gold patterned with ancient Levantine geometric "
+            "motif, warm single-candle light from the right side of the "
+            "frame catching the oud's varnish and the strings, deep "
+            "black shadow on the left, shallow depth of field, heroic "
+            "contemplative framing, terracotta and indigo-night and gold "
+            "palette, Iron Age Levant c. 1000 BCE biblical elder, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_selah_refuge_cave",
+        still_prompt=(
+            "Wide cinematic establishing shot of an ancient Iron Age "
+            "stone cliff refuge at night — a hand-carved cave entrance "
+            "cut into a massive weathered sandstone face, a single warm "
+            "oil-lamp flame burning from inside the cave glowing against "
+            "the dark interior, a cloaked contemplative figure in dark "
+            "indigo wool robe silhouetted at the cave mouth with their "
+            "back to the camera facing the flame, a deep indigo starry "
+            "desert night sky above, fine cool mist drifting across the "
+            "cliff face, distant sandstone ridges in indigo-night shadow, "
+            "deep atmospheric silence, cinematic ultra-wide heroic "
+            "framing from below, terracotta and indigo-night and gold "
+            "palette, Iron Age Canaan c. 1000 BCE Psalm 46 refuge "
+            "imagery, photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_selah_mountain_ridge",
+        still_prompt=(
+            "Wide cinematic heroic establishing shot of a lone hooded "
+            "contemplative figure in a dark indigo wool robe standing in "
+            "silhouette on a high ancient desert ridge at first dawn, "
+            "cool blue-gold mist rising slowly from the valley floor far "
+            "below, a distant ancient sandstone city visible in the "
+            "valley, the sky warming from deep indigo-night at the top "
+            "of frame to golden-amber at the horizon, the figure stands "
+            "still facing the sunrise with arms relaxed at their sides, "
+            "deep atmospheric silence, cinematic ultra-wide heroic "
+            "framing from low angle, terracotta and indigo-night and "
+            "gold palette, Iron Age Canaan c. 1000 BCE biblical vigil, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_selah_prayer_lamp",
+        still_prompt=(
+            "Close-up cinematic heroic portrait of an Iron Age Hebrew "
+            "contemplative elder in his seventies kneeling in the hushed "
+            "warm interior of a hand-woven goat-hair prayer tent at "
+            "night, a small seven-branched bronze oil lampstand burning "
+            "with seven warm flames directly in front of him casting "
+            "long amber light across his weathered face, eyes softly "
+            "closed in prayer, both hands lifted palms-upward toward the "
+            "lamps, long gray beard, a rough-spun ivory linen tunic "
+            "beneath a hand-woven indigo-and-gold striped tallit-style "
+            "prayer shawl draped over his head and shoulders with tzitzit "
+            "tassels knotted at each of the four corners, deep black "
+            "shadows behind him, shallow depth of field, heroic "
+            "contemplative framing, terracotta and indigo-night and gold "
+            "palette, Iron Age Levant c. 1000 BCE biblical priest at "
+            "prayer, photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_selah_dawn_caravan",
+        still_prompt=(
+            "Wide cinematic heroic establishing shot of a small Iron Age "
+            "nomadic caravan paused at dawn beside a tall weathered "
+            "desert standing stone, three silhouetted hooded figures in "
+            "dark indigo wool robes standing beside two resting camels "
+            "laden with hand-woven saddle bags and tent-folds in "
+            "terracotta and gold stripes, warm pink-gold dawn mist "
+            "rolling in from the left across the desert floor, distant "
+            "sandstone mountains in cool indigo-night shadow, the sky "
+            "warming from indigo above to amber at the horizon, deep "
+            "atmospheric quiet, cinematic ultra-wide heroic framing from "
+            "low angle, terracotta and indigo-night and gold palette, "
+            "Iron Age Canaan c. 1000 BCE Abrahamic-nomadic caravan, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_selah_psalms_scroll",
+        still_prompt=(
+            "Macro cinematic close-up from above of an unrolled ancient "
+            "parchment scroll lying on a low dark wooden table, deeply "
+            "inked Paleo-Hebrew calligraphic script flowing across the "
+            "parchment in vertical lines of rich black iron-gall ink, "
+            "subtle red accent marks at verse divisions, the parchment's "
+            "weathered fiber texture and faint age-stains visible under "
+            "a single warm oil-lamp flame from the top-right corner of "
+            "the frame, two weathered olive-skinned hands resting at the "
+            "lower edge of the scroll with fingertips barely touching "
+            "the parchment, deep black shadow in the rest of the frame, "
+            "terracotta and indigo-night and gold palette, Iron Age "
+            "Levant c. 1000 BCE Psalm scribe, photographic realism, "
+            "16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_selah_cedar_grove",
+        still_prompt=(
+            "Wide cinematic establishing shot of a grove of ancient tall "
+            "Lebanon cedar trees at warm dusk, their dark trunks and "
+            "deep-green spread branches silhouetted against a warming "
+            "amber-gold dusk sky, shafts of last golden light passing "
+            "between the trunks, fine cool mist drifting low along the "
+            "forest floor, soft bed of pine needles and fallen cedar "
+            "cones catching faint gold highlights, a single small "
+            "hooded figure in a dark indigo wool robe walking slowly "
+            "among the trees toward the camera left side of the frame, "
+            "deep atmospheric hush, cinematic ultra-wide heroic framing "
+            "from low angle, terracotta and indigo-night and gold "
+            "palette, Iron Age Lebanon c. 1000 BCE cedar grove, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+]
+
+_SELAH_MORPHS: list[MorphClip] = [
+    MorphClip(
+        clip_id="rjm_selah_handpan__to__still_water",
+        from_kf_id="rjm_selah_handpan",
+        to_kf_id="rjm_selah_still_water",
+        motion_prompt=(
+            "Cinematic drone camera orbiting slowly around the seated "
+            "handpan player as his hands meet the metal bowl in a gentle "
+            "strike, soft warm golden resonance waves rippling outward "
+            "from the handpan surface, the drone descends gracefully "
+            "through the rippling waves into a perfectly still pre-dawn "
+            "oasis pool, the widening ripples slowly settling back into "
+            "a mirror-flat water surface reflecting distant sandstone "
+            "cliffs. Continuous contemplative drone motion throughout, "
+            "slow meditative pace at 130 BPM, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_selah_still_water__to__oud_player",
+        from_kf_id="rjm_selah_still_water",
+        to_kf_id="rjm_selah_oud_player",
+        motion_prompt=(
+            "Slow cinematic drone camera gliding across the mirror-still "
+            "pre-dawn water surface, a single silver ripple begins to "
+            "spread outward from the reflected center, the drone rises "
+            "and arcs forward as the expanding ripple resolves into the "
+            "deep curved bowl-shaped back of a wooden oud held close "
+            "against a bearded Hebrew elder's chest, warm candlelight "
+            "catching the oud's polished varnish. Continuous "
+            "contemplative drone motion, slow meditative pace, never "
+            "static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_selah_oud_player__to__refuge_cave",
+        from_kf_id="rjm_selah_oud_player",
+        to_kf_id="rjm_selah_refuge_cave",
+        motion_prompt=(
+            "Cinematic drone camera orbiting the oud player while "
+            "pushing slowly toward the circular soundhole at the oud's "
+            "face, the dark soundhole growing larger until it fills the "
+            "frame in deep black, the drone continues gliding forward "
+            "and the darkness resolves into the hand-carved stone mouth "
+            "of a desert cliff refuge at night, a single warm oil-lamp "
+            "flame glowing at the cave entrance. Continuous contemplative "
+            "drone motion, slow meditative pace, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_selah_refuge_cave__to__mountain_ridge",
+        from_kf_id="rjm_selah_refuge_cave",
+        to_kf_id="rjm_selah_mountain_ridge",
+        motion_prompt=(
+            "Slow cinematic drone camera rising out of the cave entrance "
+            "and arcing upward through the cool indigo night air, the "
+            "single warm oil-lamp flame shrinking to become a distant "
+            "warm dawn sun on the horizon, the drone continues climbing "
+            "in a wide sweeping arc until a lone hooded contemplative "
+            "figure emerges standing in silhouette on a high desert "
+            "ridge far below, pink-gold mist rising from the valley. "
+            "Continuous contemplative drone motion, slow meditative "
+            "pace, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_selah_mountain_ridge__to__prayer_lamp",
+        from_kf_id="rjm_selah_mountain_ridge",
+        to_kf_id="rjm_selah_prayer_lamp",
+        motion_prompt=(
+            "Cinematic drone camera arcing slowly around the lone ridge "
+            "figure, then pushing gently forward into the folds of their "
+            "dark indigo woolen cloak, the fabric filling the frame in "
+            "deep amber-shadowed weave, the drone continues forward "
+            "passing through the weave and emerges inside the hushed "
+            "warm interior of a goat-hair prayer tent where a weathered "
+            "Hebrew elder kneels in prayer by a seven-branched bronze "
+            "lampstand. Continuous contemplative drone motion, slow "
+            "meditative pace, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_selah_prayer_lamp__to__dawn_caravan",
+        from_kf_id="rjm_selah_prayer_lamp",
+        to_kf_id="rjm_selah_dawn_caravan",
+        motion_prompt=(
+            "Slow cinematic drone camera pulling back from the seven "
+            "flames of the bronze lampstand as the flames grow tall and "
+            "blend into the warm pink-gold dawn sky outside, the drone "
+            "continues backward passing through the open flap of the "
+            "prayer tent and emerges high above a small nomadic caravan "
+            "of three hooded figures paused beside a weathered standing "
+            "stone with two resting camels, pink-gold mist rolling in. "
+            "Continuous contemplative drone motion, slow meditative "
+            "pace, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_selah_dawn_caravan__to__psalms_scroll",
+        from_kf_id="rjm_selah_dawn_caravan",
+        to_kf_id="rjm_selah_psalms_scroll",
+        motion_prompt=(
+            "Cinematic drone camera descending slowly toward one of the "
+            "seated caravan figures who is holding a small hand-woven "
+            "leather satchel at their side, the drone enters the "
+            "satchel's dark opening and emerges looking straight down "
+            "over an unrolled ancient parchment scroll lying flat on a "
+            "low dark wooden table, warm oil-lamp light from the corner "
+            "illuminating vertical lines of Paleo-Hebrew calligraphy. "
+            "Continuous contemplative drone motion, slow meditative "
+            "pace, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_selah_psalms_scroll__to__cedar_grove",
+        from_kf_id="rjm_selah_psalms_scroll",
+        to_kf_id="rjm_selah_cedar_grove",
+        motion_prompt=(
+            "Slow cinematic drone camera hovering directly above the "
+            "unrolled scroll as the black iron-gall ink strokes begin to "
+            "soften and rearrange themselves into vertical silhouettes, "
+            "the ink lines lifting upward from the parchment and "
+            "resolving into the tall dark trunks of ancient Lebanon "
+            "cedar trees against a warm amber-gold dusk sky, the drone "
+            "rises and glides forward through the misty cedar grove. "
+            "Continuous contemplative drone motion, slow meditative "
+            "pace, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_selah_cedar_grove__to__handpan",
+        from_kf_id="rjm_selah_cedar_grove",
+        to_kf_id="rjm_selah_handpan",
+        motion_prompt=(
+            "Cinematic drone camera emerging slowly from between the "
+            "tall silhouetted cedar trunks into an open forest clearing, "
+            "the warm dusk light gradually deepening back into golden "
+            "hour, the drone descends in a gentle orbital arc and "
+            "resolves around the seated handpan player beneath one of "
+            "the cedars, his weathered hands resting on the hand-"
+            "hammered steel handpan in quiet meditation as the drone "
+            "completes its orbit. Continuous contemplative drone motion, "
+            "seamlessly closing the hypnotic loop."
+        ),
+    ),
+]
+
+# Dedicated thumbnail keyframe — tighter crop, ultra-close, CTR-optimized.
+# This is NOT in the morph chain; it lives outside, purely for YouTube.
+# Small-format YouTube thumbnails need: (1) single clear subject, (2) face
+# occupying the majority of the frame, (3) direct piercing eye contact,
+# (4) high contrast, (5) saturated earth-palette tones against black.
+_SELAH_THUMBNAIL_KEYFRAME = Keyframe(
+    keyframe_id="rjm_selah_thumbnail",
+    still_prompt=(
+        "Ultra-close cinematic thumbnail portrait of an Iron Age Hebrew "
+        "desert contemplative elder in his sixties, piercing direct eye "
+        "contact with the camera, weathered bearded face with every line "
+        "and pore visible, deep-set dark brown eyes reflecting warm "
+        "candlelight from the right side of the frame, long "
+        "gray-streaked beard, a hand-woven indigo-and-gold striped head "
+        "wrap framing his brow patterned with ancient Levantine "
+        "geometric motif, a single hand-wrought silver pendant on a "
+        "dark leather cord visible at the collarbone, warm single-candle "
+        "light from the right carving half his face in rich golden "
+        "tones, deep obsidian black shadow on the opposite side "
+        "creating dramatic high-contrast split lighting, the face "
+        "occupies 70 percent of the frame, shallow depth of field, "
+        "ultra-saturated earth-gold tones against deep indigo-night "
+        "background, Iron Age Levant c. 1000 BCE biblical "
+        "contemplative, photographic realism, 16:9, --style raw"
+    ),
+)
+
+SELAH_STORY: MorphStory = MorphStory(
+    story_id="selah_psalm46_contemplative",
+    keyframes=_SELAH_KEYFRAMES,
+    morphs=_SELAH_MORPHS,
+    thumbnail_keyframe=_SELAH_THUMBNAIL_KEYFRAME,
+)
+
+
 # Per-track narrative override. Lowercase keys. Scripture-anchored where
-# applicable. Add new tracks as their stories are written — Selah, Halleluyah,
+# applicable. Add new tracks as their stories are written — Halleluyah,
 # Kadosh, Not By Might, etc. each get their own dedicated chain.
 TRACK_STORIES: dict[str, MorphStory] = {
     "jericho":   JERICHO_EXTENDED_STORY,
+    "selah":     SELAH_STORY,
     # Add future tracks here as their stories are written.
 }
 

@@ -97,7 +97,7 @@ TRACK_SPOTIFY_URLS: dict[str, str] = {
     "ruach":                  "",
     "shema":                  "",
     "not by might":           "",
-    "selah":                  "",
+    "selah":                  "https://open.spotify.com/track/2qNWk6iuxmsYktVhAQGsiD",
     "abba":                   "",
     "it is written":          "",
     "on all flesh":           "",
@@ -112,6 +112,7 @@ TRACK_SPOTIFY_URLS: dict[str, str] = {
 TRACK_APPLE_MUSIC_URLS: dict[str, str] = {
     # Fill in as tracks are verified on Apple Music. When empty, the smart-link
     # resolver falls back to the Apple Music artist page.
+    "selah":                  "https://music.apple.com/us/album/selah-single/1894209788",
 }
 
 

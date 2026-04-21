@@ -100,23 +100,40 @@ def _compose_description(
     elif scripture_verse:
         lyrics_block = f"\nScripture:\n{scripture_verse}\n"
 
-    # Link stack — per-track URLs where known, artist page fallback otherwise.
-    # UTM tag every outbound link so we can measure YouTube → DSP conversion
-    # in each platform's native analytics dashboard.
-    spotify_url = _tagged(registry.track_spotify_url(track_title), track_title)
-    apple_url   = _tagged(registry.track_apple_music_url(track_title), track_title)
-    web_url     = _tagged(cfg.ARTIST_WEBSITE, track_title)
-    ig_url      = cfg.ARTIST_INSTAGRAM   # IG + TikTok tracked separately via Linktree in bio
-    tt_url      = cfg.ARTIST_TIKTOK
+    # Link stack — show a per-DSP line ONLY when we have a track-specific
+    # URL for that platform. Artist-page fallbacks (e.g. Apple Music artist
+    # URL for a track not yet on Apple) are MORE CONFUSING than no link —
+    # users click expecting the track and land on a page that doesn't show
+    # it. The smart link (Odesli) already covers everything via aggregation.
+    #
+    # UTM params are added only for per-track URLs so downstream analytics
+    # can attribute clicks. Artist-page links (Instagram/TikTok/Web) are
+    # left untagged because they're too generic to attribute to this specific
+    # video reliably — Linktree in bio handles those separately.
+    from content_engine.audio_engine import (
+        TRACK_APPLE_MUSIC_URLS, TRACK_SPOTIFY_URLS,
+    )
+    key = track_title.lower().strip()
+    raw_spotify_track = TRACK_SPOTIFY_URLS.get(key, "")
+    raw_apple_track   = TRACK_APPLE_MUSIC_URLS.get(key, "")
+
+    link_lines: list[str] = [f"Listen everywhere: {smart_link}"]
+    if raw_spotify_track:
+        link_lines.append(f"Spotify: {_tagged(raw_spotify_track, track_title)}")
+    if raw_apple_track:
+        link_lines.append(f"Apple Music: {_tagged(raw_apple_track, track_title)}")
+    link_stack = "\n".join(link_lines)
+
+    web_url = _tagged(cfg.ARTIST_WEBSITE, track_title)
+    ig_url  = cfg.ARTIST_INSTAGRAM   # IG + TikTok tracked separately via Linktree in bio
+    tt_url  = cfg.ARTIST_TIKTOK
 
     anchor_line = f"\n— {scripture_anchor}" if scripture_anchor else ""
 
     return (
         f"{top_hashtags}\n\n"
         f"Enjoy it.\n\n"
-        f"Listen everywhere: {smart_link}\n"
-        f"Spotify: {spotify_url}\n"
-        f"Apple Music: {apple_url}\n"
+        f"{link_stack}\n"
         f"{lyrics_block}"
         f"— {track_title}{anchor_line}\n\n"
         f"{cfg.ARTIST_FULL_NAME}\n"
@@ -257,23 +274,26 @@ def publish_track(req: PublishRequest) -> PublishResult:
             from content_engine.youtube_longform.types import ImageAsset
 
             if req.motion:
-                # Motion publish: use the first motion keyframe as the
-                # hero/thumbnail. We generate it HERE so it's ready before
-                # the Kling morph pass (which needs all keyframes anyway).
+                # Motion publish: prefer the dedicated thumbnail keyframe
+                # from the story (CTR-optimized, tight crop, strong face).
+                # Fall back to the first in-chain keyframe if no dedicated
+                # thumbnail is defined. Either way, we generate it HERE so
+                # it's ready before the Kling morph pass.
                 story = motion_mod.story_for_track(req.track_title)
-                first_kf = story.keyframes[0]
+                thumb_kf = story.thumbnail_keyframe or story.keyframes[0]
                 logger.info(
-                    "Motion path: first keyframe '%s' will serve as thumbnail",
-                    first_kf.keyframe_id,
+                    "Motion path: thumbnail keyframe = '%s' (%s)",
+                    thumb_kf.keyframe_id,
+                    "dedicated" if story.thumbnail_keyframe else "first in chain",
                 )
-                rendered = motion_mod._generate_keyframe(first_kf, prompt)
+                rendered = motion_mod._generate_keyframe(thumb_kf, prompt)
                 result.hero_image = ImageAsset(
                     role="hero",
                     local_path=rendered.local_path,
                     remote_url=rendered.remote_url,
                     width=cfg.HERO_WIDTH,
                     height=cfg.HERO_HEIGHT,
-                    prompt_used=first_kf.still_prompt,
+                    prompt_used=thumb_kf.still_prompt,
                     variant_index=0,
                 )
             else:
