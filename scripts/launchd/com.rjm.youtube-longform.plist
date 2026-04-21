@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  RJM — Holy Rave long-form auto-publish (daily)
+  ──────────────────────────────────────────────
+  Fires once per day at 10:00 local. The wrapper calls watcher.daily_auto_publish
+  which:
+    1. Scans content/audio/masters/ for HOLY_RAVE_TRACKS not yet published
+    2. Picks the top 1 candidate
+    3. Generates 9 keyframes + 9 Kling O3 morphs + full-track render
+    4. Uploads PRIVATE to YouTube with publishAt = next Tue/Thu/Sun 21:00 UTC
+    5. YouTube auto-transitions to public at the scheduled time
+
+  Caps: max 1 publish per day  → max ~$10.80/day, ~$140/month at osso-so cadence
+  Install: launchctl load -w ~/Library/LaunchAgents/com.rjm.youtube-longform.plist
+  Remove:  launchctl unload -w ~/Library/LaunchAgents/com.rjm.youtube-longform.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.rjm.youtube-longform</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/motomoto/bin/rjm-youtube-longform-daily.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/motomoto/Library/Logs/rjm-youtube-longform-daily.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/motomoto/Library/Logs/rjm-youtube-longform-daily.err.log</string>
+</dict>
+</plist>

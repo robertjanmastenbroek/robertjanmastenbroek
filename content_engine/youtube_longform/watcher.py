@@ -184,8 +184,9 @@ def write_pending_report(candidates: list[TrackCandidate]) -> Path:
 
 def promote_candidates(
     candidates: Optional[list[TrackCandidate]] = None,
-    dry_run: bool = True,
-    limit: Optional[int] = None,
+    dry_run:    bool = True,
+    limit:      Optional[int] = None,
+    motion:     bool = True,
 ) -> list[PublishResult]:
     """
     Run the full publish pipeline for each candidate, using the weekly
@@ -196,6 +197,11 @@ def promote_candidates(
 
     Pass limit=N to cap the number of promoted tracks per call
     (prevents a surprise batch of 9 uploads consuming your whole quota).
+
+    motion=True (default) routes through the Kling O3 keyframe-chain
+    morph pipeline — ~$10.80/publish, premium Omiki-style visuals.
+    Set motion=False for the legacy stills-only path (~$0.15/publish)
+    — cheaper but just a single held still image.
     """
     candidates = candidates or scan_new_tracks()
     if not candidates:
@@ -224,13 +230,81 @@ def promote_candidates(
             track_title=cand.track_title,
             publish_at_iso=slot.publish_at_utc.isoformat().replace("+00:00", "Z"),
             dry_run=dry_run,
+            motion=motion,
         )
         logger.info(
-            "%s %s → scheduled for %s",
+            "%s %s → scheduled for %s (motion=%s)",
             "DRY-RUN" if dry_run else "PUBLISHING",
-            cand.track_title, req.publish_at_iso,
+            cand.track_title, req.publish_at_iso, motion,
         )
         result = publish_track(req)
         results.append(result)
 
+    return results
+
+
+# ─── Daily autonomous entry point ────────────────────────────────────────────
+
+def daily_auto_publish(
+    dry_run:     bool = False,
+    max_per_day: int  = 1,
+) -> list[PublishResult]:
+    """
+    Autonomous daily runner. Scans for new candidate tracks, picks the top
+    `max_per_day` (by order of HOLY_RAVE_TRACKS), and publishes them with
+    motion=True to the next available @osso-so schedule slots.
+
+    Called by ~/bin/rjm-youtube-longform-daily.sh via launchd
+    (com.rjm.youtube-longform).
+
+    Safety rails baked in:
+      · max_per_day=1 caps daily spend at ~$10.80
+      · motion=True (the premium path — this is the Omiki-style system
+        RJM committed to as the production default)
+      · file-stability gate in scan_new_tracks() (60s unchanged mtime)
+      · dedup via registry (won't re-publish an existing track)
+      · whitelist-only (HOLY_RAVE_TRACKS) — non-brand tracks never fire
+      · slot-aware — if no upcoming @osso-so slot for a track, skips it
+
+    Writes a pending_publish.json snapshot before acting so the decision
+    is always auditable post-hoc.
+    """
+    logger.info("Daily auto-publish scan starting (dry_run=%s, max_per_day=%d)",
+                dry_run, max_per_day)
+
+    # 1. Scan
+    candidates = scan_new_tracks()
+    if not candidates:
+        logger.info("No eligible candidates today. Nothing to do.")
+        return []
+
+    # 2. Snapshot the decision surface BEFORE acting
+    try:
+        write_pending_report(candidates)
+    except Exception as e:
+        logger.warning("Could not write pending report: %s", e)
+
+    # 3. Promote with safety caps
+    logger.info(
+        "%d candidate(s). Promoting up to %d with motion=True.",
+        len(candidates), max_per_day,
+    )
+    results = promote_candidates(
+        candidates=candidates,
+        dry_run=dry_run,
+        limit=max_per_day,
+        motion=True,
+    )
+
+    # 4. Summary log
+    for r in results:
+        if r.error:
+            logger.error("%s FAILED: %s", r.request.track_title, r.error)
+        else:
+            logger.info(
+                "%s scheduled → %s (spend $%.2f)",
+                r.request.track_title,
+                r.youtube_url or "(dry-run)",
+                r.cost_usd or 0.0,
+            )
     return results

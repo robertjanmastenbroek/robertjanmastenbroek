@@ -851,6 +851,12 @@ SELAH_STORY: MorphStory = MorphStory(
     thumbnail_keyframe=_SELAH_THUMBNAIL_KEYFRAME,
 )
 
+# Register SELAH_STORY in the by-ID lookup. STORIES is defined earlier in the
+# file (before this definition) so we add to it here. Any future track story
+# defined after the initial STORIES block should do the same — add one line
+# registering itself by story_id.
+STORIES[SELAH_STORY.story_id] = SELAH_STORY
+
 
 # Per-track narrative override. Lowercase keys. Scripture-anchored where
 # applicable. Add new tracks as their stories are written — Halleluyah,
