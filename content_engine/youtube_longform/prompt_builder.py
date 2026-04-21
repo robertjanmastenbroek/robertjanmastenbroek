@@ -326,7 +326,12 @@ NEGATIVE_PROMPT = (
     "DMT fractals, Balenciaga-editorial masked figures on flat red background, "
     "mushroom forest, unicorn, dragon, cyberpunk city, neon Tokyo, "
     "modern cars, smartphones, baseball caps, graphic tees, Coachella, "
-    "EDM festival LED walls"
+    "EDM festival LED walls, "
+    # Mesoamerican drift — added 2026-04-21 after smoke test thumb 2 went Aztec
+    "Mayan temple, Aztec carvings, Aztec warrior, Incan ruins, Mesoamerican "
+    "architecture, Chichen Itza, Tenochtitlan, stepped pyramids, jaguar god, "
+    "feathered serpent Quetzalcoatl, Native American plains-tribe feather "
+    "war bonnet, multicolored parrot feathers"
 )
 
 
