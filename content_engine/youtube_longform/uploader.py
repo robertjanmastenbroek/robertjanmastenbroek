@@ -106,7 +106,11 @@ def _resumable_upload(
     }
     r = requests.post(init_url, headers=init_headers, data=json.dumps(metadata), timeout=30)
     if r.status_code != 200:
-        raise UploadError(f"videos.insert initiate failed: {r.status_code} {r.text[:500]}")
+        # Dump the full payload we sent so we can diagnose the rejection
+        raise UploadError(
+            f"videos.insert initiate failed: {r.status_code} {r.text[:800]}\n"
+            f"Payload sent: {json.dumps(metadata, indent=2)}"
+        )
     upload_session_url = r.headers.get("Location")
     if not upload_session_url:
         raise UploadError("videos.insert missing Location header — cannot resume")
@@ -213,21 +217,29 @@ def upload(spec: UploadSpec) -> str:
     """
     token = _refresh_access_token()
 
-    # Build videos.insert metadata
+    # Build videos.insert metadata.
+    # Only include optional fields when they are explicitly set to avoid
+    # YouTube INVALID_REQUEST_METADATA errors on ambiguous defaults.
     snippet: dict[str, Any] = {
-        "title":                spec.title[:100],         # Hard YouTube limit
-        "description":          spec.description[:5000],  # Hard YouTube limit
-        "tags":                 spec.tags[:30],           # ~500 char total practical cap
-        "categoryId":           spec.category_id,
-        "defaultLanguage":      spec.language,
-        "defaultAudioLanguage": spec.audio_language,
+        "title":         spec.title[:100],         # Hard YouTube limit
+        "description":   spec.description[:5000],  # Hard YouTube limit
+        "tags":          spec.tags[:30],           # ~500 char total practical cap
+        "categoryId":    spec.category_id,
     }
+    if spec.language:
+        snippet["defaultLanguage"] = spec.language
+    # YouTube accepts BCP-47 codes; "zxx" (no linguistic content) is technically
+    # valid but some channels reject it. Skip when "zxx" unless explicitly set
+    # to an actual ISO 639-1 code.
+    if spec.audio_language and spec.audio_language != "zxx":
+        snippet["defaultAudioLanguage"] = spec.audio_language
+
     status: dict[str, Any] = {
-        "privacyStatus":              spec.privacy_status,
-        "selfDeclaredMadeForKids":    spec.made_for_kids,
-        "license":                    spec.license,
-        "embeddable":                 spec.embeddable,
-        "publicStatsViewable":        spec.public_stats,
+        "privacyStatus":           spec.privacy_status,
+        "selfDeclaredMadeForKids": spec.made_for_kids,
+        "license":                 spec.license,
+        "embeddable":              spec.embeddable,
+        "publicStatsViewable":     spec.public_stats,
     }
     if spec.publish_at_iso and spec.privacy_status == "private":
         status["publishAt"] = spec.publish_at_iso
