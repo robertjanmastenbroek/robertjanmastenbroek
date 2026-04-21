@@ -782,6 +782,59 @@ def cmd_content_youtube(args: list[str]):
                 print(f"  → {result.youtube_url or result.error}")
         sys.exit(0)
 
+    if sub == "watch":
+        # Scan the audio-masters folder for new tracks that are whitelisted
+        # in audio_engine.TRACK_BPMS but not yet published. Writes a report
+        # to data/youtube_longform/pending_publish.json. Does NOT publish.
+        #
+        #   rjm.py content youtube watch                # scan + report
+        #   rjm.py content youtube watch --verbose      # print full candidates list
+        from content_engine.youtube_longform.watcher import scan_new_tracks, write_pending_report
+        cands = scan_new_tracks()
+        path = write_pending_report(cands)
+        print(f"Scanned. {len(cands)} candidate(s) pending publish.")
+        if cands:
+            print(f"Report: {path}")
+            if "--verbose" in rest:
+                for c in cands:
+                    print(f"  - {c.track_title} (BPM {c.bpm}, {c.duration_seconds}s, {c.reason})")
+        else:
+            print("No new tracks to publish. Add a track to audio_engine.TRACK_BPMS "
+                  "and drop its WAV into content/audio/masters/ to opt in.")
+        sys.exit(0)
+
+    if sub == "publish-pending":
+        # Publish (or dry-run) all pending candidates from the latest scan.
+        # Defaults to --dry-run for safety.
+        #
+        #   rjm.py content youtube publish-pending                 # dry-run (default)
+        #   rjm.py content youtube publish-pending --commit        # real publish
+        #   rjm.py content youtube publish-pending --commit --limit 1   # cap at N
+        from content_engine.youtube_longform.watcher import promote_candidates
+        dry_run = "--commit" not in rest
+        limit = None
+        if "--limit" in rest:
+            idx = rest.index("--limit")
+            if idx + 1 < len(rest):
+                try:
+                    limit = int(rest[idx + 1])
+                except ValueError:
+                    pass
+        print(f"Mode: {'DRY-RUN' if dry_run else 'COMMIT (real spend)'}")
+        if limit is not None:
+            print(f"Limit: {limit} track(s) max")
+        results = promote_candidates(dry_run=dry_run, limit=limit)
+        summary = [{
+            "track":       r.request.track_title,
+            "youtube_id":  r.youtube_id,
+            "error":       r.error,
+            "dry_run":     r.request.dry_run,
+            "publish_at":  r.request.publish_at_iso,
+            "smart_link":  r.smart_link,
+        } for r in results]
+        print(json.dumps(summary, indent=2))
+        sys.exit(0 if all(not r.error for r in results) else 1)
+
     if sub == "review":
         # Interactive pre-publish review gate (generate images + approve/regenerate/abort)
         if not rest:
@@ -842,7 +895,8 @@ def cmd_content_youtube(args: list[str]):
 
     print(f"✗ Unknown youtube subcommand: {sub!r}")
     print("  Valid: status, explain <track>, publish <track> [--dry-run] [--schedule ISO],")
-    print("         budget, schedule [--queue], review <track>")
+    print("         budget, schedule [--queue], review <track>,")
+    print("         watch [--verbose], publish-pending [--commit] [--limit N]")
     sys.exit(1)
 
 
