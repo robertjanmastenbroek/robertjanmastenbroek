@@ -79,6 +79,39 @@ TRACK_LYRICS: dict[str, str] = {
     "side by side":      "",
 }
 
+
+# ─── Holy Rave channel whitelist ─────────────────────────────────────────────
+# The autonomous watcher (content_engine.youtube_longform.watcher) ONLY
+# considers tracks in this set for auto-publish to the Holy Rave channel.
+# This is decoupled from TRACK_BPMS (which is the BPM metadata database) so
+# that older / slower / off-brand tracks in the catalogue are never auto-
+# uploaded to Holy Rave even if they have BPM metadata on file.
+#
+# Inclusion rule: Holy Rave = 130–145 BPM Nomadic Electronic (organic house
+# through tribal psytrance). Tracks in this band get included by default.
+# Borderline tracks (128 BPM) are OUT by default — flip them in explicitly
+# if the user decides they fit the channel brand.
+#
+# Rationale: YouTube's recommender builds channel-level audience embeddings;
+# publishing a 124 BPM track next to a 140 BPM track confuses the cluster.
+# Keeping the channel genre-tight protects algorithmic momentum.
+HOLY_RAVE_TRACKS: set[str] = {
+    "jericho",             # 140 — tribal psytrance (Joshua 6)
+    "halleluyah",          # 140 — tribal psytrance
+    "kadosh",              # 142 — tribal psytrance, Hebrew (unreleased)
+    "selah",               # 130 — handpan / oud / Middle Eastern (Psalm 46)
+    "fire in our hands",   # 130 — organic tribal house
+    "exodus",              # 138 — fits tribal tier
+    "abba",                # 132 — fits organic tier
+    "side by side",        # 130 — organic house (unreleased)
+    # ↓ Borderline — edge tracks. Flip in by uncommenting if you want them on Holy Rave.
+    # "renamed",           # 128 — organic house, just under the 130 cutoff
+    # "he is the light",   # 128 — same
+    # ↓ Explicitly OFF Holy Rave — too slow for the channel's genre promise.
+    # Publish these to the main @robertjanmastenbroekofficial channel instead.
+    # "living water",      # 124 — organic house, below Holy Rave BPM floor
+}
+
 # ─── Active track seed (top 4 by save rate) ─────────────────────────────────
 
 SEED_TRACKS = ["halleluyah", "renamed", "jericho", "fire in our hands", "selah"]

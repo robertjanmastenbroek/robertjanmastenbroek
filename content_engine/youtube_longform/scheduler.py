@@ -23,7 +23,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
-from content_engine.audio_engine import SCRIPTURE_ANCHORS, TRACK_BPMS
+from content_engine.audio_engine import (
+    HOLY_RAVE_TRACKS,
+    SCRIPTURE_ANCHORS,
+    TRACK_BPMS,
+)
 from content_engine.youtube_longform import config as cfg, registry
 from content_engine.youtube_longform.types import PublishRequest
 
@@ -213,7 +217,11 @@ def plan_week(
     # Next N Tue/Thu/Sun 21:00 UTC slots after `now`
     slot_datetimes = _next_osso_so_slots(now, slots, hour_utc)
 
-    catalogue = list(TRACK_BPMS.keys())
+    # Scheduler uses HOLY_RAVE_TRACKS (the channel-specific whitelist), not
+    # the full TRACK_BPMS metadata database. Off-brand tracks (<130 BPM
+    # worship material) are excluded by design — they belong on the main
+    # Robert-Jan Mastenbroek channel, not Holy Rave.
+    catalogue = [t for t in HOLY_RAVE_TRACKS if t in TRACK_BPMS]
     selected: list[ScheduledUpload] = []
     selected_tiers: list[str] = []
 

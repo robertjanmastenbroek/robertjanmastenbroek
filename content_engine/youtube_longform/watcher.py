@@ -37,7 +37,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from content_engine.audio_engine import SCRIPTURE_ANCHORS, TRACK_BPMS
+from content_engine.audio_engine import (
+    HOLY_RAVE_TRACKS,
+    SCRIPTURE_ANCHORS,
+    TRACK_BPMS,
+)
 from content_engine.youtube_longform import config as cfg, registry, scheduler
 from content_engine.youtube_longform.publisher import (
     _audio_duration_seconds,
@@ -80,7 +84,19 @@ def scan_new_tracks() -> list[TrackCandidate]:
     now_ts = time.time()
     candidates: list[TrackCandidate] = []
 
-    for title in TRACK_BPMS.keys():
+    # ONLY iterate HOLY_RAVE_TRACKS — this is the explicit whitelist of
+    # tracks approved for the Holy Rave channel. The broader TRACK_BPMS
+    # dict contains BPM metadata for the full catalogue, but including
+    # off-brand tracks (<130 BPM, old worship material) on Holy Rave
+    # would dilute the genre-focus that YouTube's recommender uses to
+    # cluster our audience.
+    for title in HOLY_RAVE_TRACKS:
+        if title not in TRACK_BPMS:
+            logger.warning(
+                "%r listed in HOLY_RAVE_TRACKS but missing from TRACK_BPMS — skipping",
+                title,
+            )
+            continue
         try:
             audio_path = _resolve_audio_path(title, None)
         except Exception as e:
