@@ -29,14 +29,22 @@ Pre-reqs (do these ONCE in Google Cloud Console before running this script):
      Save.
 
 Then run:
-     python3.13 scripts/setup_youtube_oauth.py
+     python3.13 scripts/setup_youtube_oauth.py                    # Main channel (default)
+     python3.13 scripts/setup_youtube_oauth.py --channel holyrave # Holy Rave channel
 
-The script will ask you for your Client ID + Client Secret once (it reads
-them from .env if already set, otherwise prompts). Everything else is
-automatic.
+The --channel flag isolates credentials per channel:
+  default → writes YOUTUBE_REFRESH_TOKEN (used by the existing Shorts
+            pipeline on @robertjanmastenbroekofficial)
+  holyrave → writes HOLYRAVE_REFRESH_TOKEN (used by the long-form
+             Holy Rave channel publishing pipeline)
+
+One OAuth app can authorize many channels. Run with --channel holyrave
+while your Google account is switched to the Holy Rave channel to mint
+a dedicated refresh token for it.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -98,10 +106,29 @@ def _prompt(label: str, existing: str | None = None) -> str:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Mint a YouTube OAuth refresh token.")
+    parser.add_argument(
+        "--channel",
+        choices=["main", "holyrave"],
+        default="main",
+        help="Which channel this token authorizes. 'main' writes YOUTUBE_REFRESH_TOKEN "
+             "(for the existing Shorts pipeline). 'holyrave' writes HOLYRAVE_REFRESH_TOKEN "
+             "(for the Holy Rave long-form pipeline).",
+    )
+    args = parser.parse_args()
+    refresh_env_key = "YOUTUBE_REFRESH_TOKEN" if args.channel == "main" else "HOLYRAVE_REFRESH_TOKEN"
+
     print("═══════════════════════════════════════════════════════════════")
-    print("  YouTube OAuth setup — mint fresh token with yt-analytics scope")
+    print(f"  YouTube OAuth setup — channel: {args.channel}")
+    print(f"  will write: {refresh_env_key}")
     print("═══════════════════════════════════════════════════════════════")
     print()
+    if args.channel == "holyrave":
+        print("⚠  BEFORE clicking 'Allow' in the browser:")
+        print("   make sure the Google account switcher at the top-right is")
+        print("   set to the HOLY RAVE channel, not Robert-Jan Mastenbroek.")
+        print("   (The channel active when you click Allow is what gets authorized.)")
+        print()
 
     env = _load_env()
     client_id     = _prompt("Google OAuth Client ID",     env.get("YOUTUBE_CLIENT_ID"))
@@ -141,9 +168,12 @@ def main() -> int:
     updates = {
         "YOUTUBE_CLIENT_ID":     client_id,
         "YOUTUBE_CLIENT_SECRET": client_secret,
-        "YOUTUBE_OAUTH_TOKEN":   creds.token,
-        "YOUTUBE_REFRESH_TOKEN": creds.refresh_token,
+        refresh_env_key:         creds.refresh_token,
     }
+    # Only update the access-token cache when writing the main-channel token
+    # (the long-form pipeline mints its own access token per run from refresh).
+    if args.channel == "main":
+        updates["YOUTUBE_OAUTH_TOKEN"] = creds.token
     _write_env(updates)
 
     print()

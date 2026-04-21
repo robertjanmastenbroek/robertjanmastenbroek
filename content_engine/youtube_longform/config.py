@@ -124,13 +124,34 @@ AUDIO_SAMPLE_RATE         = 48000
 AUDIO_BITRATE_KBPS        = 320
 
 # ─── YouTube Data API v3 ─────────────────────────────────────────────────────
-# Reuses the existing RJM OAuth credentials. The same Google account can
-# authorize against multiple channels — Holy Rave uploads will target
-# YOUTUBE_HOLY_RAVE_CHANNEL_ID if set, otherwise the account default.
+# Channel-scoped OAuth isolation:
+#   The app-level credentials (CLIENT_ID / CLIENT_SECRET) are shared with the
+#   existing Shorts pipeline — one OAuth app can authorize many channels.
+#
+#   The REFRESH_TOKEN is channel-specific. The existing Shorts pipeline reads
+#   YOUTUBE_REFRESH_TOKEN (authorized against @robertjanmastenbroekofficial).
+#   The Holy Rave long-form pipeline reads HOLYRAVE_REFRESH_TOKEN first,
+#   falling back to YOUTUBE_REFRESH_TOKEN only if the Holy Rave-specific
+#   token is not set.
+#
+#   Setup: run scripts/setup_youtube_oauth.py while logged into the Holy Rave
+#   channel; that script writes HOLYRAVE_REFRESH_TOKEN to .env.
+#
+#   This isolation means the Shorts pipeline and the long-form pipeline never
+#   accidentally publish to the wrong channel. The existing distributor.py
+#   is untouched.
 YT_CLIENT_ID            = os.getenv("YOUTUBE_CLIENT_ID", "")
 YT_CLIENT_SECRET        = os.getenv("YOUTUBE_CLIENT_SECRET", "")
-YT_REFRESH_TOKEN        = os.getenv("YOUTUBE_REFRESH_TOKEN", "")
+YT_REFRESH_TOKEN        = (
+    os.getenv("HOLYRAVE_REFRESH_TOKEN")             # Holy Rave channel (preferred)
+    or os.getenv("YOUTUBE_REFRESH_TOKEN", "")        # Fallback — will publish to main channel
+)
 YT_HOLY_RAVE_CHANNEL_ID = os.getenv("YOUTUBE_HOLY_RAVE_CHANNEL_ID", "")
+
+
+def youtube_oauth_is_holyrave() -> bool:
+    """True if the dedicated Holy Rave refresh token is set (vs falling back to main)."""
+    return bool(os.getenv("HOLYRAVE_REFRESH_TOKEN"))
 
 # Playlist IDs for auto-add (optional — publisher skips gracefully if empty)
 YT_PLAYLIST_TRIBAL_PSY   = os.getenv("YOUTUBE_PLAYLIST_TRIBAL_PSY", "")
@@ -203,6 +224,7 @@ def config_summary() -> dict[str, bool]:
         "cloudinary":              cloudinary_configured(),
         "shotstack":               bool(SHOTSTACK_API_KEY),
         "youtube_oauth":           all((YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN)),
+        "youtube_oauth_isolated":  youtube_oauth_is_holyrave(),
         "holy_rave_channel_id":    bool(YT_HOLY_RAVE_CHANNEL_ID),
         "featurefm":               bool(FEATUREFM_API_KEY),
         "audio_masters_present":   AUDIO_MASTERS.exists(),

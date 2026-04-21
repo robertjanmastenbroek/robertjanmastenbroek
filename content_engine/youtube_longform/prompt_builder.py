@@ -76,22 +76,23 @@ def _derive_genre(bpm: int, title_lower: str) -> str:
 # dreadlocks or feather headpiece, shoulder tattoo, sunset/festival bokeh.
 # (Rejecting the Hindu/cosmic/neon 60% of the scene that is off-brand.)
 
+# Default hero phrases match proven-viral competitor thumbnails (no
+# instruments — that's an A/B test we'll run later, not a default).
 HERO_BY_FAMILY: dict[GenreFamily, dict[MoodTier, str]] = {
     "organic_house": {
         "meditative":
             "a single Bedouin woman in a hand-woven patterned niqab with "
             "gold-thread embroidery, silver tribal diadem across her forehead, "
-            "nose ring and stacked cuff bracelets, a weathered ney flute or "
-            "small oud resting in her hands, piercing contemplative eye "
-            "contact with the camera",
+            "nose ring and stacked silver cuff bracelets, piercing "
+            "contemplative eye contact directly with the camera",
         "processional":
             "a single veiled nomad walking through a dune ridge at golden "
-            "hour, silver-embroidered robes trailing sand, one hand resting on "
-            "a handpan carried at her side, eyes closed in quiet procession",
+            "hour, silver-embroidered robes trailing sand, eyes downcast in "
+            "quiet procession",
         "gathering":
-            "a small circle of four or five robed nomads seated on basalt "
-            "stone around a low fire, one holding a tribal frame-drum, "
-            "another a handpan, warm amber firelight on faces, ceremonial stillness",
+            "a single robed figure seated cross-legged on basalt stone at "
+            "dusk, warm amber firelight on her face, eyes closed in "
+            "ceremonial stillness, silver jewelry catching the fire's glow",
         "ecstatic":
             "a solitary veiled figure at the edge of a desert dance circle, "
             "dust-gold light pouring from behind, silver jewelry catching the "
@@ -107,9 +108,9 @@ HERO_BY_FAMILY: dict[GenreFamily, dict[MoodTier, str]] = {
             "dusk, single shaft of cool blue-gold light through an arched "
             "window, weathered sandstone columns receding",
         "gathering":
-            "a circle of shamanic dancers with blue-ochre warrior stripes "
-            "painted across their faces, feather headpieces, arms lifting in "
-            "unison at golden hour, dust and ember suspended in the air",
+            "a dancer with blue-ochre warrior stripes painted across her "
+            "cheekbones and temples, feather headpiece catching golden-hour "
+            "light, arms beginning to lift, dust and ember suspended in the air",
         "ecstatic":
             "an ecstatic warrior-painted dancer mid-leap, eyes closed and "
             "face tilted toward the sky, blue ochre stripes across the "
@@ -118,10 +119,57 @@ HERO_BY_FAMILY: dict[GenreFamily, dict[MoodTier, str]] = {
     },
 }
 
+# Optional A/B variant: hero WITH a visible instrument in hand. Uncontested
+# gap in competitor thumbnails (only Café de Anatolia's ~10M "Best of 2020"
+# carved-flute shot shows one). Could be a differentiator OR could flop.
+# Not used by default; accessed when build_prompt(with_instrument=True).
+HERO_BY_FAMILY_WITH_INSTRUMENT: dict[GenreFamily, dict[MoodTier, str]] = {
+    "organic_house": {
+        "meditative":
+            "a single Bedouin woman in a hand-woven patterned niqab with "
+            "gold-thread embroidery, silver tribal diadem, a weathered "
+            "ney flute held to her lips, eyes closed",
+        "processional":
+            "a single veiled nomad walking through a dune ridge at golden "
+            "hour, one hand resting on a handpan carried at her side, "
+            "silver-embroidered robes trailing sand",
+        "gathering":
+            "a single robed figure seated cross-legged on basalt stone, "
+            "cradling a handpan in her lap, warm amber firelight on her "
+            "hands, eyes closed in ceremonial stillness",
+        "ecstatic":
+            "a robed figure silhouetted against a sunset desert circle, "
+            "an oud held aloft in one hand, silver jewelry catching the light",
+    },
+    "tribal_psytrance": {
+        "meditative":
+            "a serene dancer with eyes closed, cradling a tribal "
+            "frame-drum, tribal-stone earrings and dreadlocks",
+        "processional":
+            "a cloaked figure with a ram's-horn shofar slung across the "
+            "back, approaching an ancient stone temple ruin at dusk",
+        "gathering":
+            "a warrior-painted dancer cradling a tribal frame-drum at her "
+            "chest, blue ochre stripes on her cheekbones, feather headpiece",
+        "ecstatic":
+            "an ecstatic warrior-painted dancer mid-leap, a ram's-horn "
+            "shofar raised overhead, blue ochre stripes on her cheekbones, "
+            "crowd silhouettes behind at sunset",
+    },
+}
 
-def _hero_slot(family: GenreFamily, mood: MoodTier) -> str:
-    """Pick the hero phrase for a given family + mood. Falls back to organic_house if needed."""
-    return HERO_BY_FAMILY[family].get(mood) or HERO_BY_FAMILY["organic_house"][mood]
+
+def _hero_slot(family: GenreFamily, mood: MoodTier, with_instrument: bool = False) -> str:
+    """
+    Pick the hero phrase for a given family + mood.
+
+    By default returns the no-instrument variant (matches proven-viral
+    competitor thumbnails). Pass with_instrument=True to return the
+    handpan/oud/shofar variant — this is an unproven hypothesis and
+    should only be used for explicit A/B variants, not as the default.
+    """
+    dct = HERO_BY_FAMILY_WITH_INSTRUMENT if with_instrument else HERO_BY_FAMILY
+    return dct[family].get(mood) or HERO_BY_FAMILY["organic_house"][mood]
 
 
 # ─── Scripture anchor → specific visual hook ─────────────────────────────────
@@ -265,6 +313,7 @@ def build_prompt(
     bpm: Optional[int] = None,
     scripture_anchor: Optional[str] = None,
     seed: Optional[int] = None,
+    with_instrument: bool = False,
 ) -> TrackPrompt:
     """
     Build a Flux 2 prompt for a single track.
@@ -293,7 +342,7 @@ def build_prompt(
 
     # Assemble the prompt — family-routed slots replace the old mood-only
     # slots after 2026-04-21 viral research (see proven_viral/ bucket analysis).
-    hero            = _hero_slot(genre_family, mood_tier)
+    hero            = _hero_slot(genre_family, mood_tier, with_instrument=with_instrument)
     scripture_viz   = SCRIPTURE_HOOKS.get(resolved_anchor, SCRIPTURE_HOOKS[""])
     lighting        = LIGHTING_BY_MOOD[mood_tier]
     sacred_object   = SACRED_OBJECT_BY_MOOD[mood_tier]
