@@ -22,13 +22,18 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from content_engine.audio_engine import TrackPool
+from content_engine.audio_engine import (
+    TRACK_LANGUAGES,
+    TRACK_LYRICS,
+    TrackPool,
+)
 from content_engine.youtube_longform import config as cfg
 from content_engine.youtube_longform import (
     image_gen,
     prompt_builder,
     registry,
     render,
+    scripture as scripture_mod,
     uploader,
 )
 from content_engine.youtube_longform.types import (
@@ -48,6 +53,23 @@ class PublishError(Exception):
 
 # ─── Description template ────────────────────────────────────────────────────
 
+def _utm_suffix(track_title: str, medium: str = "holyrave_longform") -> str:
+    """UTM params for every outbound link — free measurement across all destinations."""
+    slug = "".join(c if c.isalnum() else "_" for c in track_title.lower()).strip("_")
+    return f"?utm_source=youtube&utm_medium={medium}&utm_campaign=hr_{slug}"
+
+
+def _tagged(url: str, track_title: str) -> str:
+    """Append UTM to any URL that doesn't already have query params."""
+    if not url:
+        return url
+    # Rough check: if URL already has ?, append with &; otherwise append ?
+    separator = "&" if "?" in url else "?"
+    # Skip the "?" at the start of our suffix since we add our own separator
+    params = _utm_suffix(track_title).lstrip("?")
+    return f"{url}{separator}{params}"
+
+
 def _compose_description(
     track_title: str,
     smart_link: str,
@@ -56,31 +78,49 @@ def _compose_description(
     genre_tag: str,
 ) -> str:
     """
-    Mirrors the @osso-so description template — three top hashtags
-    (which YouTube hoists above the title) + link stack + scripture
-    flavoring + bottom hashtag stack.
+    @osso-so-template description — 3 top hashtags (YouTube hoists above
+    the title) + link stack + scripture-as-lyrics block + 18 bottom
+    hashtags. Every outbound link gets a UTM tag so we can measure
+    per-track YouTube→Spotify/Apple/website conversion in existing
+    analytics (Spotify for Artists, Apple Music for Artists, Google
+    Analytics on robertjanmastenbroek.com).
     """
     top_hashtags = " ".join(cfg.HASHTAGS_TOP.get(genre_tag, cfg.HASHTAGS_TOP["organic_tribal"]))
-
-    scripture_line = ""
-    if scripture_anchor:
-        scripture_line = f"\n— {scripture_anchor}\n"
-
     bottom_hashtags = " ".join(cfg.HASHTAGS_BOTTOM)
+
+    # Scripture / lyrics block — priority: explicit lyrics > scripture verse > skip.
+    key = track_title.lower().strip()
+    explicit_lyrics = TRACK_LYRICS.get(key, "") if key in TRACK_LYRICS else ""
+    scripture_verse = scripture_mod.verse_for(scripture_anchor)
+
+    lyrics_block = ""
+    if explicit_lyrics:
+        lyrics_block = f"\nLyrics:\n{explicit_lyrics}\n"
+    elif scripture_verse:
+        lyrics_block = f"\nScripture:\n{scripture_verse}\n"
+
+    # Link stack — UTM on every outbound link
+    spotify_url = _tagged(cfg.SPOTIFY_ARTIST_URL, track_title)
+    apple_url   = _tagged(cfg.APPLE_MUSIC_URL, track_title)
+    web_url     = _tagged(cfg.ARTIST_WEBSITE, track_title)
+    ig_url      = cfg.ARTIST_INSTAGRAM   # IG + TikTok tracked separately via Linktree in bio
+    tt_url      = cfg.ARTIST_TIKTOK
+
+    anchor_line = f"\n— {scripture_anchor}" if scripture_anchor else ""
 
     return (
         f"{top_hashtags}\n\n"
         f"Enjoy it.\n\n"
         f"Listen everywhere: {smart_link}\n"
-        f"Spotify: {cfg.SPOTIFY_ARTIST_URL}\n"
-        f"Apple Music: {cfg.APPLE_MUSIC_URL}\n\n"
-        f"— {track_title}\n"
-        f"{scripture_line}\n"
+        f"Spotify: {spotify_url}\n"
+        f"Apple Music: {apple_url}\n"
+        f"{lyrics_block}"
+        f"— {track_title}{anchor_line}\n\n"
         f"{cfg.ARTIST_FULL_NAME}\n"
         f"{cfg.CHANNEL_BRAND_NAME} — Ancient Truth. Future Sound.\n"
-        f"Instagram: {cfg.ARTIST_INSTAGRAM}\n"
-        f"TikTok: {cfg.ARTIST_TIKTOK}\n"
-        f"Web: {cfg.ARTIST_WEBSITE}\n\n"
+        f"Instagram: {ig_url}\n"
+        f"TikTok: {tt_url}\n"
+        f"Web: {web_url}\n\n"
         f"{bottom_hashtags}\n"
     )
 
@@ -234,12 +274,17 @@ def publish_track(req: PublishRequest) -> PublishResult:
         else:
             if result.video is None:
                 raise PublishError("Rendered video required for upload")
+            # Per-track audio language — "he" for Hebrew vocals, "en" otherwise.
+            # Falls back to "en" for unknown tracks.
+            audio_lang = TRACK_LANGUAGES.get(req.track_title.lower().strip(), "en")
             upload_spec = UploadSpec(
                 video_path=result.video.local_path,
                 thumbnail_paths=[t.local_path for t in result.thumbnails],
                 title=title,
                 description=description,
                 tags=tags,
+                language="en",            # metadata language (title/description)
+                audio_language=audio_lang, # per-track language of vocal content
                 publish_at_iso=req.publish_at_iso,
                 privacy_status="private" if req.publish_at_iso else "public",
                 channel_id=req.channel_id or cfg.YT_HOLY_RAVE_CHANNEL_ID or None,

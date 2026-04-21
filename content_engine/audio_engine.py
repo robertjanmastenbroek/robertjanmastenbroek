@@ -32,6 +32,51 @@ SCRIPTURE_ANCHORS = {
     "exodus": "Exodus 14",
     "abba": "Romans 8:15",
     "selah": "Psalm 46",
+    "kadosh": "Isaiah 6:3",         # "Holy, Holy, Holy is the Lord"
+    "side by side": "",
+}
+
+
+# ─── Per-track audio language (ISO 639-1, YouTube defaultAudioLanguage) ─────
+# Multilingual catalogue — set per-track rather than channel-wide so YouTube
+# classifies each upload correctly. Affects caption eligibility + discovery.
+# Fallback for missing entries: "en".
+TRACK_LANGUAGES: dict[str, str] = {
+    "halleluyah":        "he",    # Hebrew chant
+    "jericho":           "he",    # Hebrew vocals
+    "kadosh":            "he",    # Hebrew — "Holy"
+    "selah":             "he",    # Hebrew word + handpan/oud
+    "renamed":           "en",    # English + chanting
+    "fire in our hands": "en",
+    "living water":      "en",    # English (John 4)
+    "he is the light":   "en",    # English (John 8)
+    "exodus":            "en",
+    "abba":              "en",    # "Abba" is Aramaic but lyrics are English
+    "side by side":      "en",    # English (unreleased)
+}
+
+
+# ─── Per-track lyrics block for YouTube description SEO ─────────────────────
+# @osso-so puts the full lyrics (20-40 lines) in every video description.
+# This drives (a) engaged watch-time (viewers read while listening), and
+# (b) long-tail search SEO (lyric keywords are a major search vector).
+#
+# Empty string → publisher falls back to scripture-verse rendering when a
+# SCRIPTURE_ANCHOR is set. If both are empty, the lyrics block is skipped.
+TRACK_LYRICS: dict[str, str] = {
+    # Fill in as we confirm the actual vocal content per track.
+    # For now: empty → scripture fallback kicks in.
+    "halleluyah":        "",
+    "jericho":           "",
+    "kadosh":            "",
+    "selah":             "",
+    "renamed":           "",
+    "fire in our hands": "",
+    "living water":      "",
+    "he is the light":   "",
+    "exodus":            "",
+    "abba":              "",
+    "side by side":      "",
 }
 
 # ─── Active track seed (top 4 by save rate) ─────────────────────────────────
