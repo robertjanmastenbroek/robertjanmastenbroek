@@ -117,13 +117,21 @@ def _generate_one(
     client = _fal_client()
 
     if reference_urls:
-        # Reference-conditioned path (fal-ai/flux-2-pro/edit)
+        # Reference-conditioned path (fal-ai/flux-2-pro/edit).
+        # IMPORTANT: skip the "Avoid: X, Y, Z" negative-prompt merge on
+        # this endpoint. The content checker scans the full prompt text and
+        # flags religious/drug terms even when they appear inside an Avoid
+        # clause (Catholic saints, ayahuasca imagery, DMT fractals, Buddha
+        # statues, etc. are all negatives for us but trigger the filter).
+        # The references themselves anchor style away from those aesthetics
+        # — no negative clause needed here.
         endpoint = cfg.FAL_FLUX_2_PRO_EDIT_EP
         arguments = {
-            "prompt":        _merge_negative_into_prompt(prompt, negative_prompt),
-            "image_urls":    reference_urls[:9],    # Hard API cap: 9 refs, 9 MP total
-            "image_size":    {"width": width, "height": height},
-            "output_format": "jpeg",
+            "prompt":           prompt,                 # Clean positive prompt only
+            "image_urls":       reference_urls[:9],     # Hard API cap: 9 refs, 9 MP total
+            "image_size":       {"width": width, "height": height},
+            "output_format":    "jpeg",
+            "safety_tolerance": "4",                    # More permissive for artistic content
         }
     elif cfg.FAL_BRAND_LORA_URL:
         endpoint = cfg.FAL_FLUX_LORA_EP
