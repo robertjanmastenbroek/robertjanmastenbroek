@@ -32,8 +32,9 @@ Personalisation notes must pass two tests before the contact is flagged as ready
 
 **Audience type tagging** — carry the `audience_type` field from rjm-discover into the personalisation note. Use it to select the track angle:
 - `seeker` or consciousness audience → Living Water (John 4 anchor — "what the soul is actually thirsty for")
-- `music-first` psytrance/tribal → Halleluyah or Jericho
-- `music-first` melodic/house → Living Water or Renamed
+- `music-first` tribal/psytrance → Halleluyah or Jericho
+- `music-first` organic house / ethnic electronic → Living Water or Renamed
+- `music-first` Middle Eastern / world fusion → Selah (handpan/oud) or Fire In Our Hands
 - `faith-adjacent` → He Is The Light or Renamed
 - `avoid` → do not research, do not flag ready
 
