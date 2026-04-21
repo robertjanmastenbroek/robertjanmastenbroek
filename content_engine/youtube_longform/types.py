@@ -119,6 +119,7 @@ class PublishRequest:
     publish_at_iso:   Optional[str] = None  # Scheduled publish time (UTC)
     dry_run:          bool = False          # If True: generate assets but don't upload
     skip_image_gen:   bool = False          # If True: reuse existing hero image if present
+    force:            bool = False          # Bypass registry dedup (for re-publishes after fixes)
     channel_id:       Optional[str] = None  # Target channel (Holy Rave) override
     notes:            str = ""
 

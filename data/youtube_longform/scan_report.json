@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-04-21T16:13:26.745715+00:00",
+  "candidates": [
+    {
+      "track_title": "halleluyah",
+      "audio_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/.claude/worktrees/hardcore-albattani-865ac9/content/audio/masters/Robert-Jan Mastenbroek - Halleluyah.wav",
+      "bpm": 140,
+      "scripture_anchor": "",
+      "duration_seconds": 623,
+      "file_mtime": 1775650261.8540642,
+      "reason": "never_published",
+      "scheduled_slot": null
+    },
+    {
+      "track_title": "renamed",
+      "audio_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/.claude/worktrees/hardcore-albattani-865ac9/content/audio/masters/Robert-Jan Mastenbroek - Renamed.wav",
+      "bpm": 128,
+      "scripture_anchor": "Isaiah 62",
+      "duration_seconds": 478,
+      "file_mtime": 1775650262.9710946,
+      "reason": "never_published",
+      "scheduled_slot": null
+    },
+    {
+      "track_title": "jericho",
+      "audio_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/.claude/worktrees/hardcore-albattani-865ac9/content/audio/masters/JERICHO__MASTER.wav",
+      "bpm": 140,
+      "scripture_anchor": "Joshua 6",
+      "duration_seconds": 307,
+      "file_mtime": 1775650258.689663,
+      "reason": "never_published",
+      "scheduled_slot": "2026-04-20T17:00:00+00:00"
+    },
+    {
+      "track_title": "fire in our hands",
+      "audio_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/.claude/worktrees/hardcore-albattani-865ac9/content/audio/masters/Robert-Jan Mastenbroek & LUCID - Fire In Our Hands.wav",
+      "bpm": 130,
+      "scripture_anchor": "",
+      "duration_seconds": 344,
+      "file_mtime": 1775650261.3265083,
+      "reason": "never_published",
+      "scheduled_slot": null
+    },
+    {
+      "track_title": "selah",
+      "audio_path": "/Users/motomoto/Documents/Robert-Jan Mastenbroek Command Centre/.claude/worktrees/hardcore-albattani-865ac9/content/audio/masters/Robert-Jan Mastenbroek - Selah.wav",
+      "bpm": 130,
+      "scripture_anchor": "Psalm 46",
+      "duration_seconds": 374,
+      "file_mtime": 1775824902.0427823,
+      "reason": "never_published",
+      "scheduled_slot": "2026-04-23T17:00:00+00:00"
+    }
+  ],
+  "weekly_plan": [
+    {
+      "track": "jericho",
+      "slot": "2026-04-20T17:00:00+00:00",
+      "bpm": 140,
+      "reason": "score=3.00 (priority=2.5 +spread(ecstatic) never published)"
+    },
+    {
+      "track": "selah",
+      "slot": "2026-04-23T17:00:00+00:00",
+      "bpm": 130,
+      "reason": "score=2.70 (priority=2.2 +spread(processional) never published)"
+    },
+    {
+      "track": "living water",
+      "slot": "2026-04-25T17:00:00+00:00",
+      "bpm": 124,
+      "reason": "score=2.00 (priority=1.5 +spread(meditative) never published)"
+    }
+  ]
+}

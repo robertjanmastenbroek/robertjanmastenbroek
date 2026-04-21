@@ -76,9 +76,16 @@ PROJECT_ROOT = Path(__file__).parent.parent
 ENV_FILE     = _find_env()
 
 SCOPES = [
+    # Video uploads + thumbnails.set — existing path
     "https://www.googleapis.com/auth/youtube.upload",
+    # Read-only access — channel info, video listings
     "https://www.googleapis.com/auth/youtube.readonly",
+    # Analytics for the learning loop
     "https://www.googleapis.com/auth/yt-analytics.readonly",
+    # Full YouTube write — REQUIRED for playlist management (playlists.insert,
+    # playlistItems.insert) on setup_holy_rave_channel.py. Added 2026-04-21
+    # after initial Holy Rave refresh token hit 403 on playlist creation.
+    "https://www.googleapis.com/auth/youtube",
 ]
 
 

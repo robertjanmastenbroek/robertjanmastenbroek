@@ -203,14 +203,22 @@ def publish_track(req: PublishRequest) -> PublishResult:
     t_start = time.time()
     result = PublishResult(request=req)
 
-    # Dedup guard
+    # Dedup guard — registry prevents accidental double-publish. Bypass with
+    # req.force=True for legitimate re-publishes (e.g., after deleting the
+    # previous YouTube upload because thumbnails/links needed fixing).
     existing = registry.already_published(req.track_title)
     if existing and not existing.get("dry_run") and not existing.get("error"):
-        result.error = f"Already published: {existing.get('youtube_url')}"
-        result.youtube_id = existing.get("youtube_id")
-        result.youtube_url = existing.get("youtube_url")
-        result.smart_link = existing.get("smart_link")
-        return result
+        if req.force:
+            logger.warning(
+                "force=True: bypassing dedup guard. Prior publish at %s will be superseded.",
+                existing.get("youtube_url"),
+            )
+        else:
+            result.error = f"Already published: {existing.get('youtube_url')}"
+            result.youtube_id = existing.get("youtube_id")
+            result.youtube_url = existing.get("youtube_url")
+            result.smart_link = existing.get("smart_link")
+            return result
 
     try:
         cfg.ensure_workspace()

@@ -855,9 +855,10 @@ def cmd_content_youtube(args: list[str]):
 
     if sub == "publish":
         if not rest:
-            print("Usage: rjm.py content youtube publish <track> [--dry-run] [--schedule ISO]")
+            print("Usage: rjm.py content youtube publish <track> [--dry-run] [--schedule ISO] [--force]")
             sys.exit(1)
         dry_run = "--dry-run" in rest
+        force   = "--force" in rest
         schedule_iso = None
         if "--schedule" in rest:
             idx = rest.index("--schedule")
@@ -876,7 +877,7 @@ def cmd_content_youtube(args: list[str]):
             sys.exit(1)
         from content_engine.youtube_longform.publisher import publish_track
         from content_engine.youtube_longform.types import PublishRequest
-        req = PublishRequest(track_title=track, dry_run=dry_run, publish_at_iso=schedule_iso)
+        req = PublishRequest(track_title=track, dry_run=dry_run, force=force, publish_at_iso=schedule_iso)
         result = publish_track(req)
         print(json.dumps({
             "track":           result.request.track_title,
