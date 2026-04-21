@@ -42,3 +42,13 @@ outreach_agent/.claude_subprocess_home/
 
 # Claude Code local launch config
 .claude/launch.json
+
+# ─── Audio masters — NEVER delete this again ──────────────────────────────
+# content/audio/masters/ holds RJM track WAV files, hard-linked from
+# ~/Downloads/Music/Tracks/ (+ loose Selah.wav in ~/Downloads/). Files are
+# large (60+ MB each) and git-ignored. Directory structure kept only by
+# presence of .gitkeep. NEVER allow git to overwrite this path with a
+# symlink or anything else — the Apr 22 2026 merge did exactly that and
+# nearly lost the Selah master.
+content/audio/
+!content/audio/.gitkeep
