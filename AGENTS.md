@@ -4,8 +4,9 @@
 1,000,000 Spotify monthly listeners. Every agent action is evaluated against this goal.
 
 ## Identity
-Robert-Jan Mastenbroek — Dutch DJ/producer, 36, Tenerife. Melodic Techno + Tribal Psytrance.
+Robert-Jan Mastenbroek — Dutch DJ/producer, 36, Tenerife. **Nomadic Electronic** — organic powerful house (130 BPM) through tribal psytrance (145 BPM). Rooted in ethnic rhythms, Middle Eastern instrumentation (oud, handpan, tribal drums), sacred geometry.
 Spotify: 2Seaafm5k1hAuCkpdq7yds | Instagram: @holyraveofficial (290K)
+Sound references: Café de Anatolia · Sol Selectas / Sabo · Bedouin · Acid Arab · Ace Ventura · Vertex · Aioaska · Symbolic · Ranji · Astrix
 
 ## Swarm Topology (from ruflo/config/rjm-swarm.json)
 - **Queen**: rjm-master — orchestrates all growth activity 8×/day
