@@ -52,3 +52,4 @@ outreach_agent/.claude_subprocess_home/
 # nearly lost the Selah master.
 content/audio/
 !content/audio/.gitkeep
+.worktrees/
