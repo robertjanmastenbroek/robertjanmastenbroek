@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Robert-Jan Mastenbroek</title>
+  <title>Robert-Jan Mastenbroek — Nomadic Electronic</title>
   <meta name="description" content="Ancient Truth. Future Sound. — Stream, watch, and support the mission.">
+  <meta property="og:title" content="Robert-Jan Mastenbroek — Nomadic Electronic">
+  <meta property="og:description" content="Ancient Truth. Future Sound.">
+  <meta property="og:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+  <meta property="og:url" content="https://robertjanmastenbroek.com/links">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0a0a0a">
   <link rel="canonical" href="https://robertjanmastenbroek.com/links">
   <!-- Favicons — Holy Rave flame mark -->
   <link rel="icon" href="/favicon.ico" sizes="any">
@@ -14,7 +20,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -22,144 +28,289 @@
       padding: 0;
     }
 
+    :root {
+      --dark: #0a0a0a;
+      --bg-deep: #070708;
+      --indigo-deep: #0f1730;
+      --gold: #d4af37;
+      --terracotta: #b8532a;
+      --terracotta-glow: rgba(184, 83, 42, 0.28);
+      --ochre: #c8883a;
+      --ochre-soft: rgba(200, 136, 58, 0.42);
+      --ochre-dim: rgba(200, 136, 58, 0.18);
+      --text: #f5f1e8;
+      --text-soft: #c9c4b6;
+      --text-mute: #7a7266;
+      --ease-warm: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     body {
-      background: #0a0a0a;
-      color: #ffffff;
+      background: var(--dark);
+      color: var(--text);
       font-family: 'Inter', sans-serif;
+      font-weight: 300;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       justify-content: center;
-      padding: 8px 24px;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
+
+    /* ── Page atmosphere — indigo → dark gradient + warm horizon ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 10%, rgba(26, 42, 74, 0.55) 0%, transparent 60%),
+        radial-gradient(ellipse 90% 50% at 50% 100%, rgba(184, 83, 42, 0.22) 0%, transparent 65%),
+        linear-gradient(180deg, var(--indigo-deep) 0%, var(--dark) 55%, var(--dark) 100%);
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* ── Grain overlay — warm dust ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.82 0 0 0 0 0.55 0 0 0 0 0.23 0 0 0 0.7 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      opacity: 0.08;
+      mix-blend-mode: overlay;
+      z-index: 10000;
+      pointer-events: none;
+    }
+
+    ::selection { background: var(--terracotta); color: var(--text); }
+
+    /* ── Sigil symbol reused from /  ── */
+    .sigil {
+      display: inline-block;
+      width: 34px;
+      height: 34px;
+      color: currentColor;
+      flex-shrink: 0;
+    }
+    .sigil--sm { width: 20px; height: 20px; }
+    .sigil--lg { width: 56px; height: 56px; }
 
     .container {
       width: 100%;
-      max-width: 480px;
+      max-width: 440px;
       display: flex;
       flex-direction: column;
       align-items: center;
       margin: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Sigil ornament ── */
+    .mark {
+      color: var(--ochre);
+      margin-bottom: 2rem;
+      animation: breathe 9s var(--ease-warm) infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.7; }
+      50%      { transform: scale(1.05); opacity: 1; }
     }
 
     .name {
-      font-family: 'Cormorant Garamond', serif;
-      font-weight: 300;
-      font-size: clamp(28px, 6vw, 40px);
-      letter-spacing: 0.06em;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(28px, 6vw, 42px);
+      letter-spacing: 0.04em;
       text-align: center;
-      color: #ffffff;
-      line-height: 1.1;
+      color: var(--text);
+      line-height: 1.05;
+    }
+    .name em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--gold);
     }
 
     .tagline {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-style: italic;
       font-weight: 300;
-      font-size: 11px;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: #a08828;
-      margin-top: 10px;
+      font-size: 1.05rem;
+      letter-spacing: 0.08em;
+      color: var(--ochre);
+      margin-top: 0.5rem;
       text-align: center;
     }
 
+    /* ── Sigil divider ── */
     .divider {
-      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.1rem;
+      width: 100%;
+      max-width: 260px;
+      margin: 2.5rem auto;
+      color: var(--ochre);
+    }
+    .divider .line {
       height: 1px;
-      background: #d4af37;
-      margin: 28px auto;
-      flex-shrink: 0;
+      flex: 1;
+      background: linear-gradient(90deg, transparent, var(--ochre-soft) 50%, transparent);
     }
 
     .links {
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
     .link-btn {
       width: 100%;
-      min-height: 56px;
-      padding: 16px 24px;
-      border: 1px solid #d4af37;
-      border-radius: 4px;
-      background: transparent;
-      color: #ffffff;
+      min-height: 58px;
+      padding: 18px 26px;
+      border: 1px solid var(--ochre-dim);
+      background: rgba(10, 10, 10, 0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: var(--text);
       font-family: 'Inter', sans-serif;
-      font-weight: 400;
-      font-size: 13px;
-      letter-spacing: 0.16em;
+      font-weight: 500;
+      font-size: 0.82rem;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
       text-decoration: none;
       text-align: center;
-      transition: background 200ms ease, letter-spacing 200ms ease, border-color 200ms ease;
+      transition: all 280ms var(--ease-warm);
       cursor: pointer;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .link-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(200, 136, 58, 0.12), transparent);
+      transform: translateX(-110%);
+      transition: transform 0.75s var(--ease-warm);
     }
 
     .link-btn:hover,
     .link-btn:focus-visible {
-      background: rgba(212, 175, 55, 0.08);
-      letter-spacing: 0.20em;
-      border-color: #e8c84a;
-      outline: 2px solid #d4af37;
-      outline-offset: 2px;
+      border-color: var(--terracotta);
+      color: var(--text);
+      letter-spacing: 0.26em;
+      box-shadow: 0 10px 30px var(--terracotta-glow);
+      outline: none;
+    }
+    .link-btn:hover::before,
+    .link-btn:focus-visible::before {
+      transform: translateX(110%);
     }
 
     .link-btn:active {
-      background: rgba(212, 175, 55, 0.14);
+      transform: translateY(1px);
     }
 
     .link-btn--cta {
-      background: #d4af37;
-      color: #0a0a0a;
-      border-color: #d4af37;
-      margin-top: 8px;
-      font-weight: 500;
+      background: var(--gold);
+      color: var(--dark);
+      border-color: var(--gold);
+      margin-top: 10px;
+      font-weight: 700;
     }
-
     .link-btn--cta:hover,
     .link-btn--cta:focus-visible {
-      background: #e8c84a;
-      border-color: #e8c84a;
-      letter-spacing: 0.20em;
-    }
-
-    .link-btn--cta:active {
-      background: #c9a632;
+      background: var(--terracotta);
+      border-color: var(--terracotta);
+      color: var(--text);
+      letter-spacing: 0.26em;
     }
 
     .name-link {
       text-decoration: none;
       color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       transition: opacity 200ms ease;
     }
-
     .name-link:hover,
     .name-link:focus-visible {
-      opacity: 0.7;
+      opacity: 0.85;
       outline: none;
     }
 
     .footer {
-      margin-top: 36px;
-      font-size: 10px;
-      letter-spacing: 0.14em;
+      margin-top: 3rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
       text-transform: uppercase;
-      color: #333;
+      color: var(--text-mute);
       text-align: center;
+    }
+    .footer em {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-style: italic;
+      color: var(--ochre);
+      letter-spacing: 0.12em;
+      text-transform: none;
+      font-size: 0.85rem;
+      display: block;
+      margin-top: 0.4rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <a href="/" class="name-link"><h1 class="name">Robert-Jan Mastenbroek</h1></a>
-    <p class="tagline">Ancient Truth. Future Sound.</p>
 
-    <div class="divider"></div>
+  <!-- Sigil definition — shared with index.html -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute;">
+    <defs>
+      <symbol id="sigil" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.35"/>
+        <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.55"/>
+        <path d="M50 8 L58 42 L92 50 L58 58 L50 92 L42 58 L8 50 L42 42 Z"
+              fill="none" stroke="currentColor" stroke-width="0.7"/>
+        <path d="M50 24 L56 44 L76 50 L56 56 L50 76 L44 56 L24 50 L44 44 Z"
+              fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.7"/>
+        <circle cx="50" cy="4"  r="1.2" fill="currentColor"/>
+        <circle cx="50" cy="96" r="1.2" fill="currentColor"/>
+        <circle cx="4"  cy="50" r="1.2" fill="currentColor"/>
+        <circle cx="96" cy="50" r="1.2" fill="currentColor"/>
+        <circle cx="50" cy="50" r="1.8" fill="currentColor"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="container">
+    <a href="/" class="name-link">
+      <svg class="sigil sigil--lg mark"><use href="#sigil"/></svg>
+      <h1 class="name">Robert-Jan <em>Mastenbroek</em></h1>
+      <p class="tagline">Ancient Truth. Future Sound.</p>
+    </a>
+
+    <div class="divider">
+      <span class="line"></span>
+      <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
+      <span class="line"></span>
+    </div>
 
     <nav class="links" aria-label="Platform links">
       <a
@@ -196,7 +347,10 @@
       >Support the Mission</a>
     </nav>
 
-    <p class="footer">robertjanmastenbroek.com</p>
+    <p class="footer">
+      robertjanmastenbroek.com
+      <em>Ancient Truth. Future Sound.</em>
+    </p>
   </div>
 </body>
 </html>

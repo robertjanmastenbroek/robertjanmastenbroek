@@ -28,50 +28,113 @@
       /* Core palette (locked) */
       --dark:       #0a0a0a;
       --secondary:  #111111;
-      --card:       #161616;
+      --bg-deep:    #070708;
+      --card:       #121216;
       --gold:       #d4af37;
       --gold-dim:   rgba(212, 175, 55, 0.12);
       --gold-border:rgba(212, 175, 55, 0.25);
-      --text:       #ffffff;
-      --muted:      #a0a0a0;
-      --border:     rgba(255,255,255,0.07);
+      --text:       #f5f1e8;
+      --text-soft:  #c9c4b6;
+      --muted:      #c9c4b6;
+      --text-mute:  #7a7266;
+      --border:     rgba(212, 175, 55, 0.09);
+      --border-warm:rgba(200, 136, 58, 0.18);
       /* Earth accents (nomadic / sacred / tribal — 2026-04-21) */
       --terracotta:      #b8532a;
+      --terracotta-soft: #9a4524;
+      --terracotta-glow: rgba(184, 83, 42, 0.22);
       --terracotta-dim:  rgba(184, 83, 42, 0.15);
       --indigo-night:    #1a2a4a;
+      --indigo-deep:     #0f1730;
       --indigo-night-dim:rgba(26, 42, 74, 0.35);
       --ochre:           #c8883a;
+      --ochre-soft:      rgba(200, 136, 58, 0.42);
       --ochre-dim:       rgba(200, 136, 58, 0.18);
       /* Typography */
       --serif:      'Cormorant Garamond', Georgia, serif;
       --sans:       'Inter', -apple-system, sans-serif;
+      /* Motion */
+      --ease-warm:  cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-slow:  cubic-bezier(0.19, 1, 0.22, 1);
     }
 
     body {
       font-family: var(--sans);
+      font-weight: 300;
       background: var(--dark);
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.65;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
+
+    /* Grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10000;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.82 0 0 0 0 0.55 0 0 0 0 0.23 0 0 0 0.7 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      opacity: 0.08;
+      mix-blend-mode: overlay;
+    }
+
+    ::selection { background: var(--terracotta); color: var(--text); }
+
+    /* Sigil */
+    .sigil {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      color: currentColor;
+      flex-shrink: 0;
+    }
+    .sigil--xs { width: 12px; height: 12px; }
+    .sigil--sm { width: 18px; height: 18px; }
+    .sigil--md { width: 28px; height: 28px; }
+    .sigil--lg { width: 56px; height: 56px; }
 
     /* ── Nav ── */
     nav {
       position: fixed;
       top: 0; width: 100%;
-      background: rgba(10,10,10,0.92);
-      backdrop-filter: blur(20px);
+      background: rgba(10,10,10,0.72);
+      backdrop-filter: blur(20px) saturate(140%);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
       border-bottom: 1px solid var(--border);
       z-index: 100;
       padding: 1.2rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 2rem;
     }
-    nav .logo { font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text); text-decoration: none; }
-    nav .logo span { color: var(--gold); }
-    nav .back { color: var(--muted); text-decoration: none; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; transition: color 0.2s; }
-    nav .back:hover { color: var(--text); }
+    nav .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+      text-decoration: none;
+    }
+    nav .logo .sigil { color: var(--ochre); }
+    nav .logo em { color: var(--ochre); font-style: italic; font-weight: 400; }
+    nav .back {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.72rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      transition: color 0.3s var(--ease-warm);
+      font-weight: 500;
+    }
+    nav .back:hover { color: var(--ochre); }
 
     /* ── Hero ── */
     .hero {
@@ -84,53 +147,89 @@
       padding: 8rem 2rem 4rem;
       position: relative;
       overflow: hidden;
+      background: linear-gradient(180deg, var(--indigo-deep) 0%, var(--dark) 60%, var(--dark) 100%);
     }
-    .hero::before {
+    .hero::before,
+    .hero::after {
       content: '';
       position: absolute;
-      width: 900px; height: 900px;
-      background: radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 65%);
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      animation: breathe 12s ease-in-out infinite;
+      border-radius: 50%;
+      filter: blur(120px);
       pointer-events: none;
     }
-    @keyframes breathe {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-      50%       { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    .hero::before {
+      width: 55vw; height: 55vw;
+      top: -18vw; right: -10vw;
+      background: radial-gradient(circle, rgba(184, 83, 42, 0.30) 0%, transparent 70%);
+      animation: drift-warm 28s var(--ease-warm) infinite alternate;
+    }
+    .hero::after {
+      width: 50vw; height: 50vw;
+      bottom: -15vw; left: -15vw;
+      background: radial-gradient(circle, rgba(26, 42, 74, 0.55) 0%, transparent 70%);
+      animation: drift-cool 34s var(--ease-warm) infinite alternate;
+    }
+    @keyframes drift-warm {
+      0%   { transform: translate(0, 0);       opacity: 0.85; }
+      100% { transform: translate(-4vw, 3vw);  opacity: 0.55; }
+    }
+    @keyframes drift-cool {
+      0%   { transform: translate(0, 0);       opacity: 0.7; }
+      100% { transform: translate(5vw, -3vw);  opacity: 1; }
     }
 
     .hero-eyebrow {
-      font-size: 0.75rem;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: var(--gold);
-      margin-bottom: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      color: var(--terracotta);
+      margin-bottom: 1.75rem;
       position: relative;
+      z-index: 2;
+    }
+    .hero-eyebrow .pin {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--terracotta);
+      box-shadow: 0 0 12px var(--terracotta);
+      animation: ember 3.4s var(--ease-warm) infinite;
+    }
+    @keyframes ember {
+      0%, 100% { opacity: 0.55; transform: scale(0.85); }
+      50%      { opacity: 1;     transform: scale(1.3); }
     }
 
     .hero h1 {
       font-family: var(--serif);
       font-size: clamp(3rem, 8vw, 5.5rem);
-      font-weight: 600;
-      letter-spacing: 4px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      background: linear-gradient(135deg, #fff 30%, var(--gold) 100%);
+      background: linear-gradient(135deg, #f5f1e8 30%, var(--gold) 75%, var(--ochre) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       margin-bottom: 1.5rem;
       line-height: 1.1;
       position: relative;
+      z-index: 2;
     }
 
     .hero .sub {
       font-size: clamp(1rem, 2vw, 1.15rem);
       color: var(--muted);
-      max-width: 560px;
-      line-height: 1.8;
+      max-width: 580px;
+      line-height: 1.85;
       margin-bottom: 3rem;
       position: relative;
+      font-weight: 300;
+      z-index: 2;
     }
 
     /* ── MRR Counter ── */
@@ -195,32 +294,63 @@
     }
     .section-label {
       text-align: center;
-      font-size: 0.75rem;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: var(--gold);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+      color: var(--terracotta);
       margin-bottom: 1rem;
+      font-weight: 400;
     }
     .section-title {
       font-family: var(--serif);
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+      font-weight: 400;
       text-align: center;
-      letter-spacing: 3px;
-      text-transform: uppercase;
+      letter-spacing: -0.005em;
+      line-height: 1.15;
       margin-bottom: 0.75rem;
+    }
+    .section-title em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--ochre);
     }
     .section-sub {
       text-align: center;
       color: var(--muted);
-      max-width: 500px;
+      max-width: 520px;
       margin: 0 auto 4rem;
-      font-size: 1rem;
-      line-height: 1.7;
+      font-size: 1.05rem;
+      line-height: 1.75;
+      font-weight: 300;
     }
+    /* Sigil divider — replaces the legacy gold-line */
     .gold-line {
-      width: 50px; height: 2px;
-      background: var(--gold);
-      margin: 1.25rem auto 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      max-width: 240px;
+      margin: 1.5rem auto 2.5rem;
+      color: var(--ochre);
+      background: none;
+      height: auto;
+      width: auto;
+    }
+    .gold-line::before,
+    .gold-line::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--ochre-soft) 50%, transparent);
+      display: block;
+    }
+    .gold-line::before {
+      background: linear-gradient(90deg, transparent, var(--ochre-soft) 100%);
+    }
+    .gold-line::after {
+      background: linear-gradient(90deg, var(--ochre-soft), transparent);
     }
 
     /* ── Tier Cards ── */
@@ -234,12 +364,11 @@
     .tier-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
       padding: 2rem 1.75rem;
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      transition: all 0.35s ease;
+      transition: all 0.45s var(--ease-warm);
       position: relative;
       overflow: hidden;
     }
@@ -248,22 +377,22 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 2px;
-      background: var(--border);
-      transition: background 0.3s;
+      background: var(--border-warm);
+      transition: background 0.4s var(--ease-warm);
     }
     .tier-card:hover {
-      border-color: var(--gold-border);
+      border-color: var(--terracotta);
       transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      box-shadow: 0 20px 50px var(--terracotta-glow), 0 0 0 1px var(--terracotta-soft);
     }
     .tier-card:hover::before {
-      background: var(--gold);
+      background: var(--terracotta);
     }
 
     /* Featured card */
     .tier-card.featured {
-      border-color: var(--gold-border);
-      background: linear-gradient(160deg, #1a1600 0%, var(--card) 50%);
+      border-color: var(--gold);
+      background: linear-gradient(160deg, rgba(212, 175, 55, 0.05) 0%, var(--card) 55%);
     }
     .tier-card.featured::before {
       background: var(--gold);
@@ -273,20 +402,20 @@
       top: 1rem; right: 1rem;
       background: var(--gold);
       color: var(--dark);
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 700;
-      letter-spacing: 1.5px;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      padding: 0.3rem 0.75rem;
-      border-radius: 20px;
+      padding: 0.35rem 0.85rem;
     }
 
     .tier-name {
-      font-size: 0.75rem;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--gold);
-      font-weight: 600;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      color: var(--ochre);
+      font-weight: 400;
     }
     .tier-price {
       font-family: var(--serif);
@@ -425,26 +554,53 @@
 
     /* ── Scripture strip ── */
     .scripture {
-      background: var(--secondary);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      position: relative;
+      background: linear-gradient(180deg, rgba(26, 42, 74, 0.45), var(--bg-deep) 90%);
+      border-top: 1px solid var(--border-warm);
+      border-bottom: 1px solid var(--border-warm);
       text-align: center;
-      padding: 3rem 2rem;
+      padding: 4rem 2rem 3.5rem;
+      overflow: hidden;
+    }
+    .scripture::before {
+      content: '';
+      position: absolute;
+      width: 50vw; height: 50vw;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(184, 83, 42, 0.14) 0%, transparent 65%);
+      filter: blur(80px);
+      pointer-events: none;
+    }
+    .scripture-mark {
+      color: var(--ochre);
+      opacity: 0.55;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+      position: relative;
+      z-index: 1;
     }
     .scripture blockquote {
+      position: relative;
+      z-index: 1;
       font-family: var(--serif);
-      font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+      font-size: clamp(1.25rem, 2.6vw, 1.65rem);
       font-style: italic;
+      font-weight: 300;
       color: var(--text);
-      max-width: 600px;
-      margin: 0 auto 0.75rem;
-      line-height: 1.6;
+      max-width: 620px;
+      margin: 0 auto 1rem;
+      line-height: 1.65;
     }
     .scripture cite {
-      font-size: 0.8rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--gold);
+      position: relative;
+      z-index: 1;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 0.98rem;
+      letter-spacing: 0.14em;
+      color: var(--ochre);
+      font-weight: 400;
     }
 
     /* ── Footer strip ── */
@@ -524,21 +680,32 @@
       margin-bottom: 1.5rem;
     }
     .story-section .prose .pull {
+      position: relative;
       color: var(--text);
       font-family: var(--serif);
       font-style: italic;
-      font-size: 1.4rem;
-      border-left: 2px solid var(--gold);
-      padding: 0.25rem 0 0.25rem 1.5rem;
+      font-weight: 300;
+      font-size: clamp(1.3rem, 2.5vw, 1.55rem);
+      padding: 0.5rem 0 0.5rem 1.75rem;
       margin: 2.5rem 0;
     }
+    .story-section .prose .pull::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.5em;
+      bottom: 0.5em;
+      width: 2px;
+      background: linear-gradient(180deg, var(--terracotta), var(--ochre));
+    }
     .story-section .prose .close-line {
-      color: var(--gold);
+      color: var(--ochre);
       font-family: var(--serif);
-      font-size: 1.6rem;
+      font-size: clamp(1.5rem, 3vw, 1.85rem);
       text-align: center;
       margin-top: 3rem;
       font-style: italic;
+      font-weight: 300;
     }
 
     /* ── Three-card "What your support does" ── */
@@ -600,15 +767,37 @@
 </head>
 <body>
 
+  <!-- Sigil definition (shared) -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute;">
+    <defs>
+      <symbol id="sigil" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.35"/>
+        <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.55"/>
+        <path d="M50 8 L58 42 L92 50 L58 58 L50 92 L42 58 L8 50 L42 42 Z"
+              fill="none" stroke="currentColor" stroke-width="0.7"/>
+        <path d="M50 24 L56 44 L76 50 L56 56 L50 76 L44 56 L24 50 L44 44 Z"
+              fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.7"/>
+        <circle cx="50" cy="4"  r="1.2" fill="currentColor"/>
+        <circle cx="50" cy="96" r="1.2" fill="currentColor"/>
+        <circle cx="4"  cy="50" r="1.2" fill="currentColor"/>
+        <circle cx="96" cy="50" r="1.2" fill="currentColor"/>
+        <circle cx="50" cy="50" r="1.8" fill="currentColor"/>
+      </symbol>
+    </defs>
+  </svg>
+
   <!-- Nav -->
   <nav>
-    <a href="/" class="logo">Robert-Jan <span>M</span></a>
+    <a href="/" class="logo">
+      <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
+      <span>Robert-Jan <em>Mastenbroek</em></span>
+    </a>
     <a href="/" class="back">← Back to site</a>
   </nav>
 
   <!-- Hero -->
   <div class="hero">
-    <p class="hero-eyebrow">Send Me · Isaiah 6:8</p>
+    <p class="hero-eyebrow"><span class="pin"></span>Send Me · Isaiah 6:8</p>
     <h1>Keep Holy Rave<br>Free.</h1>
     <p class="sub">Every dancefloor. Every city. Every person. No tickets, no dress code, no faith test. Your support is what sends me to the rooms that need it most.</p>
 
@@ -633,6 +822,7 @@
 
   <!-- Scripture -->
   <div class="scripture">
+    <svg class="sigil sigil--md scripture-mark"><use href="#sigil"/></svg>
     <blockquote>"Then I heard the voice of the Lord saying, 'Whom shall I send, and who will go for us?' And I said: Here am I. Send me."</blockquote>
     <cite>— Isaiah 6:8</cite>
   </div>
@@ -640,8 +830,8 @@
   <!-- The Story -->
   <section class="story-section">
     <p class="section-label">The Story</p>
-    <h2 class="section-title">How we got here</h2>
-    <div class="gold-line"></div>
+    <h2 class="section-title">How <em>we got here</em></h2>
+    <div class="gold-line"><svg class="sigil sigil--sm"><use href="#sigil"/></svg></div>
 
     <div class="prose">
       <p>I built a crowdfunding platform once. €6 million through it. I was a millionaire at twenty-seven. Then it all burned — in the Netherlands, in the papers, in public. I left.</p>
@@ -671,8 +861,8 @@
   <!-- What Your Support Does -->
   <section class="support-does">
     <p class="section-label">What your support does</p>
-    <h2 class="section-title">Three things. Forever.</h2>
-    <div class="gold-line"></div>
+    <h2 class="section-title">Three things. <em>Forever.</em></h2>
+    <div class="gold-line"><svg class="sigil sigil--sm"><use href="#sigil"/></svg></div>
 
     <div class="three-cards">
       <div class="tier-card">
@@ -693,8 +883,8 @@
   <!-- Tiers -->
   <div class="tiers-section">
     <p class="section-label">Choose your part</p>
-    <h2 class="section-title">Send Me</h2>
-    <div class="gold-line"></div>
+    <h2 class="section-title">Send <em>Me</em></h2>
+    <div class="gold-line"><svg class="sigil sigil--sm"><use href="#sigil"/></svg></div>
     <p class="section-sub">Every tier sends the music further. Pick what feels right.</p>
 
     <div class="tiers-grid">
