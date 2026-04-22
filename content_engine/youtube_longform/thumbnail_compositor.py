@@ -34,11 +34,33 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from content_engine.youtube_longform import config as cfg
+
+
+# ─── Composition hints — per-track layout intent ─────────────────────────────
+#
+# Drives TWO things:
+#   (1) The placement strategy when the subject is about-as-expected —
+#       helps the compositor choose "opposite_side" vs "across_body" vs
+#       "lower_third" without solely relying on the rembg mask.
+#   (2) A hint for the prompt-builder to vary subject framing across the
+#       catalog so we don't ship 12 identical left-third portraits.
+#
+# The compositor still has the final say — if Flux produced a HUGE subject
+# but the hint says "subject_center_portrait", the hint is overridden to
+# "opposite_side" so the title stays readable. Hints are preferences, not
+# contracts.
+CompositionHint = Literal[
+    "subject_left",              # subject LEFT third, scene fills right — text on right
+    "subject_right",             # subject RIGHT third, scene fills left — text on left
+    "subject_center_portrait",   # tight center portrait, text crosses body (MrBeast style)
+    "subject_center_wide",       # wide landscape / small subject center — text lower-third
+    "auto",                      # let the compositor decide from the rembg mask alone
+]
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +114,16 @@ class CompositorStyle:
     # CTR lever in music-YouTube (Cafe de Anatolia / Sol Selectas / every
     # MrBeast thumbnail). Uses fal.ai rembg (~$0.002 per thumbnail).
     text_behind_subject: bool  = True
+    # Auto-sizing: title font starts at title_font_px and is auto-shrunk
+    # by 10px per step until the text fits `max_text_width_fraction` of
+    # the horizontal allotment for the chosen strategy. Min floor prevents
+    # unreadable-tiny fallback — tracks with extreme-long titles get
+    # 2-line balanced wrap instead.
+    title_font_px_min:   int   = 110
+    # 2-line wrap policy: if even the min single-line font wouldn't fit,
+    # split the title into two lines at the word break that minimizes
+    # max(line1_width, line2_width) — i.e. balanced lines, not left-skewed.
+    max_title_lines:     int   = 2
 
 
 DEFAULT_STYLE = CompositorStyle()
@@ -310,6 +342,7 @@ def composite_thumbnail(
     *,
     artist_name: str = "Robert-Jan Mastenbroek",
     subtitle: Optional[str] = None,           # e.g. scripture anchor "Joshua 6"
+    composition_hint: CompositionHint = "auto",
     output_path: Optional[Path] = None,
     style: CompositorStyle = DEFAULT_STYLE,
 ) -> Path:
@@ -347,35 +380,78 @@ def composite_thumbnail(
     # Scale font sizes off the canvas width so the compositor works on
     # both 1920x1080 heroes and 1280x720 thumbnails with no manual tuning.
     scale = canvas_w / 1920.0
-    title_px    = max(48, int(style.title_font_px * scale))
-    subtitle_px = max(20, int(style.subtitle_font_px * scale))
-    artist_px   = max(16, int(style.artist_font_px * scale))
-    logo_h      = max(40, int(style.logo_height_px * scale))
-    margin      = max(12, int(style.logo_margin_px * scale))
-    bottom_margin = max(60, int(style.text_block_bottom_margin_px * scale))
-    title_tracking = style.title_letter_spacing * scale
+    base_title_px   = max(48, int(style.title_font_px * scale))
+    min_title_px    = max(40, int(style.title_font_px_min * scale))
+    subtitle_px     = max(20, int(style.subtitle_font_px * scale))
+    artist_px       = max(16, int(style.artist_font_px * scale))
+    logo_h          = max(40, int(style.logo_height_px * scale))
+    margin          = max(12, int(style.logo_margin_px * scale))
+    bottom_margin   = max(60, int(style.text_block_bottom_margin_px * scale))
+    title_tracking  = style.title_letter_spacing * scale
 
-    title_font    = ImageFont.truetype(str(FONT_TITLE),    title_px)
-    artist_font   = ImageFont.truetype(str(FONT_ARTIST),   artist_px)
-    subtitle_font = ImageFont.truetype(str(FONT_SUBTITLE), subtitle_px)
+    artist_font     = ImageFont.truetype(str(FONT_ARTIST),   artist_px)
+    subtitle_font   = ImageFont.truetype(str(FONT_SUBTITLE), subtitle_px)
+    divider_thickness = max(1, int(style.divider_thickness_px * scale))
+
+    # ── Extract subject FIRST so placement strategy + max-text-width
+    # calculations can react to the real subject footprint.
+    subject_png: Optional[Path] = None
+    if style.text_behind_subject:
+        subject_png = _extract_subject(base_image_path)
+
+    subject_width_ratio, subject_cx_ratio, subject_density = (
+        _subject_bbox_ratio(subject_png, canvas_w) if subject_png else (0.0, 0.5, 0.0)
+    )
+    strategy = _decide_placement_strategy(
+        composition_hint, subject_width_ratio, subject_cx_ratio,
+    )
+    logger.info(
+        "Composition | hint=%s | subject_width=%.2f cx=%.2f density=%.2f → strategy=%s",
+        composition_hint, subject_width_ratio, subject_cx_ratio,
+        subject_density, strategy,
+    )
+
+    # ── Horizontal allotment for the text block (max_text_width) depends on
+    # the chosen strategy. opposite_side = one half-canvas (since the
+    # subject occupies the other half); across_body / lower_third can use
+    # most of the canvas width with a safety margin.
+    side_pad = int(40 * scale)
+    if strategy == "opposite_side":
+        # Subject occupies one half; text gets the other half minus pad.
+        max_text_width = int(canvas_w * 0.5) - side_pad * 2
+    else:
+        # across_body or lower_third — text can span most of the canvas.
+        max_text_width = canvas_w - side_pad * 2
+
+    # ── Resolve the title: single line if possible, balanced 2-line
+    # wrap otherwise, with auto font-size shrinking.
+    rendered_title = _resolve_title_rendering(
+        track_title,
+        max_width=max_text_width,
+        base_font_px=base_title_px,
+        min_font_px=min_title_px,
+        max_lines=style.max_title_lines,
+        tracking_px_per_em=title_tracking,
+    )
+
+    # Support-line widths (artist + scripture) don't need auto-sizing —
+    # they're deterministically shorter than any title we'll see.
+    artist_text  = artist_name.upper()
+    artist_width = int(artist_font.getlength(artist_text))
+    sub_width    = int(subtitle_font.getlength(subtitle)) if subtitle else 0
 
     # ── Layout math: anchor BOTTOM of text block to bottom_margin from
-    # the canvas bottom. That puts the entire block inside the 87.5%
-    # mobile-safe boundary while keeping title LOW enough to cross the
-    # subject's torso (enabling the text-behind-subject depth effect).
-    divider_thickness   = max(1, int(style.divider_thickness_px * scale))
-    gap_below_title     = int(title_px * 0.08)    # space from title to divider
-    gap_below_divider   = int(12 * scale)         # space from divider to artist
-    gap_below_artist    = int(artist_px * 0.45)   # space from artist to scripture
+    # the canvas bottom (mobile-safe zone).
+    gap_below_title     = int(rendered_title.font_px * 0.10)
+    gap_below_divider   = int(14 * scale)
+    gap_below_artist    = int(artist_px * 0.45)
 
-    # Going UP from the bottom margin:
     sub_bottom_y = canvas_h - bottom_margin
     if subtitle:
         sub_y = sub_bottom_y - subtitle_px
         artist_bottom_y = sub_y - gap_below_artist
     else:
         artist_bottom_y = sub_bottom_y
-
     artist_y = artist_bottom_y - artist_px
 
     if style.divider_enabled:
@@ -385,61 +461,63 @@ def composite_thumbnail(
     else:
         title_bottom_y = artist_y - gap_below_title
 
-    # Flux title glyphs sit ~1.1x font_px tall
-    title_y = title_bottom_y - int(title_px * 1.1)
+    # Multi-line title: top of block = bottom - block_height
+    title_top_y = title_bottom_y - rendered_title.block_height
 
-    # ── Pre-compute text widths so we know the maximum horizontal footprint
-    # before deciding text_center_x (subject-aware placement uses this).
-    title_text   = track_title.upper()
-    title_width  = _measure_tracked_text(title_font, title_text, title_tracking)
-    artist_text  = artist_name.upper()
-    artist_width = int(artist_font.getlength(artist_text))
-    sub_width    = int(subtitle_font.getlength(subtitle)) if subtitle else 0
-    max_text_width = max(title_width, artist_width, sub_width)
-
-    # ── Extract subject FIRST (if enabled) so we can use its mask for
-    # subject-aware text placement. The subject PNG is cached so re-running
-    # this compositor on the same base is free.
-    subject_png: Optional[Path] = None
-    if style.text_behind_subject:
-        subject_png = _extract_subject(base_image_path)
-
-    # ── Subject-aware text center x: default to canvas center, but if we
-    # have a subject mask, shift the text into the largest subject-free
-    # horizontal zone. This guarantees the title stays READABLE even
-    # when the behind-subject effect is applied (otherwise a big subject
-    # like a warrior covers half the title).
-    if subject_png is not None:
-        text_center_x = _compute_subject_aware_text_center_x(
-            subject_png, canvas_w, title_y, sub_bottom_y, max_text_width,
+    # ── Horizontal center (text_center_x) depends on strategy.
+    text_center_x = canvas_w // 2
+    max_line_width = max(rendered_title.line_widths)
+    if strategy == "opposite_side" and subject_png is not None:
+        # Snap text center to the OPPOSITE half from the subject.
+        # Subject cx < 0.5 → text goes to right half; > 0.5 → left half.
+        if subject_cx_ratio < 0.5:
+            # Subject LEFT → text CENTER on right-half midpoint
+            text_center_x = int(canvas_w * 0.72)
+        else:
+            text_center_x = int(canvas_w * 0.28)
+        # Fine-tune with the subject-aware algorithm for minor overlap
+        fine = _compute_subject_aware_text_center_x(
+            subject_png, canvas_w, title_top_y, sub_bottom_y, max_line_width,
         )
-    else:
+        # If the fine-tune landed anywhere reasonable, use it; otherwise keep the snap.
+        if fine and abs(fine - text_center_x) < int(canvas_w * 0.25):
+            text_center_x = fine
+    elif strategy == "lower_third":
+        # Text always canvas-centered when below subject.
         text_center_x = canvas_w // 2
+    else:  # across_body
+        # Canvas-centered, allowing the subject to cross the text naturally.
+        text_center_x = canvas_w // 2
+
+    # Clamp so text stays in-canvas
+    half_w = max_line_width // 2
+    text_center_x = max(half_w + side_pad,
+                        min(canvas_w - half_w - side_pad, text_center_x))
 
     # ── Begin compositing on an RGBA working copy.
     canvas = base.copy()
 
-    # 1. Legibility gradient — a soft darkening band anchored around the
-    # TEXT BLOCK (not the canvas bottom), so moving text up moves the
-    # gradient with it. The gradient fades from fully transparent at
-    # its top to `gradient_strength` darkness at the bottom-block edge.
-    _apply_text_block_gradient(canvas, style, title_y, sub_bottom_y)
+    # 1. Legibility gradient anchored around the text block.
+    _apply_text_block_gradient(canvas, style, title_top_y, sub_bottom_y)
 
     draw = ImageDraw.Draw(canvas)
 
-    # 2. Main title — UPPERCASE, horizontally centered on text_center_x.
-    title_x = text_center_x - title_width // 2
+    # 2. Multi-line title — each line centered on text_center_x, stacked
+    #    vertically with line_height spacing.
+    title_y_cursor = title_top_y
+    for line_text, line_width in zip(rendered_title.lines, rendered_title.line_widths):
+        line_x = text_center_x - line_width // 2
+        _draw_text_with_shadow(
+            draw, canvas,
+            (line_x, title_y_cursor), line_text,
+            font=rendered_title.font, color=COLOR_GOLD,
+            shadow_offset=max(2, int(5 * scale)),
+            shadow_blur=max(4, int(10 * scale)),
+            letter_spacing=rendered_title.tracking_px,
+        )
+        title_y_cursor += rendered_title.line_height
 
-    _draw_text_with_shadow(
-        draw, canvas,
-        (title_x, title_y), title_text,
-        font=title_font, color=COLOR_GOLD,
-        shadow_offset=max(2, int(5 * scale)),
-        shadow_blur=max(4, int(10 * scale)),
-        letter_spacing=title_tracking,
-    )
-
-    # 3. Ochre horizontal divider (centered on text_center_x).
+    # 3. Ochre horizontal divider.
     if style.divider_enabled:
         div_len = int(canvas_w * style.divider_length_pct)
         div_x1  = text_center_x - div_len // 2
@@ -448,7 +526,7 @@ def composite_thumbnail(
             fill=COLOR_OCHRE,
         )
 
-    # 4. Artist line below divider (centered on text_center_x).
+    # 4. Artist line below divider.
     artist_x = text_center_x - artist_width // 2
     _draw_text_with_shadow(
         draw, canvas,
@@ -458,7 +536,7 @@ def composite_thumbnail(
         shadow_blur=max(2, int(5 * scale)),
     )
 
-    # 5. Scripture anchor (subtle salt — users who know the Word recognize it).
+    # 5. Scripture anchor.
     if subtitle:
         sub_x = text_center_x - sub_width // 2
         _draw_text_with_shadow(
@@ -482,15 +560,43 @@ def composite_thumbnail(
 
     # 7. Text-behind-subject — paste the subject cut-out on top of the
     # text so the text appears to sit behind the subject in 3D space.
-    # We already extracted subject_png upstream for subject-aware text
-    # placement, so this is a free (cached) re-use of the same PNG.
+    #
+    # SAFETY GUARD: for some subjects (full-body centered portraits,
+    # dramatic wingspans, large crowds) the subject mask would cover
+    # nearly all of the text pixels — making the title unreadable. In
+    # those cases we SKIP pasting the subject layer and ship with text
+    # fully visible on top. Losing the depth effect is acceptable; an
+    # invisible title is not.
     if subject_png is not None:
         try:
-            subj_img = Image.open(subject_png).convert("RGBA")
-            if subj_img.size != canvas.size:
-                subj_img = subj_img.resize(canvas.size, Image.LANCZOS)
-            canvas.alpha_composite(subj_img, dest=(0, 0))
-            logger.info("Applied text-behind-subject layer")
+            # Estimate what fraction of title pixels would be hidden
+            # by the subject layer. If >60%, skip the behind-subject
+            # effect entirely.
+            title_line_height = rendered_title.line_height
+            title_region = (
+                text_center_x - max_line_width // 2,
+                title_top_y,
+                text_center_x + max_line_width // 2,
+                title_top_y + rendered_title.block_height,
+            )
+            coverage = _estimate_subject_coverage(
+                subject_png, canvas_w, canvas_h, title_region,
+            )
+            if coverage > 0.60:
+                logger.info(
+                    "Subject-layer SKIPPED — would cover %.0f%% of title "
+                    "(> 60%% threshold). Title renders on top for readability.",
+                    coverage * 100,
+                )
+            else:
+                subj_img = Image.open(subject_png).convert("RGBA")
+                if subj_img.size != canvas.size:
+                    subj_img = subj_img.resize(canvas.size, Image.LANCZOS)
+                canvas.alpha_composite(subj_img, dest=(0, 0))
+                logger.info(
+                    "Applied text-behind-subject layer (covers %.0f%% of title)",
+                    coverage * 100,
+                )
         except Exception as e:
             logger.warning(
                 "Could not overlay subject PNG (non-fatal): %s", e,
@@ -510,6 +616,290 @@ def composite_thumbnail(
         output_path.stat().st_size,
     )
     return output_path
+
+
+def _estimate_subject_coverage(
+    subject_png_path: Path,
+    canvas_w: int,
+    canvas_h: int,
+    region: tuple[int, int, int, int],
+) -> float:
+    """
+    Estimate the fraction (0.0–1.0) of pixels inside `region` (x1, y1, x2, y2)
+    that are opaque in the subject alpha mask. Used as the "would the subject
+    layer hide the title?" guard — if >0.60, caller skips the behind-subject
+    paste so the title stays visible.
+
+    Rescales the subject PNG to canvas dimensions on the fly so coverage math
+    is canvas-relative.
+    """
+    import numpy as np
+    x1, y1, x2, y2 = region
+    # Clamp to canvas
+    x1 = max(0, min(canvas_w, x1))
+    x2 = max(0, min(canvas_w, x2))
+    y1 = max(0, min(canvas_h, y1))
+    y2 = max(0, min(canvas_h, y2))
+    if x2 <= x1 or y2 <= y1:
+        return 0.0
+    try:
+        subj = Image.open(subject_png_path).convert("RGBA")
+        if subj.size != (canvas_w, canvas_h):
+            subj = subj.resize((canvas_w, canvas_h), Image.LANCZOS)
+        alpha = np.array(subj)[..., 3]
+        region_alpha = alpha[y1:y2, x1:x2]
+        if region_alpha.size == 0:
+            return 0.0
+        opaque_ratio = float((region_alpha > 128).mean())
+        return opaque_ratio
+    except Exception as e:
+        logger.warning("coverage estimate failed: %s", e)
+        return 0.0
+
+
+def _subject_bbox_ratio(subject_png_path: Path, canvas_w: int) -> tuple[float, float, float]:
+    """
+    Measure the subject's horizontal footprint in the alpha mask. Returns
+    (subject_width_ratio, subject_center_x_ratio, subject_density_in_bbox).
+
+    - `subject_width_ratio`: width of the bounding box divided by canvas_w.
+      0.0 = no subject, 1.0 = subject spans full width.
+    - `subject_center_x_ratio`: horizontal center of mass (0.0 = far left,
+      1.0 = far right).
+    - `subject_density_in_bbox`: how much of the bbox is actually opaque
+      subject (vs background holes). Low density = sparse subject (e.g.
+      wings spread), high density = solid subject (portrait).
+
+    Falls back to (0.0, 0.5, 0.0) on any error — caller treats that as
+    "no subject detected, use canvas-center behavior".
+    """
+    import numpy as np
+    try:
+        subj = np.array(Image.open(subject_png_path).convert("RGBA"))
+    except Exception as e:
+        logger.warning("Could not read subject mask for bbox: %s", e)
+        return (0.0, 0.5, 0.0)
+
+    if subj.shape[1] != canvas_w:
+        # Subject PNG is at a different resolution — normalize for ratio math.
+        pass  # our ratio math uses its own width internally
+
+    alpha = subj[..., 3]
+    opaque = alpha > 128
+    if not opaque.any():
+        return (0.0, 0.5, 0.0)
+
+    # Columns that have ANY subject pixels
+    cols_with_subject = opaque.any(axis=0)
+    idxs = np.where(cols_with_subject)[0]
+    if len(idxs) == 0:
+        return (0.0, 0.5, 0.0)
+    bbox_left = int(idxs[0])
+    bbox_right = int(idxs[-1])
+    bbox_width = bbox_right - bbox_left + 1
+    width_ratio = bbox_width / alpha.shape[1]
+
+    # Horizontal center of mass (weighted by opaque pixel count per column)
+    col_counts = opaque.sum(axis=0).astype(np.float64)
+    total = col_counts.sum()
+    if total <= 0:
+        return (0.0, 0.5, 0.0)
+    cx = float((col_counts * np.arange(alpha.shape[1])).sum() / total)
+    cx_ratio = cx / alpha.shape[1]
+
+    # Density inside the bbox (opaque pixels / bbox area)
+    bbox_area = bbox_width * alpha.shape[0]
+    density = float(col_counts.sum() / max(bbox_area, 1))
+
+    return (width_ratio, cx_ratio, density)
+
+
+# ─── Placement strategy ─────────────────────────────────────────────────────
+
+PlacementStrategy = Literal["opposite_side", "across_body", "lower_third"]
+
+
+def _decide_placement_strategy(
+    hint: CompositionHint,
+    subject_width_ratio: float,
+    subject_cx_ratio: float,
+) -> PlacementStrategy:
+    """
+    Combine the composition hint (intent) with the real subject bbox
+    (observation) to pick a placement strategy for the text block.
+
+    Rules:
+      * HUGE subject (>55% canvas width) → opposite_side, regardless of hint.
+        Any other strategy would cover most of the title.
+      * subject_center_wide hint AND sparse/small subject → lower_third.
+      * subject_center_portrait hint AND sensible size → across_body.
+      * subject_left / subject_right hints → opposite_side matched to subject
+        position (i.e. text goes in the empty half).
+      * auto hint → infer from subject position + size.
+
+    The compositor uses the returned strategy to pick the text horizontal
+    center and the max text width allotment.
+    """
+    # Hard override: if subject is dominant, always opposite_side.
+    if subject_width_ratio > 0.55:
+        return "opposite_side"
+
+    # Hard override: if subject is very small, always lower_third (text goes
+    # below subject or spans canvas since there's plenty of room).
+    if subject_width_ratio < 0.22:
+        return "lower_third"
+
+    if hint == "subject_left":
+        return "opposite_side"
+    if hint == "subject_right":
+        return "opposite_side"
+    if hint == "subject_center_portrait":
+        return "across_body"
+    if hint == "subject_center_wide":
+        return "lower_third"
+
+    # hint == "auto" — infer
+    if subject_width_ratio > 0.40:
+        # Medium-large subject — probably a portrait. across_body gives depth.
+        return "across_body"
+    if abs(subject_cx_ratio - 0.5) > 0.18:
+        # Off-center subject — opposite_side keeps text clear
+        return "opposite_side"
+    return "across_body"
+
+
+# ─── Title auto-sizing + balanced 2-line wrap ────────────────────────────────
+
+@dataclass(frozen=True)
+class RenderedTitle:
+    """Result of _resolve_title_rendering — title ready to draw."""
+    lines:           list[str]           # 1 or 2 strings, already uppercase
+    font:            ImageFont.FreeTypeFont
+    font_px:         int                  # resolved font size
+    line_widths:     list[int]            # tracked widths per line
+    tracking_px:     float                # per-char extra spacing
+    line_height:     int                  # baseline-to-baseline height in px
+    block_height:    int                  # total block height for all lines
+
+
+def _resolve_title_rendering(
+    title: str,
+    max_width: int,
+    base_font_px: int,
+    min_font_px: int,
+    max_lines: int,
+    tracking_px_per_em: float,
+) -> RenderedTitle:
+    """
+    Produce a single-line or balanced multi-line rendering that fits inside
+    max_width at the largest feasible font size.
+
+    Priority:
+      1. Single line at base_font_px if it fits.
+      2. Two balanced lines at base_font_px (split at the word break that
+         minimizes max(line1_width, line2_width) — e.g. "HOW GOOD AND
+         PLEASANT" becomes "HOW GOOD" / "AND PLEASANT", not "HOW" / "GOOD
+         AND PLEASANT").
+      3. Shrink the font and retry 1 → 2 until something fits or we hit
+         min_font_px.
+      4. If even 2-line at min_font_px overflows, return it clipped — the
+         compositor will warn and ship it anyway; extremely long titles
+         probably needed manual config regardless.
+    """
+    title_upper = title.strip().upper()
+    words = title_upper.split()
+
+    def _build_line(text: str, font_px: int) -> tuple[int, float, ImageFont.FreeTypeFont]:
+        """Return (width, tracking_px, font) for one line at a given size."""
+        font = ImageFont.truetype(str(FONT_TITLE), font_px)
+        # Scale tracking with font size to keep visual balance
+        tracking = tracking_px_per_em * (font_px / base_font_px)
+        w = _measure_tracked_text(font, text, tracking)
+        return w, tracking, font
+
+    def _best_balanced_split(font_px: int) -> tuple[Optional[list[str]], Optional[list[int]], float, ImageFont.FreeTypeFont]:
+        """
+        Return (lines, widths, tracking, font) for the best balanced
+        2-line split at this font size. Returns ([], [], tracking, font)
+        if title has 1 word (can't split).
+        """
+        if len(words) < 2:
+            _, tr, f = _build_line(words[0] if words else "", font_px)
+            return None, None, tr, f
+
+        best_split, best_max = None, float("inf")
+        cached_tracking = 0.0
+        cached_font = None
+        for split in range(1, len(words)):
+            line1 = " ".join(words[:split])
+            line2 = " ".join(words[split:])
+            w1, tr, font = _build_line(line1, font_px)
+            w2, _,  _    = _build_line(line2, font_px)
+            if cached_font is None:
+                cached_tracking = tr
+                cached_font = font
+            mx = max(w1, w2)
+            if mx < best_max:
+                best_max = mx
+                best_split = (line1, line2, w1, w2)
+        if best_split is None:
+            return None, None, cached_tracking, cached_font
+
+        line1, line2, w1, w2 = best_split
+        return [line1, line2], [w1, w2], cached_tracking, cached_font
+
+    # Iterate from base_font_px downward in 10-px steps.
+    for font_px in range(base_font_px, min_font_px - 1, -10):
+        # Try single line first
+        w, tracking, font = _build_line(title_upper, font_px)
+        if w <= max_width:
+            line_height = int(font_px * 1.1)
+            return RenderedTitle(
+                lines=[title_upper],
+                font=font,
+                font_px=font_px,
+                line_widths=[w],
+                tracking_px=tracking,
+                line_height=line_height,
+                block_height=line_height,
+            )
+
+        # Single line doesn't fit — try 2-line balanced if allowed + possible.
+        if max_lines >= 2 and len(words) >= 2:
+            lines, widths, tracking, font = _best_balanced_split(font_px)
+            if lines is not None:
+                mx = max(widths)
+                if mx <= max_width:
+                    line_height = int(font_px * 1.1)
+                    block_height = line_height * len(lines)
+                    return RenderedTitle(
+                        lines=lines,
+                        font=font,
+                        font_px=font_px,
+                        line_widths=widths,
+                        tracking_px=tracking,
+                        line_height=line_height,
+                        block_height=block_height,
+                    )
+
+    # Nothing fit — return the best we can at min_font_px (will overflow
+    # slightly but won't crash). Caller logs a warning.
+    logger.warning(
+        "Title %r does not fit in max_width=%dpx even at %dpx 2-line — "
+        "compositor will render it overflowing.",
+        title_upper, max_width, min_font_px,
+    )
+    w, tracking, font = _build_line(title_upper, min_font_px)
+    line_height = int(min_font_px * 1.1)
+    return RenderedTitle(
+        lines=[title_upper],
+        font=font,
+        font_px=min_font_px,
+        line_widths=[w],
+        tracking_px=tracking,
+        line_height=line_height,
+        block_height=line_height,
+    )
 
 
 def _compute_subject_aware_text_center_x(

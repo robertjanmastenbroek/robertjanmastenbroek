@@ -72,6 +72,12 @@ class Keyframe:
     """
     keyframe_id:  str                  # "rjm_warrior", "rjm_priestess", ...
     still_prompt: str                  # Full Flux 2 Pro /edit prompt
+    # Composition hint for the thumbnail compositor — tells it where to
+    # place the text block relative to the subject Flux is expected to
+    # produce. Only meaningful on dedicated thumbnail_keyframes (morph
+    # chain keyframes ignore this since they never get titled).
+    # Values mirror thumbnail_compositor.CompositionHint literal.
+    composition_hint: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -445,6 +451,7 @@ _JERICHO_MORPHS_DRONE: list[MorphClip] = [
 
 _JERICHO_THUMBNAIL_KEYFRAME = Keyframe(
     keyframe_id="rjm_jericho_thumbnail_v2",
+    composition_hint="subject_left",  # warrior LEFT, walls fill right — text right
     # v2 (2026-04-22 CTR rewrite): Jericho previously had NO dedicated
     # thumbnail (fell back to keyframes[0]=rjm_warrior, a tight portrait).
     # This dedicated thumbnail places the warrior in the LEFT HALF and
@@ -1006,32 +1013,36 @@ _SELAH_MORPHS: list[MorphClip] = [
 # occupying the majority of the frame, (3) direct piercing eye contact,
 # (4) high contrast, (5) saturated earth-palette tones against black.
 _SELAH_THUMBNAIL_KEYFRAME = Keyframe(
-    keyframe_id="rjm_selah_thumbnail_v2",
-    # v2 (2026-04-22 CTR rewrite): face dropped from 70% to ~35% of frame,
-    # pitch-black background replaced with a warm Bedouin tent interior,
-    # high-key golden-hour exposure replaces the single-candle low-key
-    # lighting that kept brightness below the viral baseline. Wider
-    # composition + brighter exposure = higher mobile-thumbnail CTR.
+    keyframe_id="rjm_selah_thumbnail_v3",
+    # v3 (2026-04-22 composition-variety rewrite): Selah is the
+    # "be still and know" track — the viral DNA for organic house
+    # rewards introspective gaze + environmental context. Shift subject
+    # to CENTER (tight portrait), scene wraps AROUND him. Text goes
+    # across-body (MrBeast style) using the subject_center_portrait hint.
+    # Gaze looking down-and-away (not direct camera) per DNA finding that
+    # 24/30 organic-house viral thumbnails avoid direct eye contact.
+    composition_hint="subject_center_portrait",
     still_prompt=(
         "Cinematic YouTube thumbnail of an Iron Age Hebrew desert "
-        "contemplative elder in his sixties, piercing direct eye contact "
-        "with the camera, face and shoulders occupying roughly the LEFT "
-        "THIRD of the frame, weathered bearded face with every line "
-        "visible, long gray-streaked beard, a hand-woven indigo-and-gold "
-        "striped head wrap framing his brow patterned with ancient "
-        "Levantine geometric motif, a single hand-wrought silver pendant "
-        "on a dark leather cord at the collarbone. The RIGHT TWO-THIRDS "
-        "of the frame reveals the warm interior of a sunset-lit Bedouin "
-        "tent — hand-woven earth-red-and-indigo patterned wool rugs "
-        "hanging on the tent walls, a brass oil lamp glowing amber in the "
-        "middle distance, golden-hour desert light pouring through the "
-        "open tent flap behind him casting long warm shadows and "
-        "illuminating drifting dust particles in the air. Rich high-key "
-        "cinematic lighting with warm golden ambient fill keeping "
-        "shadows luminous and tonal range bright, shallow depth of "
-        "field, cinematic wide framing, ultra-saturated terracotta and "
-        "liturgical-gold and indigo-night palette with warm amber skin "
-        "tones, Iron Age Levant c. 1000 BCE biblical contemplative, "
+        "contemplative elder in his sixties, head and shoulders "
+        "occupying the CENTER of the frame, gaze looking downward "
+        "toward his hands folded in quiet prayer (NOT direct eye "
+        "contact), weathered bearded face with every line visible "
+        "under warm golden-hour light, long gray-streaked beard, "
+        "hand-woven indigo-and-gold striped head wrap framing his "
+        "brow with ancient Levantine geometric motif, hand-wrought "
+        "silver pendant on a dark leather cord at the collarbone. "
+        "The scene wraps around him: ornate hand-woven earth-red-"
+        "and-indigo patterned wool rugs visible in the foreground, "
+        "hazy sunset desert landscape with dunes and distant "
+        "ancient ruins behind him catching warm amber light, "
+        "subtle floating dust particles illuminated by the setting "
+        "sun. Rich high-key golden-hour lighting wrapping his face "
+        "from above, deep soft cool-indigo shadow on the contemplative "
+        "side, shallow depth of field with atmospheric haze in the "
+        "background, 50mm portrait lens feel, ultra-saturated "
+        "terracotta and liturgical-gold and indigo-night palette, "
+        "Iron Age Levant c. 1000 BCE biblical contemplative, "
         "photographic realism, 16:9, --style raw"
     ),
 )
@@ -1387,33 +1398,36 @@ _HALLELUYAH_MORPHS: list[MorphClip] = [
 ]
 
 _HALLELUYAH_THUMBNAIL_KEYFRAME = Keyframe(
-    keyframe_id="rjm_halleluyah_thumbnail_v2",
-    # v2 (2026-04-22 CTR rewrite): pitch-black replaced with massive
-    # ceremonial bonfire filling two-thirds of the frame, face dropped
-    # to 35%, explicit high-key exposure. The "ember storm" background
-    # is the single visual shock element that viral psytrance
-    # thumbnails (Omiki, Vini Vici, Astrix @ Ozora) all share.
+    keyframe_id="rjm_halleluyah_thumbnail_v3",
+    # v3 (2026-04-22 composition-variety rewrite): FLIP orientation vs
+    # Jericho / Selah — priestess-dancer on the RIGHT third, bonfire +
+    # embers + silhouetted dancers fill the LEFT two-thirds. Text goes
+    # in the left half. Psytrance DNA says direct camera gaze or
+    # eyes-closed trance; we go eyes-closed-ecstatic here (30% of
+    # viral psy thumbnails per DNA).
+    composition_hint="subject_right",
     still_prompt=(
         "Cinematic YouTube thumbnail of an Iron Age Hebrew ecstatic "
-        "female priestess-dancer in her late twenties, piercing direct "
-        "eye contact with the camera, face and raised-arm silhouette "
-        "occupying the LEFT THIRD of the frame, face tilted slightly "
-        "upward with a joyful half-smile of ecstatic praise, deep brown "
-        "eyes reflecting firelight, strong cheekbones, warm olive skin, "
-        "layered silver coin necklaces, silver bangles on her raised "
-        "right wrist, wild dark curled hair crowned with a silver "
-        "diadem set with crimson carnelian. The RIGHT TWO-THIRDS of the "
-        "frame reveals a vast ceremonial bonfire at night — towering "
-        "orange-amber flames climbing into the dark sky with thousands "
-        "of bright bronze-gold ember sparks swirling upward and "
-        "outward, silhouetted tribal dancers visible in the mid-ground "
-        "circling the fire. Bright amber firelight key-lighting "
-        "wrapping her face with a warm fill, high-key cinematic "
-        "exposure keeping tonal range luminous, cinematic wide framing "
-        "with shallow depth of field, ultra-saturated amber-crimson-"
-        "gold palette against luminous indigo-night sky, Iron Age "
-        "Levant ecstatic praise c. 1000 BCE, photographic realism, "
-        "16:9, --style raw"
+        "female priestess-dancer in her late twenties, face and raised-"
+        "arms silhouette occupying the RIGHT THIRD of the frame, eyes "
+        "closed in trance-like ecstatic praise with head tilted "
+        "slightly back, strong cheekbones, warm olive skin backlit by "
+        "amber firelight, layered silver coin necklaces catching ember "
+        "glow, silver bangles on her raised right wrist, wild dark "
+        "curled hair crowned with a silver diadem set with crimson "
+        "carnelian. The LEFT TWO-THIRDS of the frame reveals a vast "
+        "ceremonial bonfire at night — towering orange-amber flames "
+        "climbing into the dark sky with thousands of bright bronze-"
+        "gold ember sparks swirling upward and outward, silhouetted "
+        "tribal dancers circling the fire in the mid-ground, distant "
+        "desert horizon visible in the background. Bright amber fire-"
+        "light rim-lighting her face from behind, warm fill from camera "
+        "side, complementary color clash between amber-orange flames "
+        "and cool indigo-night sky (psytrance DNA: max-saturation "
+        "warm-vs-cool contrast), cinematic wide framing with shallow "
+        "depth of field, ultra-saturated amber-crimson-gold palette "
+        "against luminous indigo-night sky, Iron Age Levant ecstatic "
+        "praise c. 1000 BCE, photographic realism, 16:9, --style raw"
     ),
 )
 
@@ -1742,31 +1756,37 @@ _KADOSH_MORPHS: list[MorphClip] = [
 ]
 
 _KADOSH_THUMBNAIL_KEYFRAME = Keyframe(
-    keyframe_id="rjm_kadosh_thumbnail_v2",
-    # v2 (2026-04-22 CTR rewrite): the seraph-with-wings subject holds
-    # the LEFT HALF of the frame; the RIGHT HALF reveals the blazing
-    # interior of the First Temple with a shaft of golden light, cedar
-    # columns, and billowing smoke. High-key exposure throughout.
+    keyframe_id="rjm_kadosh_thumbnail_v3",
+    # v3 (2026-04-22 composition-variety rewrite): go WIDE — small seraph
+    # in the center of a massive Solomonic temple interior filling most
+    # of the frame. This gives the compositor a lower_third text zone
+    # since the subject is small relative to the scene. Different from
+    # Jericho's subject-left and Halleluyah's subject-right for catalog
+    # variety.
+    composition_hint="subject_center_wide",
     still_prompt=(
-        "Cinematic YouTube thumbnail of a single Isaiah-6 seraph with "
+        "Cinematic YouTube thumbnail wide establishing shot of the "
+        "vast interior of the ancient Solomonic First Temple at prayer "
+        "— massive polished-cedar columns flanking the sanctuary, the "
+        "entire frame bathed in a blazing shaft of warm golden light "
+        "pouring down from the Shekinah glory above. A SINGLE small "
+        "Isaiah-6 seraph figure stands in the CENTER of the frame "
+        "occupying about 18 percent of frame width, head bowed with "
         "ornate iridescent gold-on-indigo feathered wings folded "
-        "protectively across the face, occupying the LEFT HALF of the "
-        "frame — only a sliver of glowing bronze-skin forehead and "
-        "closed eyelids visible between the wings, intricate bronze-"
-        "filigree feather edges with individual golden barbs catching "
-        "warm light. The RIGHT HALF of the frame reveals the vast "
-        "interior of the ancient Solomonic First Temple bathed in a "
-        "blazing shaft of warm golden light pouring down from above, "
-        "massive polished-cedar columns flanking the sanctuary, thick "
-        "curling pale cedar smoke drifting through the golden air, "
-        "hammered-gold cherub panels visible on distant temple walls, "
-        "bright high-key temple lighting with warm golden ambient fill "
-        "keeping tonal range luminous throughout the image, cinematic "
-        "wide framing with deep atmospheric perspective and shallow "
-        "depth of field, ultra-saturated liturgical-gold and indigo-"
-        "night and amber palette with rich shadow detail, reverent "
-        "awed register, Iron Age First Temple c. 700 BCE prophetic "
-        "vision, photographic realism, 16:9, --style raw"
+        "protectively across the face, only a sliver of glowing "
+        "bronze-skin forehead visible between the wings, small and "
+        "reverent against the enormity of the sanctuary around it. "
+        "Thick curling pale cedar smoke drifting through the golden "
+        "air in vertical columns, hammered-gold cherub panels faintly "
+        "visible on distant temple walls, elaborate mosaic floor "
+        "catching light in the foreground. Bright high-key temple "
+        "lighting with warm golden ambient fill keeping tonal range "
+        "luminous throughout, cinematic deep atmospheric perspective "
+        "with three-layer depth (foreground mosaic, midground seraph, "
+        "background cedar columns), ultra-saturated liturgical-gold "
+        "and indigo-night and amber palette, reverent awed register, "
+        "Iron Age First Temple c. 700 BCE prophetic vision, "
+        "photographic realism, 16:9, --style raw"
     ),
 )
 
@@ -2113,35 +2133,36 @@ _SHEMA_MORPHS: list[MorphClip] = [
 ]
 
 _SHEMA_THUMBNAIL_KEYFRAME = Keyframe(
-    keyframe_id="rjm_shema_thumbnail_v2",
-    # v2 (2026-04-22 CTR rewrite): face drops to LEFT THIRD, right
-    # two-thirds fills with the blazing Milky Way arching over ancient
-    # desert ruins — a single visual "wow" element that thumbnails
-    # from Cafe de Anatolia / Sol Selectas consistently use to stop
-    # the scroll. High-key starlight exposure across the whole frame.
+    keyframe_id="rjm_shema_thumbnail_v3",
+    # v3 (2026-04-22 composition-variety rewrite): CENTER portrait with
+    # Milky Way wrapping around him like a cosmic crown. The text
+    # crosses his shoulders (across_body) which works because the man
+    # is slightly lower than center, leaving the title clearly visible
+    # against the starfield behind his head.
+    composition_hint="subject_center_portrait",
     still_prompt=(
         "Cinematic YouTube thumbnail of an Iron Age Hebrew man in his "
-        "thirties kneeling in prayer under a vast star-filled desert "
-        "night sky, face and shoulders occupying the LEFT THIRD of "
-        "the frame, piercing direct eye contact with the camera, "
-        "deep brown eyes each reflecting a tiny bright galaxy, "
+        "thirties kneeling in reverent prayer under a vast star-filled "
+        "desert night sky, head and shoulders occupying the CENTER of "
+        "the frame, eyes closed in devotion with head slightly bowed, "
         "weathered bearded jaw, a black leather tefillin strap wound "
         "across his forehead with the shel-rosh box centered above "
-        "the brow impressed with a single raised sacred ornament "
-        "mark, hand-woven indigo wool prayer shawl with silver-"
-        "thread embroidery catching starlight. The RIGHT TWO-THIRDS "
-        "of the frame fills with the blazing arching Milky Way "
-        "galactic band stretching across the sky in luminous silver-"
-        "violet bloom with countless stars, ancient weathered "
-        "sandstone ruins of a desert temple catching cool silver "
-        "moonlight in the mid-ground, soft warm amber firelight from "
-        "a small oil lamp beside him providing a warm fill on his "
-        "face, high-key nocturnal cinematic exposure keeping shadows "
-        "luminous and the starfield radiant, cinematic wide framing "
-        "with shallow depth of field, ultra-saturated cool indigo-"
-        "silver palette with warm amber skin accents, Iron Age "
-        "Levant c. 1000 BCE Shema prayer under starlight, "
-        "photographic realism, 16:9, --style raw"
+        "the brow impressed with a single raised sacred ornament mark, "
+        "hand-woven indigo wool prayer shawl with silver-thread "
+        "embroidery draped over his shoulders catching starlight. "
+        "Around him the scene wraps in a cosmic panorama: the blazing "
+        "arching Milky Way galactic band sweeps across the sky above "
+        "and around his head like a cosmic halo, luminous silver-"
+        "violet stardust bloom, countless individual stars, distant "
+        "ancient weathered sandstone ruins of a desert temple catching "
+        "cool silver moonlight on the horizon. Warm amber firelight "
+        "from a small oil lamp on the ground casts a soft upward "
+        "glow on his face from below, cool silver starlight rim-"
+        "lighting from above, high-key nocturnal cinematic exposure, "
+        "shallow depth of field with the starfield in focus behind, "
+        "ultra-saturated cool indigo-silver palette with warm amber "
+        "skin accents, Iron Age Levant c. 1000 BCE Shema prayer under "
+        "starlight, photographic realism, 16:9, --style raw"
     ),
 )
 

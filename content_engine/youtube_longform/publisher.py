@@ -116,6 +116,7 @@ def _title_thumbnail_for_youtube(
     clean_base_path: Path,
     track_title: str,
     scripture_anchor: str = "",
+    composition_hint: str = "auto",
 ) -> Path:
     """
     Composite track title + artist + Holy Rave logo onto the clean Flux
@@ -123,6 +124,13 @@ def _title_thumbnail_for_youtube(
     thumbnail. The clean base path stays untouched — Kling uses it as
     the morph chain's start frame so the interpolation stays stable
     (no text bleed-through as the morph runs).
+
+    The `composition_hint` flows from the track's thumbnail Keyframe
+    (see motion.Keyframe.composition_hint). It biases the compositor
+    toward a specific placement strategy (subject_left / subject_right /
+    subject_center_portrait / subject_center_wide / auto). The compositor
+    still overrides the hint when the real rembg-extracted subject says
+    otherwise, so a misdeclared hint degrades gracefully.
 
     Non-fatal on failure: if compositing fails (missing font, bad base,
     etc.) we log a warning and return the clean base path as-is. Better
@@ -134,6 +142,7 @@ def _title_thumbnail_for_youtube(
             base_image_path=clean_base_path,
             track_title=track_title,
             subtitle=subtitle,
+            composition_hint=composition_hint,
         )
         logger.info(
             "Titled thumbnail composed | %s → %s",
@@ -401,12 +410,19 @@ def _compose_description(
         primary_spotify_url = smart_link
         primary_label = "\U0001f3a7 Spotify (artist page)"
 
+    # Above-the-fold link stack (2026-04-22 reorder): the first three lines
+    # YouTube shows before "Show more" should be Spotify → Apple Music →
+    # Website. Spotify is the 1M-listener North Star, Apple Music is the
+    # secondary DSP, and the artist website is the owned destination. IG /
+    # TikTok move below the fold because they're social surfaces users
+    # reach organically from the artist's own handles.
+    web_url = _tagged(cfg.ARTIST_WEBSITE, track_title)
     link_lines: list[str] = [f"{primary_label}: {primary_spotify_url}"]
     if raw_apple_track:
         link_lines.append(f"Apple Music: {_tagged(raw_apple_track, track_title)}")
+    link_lines.append(f"Web: {web_url}")
     link_stack = "\n".join(link_lines)
 
-    web_url = _tagged(cfg.ARTIST_WEBSITE, track_title)
     ig_url  = cfg.ARTIST_INSTAGRAM   # IG + TikTok tracked separately via Linktree in bio
     tt_url  = cfg.ARTIST_TIKTOK
 
@@ -421,8 +437,7 @@ def _compose_description(
         f"{cfg.ARTIST_FULL_NAME}\n"
         f"{cfg.CHANNEL_BRAND_NAME} — Ancient Truth. Future Sound.\n"
         f"Instagram: {ig_url}\n"
-        f"TikTok: {tt_url}\n"
-        f"Web: {web_url}\n\n"
+        f"TikTok: {tt_url}\n\n"
         f"{bottom_hashtags}\n"
     )
 
@@ -656,6 +671,7 @@ def publish_track(req: PublishRequest) -> PublishResult:
                     clean_base_path=rendered.local_path,
                     track_title=req.track_title,
                     scripture_anchor=prompt.scripture_anchor,
+                    composition_hint=getattr(effective_thumb_kf, "composition_hint", "auto"),
                 )
                 result.hero_image = ImageAsset(
                     role="hero",
