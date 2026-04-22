@@ -60,6 +60,155 @@ class MotionError(Exception):
     """Raised when keyframe generation or Kling morph fails irrecoverably."""
 
 
+# ─── Reliability helpers (2026-04-22 post-Renamed-incident) ─────────────────
+#
+# Three recurring failure modes observed during the Renamed publish:
+#   1. Shotstack MP4 download truncated silently mid-stream (142/390 MB)
+#      — iter_content didn't raise on connection drop, produced a file
+#      with a valid MP4 header but 2:55 of playable data instead of 7:59.
+#   2. Morph cache digest keyed on Cloudinary URL — re-uploads bumped the
+#      URL version token, invalidated cache, re-ran 3 already-rendered
+#      Kling morphs ($2.52 wasted).
+#   3. Kling morph hung 23 min on a single request — fal-client's
+#      subscribe polls without a client-side timeout, so a stuck job
+#      blocks the whole publish indefinitely.
+#
+# The helpers below close all three gaps.
+
+
+def _content_digest(path: Path, length: int = 12) -> str:
+    """
+    Hash a file's CONTENT for cache keys. Unlike URL-based keys this is
+    stable across re-uploads — the same keyframe JPEG produces the same
+    digest regardless of how many times it's been pushed to Cloudinary.
+
+    Uses sha256 streamed in 1MB chunks so it handles large files without
+    loading them into memory. Returns the first `length` hex chars.
+    """
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()[:length]
+
+
+def _download_verified(
+    url:         str,
+    dest:        Path,
+    *,
+    max_tries:   int = 3,
+    timeout:     tuple[int, int] = (30, 600),
+    backoff:     float = 2.0,
+) -> int:
+    """
+    Stream-download a URL to dest with size verification + retry.
+
+    Why this exists: the Renamed failure (2026-04-22) was a silent
+    mid-stream connection drop. requests.iter_content does NOT raise
+    on partial downloads — it just returns early. The resulting file
+    has a valid MP4 header (moov atom was near the start) but is
+    truncated, so YouTube shows 2:55 of playable video for what
+    should be 7:59.
+
+    This helper:
+      1. HEAD the URL to get Content-Length (expected size)
+      2. Stream-download with explicit read + connect timeouts
+      3. Verify file size exactly matches Content-Length afterward
+      4. Retry with exponential backoff on any failure
+      5. Raise MotionError if all retries fail
+
+    Returns bytes written on success.
+    """
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    expected = 0
+    try:
+        head = requests.head(url, timeout=(15, 15), allow_redirects=True)
+        expected = int(head.headers.get("Content-Length", 0))
+    except Exception as e:
+        logger.warning(
+            "HEAD failed for %s (%s) — proceeding without size check",
+            url[:80], e,
+        )
+
+    last_actual = 0
+    for attempt in range(1, max_tries + 1):
+        try:
+            with requests.get(url, stream=True, timeout=timeout) as r:
+                r.raise_for_status()
+                with open(dest, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=4 << 20):
+                        if chunk:
+                            f.write(chunk)
+            actual = dest.stat().st_size
+            last_actual = actual
+            if not expected:
+                # Can't verify — accept blind (log loudly)
+                logger.info(
+                    "Downloaded %s (%.1f MB, no Content-Length to verify)",
+                    dest.name, actual / (1 << 20),
+                )
+                return actual
+            if actual == expected:
+                logger.info(
+                    "Downloaded %s (%.1f MB, size verified)",
+                    dest.name, actual / (1 << 20),
+                )
+                return actual
+            logger.warning(
+                "Download attempt %d/%d truncated: got %d, expected %d "
+                "(%.1f MB short) — retrying",
+                attempt, max_tries, actual, expected,
+                (expected - actual) / (1 << 20),
+            )
+        except Exception as e:
+            logger.warning("Download attempt %d/%d failed: %s", attempt, max_tries, e)
+        if attempt < max_tries:
+            time.sleep(backoff ** attempt)
+    raise MotionError(
+        f"Download FAILED after {max_tries} tries: got {last_actual} bytes, "
+        f"expected {expected} (url={url[:120]})"
+    )
+
+
+def _subscribe_with_timeout(endpoint: str, arguments: dict, timeout_s: int = 600):
+    """
+    Wrap fal_client.subscribe with a hard client-side timeout.
+
+    Background: the Renamed attempt 1 hung 23 min on a single Kling O3
+    morph — fal_client polls internally without a timeout, so a stuck
+    job blocks forever. This wrapper runs subscribe in a daemon thread
+    and returns TimeoutError if it doesn't complete within `timeout_s`.
+
+    Note: we can't actually cancel the fal-side job via subscribe; the
+    daemon thread keeps polling in the background until it completes
+    or Python exits. That's OK — the caller raises, retries with a
+    fresh submit, and the original orphaned poll quietly finishes
+    when the Kling job does.
+    """
+    import threading
+    client = _fal_client()
+    result: list = [None]
+    error:  list = [None]
+
+    def _worker():
+        try:
+            result[0] = client.subscribe(endpoint, arguments=arguments, with_logs=False)
+        except Exception as e:
+            error[0] = e
+
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout_s)
+    if thread.is_alive():
+        raise TimeoutError(
+            f"fal.ai {endpoint} exceeded {timeout_s}s client-side timeout. "
+            f"Orphan poll continues in daemon thread; caller should retry."
+        )
+    if error[0] is not None:
+        raise error[0]
+    return result[0]
+
+
 # ─── Data types ──────────────────────────────────────────────────────────────
 
 @dataclass(frozen=True)
@@ -2237,12 +2386,28 @@ def _animate_morph(
         duration, aspect_ratio, motion_prompt[:90],
     )
 
+    # 10-minute client-side timeout per Kling job, with one retry on
+    # timeout. The Renamed attempt 1 (2026-04-22) hung 23 min on a
+    # single morph because fal-client's subscribe has no internal
+    # timeout; this wrapper caps each attempt.
     try:
-        result = client.subscribe(
+        result = _subscribe_with_timeout(
             cfg.FAL_KLING_O3_STANDARD_EP,
             arguments=arguments,
-            with_logs=False,
+            timeout_s=600,
         )
+    except TimeoutError as e:
+        logger.warning("Kling O3 timed out (%s) — retrying ONCE with a fresh submit", e)
+        try:
+            result = _subscribe_with_timeout(
+                cfg.FAL_KLING_O3_STANDARD_EP,
+                arguments=arguments,
+                timeout_s=600,
+            )
+        except Exception as e2:
+            raise MotionError(
+                f"Kling O3 subscribe failed after timeout+retry: {e2}"
+            ) from e2
     except Exception as e:
         raise MotionError(f"Kling O3 subscribe failed: {e}") from e
 
@@ -2423,10 +2588,17 @@ def generate_morph_loop(
                 f"from={morph.from_kf_id} to={morph.to_kf_id}"
             )
 
+        # Content-based cache digest (2026-04-22 post-Renamed fix): hash
+        # the keyframe FILE bytes instead of the Cloudinary URL. The URL
+        # changes every time we re-upload (overwrite=True bumps the
+        # `v<timestamp>/` token), which busted cache even when the image
+        # content was identical. Content-hash is stable across re-uploads.
+        from_content = _content_digest(from_rk.local_path)
+        to_content   = _content_digest(to_rk.local_path)
         clip_digest = hashlib.sha256(
             (
                 f"{morph.motion_prompt}::"
-                f"{from_rk.remote_url}::{to_rk.remote_url}::"
+                f"content:{from_content}::content:{to_content}::"
                 f"{duration_s}::{aspect_ratio}"
             ).encode()
         ).hexdigest()[:8]
@@ -2533,11 +2705,15 @@ def generate_preroll_clip(
     thumb_rk = _generate_keyframe(story.thumbnail_keyframe, track_prompt)
     first_rk = rendered_kfs[0]
 
-    # Cache key: prompt + start URL + end URL + duration + aspect
+    # Content-based cache digest (2026-04-22 post-Renamed fix): hash
+    # the keyframe file bytes, not the Cloudinary URL. Stable across
+    # re-uploads. See generate_morph_loop for the same pattern.
+    thumb_content = _content_digest(thumb_rk.local_path)
+    first_content = _content_digest(first_rk.local_path)
     clip_digest = hashlib.sha256(
         (
             f"{motion_prompt}::"
-            f"{thumb_rk.remote_url}::{first_rk.remote_url}::"
+            f"content:{thumb_content}::content:{first_content}::"
             f"{PRE_ROLL_SECONDS}::{cfg.KLING_ASPECT_16_9}"
         ).encode()
     ).hexdigest()[:8]
@@ -2681,12 +2857,7 @@ def stitch_loop(
         raise MotionError(f"Shotstack stitch timed out after {cfg.SHOTSTACK_TIMEOUT}s")
 
     local = cfg.VIDEO_DIR / f"{output_label}.mp4"
-    with requests.get(final_url, stream=True, timeout=cfg.SHOTSTACK_TIMEOUT) as resp:
-        resp.raise_for_status()
-        with open(local, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
+    _download_verified(final_url, local, max_tries=3)
     logger.info("Preview written: %s", local)
     return local
 
@@ -2828,48 +2999,70 @@ def stitch_full_track(
         },
     }
 
-    logger.info(
-        "Shotstack %s | full-track render %s | %d clips → %ds",
-        shotstack_env, output_label, len(shotstack_clips), target_duration_s,
+    # Render-id reuse check (2026-04-22 post-Renamed fix):
+    # Before submitting a new render, see if we already have an
+    # identical timeline rendered + valid URL. Saves $3-4/attempt
+    # when a downstream step fails and we retry.
+    timeline_digest = _compute_timeline_digest(
+        clip_urls=[c["src"] for c in shotstack_clips],
+        audio_url=audio_url,
+        preroll_url=preroll_clip.remote_url if preroll_clip else None,
+        target_duration_s=target_duration_s,
+        output_label=output_label,
+        env=shotstack_env,
     )
-    r = requests.post(f"{base_url}/render", headers=headers, json=timeline, timeout=60)
-    if not r.ok:
-        raise MotionError(
-            f"Shotstack {shotstack_env} render {r.status_code}: "
-            f"{r.text[:600]}\nPayload preview: {json.dumps(timeline)[:500]}"
+    reusable_url = _find_reusable_shotstack_render(
+        timeline_digest=timeline_digest,
+        env=shotstack_env,
+        api_key=cfg.SHOTSTACK_API_KEY,
+    )
+    if reusable_url:
+        final_url = reusable_url
+        job_id = None  # skip-poll signal
+    else:
+        logger.info(
+            "Shotstack %s | full-track render %s | %d clips → %ds | digest=%s",
+            shotstack_env, output_label, len(shotstack_clips),
+            target_duration_s, timeline_digest[:8],
         )
-    job_id = r.json()["response"]["id"]
-    logger.info("Shotstack job id: %s", job_id)
+        r = requests.post(f"{base_url}/render", headers=headers, json=timeline, timeout=60)
+        if not r.ok:
+            raise MotionError(
+                f"Shotstack {shotstack_env} render {r.status_code}: "
+                f"{r.text[:600]}\nPayload preview: {json.dumps(timeline)[:500]}"
+            )
+        job_id = r.json()["response"]["id"]
+        logger.info("Shotstack job id: %s", job_id)
+        _log_shotstack_render(
+            job_id, shotstack_env, output_label, target_duration_s,
+            timeline_digest=timeline_digest,
+        )
 
-    # Record the render_id in a persistent log so later cleanup retries
-    # are possible even if this process dies. Format: one JSON per line
-    # with timestamp, env, render_id, output_label, target_duration_s.
-    _log_shotstack_render(job_id, shotstack_env, output_label, target_duration_s)
-
-    deadline = time.time() + cfg.SHOTSTACK_TIMEOUT
-    final_url = None
-    while time.time() < deadline:
-        time.sleep(5)
-        s = requests.get(f"{base_url}/render/{job_id}", headers=headers, timeout=30)
-        s.raise_for_status()
-        status = s.json()["response"]["status"]
-        logger.info("Shotstack status: %s", status)
-        if status == "done":
-            final_url = s.json()["response"]["url"]
-            break
-        if status == "failed":
-            raise MotionError(f"Shotstack render failed: {s.json()!r}")
-    if not final_url:
-        raise MotionError(f"Shotstack render timed out after {cfg.SHOTSTACK_TIMEOUT}s")
+    # Only poll if we submitted a new render (final_url=None).
+    # Reused renders already have a valid final_url and skip this block.
+    if final_url is None:
+        deadline = time.time() + cfg.SHOTSTACK_TIMEOUT
+        while time.time() < deadline:
+            time.sleep(5)
+            s = requests.get(f"{base_url}/render/{job_id}", headers=headers, timeout=30)
+            s.raise_for_status()
+            status = s.json()["response"]["status"]
+            logger.info("Shotstack status: %s", status)
+            if status == "done":
+                final_url = s.json()["response"]["url"]
+                break
+            if status == "failed":
+                raise MotionError(f"Shotstack render failed: {s.json()!r}")
+        if not final_url:
+            raise MotionError(f"Shotstack render timed out after {cfg.SHOTSTACK_TIMEOUT}s")
 
     local_path = cfg.VIDEO_DIR / f"{output_label}.mp4"
-    local_path.parent.mkdir(parents=True, exist_ok=True)
-    with requests.get(final_url, stream=True, timeout=cfg.SHOTSTACK_TIMEOUT) as resp:
-        resp.raise_for_status()
-        with open(local_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
+    # Size-verified download with retry. Replaces the old naked
+    # iter_content loop that truncated silently on connection drop
+    # (2026-04-22 Renamed: 142 MB of a 390 MB file, YouTube got 2:55
+    # of 7:59). _download_verified HEADs for Content-Length, streams,
+    # and re-downloads up to 3× on mismatch before raising.
+    _download_verified(final_url, local_path, max_tries=3)
     logger.info("Full-track render written: %s", local_path)
 
     # Shotstack cleanup protocol (per RJM 2026-04-22):
@@ -2907,29 +3100,142 @@ SHOTSTACK_RENDER_LOG = cfg.REGISTRY_DIR / "shotstack_renders.jsonl"
 
 
 def _log_shotstack_render(
-    render_id:    str,
-    env:          str,
-    output_label: str,
-    duration_s:   int,
+    render_id:       str,
+    env:             str,
+    output_label:    str,
+    duration_s:      int,
+    timeline_digest: str = "",
 ) -> None:
     """
-    Append a line to data/youtube_longform/shotstack_renders.jsonl so
-    cleanup retries work even if this process dies mid-pipeline.
-    Each row: {timestamp, env, render_id, output_label, duration_s, deleted}
-    'deleted' starts false and is flipped to true when the asset-delete
-    call returns 2xx/404 (scripts/cleanup_shotstack.py can also flip it).
+    Append a line to data/youtube_longform/shotstack_renders.jsonl.
+
+    Purposes:
+      1. Cleanup: a cron can re-run asset-delete across all un-deleted
+         renders if process dies mid-pipeline.
+      2. Reuse (NEW 2026-04-22): timeline_digest is a content-based hash
+         of all input clip URLs + audio URL + duration + output_label.
+         _find_reusable_shotstack_render looks up this field to skip
+         paying for a new render when an identical timeline was already
+         rendered (today's Renamed attempts 2 + 3 double-paid $6.20
+         because there was no lookup).
+
+    Each row: {timestamp, env, render_id, output_label, duration_s,
+               timeline_digest, deleted}
     """
     cfg.ensure_workspace()
     SHOTSTACK_RENDER_LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(SHOTSTACK_RENDER_LOG, "a") as f:
         f.write(json.dumps({
-            "timestamp":    datetime.now(timezone.utc).isoformat(),
-            "env":          env,
-            "render_id":    render_id,
-            "output_label": output_label,
-            "duration_s":   duration_s,
-            "deleted":      False,
+            "timestamp":       datetime.now(timezone.utc).isoformat(),
+            "env":             env,
+            "render_id":       render_id,
+            "output_label":    output_label,
+            "duration_s":      duration_s,
+            "timeline_digest": timeline_digest,
+            "deleted":         False,
         }) + "\n")
+
+
+def _compute_timeline_digest(
+    clip_urls:        list[str],
+    audio_url:        str,
+    preroll_url:      Optional[str],
+    target_duration_s: int,
+    output_label:     str,
+    env:              str,
+) -> str:
+    """
+    Stable hash identifying a Shotstack timeline by its CONTENT.
+
+    Uses only the public URLs + duration + label — not cache-keyed on
+    the local file bytes because Shotstack works from URLs and the URLs
+    are what Shotstack will dereference on its side. Two timelines with
+    the same clip URLs + audio URL will produce identical output.
+
+    Returns first 16 hex chars of sha256.
+    """
+    parts = ["|".join(clip_urls)]
+    parts.append("AUDIO:" + audio_url)
+    if preroll_url:
+        parts.append("PREROLL:" + preroll_url)
+    parts.append(f"DUR:{target_duration_s}")
+    parts.append(f"LABEL:{output_label}")
+    parts.append(f"ENV:{env}")
+    return hashlib.sha256("||".join(parts).encode()).hexdigest()[:16]
+
+
+def _find_reusable_shotstack_render(
+    timeline_digest: str,
+    env:             str,
+    api_key:         str,
+    max_age_hours:   int = 12,
+) -> Optional[str]:
+    """
+    Look up shotstack_renders.jsonl for a non-deleted render matching this
+    timeline_digest whose URL still resolves (Shotstack's S3 links are
+    presigned with a TTL). Returns the MP4 URL on success, None on miss.
+
+    Called before submitting a new Shotstack render to avoid paying
+    $3-4 for a duplicate render of an identical timeline (today's
+    Renamed attempt 3 double-paid because no reuse logic existed).
+    """
+    if not timeline_digest or not SHOTSTACK_RENDER_LOG.exists():
+        return None
+    cutoff = datetime.now(timezone.utc).timestamp() - (max_age_hours * 3600)
+    # Iterate in reverse so most-recent match wins
+    matches: list[dict] = []
+    with open(SHOTSTACK_RENDER_LOG) as f:
+        for line in f:
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if row.get("timeline_digest") != timeline_digest:
+                continue
+            if row.get("env") != env:
+                continue
+            if row.get("deleted"):
+                continue
+            try:
+                ts = datetime.fromisoformat(row["timestamp"]).timestamp()
+            except Exception:
+                continue
+            if ts < cutoff:
+                continue
+            matches.append(row)
+    if not matches:
+        return None
+
+    # Try most recent first
+    for row in reversed(matches):
+        render_id = row["render_id"]
+        try:
+            r = requests.get(
+                f"https://api.shotstack.io/edit/{env}/render/{render_id}",
+                headers={"x-api-key": api_key},
+                timeout=15,
+            )
+            if r.status_code != 200:
+                continue
+            resp = r.json().get("response", {})
+            if resp.get("status") != "done":
+                continue
+            url = resp.get("url")
+            if not url:
+                continue
+            # HEAD the URL to confirm it still resolves (S3 presigned links expire)
+            h = requests.head(url, timeout=15, allow_redirects=True)
+            if h.status_code != 200:
+                continue
+            logger.info(
+                "Shotstack render REUSED | digest=%s | render_id=%s | saved ~$3",
+                timeline_digest[:8], render_id,
+            )
+            return url
+        except Exception as e:
+            logger.debug("Reuse check for %s failed: %s", render_id, e)
+            continue
+    return None
 
 
 def _mark_shotstack_render_deleted(render_id: str) -> None:
