@@ -1321,14 +1321,719 @@ HALLELUYAH_STORY: MorphStory = MorphStory(
 STORIES[HALLELUYAH_STORY.story_id] = HALLELUYAH_STORY
 
 
+# ─── KADOSH — 142 BPM psytrance · Hebrew · Isaiah 6:3 ────────────────────────
+# Visual source: Isaiah's throne-room vision — "I saw the Lord sitting upon
+# a throne, high and lifted up, and his train filled the temple. Above it
+# stood the seraphim, each having six wings; with two he covered his face,
+# with two he covered his feet, and with two he flew. And one cried to
+# another, 'Holy, Holy, Holy (Kadosh, Kadosh, Kadosh) is the LORD of hosts;
+# the whole earth is full of his glory.' And the posts of the door moved at
+# the voice of him that cried, and the house was filled with smoke."
+#   — Isaiah 6:1–4
+#
+# Register: REVERENCE, not ecstasy. Kadosh is the sacred-awe counterpart to
+# Halleluyah's ecstatic crowd. Slow cathedral-pace drone even at 142 BPM —
+# the track's intensity goes INWARD not OUTWARD. Palette exclusively
+# gold + bone-linen + cedar-smoke + deep indigo. NO FLAME (fire belongs
+# to Halleluyah's ecstatic register). The only warmth is the hot coal
+# carried by a seraph and the diffused temple glow behind smoke.
+
+_KADOSH_KEYFRAMES: list[Keyframe] = [
+    Keyframe(
+        keyframe_id="rjm_kadosh_seraphim",
+        still_prompt=(
+            "Close-up heroic cinematic portrait of a single Isaiah-6 "
+            "seraph suspended mid-air in a smoke-filled ancient Hebrew "
+            "temple at dawn, six vast feathered wings arranged in three "
+            "pairs — two covering the face, two covering the feet, two "
+            "outspread for flight, the wings iridescent pale-gold on "
+            "dark-indigo with fine bronze filigree edges, the face "
+            "entirely hidden by the folded upper wings, a single shaft "
+            "of golden temple-light catching the lower wing tips, the "
+            "body in deep-indigo shadow, thick cedar-smoke swirling "
+            "around the figure in slow curls, ancient stone temple "
+            "pillars visible in soft blur behind, cinematic heroic "
+            "framing with reverent low angle, palette locked to "
+            "liturgical gold and bone-linen and cedar-smoke and "
+            "deep-indigo-night (NO flame, NO ember-orange), Iron Age "
+            "First Temple period c. 700 BCE biblical throne vision, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_kadosh_throne",
+        still_prompt=(
+            "Wide cinematic heroic establishing shot of an ancient "
+            "Hebrew temple interior at dawn flooded with thick cedar "
+            "smoke, a massive high-backed stone throne at the far end "
+            "raised on seven broad stone steps, the throne itself "
+            "lost in haze with only its polished gold-leafed arms "
+            "catching a diffused shaft of sacred light, the train of "
+            "a heavy robe cascading from the throne across the steps "
+            "and flowing outward filling the entire temple floor in "
+            "smoke-softened folds of pale bone and gold thread, two "
+            "colossal cedar-wood columns frame the throne, suspended "
+            "silhouetted seraphim-wings barely visible in the haze, "
+            "no flame anywhere, cinematic ultra-wide from low angle, "
+            "palette gold + bone-linen + cedar-smoke + deep-indigo, "
+            "Iron Age First Temple c. 700 BCE, photographic realism, "
+            "16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_kadosh_train",
+        still_prompt=(
+            "Macro cinematic close-up of the edge of a massive cascading "
+            "sacred robe-train flowing across a polished cedar-wood "
+            "temple floor, the fabric a heavy woven bone-white linen "
+            "shot through with pure gold thread in intricate Paleo-Hebrew "
+            "patterns, the edge tasseled with plaited gold cords and "
+            "small bronze bells, thick cedar smoke rolling low across "
+            "the floor and past the fabric, a single shaft of pale "
+            "golden light from above catching the gold embroidery, deep "
+            "indigo shadow everywhere else, extreme material texture "
+            "detail, cinematic close framing, palette gold + bone + "
+            "cedar-smoke + indigo-night (no warm flame), Iron Age "
+            "First Temple c. 700 BCE, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_kadosh_coal",
+        still_prompt=(
+            "Macro cinematic close-up of a single glowing hot coal held "
+            "in a pair of long bronze altar-tongs extended toward the "
+            "viewer, the coal white-hot at its core fading to deep ember "
+            "red then ash-black at its edges, tiny bright sparks lifting "
+            "from the coal's surface into thick cedar-smoke, the bronze "
+            "tongs tarnished and ancient with engraved Paleo-Hebrew "
+            "letters, a weathered seraphic hand just visible at the "
+            "bottom of the frame gripping the tongs, the background a "
+            "pure smoke-filled temple blur in muted gold and cedar "
+            "tones, extreme depth-of-field isolation on the coal, "
+            "cinematic macro framing, Iron Age First Temple c. 700 BCE "
+            "altar of incense, photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_kadosh_prostrate",
+        still_prompt=(
+            "Wide cinematic heroic overhead shot of the prophet Isaiah "
+            "lying prostrate face-down on the polished cedar-wood temple "
+            "floor, arms stretched outward forming a cross, his hand-"
+            "woven bone-linen robe spread around him catching a single "
+            "shaft of sacred golden light from above, his dark curled "
+            "hair falling across his face, thick cedar smoke rolling "
+            "across the floor around and over him in slow dense curls, "
+            "deep indigo shadow at the frame edges, the train of the "
+            "throne's robe just visible at the upper edge of frame, no "
+            "flame, cinematic overhead heroic framing, palette gold + "
+            "bone + cedar-smoke + indigo, Iron Age First Temple c. 700 "
+            "BCE prophetic vision, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_kadosh_seraph_approach",
+        still_prompt=(
+            "Close-up cinematic heroic shot of a single six-winged "
+            "seraph in profile approaching across a smoke-filled "
+            "temple floor, the seraph silhouetted dark against a pale "
+            "golden glow from the distant throne light, one lower wing "
+            "catching a subtle highlight of gold-leaf feathering, the "
+            "face hidden by the upper pair of folded wings, a small "
+            "burning coal held in one outstretched hand with the "
+            "bronze tongs, the other hand raised in benediction, thick "
+            "cedar smoke rolling past the seraph's body in slow curls, "
+            "the temple architecture in deep indigo haze behind, "
+            "cinematic profile framing with reverent low angle, "
+            "palette gold + bone-linen + cedar-smoke + indigo-night, "
+            "Iron Age First Temple c. 700 BCE, photographic realism, "
+            "16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_kadosh_doorposts",
+        still_prompt=(
+            "Wide cinematic heroic establishing shot of the massive "
+            "cedar-wood doorposts and lintel of the Holy of Holies "
+            "entrance in an ancient Hebrew temple, the posts carved "
+            "with intricate Paleo-Hebrew inscriptions and sculpted "
+            "pomegranate-and-bell friezes in aged bronze, the lintel "
+            "visibly trembling with a subtle motion-blur shimmer at "
+            "its edges as if shaken by a thunderous voice, thick cedar "
+            "smoke pouring out through the dark doorway into the camera "
+            "space, a shaft of pale gold light cutting diagonally from "
+            "within, deep indigo shadows surrounding, cinematic "
+            "ultra-wide heroic framing from low angle, palette gold + "
+            "cedar-brown + bone + smoke + indigo-night, Iron Age First "
+            "Temple c. 700 BCE, photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_kadosh_smoke_columns",
+        still_prompt=(
+            "Middle cinematic shot looking up through an avenue of "
+            "colossal cedar-wood temple columns with polished gold-"
+            "leafed capitals carved in lotus and pomegranate motif, "
+            "thick cedar smoke rising in slow tall plumes between each "
+            "column, a distant pale golden shaft of throne-light "
+            "catching the rising smoke in god-ray beams, the floor "
+            "deep in smoke-obscured indigo shadow, ancient Paleo-"
+            "Hebrew inscriptions faintly visible on the column bases, "
+            "no figures in frame, no flame, cinematic vertical heroic "
+            "framing emphasizing the column height, palette gold + "
+            "cedar-brown + bone-smoke + deep-indigo-night, Iron Age "
+            "First Temple c. 700 BCE, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_kadosh_altar_incense",
+        still_prompt=(
+            "Close-up cinematic heroic shot of the golden altar of "
+            "incense at the center of the Holy Place, a low rectangular "
+            "altar overlaid with hammered gold leaf with four horned "
+            "corners, thick pale cedar-and-frankincense smoke rising "
+            "from a bed of glowing ember-coals on its upper surface, "
+            "the coals showing through only as dim red glow beneath a "
+            "thick white-gold smoke column climbing upward into the "
+            "temple gloom, tiny gold-dust sparks suspended in the "
+            "smoke, Paleo-Hebrew inscriptions visible on the altar "
+            "sides, deep indigo-black shadow surrounding, cinematic "
+            "close heroic framing, palette hammered gold + ember-dim "
+            "+ cedar-smoke + indigo, Iron Age First Temple c. 700 BCE "
+            "incense ritual, photographic realism, 16:9, --style raw"
+        ),
+    ),
+]
+
+_KADOSH_MORPHS: list[MorphClip] = [
+    MorphClip(
+        clip_id="rjm_kadosh_seraphim__to__throne",
+        from_kf_id="rjm_kadosh_seraphim",
+        to_kf_id="rjm_kadosh_throne",
+        motion_prompt=(
+            "Slow reverent cinematic drone camera orbiting the "
+            "suspended six-winged seraph, the wings subtly flexing, "
+            "then the drone pulls backward and downward revealing the "
+            "full temple interior behind — the throne at the far end "
+            "raised on seven steps, the train of the robe filling the "
+            "temple floor in smoke-softened folds. Cathedral-paced "
+            "drone motion, slow and awed, never kinetic despite 142 "
+            "BPM underneath — the track's intensity goes inward, not "
+            "outward."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_kadosh_throne__to__train",
+        from_kf_id="rjm_kadosh_throne",
+        to_kf_id="rjm_kadosh_train",
+        motion_prompt=(
+            "Cinematic drone camera descending slowly from the throne "
+            "along the cascading robe-train, the view converging to a "
+            "macro close-up of the tasseled edge of the train on the "
+            "cedar-wood floor, gold-thread embroidery resolving in "
+            "sharp detail as the smoke parts briefly. Slow reverent "
+            "descent, cathedral pace."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_kadosh_train__to__coal",
+        from_kf_id="rjm_kadosh_train",
+        to_kf_id="rjm_kadosh_coal",
+        motion_prompt=(
+            "Cinematic drone camera rising from the train's edge, "
+            "tracking upward and forward through drifting cedar smoke, "
+            "the view converging on a single glowing hot coal held "
+            "extended in bronze altar-tongs — the coal growing to fill "
+            "the frame in macro detail as the camera approaches. Slow "
+            "reverent approach, awed pace."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_kadosh_coal__to__prostrate",
+        from_kf_id="rjm_kadosh_coal",
+        to_kf_id="rjm_kadosh_prostrate",
+        motion_prompt=(
+            "Cinematic drone camera pulling slowly backward and rising "
+            "upward from the glowing coal, rotating toward straight-"
+            "down orientation, revealing from above the prophet Isaiah "
+            "lying prostrate on the cedar-wood floor with arms "
+            "cross-spread, thick cedar smoke rolling across the floor. "
+            "Slow reverent ascent, cathedral pace."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_kadosh_prostrate__to__seraph_approach",
+        from_kf_id="rjm_kadosh_prostrate",
+        to_kf_id="rjm_kadosh_seraph_approach",
+        motion_prompt=(
+            "Cinematic drone camera descending slowly back to floor "
+            "level beside the prostrate prophet and rotating to profile "
+            "orientation, the camera gliding forward through the smoke "
+            "until a single six-winged seraph with coal-in-tongs "
+            "emerges in silhouetted profile approaching through the "
+            "haze. Slow reverent forward glide, awed pace."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_kadosh_seraph_approach__to__doorposts",
+        from_kf_id="rjm_kadosh_seraph_approach",
+        to_kf_id="rjm_kadosh_doorposts",
+        motion_prompt=(
+            "Cinematic drone camera passing around the approaching "
+            "seraph and turning back across the temple, the seraph "
+            "falling out of frame behind, the drone continuing forward "
+            "toward the massive cedar doorposts of the Holy of Holies "
+            "with smoke pouring out, the lintel visibly shaking as if "
+            "from a thunderous voice. Slow reverent forward travel, "
+            "awed pace."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_kadosh_doorposts__to__smoke_columns",
+        from_kf_id="rjm_kadosh_doorposts",
+        to_kf_id="rjm_kadosh_smoke_columns",
+        motion_prompt=(
+            "Cinematic drone camera turning slowly away from the "
+            "trembling doorposts and rising vertically into the "
+            "temple's central avenue, revealing the colossal cedar-"
+            "wood columns rising on either side with thick smoke "
+            "plumes climbing between them through god-ray shafts of "
+            "pale gold light. Slow reverent vertical rise, cathedral "
+            "pace."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_kadosh_smoke_columns__to__altar_incense",
+        from_kf_id="rjm_kadosh_smoke_columns",
+        to_kf_id="rjm_kadosh_altar_incense",
+        motion_prompt=(
+            "Cinematic drone camera descending from the avenue of "
+            "columns into the smoke-filled central space, converging "
+            "on the golden altar of incense at the temple's heart, "
+            "the altar growing in frame with its rising smoke column "
+            "and dim ember-glow. Slow reverent approach, cathedral "
+            "pace."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_kadosh_altar_incense__to__seraphim",
+        from_kf_id="rjm_kadosh_altar_incense",
+        to_kf_id="rjm_kadosh_seraphim",
+        motion_prompt=(
+            "Cinematic drone camera rising slowly from the golden "
+            "altar of incense through the thick column of rising "
+            "smoke, ascending toward the temple's upper space where a "
+            "single six-winged seraph is suspended in mid-air, the "
+            "drone resolves into an orbital close-up around the "
+            "seraph's wings, closing the reverent loop. Slow "
+            "cathedral-paced ascent, seamlessly closes the hypnotic "
+            "loop."
+        ),
+    ),
+]
+
+_KADOSH_THUMBNAIL_KEYFRAME = Keyframe(
+    keyframe_id="rjm_kadosh_thumbnail",
+    still_prompt=(
+        "Ultra-close cinematic thumbnail portrait of a single Isaiah-6 "
+        "seraph face hidden by folded iridescent gold-on-indigo "
+        "feathered wings crossed protectively in front of the head, "
+        "only a sliver of bronze-skin forehead and closed eyelids "
+        "visible between the wings, intricate bronze-filigree feather "
+        "edges, individual golden barbs catching a single pale shaft "
+        "of temple light from the right, deep obsidian-indigo shadow "
+        "on the left half, thick pale cedar smoke swirling in slow "
+        "curls around the wings, face occupying 70 percent of the "
+        "frame, extremely high contrast, ultra-saturated gold-and-"
+        "indigo palette against smoke-softened pitch-black background, "
+        "reverent and awed register, Iron Age First Temple c. 700 BCE "
+        "prophetic vision, photographic realism, 16:9, --style raw"
+    ),
+)
+
+KADOSH_STORY: MorphStory = MorphStory(
+    story_id="kadosh_isaiah6_throne_vision",
+    keyframes=_KADOSH_KEYFRAMES,
+    morphs=_KADOSH_MORPHS,
+    thumbnail_keyframe=_KADOSH_THUMBNAIL_KEYFRAME,
+)
+
+STORIES[KADOSH_STORY.story_id] = KADOSH_STORY
+
+
+# ─── SHEMA — 140 BPM psytrance · English · Deuteronomy 6:4 ───────────────────
+# Visual source: the great Shema prayer — "Hear, O Israel: The LORD our God,
+# the LORD is One. Love the LORD your God with all your heart and with all
+# your soul and with all your strength. These commandments that I give you
+# today are to be on your hearts. Impress them on your children. Talk about
+# them when you sit at home and when you walk along the road, when you lie
+# down and when you get up. Tie them as symbols on your hands and bind them
+# on your foreheads. Write them on the doorframes of your houses and on
+# your gates."  — Deuteronomy 6:4–9
+#
+# Register: COVENANTAL INTIMACY, not ecstasy. Night prayer, tefillin binding,
+# scrolls on doorposts, stone tablets, children under stars. Visually the
+# "deep indigo night + silver starlight + obsidian" counterpart to Kadosh's
+# "gold + cedar smoke" and Halleluyah's "amber + crimson." All three are
+# System B psytrance at 140+ BPM, but visually almost opposite to each other.
+# Camera: still and prayer-paced with zoom-into-letters moments — the
+# kinetic beat goes into the light/word motion, not the camera or crowd.
+
+_SHEMA_KEYFRAMES: list[Keyframe] = [
+    Keyframe(
+        keyframe_id="rjm_shema_prayer_under_stars",
+        still_prompt=(
+            "Wide cinematic heroic establishing shot of a lone cloaked "
+            "Hebrew figure standing still in the open desert at deep "
+            "night facing the viewer, head bowed in prayer, the entire "
+            "Milky Way galactic arch stretching diagonally across the "
+            "deep indigo-black sky above, thousands of bright silver "
+            "stars in sharp detail, the figure wrapped in a dark "
+            "indigo wool cloak with subtle silver-thread embroidery "
+            "catching starlight, a hand-woven tallit prayer shawl "
+            "striped in silver and pale gold draped over the head with "
+            "tzitzit tassels knotted at the four corners, bare feet on "
+            "pale desert sand, no fire anywhere, only starlight and a "
+            "faint moon-silver ground glow, cinematic ultra-wide "
+            "heroic framing from low angle, palette deep-indigo-night "
+            "+ silver-starlight + obsidian-black + pale-gold accent, "
+            "Iron Age Levant c. 1000 BCE covenant prayer, photographic "
+            "realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_shema_tefillin_hand",
+        still_prompt=(
+            "Macro cinematic close-up of a weathered Hebrew man's hand "
+            "and forearm in the process of binding a tefillin — a "
+            "small square dark-leather box containing parchment, "
+            "bound by a long black leather strap wound seven times "
+            "around the forearm in tight neat coils and continuing up "
+            "over the back of the hand in a specific ritual pattern "
+            "spelling the Hebrew letter Shin, the leather deeply worn "
+            "and aged, the Hebrew letters SHADDAI visibly impressed "
+            "into the box, the skin sun-darkened and strong, a single "
+            "silver ring on the hand, deep indigo-night background "
+            "with only the hand illuminated by a cool moon-silver key "
+            "light from the right, obsidian shadow elsewhere, cinematic "
+            "macro close framing, palette indigo-night + silver-moon + "
+            "black-leather + olive-skin, Iron Age Levant c. 1000 BCE "
+            "Shema morning prayer, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_shema_stone_tablets",
+        still_prompt=(
+            "Wide cinematic heroic shot of the two stone tablets of "
+            "the Law carved from dark rough-hewn granite, resting "
+            "upright against a vertical desert stone at deep night, "
+            "each tablet incised deeply with Paleo-Hebrew letters of "
+            "the Ten Commandments glowing a faint cool silver as if "
+            "freshly cut, the desert stretching dark behind under a "
+            "vast Milky Way overhead, subtle silver starlight catching "
+            "the tablet edges, no fire anywhere, no human figures, "
+            "deep indigo-black shadows dominant, cinematic heroic "
+            "framing with reverent low angle, palette deep-indigo-"
+            "night + silver-starlight + obsidian-stone + pale-glow-"
+            "white, Exodus / Deuteronomy stone-tablet imagery c. 1400 "
+            "BCE, photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_shema_moses_silhouette",
+        still_prompt=(
+            "Wide cinematic heroic shot from below of the silhouette "
+            "of the prophet Moses descending a dark mountain ridge at "
+            "deep night, long beard and hand-woven cloak whipping in "
+            "wind, his arms outstretched holding the two stone tablets "
+            "of the Law high above his head against the Milky Way, "
+            "the tablets' Paleo-Hebrew inscriptions glowing with a "
+            "cool silver light, the figure entirely silhouetted except "
+            "for rim-light on his beard and robe edges from the stars "
+            "behind, rocky dark mountain terrain in foreground indigo "
+            "shadow, no flame, cinematic ultra-wide heroic framing "
+            "from low angle, palette deep-indigo-night + silver-"
+            "starlight + obsidian-mountain + pale-tablet-glow, "
+            "Exodus / Deuteronomy c. 1400 BCE Sinai descent, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_shema_community_reciting",
+        still_prompt=(
+            "Wide cinematic heroic establishing shot of a small "
+            "Hebrew village community of about twenty cloaked figures "
+            "gathered in a broad ring standing facing each other in "
+            "the desert at deep night, all heads bowed and hands "
+            "raised palms-upward in unified prayer, each figure "
+            "wrapped in a tallit prayer shawl with faint silver-thread "
+            "stripes, the vast Milky Way arching overhead, a distant "
+            "silhouetted ancient stone village on a far ridge, faint "
+            "silver moonlight illuminating the ring, no fire, no "
+            "torches, only starlight, cinematic ultra-wide from low "
+            "angle, palette deep-indigo-night + silver-starlight + "
+            "obsidian-ground + pale-gold-accent, Iron Age Levant c. "
+            "1000 BCE Shema evening recitation, photographic realism, "
+            "16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_shema_mezuzah_doorpost",
+        still_prompt=(
+            "Close-up cinematic heroic shot of an ancient Hebrew "
+            "cedar-wood doorpost at night with a small hand-hewn "
+            "silver mezuzah case attached vertically to the post at "
+            "eye-height, the silver case aged and subtly embossed "
+            "with the Hebrew letter SHIN, a tiny rolled parchment "
+            "scroll inside just visible through a small open window, "
+            "the cedar grain deeply textured, a weathered sun-darkened "
+            "Hebrew hand just entering the frame from the right "
+            "touching the mezuzah in passing-by blessing, warm amber "
+            "oil-lamp light from within the doorway spilling softly "
+            "against the cool silver-moon light from the night "
+            "outside, deep indigo-black shadow framing, cinematic "
+            "close heroic framing, palette cedar-brown + silver + "
+            "indigo-night + pale-amber-accent, Iron Age Levant c. "
+            "1000 BCE home ritual, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_shema_elder_teaching",
+        still_prompt=(
+            "Middle cinematic heroic shot of a Hebrew elder in his "
+            "seventies seated cross-legged on a woven wool rug inside "
+            "a nomadic goat-hair tent at deep night, surrounded by "
+            "five seated children listening intently, a single small "
+            "bronze oil lamp burning between them casting warm amber "
+            "light on the elder's weathered face and long gray-"
+            "streaked beard, his hand extended open-palm as he teaches "
+            "the Shema, the Hebrew letters of the prayer faintly "
+            "visible as cool silver impressions in the air just above "
+            "the children's heads, the tent walls in deep indigo "
+            "shadow, subtle star-glow visible through the open tent "
+            "flap behind, cinematic middle heroic framing, palette "
+            "indigo-night + warm-amber-lamp + silver-letter-glow + "
+            "cedar-wool, Iron Age Levant c. 1000 BCE Shema teaching, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_shema_open_scroll",
+        still_prompt=(
+            "Macro cinematic overhead close-up of an unrolled ancient "
+            "parchment scroll of the Shema prayer lying flat on a "
+            "low dark wooden table at night, deep black iron-gall ink "
+            "Paleo-Hebrew lettering flowing vertically down the "
+            "parchment in crisp columns with the opening verse "
+            "Shema Yisrael carefully calligraphed in Paleo-Hebrew, "
+            "the parchment "
+            "weathered and amber-aged with visible fiber texture, a "
+            "single small bronze oil lamp at the upper corner of "
+            "frame casting warm amber light across the scroll, subtle "
+            "silver starlight faintly visible through a window in the "
+            "background blur, deep indigo shadow dominating outside "
+            "the lamp's reach, cinematic macro close framing, palette "
+            "parchment-amber + iron-gall-black + indigo-night + "
+            "silver-star-accent, Iron Age Levant c. 1000 BCE Shema "
+            "scroll, photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_shema_letters_sky",
+        still_prompt=(
+            "Wide cinematic overhead heroic shot looking straight up "
+            "into a vast deep-indigo-black night sky filled with the "
+            "full Milky Way galactic arch, among the thousands of "
+            "bright silver stars an arrangement of Paleo-Hebrew "
+            "letters forms from the constellations themselves — the "
+            "letters שְׁמַע יִשְׂרָאֵל (Shema Yisrael) faintly traced in "
+            "glowing silver-pale connecting lines between stars, the "
+            "letters ghostly and cool against the cosmic background, "
+            "no ground visible, pure overhead sky, cinematic ultra-"
+            "wide heroic overhead framing, palette deep-indigo-night "
+            "+ silver-starlight + obsidian-space + pale-letter-glow, "
+            "Iron Age Levant c. 1000 BCE sky-covenant imagery, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+]
+
+_SHEMA_MORPHS: list[MorphClip] = [
+    MorphClip(
+        clip_id="rjm_shema_prayer_under_stars__to__tefillin_hand",
+        from_kf_id="rjm_shema_prayer_under_stars",
+        to_kf_id="rjm_shema_tefillin_hand",
+        motion_prompt=(
+            "Cinematic drone camera orbiting slowly around the lone "
+            "cloaked praying figure at night, then pushing in close "
+            "to their right hand which is raising slowly, the frame "
+            "converging in macro on the hand and forearm as a black "
+            "leather tefillin strap winds itself across the skin in "
+            "ritual pattern. Slow prayer-paced drone motion under the "
+            "starlight, covenantal intimacy register."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_shema_tefillin_hand__to__stone_tablets",
+        from_kf_id="rjm_shema_tefillin_hand",
+        to_kf_id="rjm_shema_stone_tablets",
+        motion_prompt=(
+            "Cinematic drone camera pulling back from the tefillin-"
+            "bound hand, the hand lowering and falling out of frame, "
+            "the drone rotating upward and outward revealing two "
+            "upright stone tablets resting against a dark desert "
+            "stone with their Paleo-Hebrew commandments glowing cool "
+            "silver under the Milky Way. Slow awed drone motion, "
+            "starlight-only, covenantal register."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_shema_stone_tablets__to__moses_silhouette",
+        from_kf_id="rjm_shema_stone_tablets",
+        to_kf_id="rjm_shema_moses_silhouette",
+        motion_prompt=(
+            "Cinematic drone camera rising slowly from the resting "
+            "stone tablets and pulling up and backward, the tablets "
+            "shrinking in frame and the camera rotating to reveal the "
+            "silhouetted figure of Moses descending a distant mountain "
+            "ridge with tablets raised high against the Milky Way. "
+            "Slow cathedral-paced drone ascent, covenantal register."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_shema_moses_silhouette__to__community_reciting",
+        from_kf_id="rjm_shema_moses_silhouette",
+        to_kf_id="rjm_shema_community_reciting",
+        motion_prompt=(
+            "Cinematic drone camera arcing slowly around the "
+            "silhouetted Moses figure, then flying forward across the "
+            "dark desert landscape descending toward a distant "
+            "silhouetted village, the village growing to reveal a ring "
+            "of twenty cloaked community members gathered in unified "
+            "Shema prayer under the starry sky. Slow traveling drone "
+            "descent, prayer-paced, covenantal register."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_shema_community_reciting__to__mezuzah_doorpost",
+        from_kf_id="rjm_shema_community_reciting",
+        to_kf_id="rjm_shema_mezuzah_doorpost",
+        motion_prompt=(
+            "Cinematic drone camera descending toward the ring of "
+            "praying figures, then gliding past them toward the "
+            "village's nearest house, the drone pushing in close to "
+            "the cedar-wood doorpost where a small silver mezuzah "
+            "case is affixed, the frame tightening to a close-up as "
+            "a weathered hand reaches in to touch the mezuzah in "
+            "passing. Slow prayer-paced approach, covenantal register."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_shema_mezuzah_doorpost__to__elder_teaching",
+        from_kf_id="rjm_shema_mezuzah_doorpost",
+        to_kf_id="rjm_shema_elder_teaching",
+        motion_prompt=(
+            "Cinematic drone camera pulling back from the silver "
+            "mezuzah on the doorpost and passing through the open "
+            "doorway into a goat-hair tent interior lit by a single "
+            "amber oil lamp, the view settling on an elder teaching "
+            "the Shema to five seated children with cool silver "
+            "letters of the prayer forming faintly in the air above "
+            "their heads. Slow reverent interior pass, covenantal "
+            "intimacy register."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_shema_elder_teaching__to__open_scroll",
+        from_kf_id="rjm_shema_elder_teaching",
+        to_kf_id="rjm_shema_open_scroll",
+        motion_prompt=(
+            "Cinematic drone camera descending from the silver "
+            "letters floating above the children, tracking forward "
+            "toward the elder's teaching hand and the low wooden "
+            "table in front of him, converging in macro overhead "
+            "close-up on an unrolled parchment Shema scroll laid flat "
+            "on the table. Slow contemplative descent, covenantal "
+            "register."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_shema_open_scroll__to__letters_sky",
+        from_kf_id="rjm_shema_open_scroll",
+        to_kf_id="rjm_shema_letters_sky",
+        motion_prompt=(
+            "Cinematic drone camera hovering over the Shema scroll as "
+            "the black iron-gall Paleo-Hebrew letters begin to "
+            "luminesce and lift upward from the parchment in glowing "
+            "silver, rising through the tent ceiling and into the "
+            "night sky where they settle among the Milky Way stars "
+            "forming the letters שְׁמַע יִשְׂרָאֵל traced in silver lines "
+            "between distant stars. Slow awed vertical ascent, "
+            "covenantal register."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_shema_letters_sky__to__prayer_under_stars",
+        from_kf_id="rjm_shema_letters_sky",
+        to_kf_id="rjm_shema_prayer_under_stars",
+        motion_prompt=(
+            "Cinematic drone camera slowly descending from the "
+            "star-lettered sky, rotating back from overhead to "
+            "horizontal orientation, the Milky Way sliding into "
+            "position overhead and the cloaked praying figure "
+            "reappearing standing still in the desert below, "
+            "seamlessly closing the covenantal loop. Slow prayer-"
+            "paced descent, covenantal register, seamlessly closes "
+            "the hypnotic loop."
+        ),
+    ),
+]
+
+_SHEMA_THUMBNAIL_KEYFRAME = Keyframe(
+    keyframe_id="rjm_shema_thumbnail",
+    still_prompt=(
+        "Ultra-close cinematic thumbnail portrait of a single Hebrew "
+        "man's face at deep night, piercing direct eye contact with "
+        "the camera, deep brown eyes with a small bright reflection "
+        "of the Milky Way inside each pupil, weathered bearded jaw, "
+        "a black leather tefillin strap wound across his forehead "
+        "with the dark-leather shel-rosh box centered above the brow "
+        "impressed with the Hebrew letter SHIN, faint silver-thread "
+        "embroidery at his shoulder catching cool starlight, cool "
+        "silver moonlight from the right carving half his face, deep "
+        "obsidian-indigo shadow on the opposite side, face occupies "
+        "70 percent of the frame, extremely high contrast, ultra-"
+        "saturated indigo-silver palette against pitch-black "
+        "background, Iron Age Levant c. 1000 BCE Shema morning "
+        "prayer, photographic realism, 16:9, --style raw"
+    ),
+)
+
+SHEMA_STORY: MorphStory = MorphStory(
+    story_id="shema_deut6_covenant_prayer",
+    keyframes=_SHEMA_KEYFRAMES,
+    morphs=_SHEMA_MORPHS,
+    thumbnail_keyframe=_SHEMA_THUMBNAIL_KEYFRAME,
+)
+
+STORIES[SHEMA_STORY.story_id] = SHEMA_STORY
+
+
 # Per-track narrative override. Lowercase keys. Scripture-anchored where
-# applicable. Add new tracks as their stories are written — Kadosh,
-# Not By Might, etc. each get their own dedicated chain with distinct
+# applicable. Add new tracks as their stories are written — Not By Might,
+# Kavod, Ruach, etc. each get their own dedicated chain with distinct
 # style DNA (see "STYLE VARIETY DOCTRINE" above).
 TRACK_STORIES: dict[str, MorphStory] = {
     "jericho":    JERICHO_EXTENDED_STORY,       # iron_age + golden_hour + character + ecstatic
     "selah":      SELAH_STORY,                  # bronze_age + pre_dawn_mist + contemplative + slow
     "halleluyah": HALLELUYAH_STORY,             # iron_age + fiery + ecstatic_crowd + ecstatic
+    "kadosh":     KADOSH_STORY,                 # first_temple + gold_smoke + throne_vision + reverent
+    "shema":      SHEMA_STORY,                  # iron_age + indigo_starlight + covenantal_prayer + reverent
     # Add future tracks here as their stories are written.
 }
 
