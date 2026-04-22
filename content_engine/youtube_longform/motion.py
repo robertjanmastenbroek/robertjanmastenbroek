@@ -483,6 +483,73 @@ STORIES: dict[str, MorphStory] = {
 
 DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 
+
+# ─── TWO VISUAL SYSTEMS (by BPM tier) ────────────────────────────────────────
+# Observation (RJM post-Jericho-launch, 12h stats: 3.0% CTR / 80% Suggested
+# Videos / 0:37 APV): Café de Anatolia 128-138 BPM audiences and Astrix 140+
+# BPM audiences expect visibly different visualizers. Organic-house viewers
+# want daytime / contemplative / solo-figure. Psytrance viewers want night /
+# kinetic / crowd-ritual. Mixing the two signals tells YouTube the channel
+# is unclustered — dilutes the clustering that's already working.
+#
+# Every new MorphStory leans its keyframes into ONE of the two systems:
+#
+# ╔═══════════════════════════════════════════════════════════════════════════
+# ║ SYSTEM A — ORGANIC HOUSE (128-138 BPM)
+# ║   Selah, Renamed, Fire In Our Hands, Living Water, He Is The Light, Abba,
+# ║   Side By Side, Step By Step, Rise Up My Love, How Good And Pleasant
+# ╠═══════════════════════════════════════════════════════════════════════════
+# ║  Time of day:   dawn / golden hour / dusk (daytime light dominant)
+# ║  Palette:       warm amber + terracotta + soft gold + pale indigo + ochre
+# ║  Subject:       solo contemplative figure(s); veiled portraits; handpan or
+# ║                 oud players; elders in prayer; lone watchers on ridges
+# ║  Setting:       oasis, cedar grove, cliffside vigil, dawn caravan, prayer
+# ║                 tent interior lit by oil lamp
+# ║  Camera:        floating drone, slow cinematic glide, gentle orbital arcs
+# ║  Lighting:      soft warm key, gradient shadows, ambient softness
+# ║  Texture:       linen, wool, hand-woven, still water, sand, silver, lapis
+# ║  Register:      contemplation, stillness, reverence, ceremony
+# ║  Reference DNA: Café de Anatolia / Sol Selectas / Sabo / Bedouin /
+# ║                 Monolink / Be Svendsen / Anjunadeep / All Day I Dream
+# ╚═══════════════════════════════════════════════════════════════════════════
+#
+# ╔═══════════════════════════════════════════════════════════════════════════
+# ║ SYSTEM B — TRIBAL PSYTRANCE (140+ BPM)
+# ║   Jericho (hybrid), Halleluyah, Kadosh, Shema, Not By Might, Kavod,
+# ║   Ruach (intense variants)
+# ╠═══════════════════════════════════════════════════════════════════════════
+# ║  Time of day:   deep night — torchlight, firelight, moonlight (NO daytime)
+# ║  Palette:       indigo-black + ember-orange + amber-crimson + silver accent
+# ║                 (NO daytime warm gold; keep gold as fire/ember light only)
+# ║  Subject:       warriors / priests mid-ritual; ecstatic crowds; fire-bearers;
+# ║                 sound-wave moments; architectural macro (cracking stone)
+# ║  Setting:       fire circle, night altar, temple at night, ziggurat under
+# ║                 stars, cave refuge at midnight, macro sacred stone detail,
+# ║                 spiral-dance aerial shots
+# ║  Camera:        sweeping arcs, fast orbital zooms, kinetic aerial swoops,
+# ║                 sharp tracking — matches BPM intensity
+# ║  Lighting:      hard amber key from below (firelight), deep obsidian
+# ║                 shadows on opposite side, rim-lit silhouettes, high contrast
+# ║  Texture:       bronze, silver, flame, embers, cracked stone, sparks, ash
+# ║  Register:      celebration, trance, ecstasy, confrontation, sacred violence
+# ║  Reference DNA: Astrix / Ace Ventura / Vini Vici / Symphonix / Vertex /
+# ║                 Ranji / Tristan / Infected Mushroom / Iboga Records
+# ╚═══════════════════════════════════════════════════════════════════════════
+#
+# Per-story variety STILL matters WITHIN a system so that two System-B tracks
+# don't both look like "ecstatic fire circle." Pick different vocabulary
+# inside the system — e.g. Jericho = warrior + stone walls + golden dust at
+# night, Halleluyah = fire circle + dancers + embers, Kadosh = sacred
+# architecture + white-linen priests + altar flames, Shema = cloaked-figure
+# silhouettes + Paleo-Hebrew-light + geometric pattern, etc.
+#
+# Convenience helper:
+
+def system_for_bpm(bpm: int) -> str:
+    """Return 'A' (organic 128-138) or 'B' (psytrance 140+) given a BPM."""
+    return "B" if bpm >= 139 else "A"
+
+
 # ─── SELAH — Psalm 46, 130 BPM meditative, 9-keyframe 90s no-repeat ──────────
 # Selah is the contemplative counterpart to Jericho's ecstatic storm. Where
 # Jericho revisits the warrior as its anchor (3x in the chain), Selah has
