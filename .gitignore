@@ -53,3 +53,4 @@ outreach_agent/.claude_subprocess_home/
 content/audio/
 !content/audio/.gitkeep
 .worktrees/
+.claude_subprocess_home/
