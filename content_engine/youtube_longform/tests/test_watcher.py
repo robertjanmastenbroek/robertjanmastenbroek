@@ -59,6 +59,16 @@ def test_scan_skips_already_published(tmp_path, monkeypatch):
     }) + "\n")
     monkeypatch.setattr("content_engine.youtube_longform.registry.REGISTRY_FILE", reg)
 
+    # Watcher now calls already_published(..., validate=True). In this
+    # test we have no YouTube OAuth — stub out the token to None so the
+    # validation short-circuits and preserves the original "first-successful
+    # row wins" behavior. The live validation path is covered by
+    # test_registry.test_already_published_validation_skips_stale_returns_next_success.
+    monkeypatch.setattr(
+        "content_engine.youtube_longform.registry._dedup_token",
+        lambda: None,
+    )
+
     cands = watcher.scan_new_tracks()
     assert all(c.track_title.lower() != "jericho" for c in cands)
 

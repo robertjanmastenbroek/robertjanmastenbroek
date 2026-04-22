@@ -128,6 +128,118 @@ def test_already_published_matches_case_insensitive(tmp_path, monkeypatch):
     assert registry.already_published("jericho ") is not None
 
 
+def test_already_published_unvalidated_returns_first_success(tmp_path, monkeypatch):
+    """
+    Default (no validate=, no env var): preserve pre-2026-04-22 behavior —
+    return the first successful row. Zero network calls.
+    """
+    monkeypatch.delenv("HOLYRAVE_DEDUP_VALIDATE", raising=False)
+    path = tmp_path / "reg.jsonl"
+    path.write_text(
+        '{"track_title": "Jericho", "youtube_id": "stale_abc", "dry_run": false, "error": null}\n'
+        '{"track_title": "Jericho", "youtube_id": "fresh_xyz", "dry_run": false, "error": null}\n'
+    )
+    monkeypatch.setattr("content_engine.youtube_longform.registry.REGISTRY_FILE", path)
+
+    with patch("content_engine.youtube_longform.registry.requests.get") as mock_get, \
+         patch("content_engine.youtube_longform.registry._dedup_token") as mock_token:
+        r = registry.already_published("Jericho")
+
+    # No network traffic — default path is unvalidated.
+    mock_get.assert_not_called()
+    mock_token.assert_not_called()
+    assert r is not None
+    assert r["youtube_id"] == "stale_abc"     # first successful wins, regardless of staleness
+
+
+def test_already_published_validation_skips_stale_returns_next_success(tmp_path, monkeypatch):
+    """
+    validate=True: probe each success row via videos.list. When the first
+    success's video no longer exists on our channel, skip it and return the
+    next success whose video DOES exist. This is the 2026-04-22 Jericho
+    false-positive guard.
+    """
+    path = tmp_path / "reg.jsonl"
+    path.write_text(
+        '{"track_title": "Jericho", "youtube_id": "stale_abc",   "dry_run": false, "error": null}\n'
+        '{"track_title": "Jericho", "youtube_id": "dryrun_row",  "dry_run": true,  "error": null}\n'
+        '{"track_title": "Jericho", "youtube_id": "fresh_xyz",   "dry_run": false, "error": null}\n'
+    )
+    monkeypatch.setattr("content_engine.youtube_longform.registry.REGISTRY_FILE", path)
+    # Reset the channel-id cache so the test's responses are consulted
+    monkeypatch.setattr("content_engine.youtube_longform.registry._MY_CHANNEL_ID_CACHE", None)
+    # Bypass the real OAuth refresh
+    monkeypatch.setattr(
+        "content_engine.youtube_longform.registry._dedup_token",
+        lambda: "fake-token",
+    )
+    monkeypatch.setattr(
+        "content_engine.youtube_longform.config.YT_HOLY_RAVE_CHANNEL_ID",
+        "holy-rave-ch-id",
+    )
+
+    # videos.list responses — stale returns 0 items, fresh returns 1 item
+    # on the expected channel.
+    def fake_get(url, params=None, headers=None, timeout=None):
+        if "channels" in url:
+            # channels.list (shouldn't fire because HOLY_RAVE_CHANNEL_ID is set,
+            # but defensive stub)
+            return MagicMock(status_code=200, json=lambda: {"items": [{"id": "holy-rave-ch-id"}]})
+        assert "videos" in url, f"Unexpected URL: {url}"
+        vid = (params or {}).get("id", "")
+        if vid == "stale_abc":
+            return MagicMock(status_code=200, json=lambda: {"items": []})
+        if vid == "fresh_xyz":
+            return MagicMock(status_code=200, json=lambda: {
+                "items": [{"snippet": {"channelId": "holy-rave-ch-id"}}],
+            })
+        return MagicMock(status_code=404, json=lambda: {"items": []})
+
+    with patch("content_engine.youtube_longform.registry.requests.get", side_effect=fake_get):
+        r = registry.already_published("Jericho", validate=True)
+
+    assert r is not None
+    assert r["youtube_id"] == "fresh_xyz", (
+        f"expected the fresh row to win, got {r}"
+    )
+
+
+def test_already_published_validation_all_stale_returns_first_seen(tmp_path, monkeypatch):
+    """
+    validate=True and EVERY successful row is stale → return the first_seen
+    row (may be a dry-run / error), which the publisher treats as "not yet
+    published" and allows a fresh publish to proceed.
+    """
+    path = tmp_path / "reg.jsonl"
+    path.write_text(
+        '{"track_title": "Jericho", "youtube_id": null, "dry_run": true, "error": null}\n'
+        '{"track_title": "Jericho", "youtube_id": "stale_abc",   "dry_run": false, "error": null}\n'
+        '{"track_title": "Jericho", "youtube_id": "also_stale",  "dry_run": false, "error": null}\n'
+    )
+    monkeypatch.setattr("content_engine.youtube_longform.registry.REGISTRY_FILE", path)
+    monkeypatch.setattr("content_engine.youtube_longform.registry._MY_CHANNEL_ID_CACHE", None)
+    monkeypatch.setattr(
+        "content_engine.youtube_longform.registry._dedup_token",
+        lambda: "fake-token",
+    )
+    monkeypatch.setattr(
+        "content_engine.youtube_longform.config.YT_HOLY_RAVE_CHANNEL_ID",
+        "holy-rave-ch-id",
+    )
+
+    # Every video lookup returns empty → all success rows are stale.
+    stale = MagicMock(status_code=200)
+    stale.json.return_value = {"items": []}
+    with patch("content_engine.youtube_longform.registry.requests.get", return_value=stale):
+        r = registry.already_published("Jericho", validate=True)
+
+    assert r is not None
+    # first_seen is the dry_run row — dry_run=True is the signal the publisher
+    # uses to decide "not yet truly published", so this is the right row to
+    # surface for context without blocking a re-publish.
+    assert r.get("dry_run") is True
+
+
 def test_count_today_excludes_dry_runs_and_errors(tmp_path, monkeypatch):
     """Only successful non-dry-run publishes are counted."""
     from datetime import datetime, timezone

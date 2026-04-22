@@ -110,8 +110,11 @@ def scan_new_tracks() -> list[TrackCandidate]:
             logger.info("skip %r: file only %.0fs old; waiting for stability", title, age)
             continue
 
-        # Dedup via registry (successfully published OR errored-but-has-youtube-id)
-        existing = registry.already_published(title)
+        # Dedup via registry (successfully published OR errored-but-has-youtube-id).
+        # validate=True probes each success row via videos.list to skip stale
+        # rows pointing at deleted/wrong-channel videos (2026-04-22 Jericho
+        # false-positive guard). ~1 quota unit per row, negligible.
+        existing = registry.already_published(title, validate=True)
         if existing and existing.get("youtube_id") and not existing.get("error"):
             logger.debug("skip %r: already published %s", title, existing.get("youtube_url"))
             continue

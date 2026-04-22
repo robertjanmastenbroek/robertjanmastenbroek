@@ -39,9 +39,145 @@ logger = logging.getLogger(__name__)
 REGISTRY_FILE = cfg.REGISTRY_DIR / "youtube_longform.jsonl"
 
 
+# ─── YouTube-channel validation cache ────────────────────────────────────────
+# Process-local cache of the authenticated channel's ID. Resolved lazily the
+# first time a dedup validation runs, then reused. If the token or the active
+# channel changes mid-process, the cache is stale — but the cost of that is
+# a false "stale row" classification on one track, which self-heals on the
+# next publisher invocation.
+_MY_CHANNEL_ID_CACHE: Optional[str] = None
+
+
+def _resolve_my_channel_id(access_token: str) -> Optional[str]:
+    """
+    Return the channelId of the OAuth-authenticated user, cached per process.
+    Prefers cfg.YT_HOLY_RAVE_CHANNEL_ID when set (zero-quota path), else one
+    channels.list?mine=true call (1 quota unit).
+    """
+    global _MY_CHANNEL_ID_CACHE
+    if _MY_CHANNEL_ID_CACHE:
+        return _MY_CHANNEL_ID_CACHE
+
+    # Prefer the configured channel id — zero quota, single source of truth.
+    if cfg.YT_HOLY_RAVE_CHANNEL_ID:
+        _MY_CHANNEL_ID_CACHE = cfg.YT_HOLY_RAVE_CHANNEL_ID
+        return _MY_CHANNEL_ID_CACHE
+
+    try:
+        r = requests.get(
+            "https://www.googleapis.com/youtube/v3/channels",
+            params={"part": "id", "mine": "true"},
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=15,
+        )
+        if r.status_code == 200:
+            items = r.json().get("items", [])
+            if items:
+                _MY_CHANNEL_ID_CACHE = items[0]["id"]
+                return _MY_CHANNEL_ID_CACHE
+        logger.warning(
+            "channels.list mine=true returned %d: %s",
+            r.status_code, r.text[:200],
+        )
+    except Exception as e:
+        logger.warning("Could not resolve active channel id: %s", e)
+    return None
+
+
+def _video_exists_on_my_channel(video_id: str, access_token: str) -> bool:
+    """
+    Return True iff the given YouTube video id still exists AND is owned by
+    the OAuth-authenticated channel (i.e. matches _resolve_my_channel_id).
+
+    Cost: 1 videos.list quota unit per call. Negligible vs the 1600 units
+    of a full videos.insert.
+
+    Conservative on errors: if we can't determine the answer (network
+    failure, auth failure, channel-id resolution fails), return True to
+    avoid false-positively blocking legitimate "already published"
+    signals during infrastructure hiccups. Log loudly so it's visible.
+    """
+    if not video_id:
+        return False
+    my_ch = _resolve_my_channel_id(access_token)
+    if not my_ch:
+        logger.warning(
+            "Skipping dedup validation for %s — could not resolve active "
+            "channel id.", video_id,
+        )
+        return True   # Conservative: treat as existing, keep dedup intact
+
+    try:
+        r = requests.get(
+            "https://www.googleapis.com/youtube/v3/videos",
+            params={"part": "snippet", "id": video_id},
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            logger.warning(
+                "videos.list probe for %s returned %d — treating as EXISTS "
+                "(conservative). Body: %s",
+                video_id, r.status_code, r.text[:200],
+            )
+            return True
+        items = r.json().get("items", [])
+        if not items:
+            logger.info(
+                "videos.list found no item for %s — video deleted or on "
+                "different channel. Treating registry row as STALE.",
+                video_id,
+            )
+            return False
+        found_channel = items[0].get("snippet", {}).get("channelId")
+        if found_channel != my_ch:
+            logger.info(
+                "Video %s belongs to channel %s, not active channel %s — "
+                "treating registry row as STALE.",
+                video_id, found_channel, my_ch,
+            )
+            return False
+        return True
+    except Exception as e:
+        logger.warning(
+            "Exception during videos.list probe of %s — treating as EXISTS "
+            "(conservative): %s", video_id, e,
+        )
+        return True
+
+
+def _dedup_validate_enabled(explicit: Optional[bool]) -> bool:
+    """Resolve the validate-on-dedup flag from an explicit arg or env var."""
+    if explicit is not None:
+        return bool(explicit)
+    env = os.getenv("HOLYRAVE_DEDUP_VALIDATE", "").strip().lower()
+    return env in ("1", "true", "yes", "on")
+
+
+def _dedup_token() -> Optional[str]:
+    """
+    Obtain a YouTube access token for the validation probe. Returns None if
+    the OAuth credentials aren't set, in which case the caller skips the
+    validation step entirely (logs a warning once).
+    """
+    from content_engine.youtube_longform import uploader
+    try:
+        return uploader._refresh_access_token()
+    except Exception as e:
+        logger.warning(
+            "Cannot refresh YouTube token for dedup validation (%s) — "
+            "falling back to unvalidated behavior.", e,
+        )
+        return None
+
+
 # ─── Dedup registry ──────────────────────────────────────────────────────────
 
-def already_published(track_title: str) -> Optional[dict]:
+def already_published(
+    track_title: str,
+    *,
+    validate: Optional[bool] = None,
+) -> Optional[dict]:
     """
     Return a registry row for this track, preferring a SUCCESSFUL
     publish (youtube_id set, no error, not a dry-run) over any
@@ -58,17 +194,41 @@ def already_published(track_title: str) -> Optional[dict]:
     (dry-run) row, publisher decided the track wasn't really published
     yet, and $3.77 evaporated re-generating what already existed.
 
+    2026-04-22 Jericho false-positive: the opposite failure — the
+    registry had MULTIPLE successful rows for Jericho, and the first
+    one pointed at a video id (tPXmDVOJVf0) that no longer existed on
+    Holy Rave (deleted or uploaded to a test channel). This function
+    returned that stale row, which made thumbnails.set 404 when we
+    tried to refresh the thumbnail after the new CTR pipeline
+    landed — and it would have blocked any future re-publish too. The
+    `validate=True` path validates each successful row via one
+    videos.list probe, skipping stale ones and returning the next
+    valid success, so the publisher's dedup guard only ever trusts
+    rows whose video is still on the active channel.
+
     Return priority:
-      1. First row where youtube_id is set and error is None and
-         dry_run is False  (the real "already published" signal)
+      1. First row where youtube_id is set, error is None, dry_run is
+         False, AND (if validate=True) the video still exists on the
+         active Holy Rave channel.
       2. First row matching the track name otherwise (may be a
-         failure/dry-run — lets callers inspect prior-attempt context)
+         failure/dry-run — lets callers inspect prior-attempt context).
       3. None if the track never appears.
+
+    Args:
+      track_title:  case-insensitive lookup key.
+      validate:     if True, probe each candidate success row via
+                    videos.list to confirm the id still exists on the
+                    active channel. If False, skip validation. If None
+                    (default), consult HOLYRAVE_DEDUP_VALIDATE env var
+                    (disabled by default so unit tests stay hermetic;
+                    the watcher turns it on explicitly in production).
     """
     if not REGISTRY_FILE.exists():
         return None
     key = track_title.lower().strip()
     first_seen: Optional[dict] = None
+    successful_rows: list[dict] = []
+
     with open(REGISTRY_FILE, "r") as f:
         for line in f:
             try:
@@ -80,9 +240,44 @@ def already_published(track_title: str) -> Optional[dict]:
             if (row.get("youtube_id")
                     and not row.get("error")
                     and not row.get("dry_run")):
-                return row   # Successful publish — use this
-            if first_seen is None:
+                successful_rows.append(row)
+            elif first_seen is None:
                 first_seen = row
+
+    if not successful_rows:
+        return first_seen   # Only failures / dry-runs ever seen
+
+    do_validate = _dedup_validate_enabled(validate)
+    if not do_validate:
+        # Preserve existing behavior — first successful row wins.
+        return successful_rows[0]
+
+    # Validation path: check each successful row's video still exists on
+    # the active channel. First validating row wins.
+    token = _dedup_token()
+    if not token:
+        # Couldn't auth for validation — fall back to unvalidated behavior.
+        return successful_rows[0]
+
+    for row in successful_rows:
+        vid = row.get("youtube_id", "")
+        if _video_exists_on_my_channel(vid, token):
+            return row
+        logger.info(
+            "Dedup skipped stale registry row for %r (video %s not on "
+            "active channel). Continuing scan.",
+            track_title, vid,
+        )
+
+    # Every successful row is stale — return first_seen so the caller
+    # can still see the last-attempt context, but the publisher's
+    # guard (which checks for a valid youtube_id + no error) will treat
+    # this as "not yet published" and allow a fresh publish.
+    logger.warning(
+        "All %d successful registry rows for %r are stale (video deleted "
+        "or on wrong channel). Treating track as unpublished.",
+        len(successful_rows), track_title,
+    )
     return first_seen
 
 
