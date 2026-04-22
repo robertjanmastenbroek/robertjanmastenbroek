@@ -1,7 +1,12 @@
 """
-Tests for registry.py smart-link fallback chain + dedup behavior.
+Tests for registry.py primary-link behavior + dedup.
 
-Priority order for build_smart_link:
+Spotify-first default (2026-04-22 North-Star mandate):
+  build_smart_link returns the per-track Spotify URL + UTM by default.
+  Odesli / Feature.fm aggregators are only consulted when
+  HOLYRAVE_PRIMARY_LINK=smart is set explicitly.
+
+Opt-in "smart" mode priority:
   1. Feature.fm (if API key set and request succeeds)
   2. Odesli/Songlink (if request succeeds)
   3. Raw Spotify URL + UTM suffix (always works — final fallback)
@@ -25,8 +30,33 @@ def test_utm_suffix_formats_correctly():
     assert "utm_campaign=hr_fire_in_our_hands" in suffix
 
 
+def test_build_smart_link_default_is_spotify_direct(monkeypatch):
+    """
+    Default (no HOLYRAVE_PRIMARY_LINK env var): return the per-track
+    Spotify URL + UTM with ZERO aggregator network calls. This is the
+    2026-04-22 North-Star default — every click funnels to Spotify.
+    """
+    monkeypatch.delenv("HOLYRAVE_PRIMARY_LINK", raising=False)
+
+    with patch("content_engine.youtube_longform.registry.requests.get") as mock_get, \
+         patch("content_engine.youtube_longform.registry.requests.post") as mock_post:
+        url = registry.build_smart_link("Jericho")
+
+    # No network — we skip Odesli and Feature.fm entirely in Spotify mode.
+    mock_get.assert_not_called()
+    mock_post.assert_not_called()
+
+    assert "open.spotify.com/track/2M7cL3KynPGzE1DonuldrN" in url
+    assert "utm_source=youtube" in url
+    assert "utm_campaign=hr_jericho" in url
+
+
 def test_build_smart_link_falls_back_to_spotify_utm_when_no_services(monkeypatch):
-    """No Feature.fm key + Odesli fails → UTM-suffixed per-track Spotify URL."""
+    """
+    Opt-in smart mode with no Feature.fm key + Odesli failing → final
+    fallback is the UTM-suffixed per-track Spotify URL.
+    """
+    monkeypatch.setenv("HOLYRAVE_PRIMARY_LINK", "smart")
     monkeypatch.setattr("content_engine.youtube_longform.config.FEATUREFM_API_KEY", "")
 
     # Stub Odesli to fail
@@ -36,7 +66,7 @@ def test_build_smart_link_falls_back_to_spotify_utm_when_no_services(monkeypatch
     with patch("content_engine.youtube_longform.registry.requests.get", side_effect=fail):
         url = registry.build_smart_link("Jericho")
 
-    # Post-2026-04-21: we now emit the per-TRACK Spotify URL, not the artist
+    # Post-2026-04-21: we emit the per-TRACK Spotify URL, not the artist
     # page, whenever a track URL is on file in audio_engine.TRACK_SPOTIFY_URLS.
     # Jericho is known (2M7cL3KynPGzE1DonuldrN) so the fallback is the track.
     assert "open.spotify.com/track/2M7cL3KynPGzE1DonuldrN" in url
@@ -45,7 +75,8 @@ def test_build_smart_link_falls_back_to_spotify_utm_when_no_services(monkeypatch
 
 
 def test_build_smart_link_uses_odesli_when_available(monkeypatch):
-    """No Feature.fm but Odesli returns pageUrl → returns that + UTM."""
+    """Opt-in smart mode: Odesli returns pageUrl → returns that + UTM."""
+    monkeypatch.setenv("HOLYRAVE_PRIMARY_LINK", "smart")
     monkeypatch.setattr("content_engine.youtube_longform.config.FEATUREFM_API_KEY", "")
 
     fake_response = MagicMock()
@@ -60,7 +91,8 @@ def test_build_smart_link_uses_odesli_when_available(monkeypatch):
 
 
 def test_build_smart_link_prefers_featurefm(monkeypatch):
-    """Feature.fm succeeds → returns its url without hitting Odesli."""
+    """Opt-in smart mode: Feature.fm succeeds → returns its url without hitting Odesli."""
+    monkeypatch.setenv("HOLYRAVE_PRIMARY_LINK", "smart")
     monkeypatch.setattr("content_engine.youtube_longform.config.FEATUREFM_API_KEY", "test-key")
     monkeypatch.setattr("content_engine.youtube_longform.config.FEATUREFM_ACCOUNT_ID", "")
 

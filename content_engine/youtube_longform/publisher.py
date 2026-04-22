@@ -80,11 +80,19 @@ def _compose_description(
 ) -> str:
     """
     @osso-so-template description — 3 top hashtags (YouTube hoists above
-    the title) + link stack + scripture-as-lyrics block + 18 bottom
-    hashtags. Every outbound link gets a UTM tag so we can measure
-    per-track YouTube→Spotify/Apple/website conversion in existing
-    analytics (Spotify for Artists, Apple Music for Artists, Google
-    Analytics on robertjanmastenbroek.com).
+    the title) + Spotify-first link stack + scripture-as-lyrics block +
+    18 bottom hashtags.
+
+    Link stack ordering is Spotify-first by explicit design (2026-04-22):
+    North Star is 1M Spotify monthly listeners, so every click should
+    route to Spotify. Apple Music is surfaced only as a secondary
+    option when a track-specific Apple URL exists. Odesli-style
+    aggregator landing pages are NOT used here because their DSP
+    picker splits conversion away from Spotify.
+
+    Every outbound Spotify/Apple/Web link gets a UTM tag so Spotify
+    for Artists and Apple Music for Artists can attribute YouTube
+    inbound traffic per-track.
     """
     top_hashtags = " ".join(cfg.HASHTAGS_TOP.get(genre_tag, cfg.HASHTAGS_TOP["organic_tribal"]))
     bottom_hashtags = " ".join(cfg.HASHTAGS_BOTTOM)
@@ -100,16 +108,20 @@ def _compose_description(
     elif scripture_verse:
         lyrics_block = f"\nScripture:\n{scripture_verse}\n"
 
-    # Link stack — show a per-DSP line ONLY when we have a track-specific
-    # URL for that platform. Artist-page fallbacks (e.g. Apple Music artist
-    # URL for a track not yet on Apple) are MORE CONFUSING than no link —
-    # users click expecting the track and land on a page that doesn't show
-    # it. The smart link (Odesli) already covers everything via aggregation.
+    # Link stack — Spotify-first (2026-04-22). Fall back to the artist
+    # URL when a track-specific Spotify URL isn't known yet (e.g. for
+    # unreleased tracks like Kadosh / Side by Side where we still want
+    # *some* Spotify discovery target).
     #
-    # UTM params are added only for per-track URLs so downstream analytics
-    # can attribute clicks. Artist-page links (Instagram/TikTok/Web) are
-    # left untagged because they're too generic to attribute to this specific
-    # video reliably — Linktree in bio handles those separately.
+    # Apple Music appears ONLY when a track-specific URL exists —
+    # artist-page fallbacks confuse the user ("where's the track I
+    # just clicked on?"). No Odesli/smart-link line in the primary
+    # stack because the smart_link is now already Spotify (see
+    # registry.build_smart_link).
+    #
+    # UTM params go on every per-track DSP URL for analytics.
+    # Instagram/TikTok/Web get UTMs via their own paths; IG/TikTok
+    # are artist-level so UTMs are less useful there.
     from content_engine.audio_engine import (
         TRACK_APPLE_MUSIC_URLS, TRACK_SPOTIFY_URLS,
     )
@@ -117,9 +129,18 @@ def _compose_description(
     raw_spotify_track = TRACK_SPOTIFY_URLS.get(key, "")
     raw_apple_track   = TRACK_APPLE_MUSIC_URLS.get(key, "")
 
-    link_lines: list[str] = [f"Listen everywhere: {smart_link}"]
     if raw_spotify_track:
-        link_lines.append(f"Spotify: {_tagged(raw_spotify_track, track_title)}")
+        primary_spotify_url = _tagged(raw_spotify_track, track_title)
+        primary_label = "\U0001f3a7 Spotify"
+    else:
+        # No per-track URL — the smart_link already resolves to the
+        # artist Spotify URL (see registry.build_smart_link default
+        # "spotify" mode), so use that verbatim rather than
+        # double-UTM-ing it.
+        primary_spotify_url = smart_link
+        primary_label = "\U0001f3a7 Spotify (artist page)"
+
+    link_lines: list[str] = [f"{primary_label}: {primary_spotify_url}"]
     if raw_apple_track:
         link_lines.append(f"Apple Music: {_tagged(raw_apple_track, track_title)}")
     link_stack = "\n".join(link_lines)
@@ -163,12 +184,21 @@ def _compose_pinned_cta(
     from mobile YouTube Studio is 2 taps. So this function composes
     the copy; the uploader posts it; RJM pins it later if desired.
 
+    Spotify-first CTA (2026-04-22): the first line is a Spotify link,
+    nothing else. North Star is 1M Spotify monthly listeners —
+    every touchpoint from long-form video funnels directly to
+    Spotify so the algorithm picks up real listener intent signals
+    (save, follow, playlist-add) on the platform that matters.
+
     Kept short (2–4 lines) — long CTA comments get collapsed behind
-    "Read more." Scripture anchor is optional; we only surface it when
-    the track has one.
+    "Read more." Scripture anchor is optional; we only surface it
+    when the track has one.
     """
+    # `smart_link` is Spotify-direct (see registry.build_smart_link
+    # default mode as of 2026-04-22). Use it verbatim as the Spotify
+    # click target.
     lines = [
-        f"\U0001f3a7 Full catalog + new drops: {smart_link}",
+        f"\U0001f3a7 Listen on Spotify: {smart_link}",
         f"New visualizers every Tue/Thu/Sun 21:00 UTC \u2014 subscribe so the algorithm feeds you the next one.",
     ]
     if scripture_anchor:

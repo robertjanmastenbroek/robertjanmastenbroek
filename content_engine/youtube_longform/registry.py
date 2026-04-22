@@ -1,13 +1,18 @@
 """
-registry.py — Dedup + Feature.fm / Odesli smart-link instrumentation.
+registry.py — Dedup + primary-listen-link instrumentation.
 
 The registry is a flat JSONL log. Each publish appends one row so daily
 status reports can count uploads without hitting the YouTube API.
 
-Smart links:
-  - If FEATUREFM_API_KEY is set → create a Feature.fm smart link
-  - Else → fall back to Odesli/Songlink (free, no auth) and append UTM
-    params to the Spotify URL manually
+Primary listen link policy (2026-04-22 Spotify-first mandate):
+  North Star = 1M Spotify monthly listeners. Every outbound link from
+  the long-form pipeline points at SPOTIFY by default — track URL if
+  we know it, artist URL otherwise. No Odesli aggregator in the primary
+  slot (kills Spotify conversion: users pick their preferred DSP, which
+  for the majority of our TAM is NOT Spotify).
+
+  Opt-in to the old Odesli / Feature.fm aggregator behavior by setting
+  HOLYRAVE_PRIMARY_LINK=smart  (defaults to "spotify" when unset).
 
 UTM convention:
   ?utm_source=youtube&utm_medium=holyrave_longform&utm_campaign=<track-slug>
@@ -16,6 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -194,35 +200,59 @@ def _build_odesli(spotify_url: str) -> Optional[str]:
     return None
 
 
+def _primary_link_mode() -> str:
+    """
+    "spotify" (default) | "smart"
+
+    Controls what build_smart_link returns. "spotify" is the 2026-04-22
+    North-Star default: every CTA funnels straight to Spotify so the
+    1M-monthly-listeners goal gets the full conversion. "smart" restores
+    Feature.fm → Odesli → Spotify priority for rare cases where
+    multi-DSP discovery matters more than Spotify funnel conversion.
+    """
+    return os.getenv("HOLYRAVE_PRIMARY_LINK", "spotify").strip().lower() or "spotify"
+
+
 def build_smart_link(track_title: str) -> str:
     """
-    Resolve the best "Listen everywhere" smart link for a track, in
-    priority order:
+    Resolve the primary "listen now" link for a track.
+
+    Default mode ("spotify", 2026-04-22 North-Star mandate): return the
+    track-specific Spotify URL with UTM, or the artist Spotify URL as
+    fallback. This is THE call-to-action everywhere the long-form
+    pipeline shows a single link — description top line, pinned comment,
+    end slate, etc. Every click converts directly on Spotify.
+
+    Legacy "smart" mode (set HOLYRAVE_PRIMARY_LINK=smart):
       1. Feature.fm         — paid tier, tracked per-platform analytics
       2. Odesli/Songlink    — free, cross-DSP, routes to user's preferred DSP
-      3. Track-specific Spotify URL + UTM — works as direct Spotify link
-      4. Artist page + UTM  — final fallback when track URL unknown
+      3. Track-specific Spotify URL + UTM — final fallback
 
-    CRITICAL: Odesli is called with the per-TRACK Spotify URL, not the
-    artist URL. Odesli uses the track URL to find equivalents on Apple
-    Music / YouTube Music / Deezer / Tidal / etc. Calling with the artist
-    URL returns a cross-platform artist page, which is what we had before
-    and is near-useless for "Listen everywhere."
+    Why Spotify-direct by default: Odesli/Feature.fm landing pages offer
+    a DSP-picker, which splits listener attention. ~40% of visitors pick
+    Apple Music / YouTube Music / etc instead of Spotify. For a Spotify-
+    first growth strategy (1M monthly listeners), that split is pure
+    leakage. We still surface Apple Music as a SECONDARY link in the
+    description for the minority who actively want it.
     """
+    utm_spotify = _build_utm_spotify_url(track_title)
+
+    mode = _primary_link_mode()
+    if mode != "smart":
+        # Default path: Spotify-direct, no aggregator middleman.
+        return utm_spotify
+
+    # Legacy smart-link behavior (opt-in via env var).
     track_sp_url = track_spotify_url(track_title)
     is_track_url = "/track/" in track_sp_url
 
-    # Priority 1: Feature.fm (if configured)
-    utm_url = _build_utm_spotify_url(track_title)
-    feature_url = _build_featurefm(track_title, utm_url)
+    feature_url = _build_featurefm(track_title, utm_spotify)
     if feature_url:
         return feature_url
 
-    # Priority 2: Odesli — only if we have a genuine track URL to feed it
     if is_track_url:
         odesli_url = _build_odesli(track_sp_url)
         if odesli_url:
             return f"{odesli_url}{_utm_suffix(track_title)}"
 
-    # Priority 3 / 4: UTM-suffixed Spotify URL (track-specific if available)
-    return utm_url
+    return utm_spotify
