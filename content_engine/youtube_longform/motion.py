@@ -2250,14 +2250,41 @@ def _generate_keyframe(
     use_references:  bool = True,
 ) -> RenderedKeyframe:
     """
-    Produce one keyframe still (Flux 2 Pro /edit with reference corpus).
-    Uploads to Cloudinary so Kling O3 can consume a public URL.
+    Produce one keyframe still (Flux 2 Pro /edit with reference corpus
+    + genre viral-DNA preamble). Uploads to Cloudinary so Kling O3 can
+    consume a public URL.
+
+    Viral DNA (2026-04-22): a genre-specific compositional style guide
+    distilled by Claude Vision from the top-30 highest-viewed thumbnails
+    in each bucket (scripts/extract_viral_dna.py → viral_dna/*.json).
+    The DNA's `prompt_preamble` is PREPENDED to every still_prompt here
+    so Flux is conditioned on the shared "viral DNA" for the track's
+    genre, at ZERO per-generation cost. The preamble is also folded
+    into the cache digest so refreshing the DNA invalidates old
+    thumbnails — next generation picks up the new style.
     """
-    from content_engine.youtube_longform import reference_pool
+    from content_engine.youtube_longform import reference_pool, viral_dna
     from content_engine.youtube_longform.render import upload_image_for_render
 
+    # Pull the viral DNA preamble for this track's genre family. Returns "" if
+    # no DNA artifact exists yet (extraction never run, file missing) — in
+    # that case we fall back to the prompt verbatim, preserving pre-DNA
+    # behavior as a graceful-degradation default.
+    preamble = viral_dna.preamble_for(track_prompt.genre_family)
+
+    # Compose the full Flux prompt: preamble then the keyframe's
+    # scene-specific still_prompt. Double-newline separates the two so
+    # Flux reads them as distinct paragraphs (the preamble = style,
+    # the still_prompt = scene).
+    if preamble:
+        full_flux_prompt = f"{preamble}\n\n{kf.still_prompt}"
+    else:
+        full_flux_prompt = kf.still_prompt
+
+    # Cache digest includes the full prompt (preamble + scene) so a
+    # DNA refresh forces regeneration with the new preamble.
     slug = _slug(kf.keyframe_id)
-    digest = hashlib.sha256(kf.still_prompt.encode()).hexdigest()[:8]
+    digest = hashlib.sha256(full_flux_prompt.encode()).hexdigest()[:8]
     local_path = cfg.IMAGE_DIR / f"kf_{slug}_{digest}.jpg"
 
     # Reference resolution from the proven-viral bucket (same family as track)
@@ -2296,7 +2323,7 @@ def _generate_keyframe(
 
     t0 = time.time()
     url = _generate_one(
-        prompt=kf.still_prompt,
+        prompt=full_flux_prompt,
         negative_prompt=track_prompt.flux_negative,
         width=cfg.HERO_WIDTH,
         height=cfg.HERO_HEIGHT,

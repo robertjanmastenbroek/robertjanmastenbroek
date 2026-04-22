@@ -1,0 +1,228 @@
+{
+  "genre_label": "Tribal psytrance / Goa psytrance (140+ BPM)",
+  "n_images_analyzed": 30,
+  "lighting": {
+    "time_of_day": "dual-mode: golden-hour daylight OR nighttime neon festival",
+    "key_light": "split approach: natural sun 45\u00b0 high-angle for daytime / multi-source colored LED stage wash for night. Hard directional in both cases",
+    "fill_light": "complementary color ambient fill \u2014 if key is warm (orange/gold), fill is cool cyan/teal at 40% intensity. If key is cool (blue/purple), fill is warm magenta/amber",
+    "shadow_character": "hard dramatic shadows with luminous color spill \u2014 shadows are never neutral black, they carry cyan or magenta cast"
+  },
+  "palette": {
+    "dominant_warm": "#FF6B35 (festival-orange) to #FFD700 (golden-hour amber)",
+    "dominant_cool": "#00CED1 (electric cyan) to #6A0DAD (deep psychedelic purple)",
+    "accent": "#FF1493 (neon magenta) or #39FF14 (acid green)",
+    "ratio": "50/40/10 warm-cool-accent, often split-toned left-to-right or top-to-bottom",
+    "saturation": "ultra-saturated \u2014 vibrance +80, saturation +60 in post, no neutral midtones"
+  },
+  "subject_framing": {
+    "subject_width_pct": "40-65% for portraits, 15-25% for festival/cosmic wide shots",
+    "subject_position": "dead center or upper-center \u2014 strong axial symmetry, rule-of-thirds rarely used",
+    "subject_gaze": "direct-camera with intense eye contact (55%) / eyes-closed in trance ecstasy (30%) / looking-up toward light/cosmos (15%)",
+    "crop_style": "tight portrait chest-up for faces, wide establishing for festival scenes \u2014 avoid mid-range waist shots"
+  },
+  "scene_depth": {
+    "foreground": "primary subject (face, body, mystical figure) with sharp focus OR geometric overlay (mandala, sacred geometry) at 30% opacity blend mode",
+    "midground": "subject if not foreground, OR festival crowd in motion blur, OR psychedelic pattern field",
+    "background": "radial light burst / festival stage with LED panels / cosmic starfield / fractal geometry explosion \u2014 always highly detailed, never flat bokeh",
+    "atmospheric_effect": "layered particles \u2014 dust motes + lens flare + light rays (god rays at 15\u00b0 angle) + floating embers/sparkles. Present in 27/30 thumbnails"
+  },
+  "shock_element": {
+    "description": "complementary color clash at maximum saturation \u2014 orange subject against cyan background, or magenta-lit face against green/teal field. Creates retinal vibration effect that stops mid-scroll",
+    "frequency": "24/30 thumbnails use extreme warm-vs-cool contrast as primary shock element. Secondary: glowing/heterochromatic eyes (18/30), tribal face paint/body art (16/30), impossible scale or surreal elements (12/30)"
+  },
+  "anti_patterns": [
+    "Monochromatic or analogous color schemes \u2014 this genre demands complementary color warfare",
+    "Negative space or minimalist composition \u2014 every pixel must carry visual information, maximalism is law",
+    "Natural skin tones or realistic color grading \u2014 faces are teal, orange, magenta, never neutral beige",
+    "Rule-of-thirds off-center framing \u2014 subjects are centered for shamanic/portal effect, symmetry dominates",
+    "Soft dreamy bokeh backgrounds \u2014 backgrounds must have structure (geometry, patterns, cosmic detail), never smooth gradients alone"
+  ],
+  "prompt_preamble": "Center-framed portrait shot with perfect axial symmetry, subject occupying 50% of frame width. Shot on 85mm f/1.4 lens with subject in sharp focus, background at f/2.8 equivalent for detail retention. Extreme split-tone color grading: key light is warm (#FF6B35 festival-orange or #FFD700 golden amber) from 45\u00b0 above right, fill light is cool (#00CED1 electric cyan or #6A0DAD deep purple) from opposite side at 40% intensity, creating hard directional shadows with colored spill \u2014 no neutral blacks. Ultra-saturated complementary color clash (vibrance +80) between warm and cool zones to create retinal vibration effect. Subject's eyes are enhanced focal point with catch-light or subtle glow. Atmospheric depth: foreground has subtle geometric sacred geometry overlay at 25% opacity blend mode, midground sharp subject, background detailed with radial light burst or fractal pattern field (never smooth bokeh). Layered particle atmosphere: fine dust motes + god rays at 12\u00b0 angle + floating embers + lens flare, all color-tinted to match split-tone palette. Tribal/ethnic aesthetic: face paint, indigenous features, dreadlocks, or mystical adornments. Mood is ecstatic trance state, either direct intense eye contact or eyes closed in bliss. Festival or cosmic context subtly present. Maximalist composition \u2014 pack the frame with color and detail, avoid empty space. Photorealistic render with psychedelic post-grade.",
+  "_meta": {
+    "genre_family": "tribal_psytrance",
+    "genre_bucket": "140_psytrance",
+    "n_images": 30,
+    "sampled_images": [
+      {
+        "filename": "0001_omiki_squid_game_whiteno1se_x_omiki_remix.jpg",
+        "title": "SQUID GAME (WHITENO1SE x OMIKI REMIX)",
+        "view_count": 154500643,
+        "channel": "Omiki"
+      },
+      {
+        "filename": "0002_astrix_vini_vici_astrix_adhana.jpg",
+        "title": "Vini Vici & Astrix - Adhana",
+        "view_count": 74155106,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0003_astrix_astrix_deep_jungle_walk.jpg",
+        "title": "Astrix - Deep Jungle Walk",
+        "view_count": 32283599,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0004_astrix_astrix_universo_paralello_2019_2020_full_set.jpg",
+        "title": "Astrix @ Universo Paralello 2019-2020 [Full Set]",
+        "view_count": 30367103,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0005_astrix_astrix_ozora_festival_2019_full_set_movie.jpg",
+        "title": "Astrix @ Ozora Festival 2019 (Full Set Movie)",
+        "view_count": 12199800,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0006_astrix_charlotte_de_witte_high_street_astrix_remix.jpg",
+        "title": "Charlotte de Witte - High Street (Astrix\u00a0remix)",
+        "view_count": 10973320,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0007_astrix_astrix_artcore_hi_profile_remix.jpg",
+        "title": "Astrix - Artcore (Hi Profile Remix)",
+        "view_count": 10061411,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0008_astrix_astrix_freedom_fighters_burning_stones.jpg",
+        "title": "Astrix & Freedom Fighters - Burning Stones",
+        "view_count": 6638663,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0009_vini_vici_vini_vici_vs_jean_marie_ft_hilight_tribe_moyoni.jpg",
+        "title": "Vini Vici vs Jean Marie ft Hilight Tribe - Moyoni",
+        "view_count": 6452706,
+        "channel": "Vini Vici"
+      },
+      {
+        "filename": "0010_astrix_astrix_simon_patterson_shadows.jpg",
+        "title": "Astrix & Simon Patterson - Shadows",
+        "view_count": 5974017,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0011_astrix_astrix_boom_festival_2023_full_set_movie.jpg",
+        "title": "Astrix @ Boom Festival 2023 (Full Set Movie)",
+        "view_count": 5747691,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0012_astrix_astrix_he_art_full_album_mix.jpg",
+        "title": "Astrix - He.art [Full Album Mix]",
+        "view_count": 5518173,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0013_astrix_astrix_ozora_festival_2022_full_set_movie.jpg",
+        "title": "Astrix @ Ozora Festival 2022 (Full Set Movie)",
+        "view_count": 5299775,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0014_astrix_astrix_incoming_shibass_remix.jpg",
+        "title": "Astrix - Incoming (ShiBass remix)",
+        "view_count": 5061241,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0015_astrix_astrix_deedrah_gayatri.jpg",
+        "title": "Astrix & Deedrah - Gayatri",
+        "view_count": 4427715,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0016_astrix_astrix_ozora_2017_turn_on_tune_in_drop_out.jpg",
+        "title": "Astrix @ Ozora 2017 - Turn On, Tune In, Drop Out",
+        "view_count": 4000754,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0017_ace_ventura_ace_ventura_gms_mindshift.jpg",
+        "title": "Ace Ventura & GMS - Mindshift",
+        "view_count": 3956210,
+        "channel": "Ace Ventura"
+      },
+      {
+        "filename": "0018_astrix_astrix_boom_festival_2018_full_set_movie.jpg",
+        "title": "Astrix @ Boom Festival 2018 (Full Set Movie)",
+        "view_count": 3953069,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0019_omiki_omiki_x_sighter_sofia_extended_official_video.jpg",
+        "title": "Omiki x Sighter - Sofia (Extended Official Video)",
+        "view_count": 3661611,
+        "channel": "Omiki"
+      },
+      {
+        "filename": "0020_ozora_festival_ozora_festival_2024_official_video.jpg",
+        "title": "OZORA Festival 2024 (Official Video)",
+        "view_count": 3651867,
+        "channel": "Ozora Festival"
+      },
+      {
+        "filename": "0021_vini_vici_vini_vici_ultra_music_festival_miami_2023_mainstage_official.jpg",
+        "title": "Vini Vici @ Ultra Music Festival Miami 2023 (Mainstage) | Official Video",
+        "view_count": 3597905,
+        "channel": "Vini Vici"
+      },
+      {
+        "filename": "0022_astrix_astrix_poison_wrecked_machines_remix.jpg",
+        "title": "Astrix - Poison (Wrecked Machines Remix)",
+        "view_count": 3523958,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0023_astrix_astrix_coolio_darwish_remix_8k.jpg",
+        "title": "Astrix - Coolio (Darwish Remix) [8K]",
+        "view_count": 3359961,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0024_omiki_omiki_devil_in_me_official_video.jpg",
+        "title": "Omiki - Devil In Me (Official Video)",
+        "view_count": 3225504,
+        "channel": "Omiki"
+      },
+      {
+        "filename": "0025_vini_vici_vini_vici_vs_neelix_ft_mkla_come_close_extended.jpg",
+        "title": "Vini Vici vs. Neelix ft. MKLA - Come Close (Extended)",
+        "view_count": 3055101,
+        "channel": "Vini Vici"
+      },
+      {
+        "filename": "0026_omiki_omiki_flor_da_vida_festival_2025_full_set_movie.jpg",
+        "title": "Omiki @ Flor Da Vida Festival 2025 (Full Set Movie)",
+        "view_count": 2978463,
+        "channel": "Omiki"
+      },
+      {
+        "filename": "0027_astrix_astrix_boom_festival_2022_full_set_movie.jpg",
+        "title": "Astrix @ Boom Festival 2022 (Full Set Movie)",
+        "view_count": 2916809,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0028_astrix_moonclipse_ozora_festival_2022_full_set_movie.jpg",
+        "title": "Moonclipse @ Ozora Festival 2022 (Full Set Movie)",
+        "view_count": 2883443,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0029_astrix_astrix_shamanic_tales.jpg",
+        "title": "Astrix - Shamanic Tales",
+        "view_count": 2815401,
+        "channel": "Astrix"
+      },
+      {
+        "filename": "0030_astrix_astrix_loud_genetic_lottery.jpg",
+        "title": "Astrix & Loud - Genetic Lottery",
+        "view_count": 2803028,
+        "channel": "Astrix"
+      }
+    ]
+  }
+}

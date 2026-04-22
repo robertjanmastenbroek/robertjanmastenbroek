@@ -1,0 +1,228 @@
+{
+  "genre_label": "Organic house / ethnic house (128-138 BPM)",
+  "n_images_analyzed": 30,
+  "lighting": {
+    "time_of_day": "Golden hour transitioning to blue hour \u2014 warm amber sun or deep twilight indigo, never midday",
+    "key_light": "Backlit or 45\u00b0 side light \u2014 warm amber #d4a574 at sunset, cool cyan-blue #2a5a7a at twilight, creating strong rim-light on subjects",
+    "fill_light": "Soft atmospheric ambient \u2014 low-intensity fill with visible haze, dust, or volumetric fog reducing contrast by 30-40%",
+    "shadow_character": "Soft to medium gradient shadows \u2014 luminous in golden hour (warm bronze undertones), obsidian in blue hour (deep navy-black)"
+  },
+  "palette": {
+    "dominant_warm": "#d4a574 amber gold transitioning to #d97234 burnt terracotta",
+    "dominant_cool": "#1a4d6f deep teal-blue transitioning to #1a2a4a indigo night",
+    "accent": "#c44569 magenta-rose or #4ecdc4 cyan-teal or #7bed9f mint-green",
+    "ratio": "45/45/10 warm/cool/accent \u2014 strong chromatic split between sky and land, or foreground and background",
+    "saturation": "Medium-high \u2014 desert and nature scenes at 65-80% saturation, studio/festival scenes at 70-90%"
+  },
+  "subject_framing": {
+    "subject_width_pct": "30-50% \u2014 subjects occupy less than half the frame, allowing landscape/atmosphere to breathe",
+    "subject_position": "Center or lower third \u2014 rule-of-thirds horizontal placement, subjects often grounded at bottom 40% of frame",
+    "subject_gaze": "Looking down or away \u2014 24/30 subjects focused on instrument or horizon, not camera; eyes closed or averted creates introspective mood",
+    "crop_style": "Wide establishing or medium waist-up \u2014 prefer environmental context over tight portraits; 18mm-35mm equivalent focal length feel"
+  },
+  "scene_depth": {
+    "foreground": "Musician with instrument anchoring composition \u2014 handpan, keyboard, or duo positioned in lower 40% of frame",
+    "midground": "Performance space or crowd \u2014 festival crowd silhouettes, desert floor with tribal torches, or studio floor with visible texture",
+    "background": "Expansive natural or architectural drama \u2014 mountain ranges, desert horizons, pyramids, abandoned interiors, or festival stage with sky",
+    "atmospheric_effect": "Haze, dust, or volumetric fog in 21/30 thumbnails \u2014 creates depth separation and diffuses background by 20-40%"
+  },
+  "shock_element": {
+    "description": "The handpan instrument itself (metallic UFO-like dome with visible tone fields) or massive festival crowd scale \u2014 the handpan's alien-organic hybrid form is instantly recognizable and genre-specific; festival shots use 10,000+ crowd density to convey cultural movement scale",
+    "frequency": "Handpan visible in 9/30 thumbnails; massive crowds (5,000+ people) in 4/30; surreal artistic compositions (floating objects, extreme color treatments, surrealist collage) in 7/30"
+  },
+  "anti_patterns": [
+    "No midday harsh sun or flat noon lighting \u2014 all images use transitional light (sunrise, sunset, twilight, or controlled studio gels)",
+    "No tight headshot crops or portrait-only framing \u2014 always include environmental context, instrument, or performance space",
+    "No clean minimal backgrounds \u2014 every background has texture, atmosphere, or geographic specificity (desert, forest, ruins, festival)",
+    "No subjects staring directly at camera with posed smiles \u2014 introspective, meditative, or performance-focused gaze only",
+    "No cluttered multi-element collages or busy graphic overlays \u2014 when text is present, it's bold typographic lockup with ample negative space, not layered effects"
+  ],
+  "prompt_preamble": "Photographed with 24mm wide-angle lens at f/2.8 creating subtle environmental blur beyond 8 meters. Golden hour backlight from 30\u00b0 behind subject casting warm amber #d4a574 rim-light, or deep blue hour twilight with indigo #1a2a4a sky gradient. Soft atmospheric haze reducing background contrast by 35%, visible dust particles or volumetric fog in midground. Subject occupies 35-45% of frame width, positioned in lower third, eyes averted downward toward instrument or gazing at distant horizon. Three-layer depth: foreground musician with handpan or ethnic instrument in sharp focus, midground performance space with visible texture (sand ripples, weathered stone, festival crowd), background expansive desert mountain range or twilight sky with 25% atmospheric diffusion. Color palette: 45% warm amber-terracotta #d4a574 to #d97234, 45% cool teal-indigo #1a4d6f to #1a2a4a, 10% magenta-rose #c44569 accent. Saturation 70-80%. Soft gradient shadows with luminous bronze undertones in golden hour or obsidian navy-black in blue hour. Environmental storytelling over portraiture \u2014 always include geographic or cultural context. Meditative, introspective mood. Never midday sun, never direct camera gaze, never clean studio background.",
+  "_meta": {
+    "genre_family": "organic_house",
+    "genre_bucket": "130_organic",
+    "n_images": 30,
+    "sampled_images": [
+      {
+        "filename": "0001_monolink_monolink_return_to_oz_artbat_remix.jpg",
+        "title": "Monolink - Return To Oz (ARTBAT Remix)",
+        "view_count": 82799243,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0002_hang_massive_hang_massive_once_again_2011_hang_drum_duo_hd.jpg",
+        "title": "Hang Massive - Once Again - 2011 ( hang drum duo ) ( HD )",
+        "view_count": 63540232,
+        "channel": "Hang Massive"
+      },
+      {
+        "filename": "0003_hang_massive_hang_massive_the_secret_kissing_of_the_sun_and_moon_official.jpg",
+        "title": "Hang Massive - The Secret Kissing of the Sun and Moon [ Official Video ]",
+        "view_count": 29910093,
+        "channel": "Hang Massive"
+      },
+      {
+        "filename": "0004_keinemusik_keinemusik_at_giza_pyramids_2024.jpg",
+        "title": "Keinemusik at Giza Pyramids 2024",
+        "view_count": 15559117,
+        "channel": "Keinemusik"
+      },
+      {
+        "filename": "0005_keinemusik_keinemusik_rampa_me_adam_port_say_what_feat_chuala.jpg",
+        "title": "Keinemusik (Rampa, &ME, Adam Port) - Say What (feat. Chuala)",
+        "view_count": 14006173,
+        "channel": "Keinemusik"
+      },
+      {
+        "filename": "0006_monolink_monolink_otherside_fideles_remix_official_video.jpg",
+        "title": "Monolink - Otherside (Fideles Remix) Official Video",
+        "view_count": 13532531,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0007_keinemusik_me_black_coffee_the_rapture_pt_iii.jpg",
+        "title": "&ME, Black Coffee - The Rapture Pt.III",
+        "view_count": 12114875,
+        "channel": "Keinemusik"
+      },
+      {
+        "filename": "0008_monolink_monolink_sirens_original_mix.jpg",
+        "title": "Monolink - Sirens (Original Mix)",
+        "view_count": 10870504,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0009_monolink_monolink_laura_argy_omnya_remix.jpg",
+        "title": "Monolink - Laura (Argy & Omnya Remix)",
+        "view_count": 6296098,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0010_keinemusik_keinemusik_adam_port_me_rampa_alan_dixon_thandaza_feat_arabi.jpg",
+        "title": "Keinemusik (Adam Port, &ME, Rampa), Alan Dixon - Thandaza feat. Arabic Piano",
+        "view_count": 5933667,
+        "channel": "Keinemusik"
+      },
+      {
+        "filename": "0011_be_svendsen_be_svendsen_nabia.jpg",
+        "title": "Be Svendsen - NABIA",
+        "view_count": 5519907,
+        "channel": "Be Svendsen"
+      },
+      {
+        "filename": "0012_keinemusik_moderat_more_love_rampa_me_remix.jpg",
+        "title": "Moderat - More Love (Rampa &ME Remix)",
+        "view_count": 5425135,
+        "channel": "Keinemusik"
+      },
+      {
+        "filename": "0013_keinemusik_keinemusik_rampa_adam_port_me_muy.jpg",
+        "title": "Keinemusik (Rampa, Adam Port, &ME) - Muy\u00e8",
+        "view_count": 5036866,
+        "channel": "Keinemusik"
+      },
+      {
+        "filename": "0014_keinemusik_rampa_les_gout_feat_chuala.jpg",
+        "title": "Rampa -- Les Gout feat. Chuala",
+        "view_count": 4621794,
+        "channel": "Keinemusik"
+      },
+      {
+        "filename": "0015_monolink_monolink_the_prey_mind_against_remix.jpg",
+        "title": "Monolink - The Prey (Mind Against Remix)",
+        "view_count": 4427589,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0016_monolink_monolink_father_ocean_live_video.jpg",
+        "title": "Monolink - Father Ocean (Live Video)",
+        "view_count": 3822679,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0017_sol_selectas_sabo_sabo_goldcap_desert_sunrise_2020.jpg",
+        "title": "Sabo & Goldcap Desert Sunrise 2020",
+        "view_count": 3583704,
+        "channel": "Sol Selectas / Sabo"
+      },
+      {
+        "filename": "0018_hang_massive_hang_massive_end_of_sky_official_video.jpg",
+        "title": "Hang Massive - End of Sky [Official Video]",
+        "view_count": 3136677,
+        "channel": "Hang Massive"
+      },
+      {
+        "filename": "0019_hang_massive_hang_massive_beats_for_your_feet_2012_hd.jpg",
+        "title": "HANG MASSIVE - BEATS FOR YOUR FEET 2012  ( HD )",
+        "view_count": 3001036,
+        "channel": "Hang Massive"
+      },
+      {
+        "filename": "0020_monolink_monolink_under_dark_innellea_remix_live_version.jpg",
+        "title": "Monolink - Under Dark - Innellea Remix - Live Version",
+        "view_count": 2837683,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0021_monolink_monolink_burning_sun_original_mix.jpg",
+        "title": "Monolink - Burning Sun (Original Mix)",
+        "view_count": 2777026,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0022_hang_massive_hang_massive_luminous_emptiness_official_video.jpg",
+        "title": "Hang Massive - Luminous Emptiness [Official Video]",
+        "view_count": 2754913,
+        "channel": "Hang Massive"
+      },
+      {
+        "filename": "0023_keinemusik_stryv_malachiii_adam_port_positions.jpg",
+        "title": "Stryv, Malachiii, Adam Port - Positions",
+        "view_count": 2407750,
+        "channel": "Keinemusik"
+      },
+      {
+        "filename": "0024_monolink_monolink_live_fusion_festival_2018.jpg",
+        "title": "Monolink (live) - Fusion Festival 2018",
+        "view_count": 2268450,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0025_monolink_monolink_sinner_mathame_remix.jpg",
+        "title": "Monolink - Sinner (Mathame Remix)",
+        "view_count": 2106766,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0026_hang_massive_hang_massive_sk_negatan_2011_hang_drum_duo_hd.jpg",
+        "title": "Hang Massive - Sk\u00e5negatan - 2011 ( hang drum duo ) ( HD )",
+        "view_count": 2051991,
+        "channel": "Hang Massive"
+      },
+      {
+        "filename": "0027_monolink_monolink_live_from_his_berlin_studio_full_set_hd.jpg",
+        "title": "Monolink - Live from his Berlin Studio (Full Set HD)",
+        "view_count": 1906720,
+        "channel": "Monolink"
+      },
+      {
+        "filename": "0028_hang_massive_hang_massive_as_it_is_live_corridor_jam_july_2012_hd.jpg",
+        "title": "Hang Massive:  \"As It Is\" - Live Corridor Jam ( July 2012 ) ( HD )",
+        "view_count": 1882291,
+        "channel": "Hang Massive"
+      },
+      {
+        "filename": "0029_cafe_de_anatolia_cafe_de_anatolia_desert_music_2024_desert_deep_house_dj_mix.jpg",
+        "title": "Cafe De Anatolia - Desert Music 2024 & Desert Deep House (DJ Mix)",
+        "view_count": 1790565,
+        "channel": "Cafe De Anatolia"
+      },
+      {
+        "filename": "0030_keinemusik_keinemusik_at_coachella_2025.jpg",
+        "title": "Keinemusik at Coachella 2025",
+        "view_count": 1666811,
+        "channel": "Keinemusik"
+      }
+    ]
+  }
+}
