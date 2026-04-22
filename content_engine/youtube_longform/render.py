@@ -90,7 +90,19 @@ def _upload_to_cloudinary(
     resource_type: str = "image",
     public_id: Optional[str] = None,
 ) -> str:
-    """Upload a local file to Cloudinary and return its secure_url."""
+    """
+    Upload a local file to Cloudinary and return its secure_url.
+
+    Automatically switches to chunked `upload_large` when the file exceeds
+    Cloudinary's single-shot upload limit (100MB free tier, 300MB+ paid).
+    This is mandatory for full-track WAV uploads — a 10-minute 44.1kHz
+    stereo 16-bit file is ~100MB and trips the single-shot limit with a
+    413 Request Entity Too Large. upload_large streams in 20MB chunks and
+    has no practical size ceiling.
+
+    Confirmed 2026-04-22 Halleluyah publish: 10:23 WAV = 104MB failed
+    via `upload()` with 413, succeeded via `upload_large()`.
+    """
     try:
         import cloudinary  # type: ignore
         import cloudinary.uploader  # type: ignore
@@ -102,7 +114,16 @@ def _upload_to_cloudinary(
 
     _configure_cloudinary()
 
-    logger.info("Cloudinary upload | %s | %s", resource_type, file_path.name)
+    size_bytes = file_path.stat().st_size
+    # 90MB cutoff — stays well under Cloudinary's 100MB single-shot limit
+    # with margin for multipart overhead. Anything above this goes chunked.
+    LARGE_FILE_THRESHOLD = 90 * 1024 * 1024
+
+    logger.info(
+        "Cloudinary upload | %s | %s | %.1f MB | %s",
+        resource_type, file_path.name, size_bytes / (1024 * 1024),
+        "chunked (upload_large)" if size_bytes > LARGE_FILE_THRESHOLD else "single-shot",
+    )
     upload_kwargs = {
         "resource_type": resource_type,
         "folder":        "holy_rave/youtube_longform",
@@ -111,7 +132,13 @@ def _upload_to_cloudinary(
         upload_kwargs["public_id"] = public_id
         upload_kwargs["overwrite"] = True
 
-    result = cloudinary.uploader.upload(str(file_path), **upload_kwargs)
+    if size_bytes > LARGE_FILE_THRESHOLD:
+        # Chunked upload — Cloudinary streams the file in parts. chunk_size
+        # defaults to 20MB; we explicitly set it for clarity + logging.
+        upload_kwargs["chunk_size"] = 20 * 1024 * 1024
+        result = cloudinary.uploader.upload_large(str(file_path), **upload_kwargs)
+    else:
+        result = cloudinary.uploader.upload(str(file_path), **upload_kwargs)
     return result["secure_url"]
 
 
