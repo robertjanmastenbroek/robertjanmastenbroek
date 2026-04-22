@@ -35,6 +35,7 @@ from content_engine.youtube_longform import (
     registry,
     render,
     scripture as scripture_mod,
+    thumbnail_compositor,
     thumbnail_learning,
     uploader,
 )
@@ -63,93 +64,199 @@ class PublishError(Exception):
 # of feedback data showing regens 2+ meaningfully beat regens 1.
 MAX_THUMBNAIL_REGENS = 1
 
+# Number of thumbnail variants to generate per publish. The publisher picks
+# the best-scoring one and ships it; the losers are kept on disk for YouTube
+# Test & Compare rotation (manual in Studio) and for weekly-learning analysis.
+# Cost: N × $0.075 Flux call per publish. 3 hits the quality/cost sweet spot
+# — 1 is flaky, 2 gives the gate real choice, 3+ diminishes in returns fast
+# because the anchor prompt stays the same (all 3 variants are sampling the
+# same prompt region, just with different refs and random seeds).
+THUMBNAIL_VARIANTS_PER_PUBLISH = 3
+
+# Short prompt suffixes used to differentiate the 3 variants. Each is a
+# compositional nudge (not a brand rewrite) so the gate scores them
+# against the same viral baseline. Think "same story, different angle"
+# — every thumbnail is still 1200 BCE Hebrew, just with different
+# cinematic framing / lighting / energy.
+_VARIANT_SUFFIXES = (
+    "",  # v0 — unchanged baseline
+    " Alternative cinematic angle, camera slightly lower and to the left, "
+    "richer warm amber light, more atmospheric haze in the background.",
+    " Alternative lighting setup, cooler blue-hour sky with warmer key light "
+    "on the subject, tighter depth of field, more bokeh bloom on background highlights.",
+)
+
+
+def _variant_score(check) -> tuple:
+    """
+    Composite ranking used to pick the best variant. Lexicographic tuple:
+      1. Severity rank (pass=3 > soft_fail=2 > hard_fail=1)
+      2. Corpus similarity (higher = more on-theme)
+      3. Center-bias (higher = stronger dominant subject)
+      4. Brightness normalized to the viral zone
+      5. Palette on-brand flag
+
+    Returning a tuple lets Python's natural ordering pick the winner
+    via `max(candidates, key=_variant_score)`.
+    """
+    sev_rank = {"pass": 3, "soft_fail": 2, "hard_fail": 1}.get(check.severity, 0)
+    # Brightness: ideal around 90-120; penalize both far from that window.
+    b = check.composition.brightness_mean
+    brightness_score = -abs(b - 105) / 105      # 0 at 105, negative further
+    return (
+        sev_rank,
+        check.corpus_sim.mean_similarity,
+        check.composition.center_bias,
+        brightness_score,
+        1 if check.composition.palette_on_brand else 0,
+    )
+
+
+def _title_thumbnail_for_youtube(
+    clean_base_path: Path,
+    track_title: str,
+    scripture_anchor: str = "",
+) -> Path:
+    """
+    Composite track title + artist + Holy Rave logo onto the clean Flux
+    base. Returns the path to the titled JPEG that YouTube sees as the
+    thumbnail. The clean base path stays untouched — Kling uses it as
+    the morph chain's start frame so the interpolation stays stable
+    (no text bleed-through as the morph runs).
+
+    Non-fatal on failure: if compositing fails (missing font, bad base,
+    etc.) we log a warning and return the clean base path as-is. Better
+    to ship an untitled thumbnail than to fail the whole publish.
+    """
+    try:
+        subtitle = scripture_anchor or None
+        titled = thumbnail_compositor.composite_thumbnail(
+            base_image_path=clean_base_path,
+            track_title=track_title,
+            subtitle=subtitle,
+        )
+        logger.info(
+            "Titled thumbnail composed | %s → %s",
+            track_title, titled.name,
+        )
+        return titled
+    except Exception as e:
+        logger.warning(
+            "Thumbnail compositor failed (shipping untitled base): %s", e,
+        )
+        return clean_base_path
+
 
 def _gated_motion_thumbnail(
     thumb_kf,                              # motion.Keyframe (frozen dataclass)
     prompt,                                # prompt_builder.TrackPrompt
     track_title: str,
     bpm: int,
+    *,
+    variants: int = THUMBNAIL_VARIANTS_PER_PUBLISH,
 ):
     """
-    Generate a motion-path thumbnail keyframe through the CTR gate.
+    Generate N thumbnail variants, score each, ship the best.
 
     Returns a tuple (rendered_keyframe, effective_keyframe) where:
-      - rendered_keyframe: motion._RenderedKeyframe with local_path + remote_url
-      - effective_keyframe: the Keyframe dataclass actually used (may be the
-        original thumb_kf, or a modified copy with prompt-suggestion additions
-        appended). Returned so motion.generate_morph_loop can use the SAME
-        first-frame definition and the morph chain stays seam-continuous.
+      - rendered_keyframe: motion._RenderedKeyframe for the winning variant
+      - effective_keyframe: the Keyframe dataclass actually used (may be a
+        variant with a modified still_prompt). Returned so motion.generate_
+        morph_loop can use the SAME first-frame definition and the preroll
+        morphs into the chain's rjm_warrior/priestess/etc from this winner.
 
     Behavior:
-      1. Render the thumbnail keyframe (Flux 2 Pro /edit).
-      2. Run pre_publish_check. If pass/soft_fail → return unchanged.
-      3. If hard_fail → regenerate ONCE with suggestions appended to the
-         still_prompt (changes the Flux cache digest so we get a fresh image).
-      4. Of the two candidates, return whichever has higher corpus similarity.
-         Both candidates + the verdict are logged to thumbnail_learning_events.
+      1. Build N variant Keyframes by appending short compositional suffix
+         prompts to the original (same subject, different framing/light).
+      2. Generate each via Flux 2 Pro /edit (reference-conditioned on the
+         528-thumbnail viral pool; view-count-weighted picks per variant).
+      3. Score each via thumbnail_learning.pre_publish_check.
+      4. If the best variant is a hard_fail AND MAX_THUMBNAIL_REGENS > 0
+         AND the gate has prompt suggestions, run ONE more regen against
+         the best variant's prompt + suggestions.
+      5. Pick the final winner by composite score and return it.
 
-    Net cost of worst-case regen: ~$0.075 (one extra Flux call). Cost
-    avoided by gating: the full ~$7 Jericho-class publish that would
-    ship with an unreadable mobile thumbnail.
+    Net cost per publish: variants × $0.075 (+ optional 1 regen). With
+    variants=3 this is $0.225-$0.30 — still cheap vs. the ~$7 full
+    Jericho-class publish. spend_guard enforces the daily cap anyway.
+
+    All variant scores are logged to thumbnail_learning_events.jsonl so
+    the weekly analyzer can spot patterns (e.g. "variant suffix 2 tends
+    to win on psytrance tracks").
     """
     from content_engine.youtube_longform.motion import Keyframe as MKf
-    # First render + gate
-    rendered = motion_mod._generate_keyframe(thumb_kf, prompt)
-    check = thumbnail_learning.pre_publish_check(
-        image_path=rendered.local_path,
-        bpm=bpm,
-        track_title=f"{track_title} / {thumb_kf.keyframe_id} / attempt=1",
-    )
-    logger.info(
-        "Thumbnail CTR gate | %s | attempt=1 | severity=%s | sim=%.2f | bright=%.0f",
-        track_title, check.severity, check.corpus_sim.mean_similarity,
-        check.composition.brightness_mean,
-    )
-    if check.severity != "hard_fail" or MAX_THUMBNAIL_REGENS < 1:
-        return rendered, thumb_kf
 
-    if not check.suggested_prompt_additions:
-        # Hard-fail with no usable suggestions (e.g. corpus unavailable).
-        # Ship the original — nothing better to do automatically.
-        logger.warning(
-            "Thumbnail hard-failed but no prompt suggestions available — "
-            "shipping original. Issues: %s", check.issues,
+    n = max(1, min(variants, len(_VARIANT_SUFFIXES)))
+    logger.info(
+        "Thumbnail variant sweep | %s | %d variants planned", track_title, n,
+    )
+
+    candidates: list[tuple] = []
+    for idx in range(n):
+        suffix = _VARIANT_SUFFIXES[idx]
+        # Variant 0 uses the original still_prompt verbatim (same cache
+        # digest as direct-call behavior — benefits from previous caches).
+        # Variants 1+ get a suffix, producing a different digest → fresh gen.
+        vkf = thumb_kf if idx == 0 else MKf(
+            keyframe_id=f"{thumb_kf.keyframe_id}_v{idx}",
+            still_prompt=thumb_kf.still_prompt + suffix,
         )
-        return rendered, thumb_kf
+        rendered = motion_mod._generate_keyframe(vkf, prompt)
+        check = thumbnail_learning.pre_publish_check(
+            image_path=rendered.local_path,
+            bpm=bpm,
+            track_title=f"{track_title} / {vkf.keyframe_id} / variant={idx}",
+        )
+        logger.info(
+            "Thumbnail variant %d/%d | %s | severity=%s | sim=%.2f | bright=%.0f | center=%.2f | palette=%s",
+            idx + 1, n, vkf.keyframe_id, check.severity,
+            check.corpus_sim.mean_similarity, check.composition.brightness_mean,
+            check.composition.center_bias, check.composition.palette_on_brand,
+        )
+        candidates.append((rendered, vkf, check))
 
-    # Regenerate ONCE with suggestions appended. New still_prompt → new
-    # Flux cache digest → fresh generation.
-    addition = ". ".join(check.suggested_prompt_additions)
-    regen_kf = MKf(
-        keyframe_id=thumb_kf.keyframe_id,
-        still_prompt=f"{thumb_kf.still_prompt} {addition}",
-    )
+    # Pick the best variant
+    winner = max(candidates, key=lambda t: _variant_score(t[2]))
+    win_rendered, win_kf, win_check = winner
+    win_idx = candidates.index(winner)
     logger.info(
-        "Thumbnail CTR gate | %s | regen attempt=2 with additions: %s",
-        track_title, addition[:160],
-    )
-    rendered2 = motion_mod._generate_keyframe(regen_kf, prompt)
-    check2 = thumbnail_learning.pre_publish_check(
-        image_path=rendered2.local_path,
-        bpm=bpm,
-        track_title=f"{track_title} / {regen_kf.keyframe_id} / attempt=2",
-    )
-    logger.info(
-        "Thumbnail CTR gate | %s | attempt=2 | severity=%s | sim=%.2f | bright=%.0f",
-        track_title, check2.severity, check2.corpus_sim.mean_similarity,
-        check2.composition.brightness_mean,
+        "Thumbnail variant sweep | %s | WINNER=variant_%d (%s) sim=%.2f severity=%s",
+        track_title, win_idx, win_kf.keyframe_id,
+        win_check.corpus_sim.mean_similarity, win_check.severity,
     )
 
-    # Pick winner by composite score: severity beats sim beats brightness.
-    def _score(c):
-        sev_rank = {"pass": 3, "soft_fail": 2, "hard_fail": 1}[c.severity]
-        return (sev_rank, c.corpus_sim.mean_similarity, c.composition.brightness_mean)
+    # Late-stage regen: if even the best variant hard-fails, try one more
+    # pass with the gate's diagnosis suggestions appended. This catches
+    # the case where all 3 variants are too dark (common when the ambient
+    # scene is night/ruins). Costs one more $0.075 Flux call.
+    if (win_check.severity == "hard_fail"
+            and MAX_THUMBNAIL_REGENS >= 1
+            and win_check.suggested_prompt_additions):
+        addition = ". ".join(win_check.suggested_prompt_additions)
+        regen_kf = MKf(
+            keyframe_id=f"{win_kf.keyframe_id}_regen",
+            still_prompt=f"{win_kf.still_prompt} {addition}",
+        )
+        logger.info(
+            "Thumbnail regen after variant sweep | %s | suggestions: %s",
+            track_title, addition[:160],
+        )
+        regen_rendered = motion_mod._generate_keyframe(regen_kf, prompt)
+        regen_check = thumbnail_learning.pre_publish_check(
+            image_path=regen_rendered.local_path,
+            bpm=bpm,
+            track_title=f"{track_title} / {regen_kf.keyframe_id} / regen-after-sweep",
+        )
+        logger.info(
+            "Thumbnail regen | %s | severity=%s | sim=%.2f | bright=%.0f",
+            track_title, regen_check.severity,
+            regen_check.corpus_sim.mean_similarity,
+            regen_check.composition.brightness_mean,
+        )
+        if _variant_score(regen_check) > _variant_score(win_check):
+            return regen_rendered, regen_kf
 
-    if _score(check2) > _score(check):
-        logger.info("Thumbnail CTR gate | %s | regen WINS (shipped)", track_title)
-        return rendered2, regen_kf
-    logger.info("Thumbnail CTR gate | %s | original WINS (regen worse — shipped original)", track_title)
-    return rendered, thumb_kf
+    return win_rendered, win_kf
 
 
 def _gated_stills_hero(prompt, track_title: str, bpm: int) -> ImageAsset:
@@ -542,10 +649,18 @@ def publish_track(req: PublishRequest) -> PublishResult:
                 # still gets set — downstream code treats "already matches"
                 # as a no-op merge.
                 effective_thumbnail_keyframe = effective_thumb_kf
+                # Title the clean base for YouTube. Kling keeps using the
+                # clean base (via the keyframe cache keyed on still_prompt),
+                # so morph interpolation stays stable — no text bleed-thru.
+                titled_path = _title_thumbnail_for_youtube(
+                    clean_base_path=rendered.local_path,
+                    track_title=req.track_title,
+                    scripture_anchor=prompt.scripture_anchor,
+                )
                 result.hero_image = ImageAsset(
                     role="hero",
-                    local_path=rendered.local_path,
-                    remote_url=rendered.remote_url,
+                    local_path=titled_path,
+                    remote_url=rendered.remote_url,   # remote_url still points at the clean base (ok — YT uses local file for thumbnails.set)
                     width=cfg.HERO_WIDTH,
                     height=cfg.HERO_HEIGHT,
                     prompt_used=effective_thumb_kf.still_prompt,
@@ -554,10 +669,34 @@ def publish_track(req: PublishRequest) -> PublishResult:
             else:
                 # Stills-only publish: use prompt_builder's hero slot,
                 # gated by the same pre-publish CTR check.
-                result.hero_image = _gated_stills_hero(
+                clean_hero = _gated_stills_hero(
                     prompt=prompt,
                     track_title=req.track_title,
                     bpm=prompt.bpm,
+                )
+                # Title for YouTube. The stills path uses this SAME image
+                # as the full-track video background in render.composite(),
+                # so we have two choices:
+                #   (a) ship the titled one everywhere (background shows
+                #       track title for the whole video — fine for stills
+                #       since there's no morphing to worry about)
+                #   (b) keep the video clean, title only the thumbnail
+                # We pick (a) because stills-only publishes tend to be
+                # lower-stakes single-image visualizers where a burnt-in
+                # title aids the passive listener.
+                titled_path = _title_thumbnail_for_youtube(
+                    clean_base_path=clean_hero.local_path,
+                    track_title=req.track_title,
+                    scripture_anchor=prompt.scripture_anchor,
+                )
+                result.hero_image = ImageAsset(
+                    role="hero",
+                    local_path=titled_path,
+                    remote_url=clean_hero.remote_url,
+                    width=clean_hero.width,
+                    height=clean_hero.height,
+                    prompt_used=clean_hero.prompt_used,
+                    variant_index=0,
                 )
 
             result.thumbnails = [
