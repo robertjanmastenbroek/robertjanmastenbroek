@@ -732,16 +732,29 @@ DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 # ╠═══════════════════════════════════════════════════════════════════════════
 # ║  Time of day:   dawn / golden hour / dusk (daytime light dominant)
 # ║  Palette:       warm amber + terracotta + soft gold + pale indigo + ochre
-# ║  Subject:       solo contemplative figure(s); veiled portraits; handpan or
-# ║                 oud players; elders in prayer; lone watchers on ridges
+# ║  Subject:       solo contemplative figure(s); veiled portraits; elders
+# ║                 in prayer; lone watchers on ridges; shepherds; pilgrims.
+# ║                 ALSO REQUIRED (2026-04-22 variety mandate): at least 2
+# ║                 non-human keyframes per story — animals (ibex, hawk,
+# ║                 desert wolf, lion, sheep, dove, camel, horse) and
+# ║                 nature (storm, river, waterfall, flame, starfield,
+# ║                 mountain peak, cedar grove wind, still-life objects).
 # ║  Setting:       oasis, cedar grove, cliffside vigil, dawn caravan, prayer
-# ║                 tent interior lit by oil lamp
+# ║                 tent interior lit by oil lamp, storm-lashed ridge,
+# ║                 waterfall, ruined temple courtyard, windswept dune
 # ║  Camera:        floating drone, slow cinematic glide, gentle orbital arcs
 # ║  Lighting:      soft warm key, gradient shadows, ambient softness
 # ║  Texture:       linen, wool, hand-woven, still water, sand, silver, lapis
 # ║  Register:      contemplation, stillness, reverence, ceremony
 # ║  Reference DNA: Café de Anatolia / Sol Selectas / Sabo / Bedouin /
 # ║                 Monolink / Be Svendsen / Anjunadeep / All Day I Dream
+# ║
+# ║  HARD BAN — no figures "playing" musical instruments. Flux 2 Pro
+# ║             consistently makes these look AI-clumsy (warped hand
+# ║             positions, floating instruments). Show the instrument
+# ║             as a still-life sacred object, or a figure HOLDING it
+# ║             at rest, or visual sound metaphors (dust ripples,
+# ║             concentric light rings) — never mid-performance.
 # ╚═══════════════════════════════════════════════════════════════════════════
 #
 # ╔═══════════════════════════════════════════════════════════════════════════
@@ -753,10 +766,15 @@ DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 # ║  Palette:       indigo-black + ember-orange + amber-crimson + silver accent
 # ║                 (NO daytime warm gold; keep gold as fire/ember light only)
 # ║  Subject:       warriors / priests mid-ritual; ecstatic crowds; fire-bearers;
-# ║                 sound-wave moments; architectural macro (cracking stone)
+# ║                 sound-wave moments; architectural macro (cracking stone).
+# ║                 ALSO REQUIRED (2026-04-22 variety mandate): at least 2
+# ║                 non-human keyframes per story — animals (lion at fire,
+# ║                 eagle across stars, wolf pack on ridge, bull in
+# ║                 firelight) and nature (lightning storm, supernova over
+# ║                 desert, Milky Way rotating over ruins, burning tree).
 # ║  Setting:       fire circle, night altar, temple at night, ziggurat under
 # ║                 stars, cave refuge at midnight, macro sacred stone detail,
-# ║                 spiral-dance aerial shots
+# ║                 spiral-dance aerial shots, storm-lashed peak, burning tree
 # ║  Camera:        sweeping arcs, fast orbital zooms, kinetic aerial swoops,
 # ║                 sharp tracking — matches BPM intensity
 # ║  Lighting:      hard amber key from below (firelight), deep obsidian
@@ -765,6 +783,12 @@ DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 # ║  Register:      celebration, trance, ecstasy, confrontation, sacred violence
 # ║  Reference DNA: Astrix / Ace Ventura / Vini Vici / Symphonix / Vertex /
 # ║                 Ranji / Tristan / Infected Mushroom / Iboga Records
+# ║
+# ║  HARD BAN (same as System A) — no figures "playing" musical instruments.
+# ║             AI-clumsy hand positions + warped instrument shapes wreck
+# ║             the cinematic illusion. See story_generator.py doctrine
+# ║             for acceptable substitutes (still-life instruments,
+# ║             holding-at-rest, abstract sound metaphors).
 # ╚═══════════════════════════════════════════════════════════════════════════
 #
 # Per-story variety STILL matters WITHIN a system so that two System-B tracks

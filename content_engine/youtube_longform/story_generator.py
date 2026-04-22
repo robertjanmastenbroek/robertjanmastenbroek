@@ -138,10 +138,17 @@ O3 image-to-video pipeline.
 SYSTEM A (128-138 BPM, organic house):
   time-of-day:   dawn / golden hour / dusk (daytime dominant)
   palette:       warm amber + terracotta + soft gold + pale indigo + ochre
-  subject:       solo contemplative figure(s), veiled portraits,
-                 handpan/oud players, elders in prayer, lone watchers
+  subject:       solo contemplative figure(s), veiled portraits, elders
+                 in prayer, lone watchers, shepherds, pilgrims,
+                 craftspeople at rest — NEVER a figure "playing" a
+                 musical instrument (see HARD BAN below). Mix in
+                 animals (desert wolf, hawk, ibex, lion, sheep, dove,
+                 camel, horse) and nature (storm, river, waterfall,
+                 flame, waves, starfield, mountain peak) as standalone
+                 keyframes so the catalog isn't 100% human-portrait.
   setting:       oasis, cedar grove, cliffside vigil, prayer tent,
-                 dawn caravan
+                 dawn caravan, mountain ridge, waterfall, ruined
+                 temple courtyard, windswept dune
   camera:        floating drone, slow cinematic glide, gentle orbital arcs
   lighting:      soft warm key, gradient shadows, ambient softness
   register:      contemplation, stillness, reverence, ceremony
@@ -154,15 +161,41 @@ SYSTEM B (140+ BPM, tribal psytrance):
   palette:       indigo-black + ember-orange + amber-crimson + silver +
                  gold-as-fire-accent only
   subject:       warriors / priests mid-ritual, ecstatic crowds,
-                 fire-bearers, sound-wave moments, architectural macro
+                 fire-bearers, sound-wave moments, architectural macro —
+                 NEVER "playing" a musical instrument. Mix in animals
+                 (lion roaring at fire, eagle circling stars, wolf pack
+                 on a ridge) and nature (firestorm, lightning over
+                 desert, Milky Way band, crashing waves under moon,
+                 exploding supernova with ancient symbols) as standalone
+                 keyframes.
   setting:       fire circle, night altar, temple at night, ziggurat
-                 under stars, macro sacred stone detail
+                 under stars, macro sacred stone detail, storm-lashed
+                 peak, burning tree
   camera:        sweeping arcs, fast orbital zooms, kinetic aerial swoops
   lighting:      hard amber key from below (firelight), deep obsidian
                  shadows, rim-lit silhouettes, high contrast
   register:      celebration, trance, ecstasy, confrontation, sacred awe
   reference DNA: Astrix / Ace Ventura / Vini Vici / Symphonix / Ranji /
                  Iboga Records
+
+## Variety mandate (the "biblical history channel" fix, 2026-04-22)
+
+Early catalog (Jericho/Selah/Halleluyah/Kadosh/Shema) leaned 100% on
+"Iron Age Hebrew person portrait" — visually monolithic and off-brand
+for a music channel. Every new story MUST include:
+  · At least 2 non-human keyframes (animals, nature, architectural
+    macro, ritual objects in still-life). Not every keyframe has to
+    have a person in it.
+  · Visual variety vs prior stories — different geography (not always
+    Wadi-Rum-lookalike desert), different weather (storms, rain,
+    fog, snow-on-cedar), different time of day within the system's
+    allowed band.
+  · Movement BEYOND human portraits — wind, flowing water, fire spiral,
+    starfield rotation, flock of birds, running animal, avalanche of
+    sand, cascading light through a temple colonnade.
+RJM's brand is "Ancient Truth. Future Sound." — stay ancient but don't
+be a static History Channel documentary. Music videos have motion and
+nature is motion.
 
 ## Futuristic-electronic blend (SUBTLE, 10% presence, both systems)
 
@@ -199,6 +232,25 @@ marks", "unreadable ritual inscriptions", "glyphic scroll ornament",
 "abstract glowing symbols on stone". If a specific text overlay is
 truly needed for a track, that's a Shotstack post-process job, not a
 Flux prompt.
+
+HARD BAN — characters playing musical instruments:
+Never show a figure "playing" or "performing" a handpan, oud, drum,
+flute, lyre, shofar-being-blown, etc. Flux 2 Pro makes these look
+CLUMSY — awkward hand positions, instruments floating or distorted,
+the whole frame screams AI. The 2026-04-22 Selah story and the
+Claude-generated Renamed story both included handpan/oud player
+scenes and they consistently looked off-brand.
+
+Acceptable substitutes for musical-instrument imagery:
+  · The instrument alone, still-life, as a sacred object (on a stone,
+    in a tent, caught in sunlight — nobody playing it)
+  · A figure HOLDING an instrument but not performing (resting it on
+    the lap, carrying it across the shoulder, cradling it in prayer)
+  · Abstract visual echoes of sound (dust rippling from a struck
+    surface, concentric light rings, reverberating particles) with
+    NO instrument visible
+  · A raised shofar at the moment BEFORE it's blown — frozen, not
+    mid-exhale — as a ceremonial gesture, not a performance
 
 ALSO BANNED (brand rules):
   · Mesoamerican / Aztec / Mayan imagery (feather headdresses, pyramids,
