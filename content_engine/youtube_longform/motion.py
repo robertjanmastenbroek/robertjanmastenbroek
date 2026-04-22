@@ -2095,13 +2095,23 @@ def _animate_morph(
     motion_prompt:  str,
     duration:       int = cfg.KLING_O3_CLIP_SECONDS,
     aspect_ratio:   str = cfg.KLING_ASPECT_16_9,
+    spend_note:     str = "",
 ) -> str:
     """
     Submit one Kling O3 morph job with start+end frame conditioning.
-    Returns the rendered MP4 URL.
+    Returns the rendered MP4 URL. Budget-guarded by spend_guard.
     """
     if duration not in (5, 10):
         raise MotionError(f"Kling O3 only supports 5 or 10 second clips; got {duration}")
+
+    # Hard daily $ cap check BEFORE spending. Kling O3 = $0.084/s.
+    from content_engine.youtube_longform import spend_guard
+    estimated = 0.084 * duration
+    spend_guard.check_budget(
+        estimated,
+        kind=f"kling_o3_{duration}s",
+        note=spend_note,
+    )
 
     client = _fal_client()
 
@@ -2126,6 +2136,13 @@ def _animate_morph(
         )
     except Exception as e:
         raise MotionError(f"Kling O3 subscribe failed: {e}") from e
+
+    # Record actual spend after the call succeeded.
+    spend_guard.record_spend(
+        estimated,
+        kind=f"kling_o3_{duration}s",
+        note=spend_note,
+    )
 
     if not isinstance(result, dict):
         raise MotionError(f"Kling O3 returned non-dict: {result!r}")
@@ -2182,6 +2199,14 @@ def _generate_keyframe(
             remote_url=remote_url,
         )
 
+    # Hard daily $ cap check BEFORE spending. Flux 2 Pro /edit ~$0.075.
+    from content_engine.youtube_longform import spend_guard
+    spend_guard.check_budget(
+        0.075,
+        kind="flux_2_pro_edit" if reference_urls else "flux_2_pro",
+        note=kf.keyframe_id,
+    )
+
     t0 = time.time()
     url = _generate_one(
         prompt=kf.still_prompt,
@@ -2195,6 +2220,13 @@ def _generate_keyframe(
     logger.info(
         "Keyframe %s generated in %.1fs (%d refs) → %s",
         kf.keyframe_id, time.time() - t0, len(reference_urls), local_path.name,
+    )
+
+    # Record actual spend after success (~$0.075 per keyframe)
+    spend_guard.record_spend(
+        0.075,
+        kind="flux_2_pro_edit" if reference_urls else "flux_2_pro",
+        note=kf.keyframe_id,
     )
 
     remote_url = upload_image_for_render(
@@ -2304,6 +2336,120 @@ def generate_morph_loop(
         ))
 
     return rendered_kfs, rendered_clips
+
+
+# ─── Pre-roll hook (retention lift for the first 5 seconds) ──────────────────
+# RJM review 2026-04-22: "Jericho's 0:37 APV (12% retention) on a 5:07 track
+# strongly suggests viewers bail in the first bar. The first 5 seconds MUST
+# move cinematically before the music drops."
+#
+# Fix: generate a dedicated 5s Kling O3 "hook" clip using the story's
+# thumbnail keyframe as the start frame and the first in-chain keyframe as
+# the end frame. Prepend it to the Shotstack timeline so the audio plays
+# from 0:00 underneath a visually arresting opening shot. Adds ~$0.42 to
+# each publish (5s of Kling O3 Standard @ $0.084/s); expected APV lift
+# 12% → 20%+ based on psytrance viewer drop-scrubbing behavior.
+#
+# Hook vocabulary (override via optional story.preroll_prompt later):
+#   · Sweeping cinematic drone push-in toward the subject's face
+#   · Dust / sparks igniting outward toward the camera
+#   · Rack-focus from blurred background to sharp hero
+#   · Strong kinetic energy on first beat — NOT a static dolly
+
+PRE_ROLL_DEFAULT_PROMPT = (
+    "Aggressive cinematic drone push-in toward the subject, dust and ember "
+    "particles igniting outward toward the camera, strong kinetic energy on "
+    "first beat, dramatic rack-focus from soft blurred background to "
+    "tack-sharp hero, subtle chromatic aberration at the flame highlights, "
+    "continuous sweeping drone motion, the subject's eyes snapping open on "
+    "the final beat. Opening hook — must capture attention in the first "
+    "second. Never static."
+)
+
+PRE_ROLL_SECONDS = 5
+
+
+def generate_preroll_clip(
+    story:         MorphStory,
+    track_prompt:  TrackPrompt,
+    rendered_kfs:  list[RenderedKeyframe],
+    motion_prompt: str = PRE_ROLL_DEFAULT_PROMPT,
+) -> Optional[RenderedMorphClip]:
+    """
+    Optional pre-roll: one extra 5s Kling O3 clip prepended to the final
+    Shotstack timeline. Uses the thumbnail_keyframe as start, the
+    first-in-chain keyframe as end (so the pre-roll SEAMLESSLY resolves
+    into the main loop's first frame).
+
+    Returns None if the story has no thumbnail_keyframe (we'd have no
+    distinct start frame to push in from).
+    """
+    if not story.thumbnail_keyframe:
+        logger.info("Pre-roll skipped — story has no thumbnail_keyframe")
+        return None
+    if not rendered_kfs:
+        return None
+
+    # Render (or cache-hit) the thumbnail as the pre-roll's start frame.
+    # Thumbnail already rendered in publisher.py motion path, so this is
+    # a cache hit in the normal flow — costs $0 extra.
+    from content_engine.youtube_longform import reference_pool  # noqa: F401
+    thumb_rk = _generate_keyframe(story.thumbnail_keyframe, track_prompt)
+    first_rk = rendered_kfs[0]
+
+    # Cache key: prompt + start URL + end URL + duration + aspect
+    clip_digest = hashlib.sha256(
+        (
+            f"{motion_prompt}::"
+            f"{thumb_rk.remote_url}::{first_rk.remote_url}::"
+            f"{PRE_ROLL_SECONDS}::{cfg.KLING_ASPECT_16_9}"
+        ).encode()
+    ).hexdigest()[:8]
+    clip_path = cfg.VIDEO_DIR / f"preroll_{_slug(story.story_id)}_{clip_digest}.mp4"
+
+    if clip_path.exists():
+        logger.info("Pre-roll clip cached: %s", clip_path.name)
+        # Cached file — re-upload to Cloudinary for Shotstack stitch
+        from content_engine.youtube_longform.render import _upload_to_cloudinary
+        remote_url = _upload_to_cloudinary(
+            clip_path,
+            resource_type="video",
+            public_id=f"preroll_{_slug(story.story_id)}_{clip_digest}",
+        )
+        return RenderedMorphClip(
+            clip_id=f"preroll_{story.story_id}",
+            from_kf_id=story.thumbnail_keyframe.keyframe_id,
+            to_kf_id=first_rk.keyframe_id,
+            local_path=clip_path,
+            remote_url=remote_url,
+            duration_s=PRE_ROLL_SECONDS,
+            width=cfg.HERO_WIDTH,
+            height=cfg.HERO_HEIGHT,
+        )
+
+    logger.info("Pre-roll generating: thumbnail → %s", first_rk.keyframe_id)
+    t0 = time.time()
+    video_url = _animate_morph(
+        from_frame_url=thumb_rk.remote_url,
+        to_frame_url=first_rk.remote_url,
+        motion_prompt=motion_prompt,
+        duration=PRE_ROLL_SECONDS,
+        aspect_ratio=cfg.KLING_ASPECT_16_9,
+        spend_note=f"preroll_{story.story_id}",
+    )
+    _download(video_url, clip_path)
+    logger.info("Pre-roll rendered in %.1fs → %s", time.time() - t0, clip_path.name)
+
+    return RenderedMorphClip(
+        clip_id=f"preroll_{story.story_id}",
+        from_kf_id=story.thumbnail_keyframe.keyframe_id,
+        to_kf_id=first_rk.keyframe_id,
+        local_path=clip_path,
+        remote_url=video_url,
+        duration_s=PRE_ROLL_SECONDS,
+        width=cfg.HERO_WIDTH,
+        height=cfg.HERO_HEIGHT,
+    )
 
 
 # ─── Shotstack stitch — concat the morph chain ───────────────────────────────
@@ -2417,6 +2563,7 @@ def stitch_full_track(
     target_duration_s:  int,
     output_label:       str,
     shotstack_env:      str = "v1",     # v1 = production PAYG, no watermark
+    preroll_clip:       Optional[RenderedMorphClip] = None,
 ) -> "RenderedVideo":
     """
     Render the final publish MP4: motion chain looped to cover `target_duration_s`
@@ -2428,9 +2575,16 @@ def stitch_full_track(
       are full 10s; the final slot is truncated to 2s so the video ends
       exactly at 312s matching the audio.
 
+    `preroll_clip` (optional, 2026-04-22 retention-lift feature) plays
+    BEFORE the main loop chain starts — it's the first 5 seconds of the
+    video, with audio starting at 0:00 under a kinetic hook shot.
+    The main loop starts at PRE_ROLL_SECONDS. Total video length stays
+    equal to target_duration_s so the audio ends at the right moment;
+    the chain loop is truncated by PRE_ROLL_SECONDS to make room for
+    the pre-roll.
+
     Uses Shotstack v1 (production) by default — the stage env has
-    watermarks + time caps and is unsuitable for real publishes. Stage
-    stays free for our test_morph_loop.py runs.
+    watermarks + time caps and is unsuitable for real publishes.
 
     Returns a RenderedVideo dataclass so it slots into existing publisher
     flow (same shape as render.composite()).
@@ -2477,11 +2631,38 @@ def stitch_full_track(
         "Content-Type": "application/json",
     }
 
-    # Build the cycled clip sequence. Most clips are full-duration; the
-    # LAST clip may be truncated so total = target_duration_s exactly.
+    # Build the clip sequence. If pre-roll is supplied, it plays first and
+    # the main loop starts after it. Audio plays from 0:00 regardless so the
+    # pre-roll covers the first PRE_ROLL_SECONDS of the track.
     clip_len = clips[0].duration_s
     shotstack_clips = []
     cursor = 0.0
+
+    if preroll_clip:
+        if not preroll_clip.remote_url:
+            # Rehydrate cached pre-roll
+            from content_engine.youtube_longform.render import _upload_to_cloudinary
+            preroll_url = _upload_to_cloudinary(
+                preroll_clip.local_path,
+                resource_type="video",
+                public_id=f"preroll_{preroll_clip.clip_id}",
+            )
+        else:
+            preroll_url = preroll_clip.remote_url
+        shotstack_clips.append({
+            "asset":  {"type": "video", "src": preroll_url},
+            "start":  0.0,
+            "length": preroll_clip.duration_s,
+            "fit":    "cover",
+        })
+        cursor = float(preroll_clip.duration_s)
+        logger.info(
+            "Pre-roll: %ds kinetic hook prepended before main loop",
+            preroll_clip.duration_s,
+        )
+
+    # Main loop cycle — fills from `cursor` up to target_duration_s.
+    # Last clip may be truncated so total = target_duration_s exactly.
     i = 0
     while cursor < target_duration_s:
         src = clips[i % len(clips)].remote_url

@@ -108,6 +108,11 @@ class UploadSpec:
     notify_subscribers:  bool = True
     playlist_id:         Optional[str] = None        # Optional playlist to append to
     channel_id:          Optional[str] = None        # Holy Rave channel ID (optional override)
+    pinned_comment:      Optional[str] = None        # Auto-post a top-level CTA comment
+                                                     # from the channel owner. Creator
+                                                     # comments rank top of thread by
+                                                     # default; pinning in Studio takes
+                                                     # 2 taps on mobile (no Data API).
 
 
 @dataclass

@@ -149,6 +149,34 @@ def _compose_title(track_title: str) -> str:
     return f"{cfg.ARTIST_FULL_NAME} - {track_title}"
 
 
+def _compose_pinned_cta(
+    track_title: str,
+    smart_link: str,
+    scripture_anchor: str,
+) -> str:
+    """
+    First top-level comment posted by the channel owner after upload.
+
+    YouTube has no Data API endpoint for pinning comments (confirmed
+    2026-04-22), but the creator's own first comment ranks top of
+    thread by default in most viewing contexts, and manual pinning
+    from mobile YouTube Studio is 2 taps. So this function composes
+    the copy; the uploader posts it; RJM pins it later if desired.
+
+    Kept short (2–4 lines) — long CTA comments get collapsed behind
+    "Read more." Scripture anchor is optional; we only surface it when
+    the track has one.
+    """
+    lines = [
+        f"\U0001f3a7 Full catalog + new drops: {smart_link}",
+        f"New visualizers every Tue/Thu/Sun 21:00 UTC \u2014 subscribe so the algorithm feeds you the next one.",
+    ]
+    if scripture_anchor:
+        lines.append(f"Anchor for this one: {scripture_anchor}.")
+    lines.append("Which track hits hardest? Drop a timestamp below.")
+    return "\n".join(lines)
+
+
 def _compose_tags(genre: str, mood_tier: str, scripture_anchor: str) -> list[str]:
     base = [
         "Robert-Jan Mastenbroek", "RJM", "Holy Rave",
@@ -353,12 +381,25 @@ def publish_track(req: PublishRequest) -> PublishResult:
                     story_id=story.story_id,
                     track_prompt=prompt,
                 )
+
+                # Pre-roll hook (2026-04-22 retention-lift feature) —
+                # 5s kinetic Kling clip from thumbnail keyframe into the
+                # first chain keyframe. Prepended to the Shotstack timeline
+                # so the audio plays under an arresting opening shot. Big
+                # expected APV lift (Jericho was at 12%). +$0.42/publish.
+                preroll_clip = motion_mod.generate_preroll_clip(
+                    story=story,
+                    track_prompt=prompt,
+                    rendered_kfs=keyframes,
+                )
+
                 result.video = motion_mod.stitch_full_track(
                     clips=morph_clips,
                     audio_url=audio_public,
                     target_duration_s=duration,
                     output_label=f"{output_label}_motion",
                     shotstack_env="v1",   # PAYG, no watermark
+                    preroll_clip=preroll_clip,
                 )
             else:
                 # Stills-only path: single hero image held for full duration.
@@ -400,6 +441,11 @@ def publish_track(req: PublishRequest) -> PublishResult:
             # Per-track audio language — "he" for Hebrew vocals, "en" otherwise.
             # Falls back to "en" for unknown tracks.
             audio_lang = TRACK_LANGUAGES.get(req.track_title.lower().strip(), "en")
+            pinned_cta = _compose_pinned_cta(
+                track_title=req.track_title,
+                smart_link=result.smart_link or "",
+                scripture_anchor=prompt.scripture_anchor,
+            )
             upload_spec = UploadSpec(
                 video_path=result.video.local_path,
                 thumbnail_paths=[t.local_path for t in result.thumbnails],
@@ -412,6 +458,7 @@ def publish_track(req: PublishRequest) -> PublishResult:
                 privacy_status="private" if req.publish_at_iso else "public",
                 channel_id=req.channel_id or cfg.YT_HOLY_RAVE_CHANNEL_ID or None,
                 playlist_id=_select_playlist(genre_key),
+                pinned_comment=pinned_cta,
             )
             video_id = uploader.upload(upload_spec)
             result.youtube_id = video_id

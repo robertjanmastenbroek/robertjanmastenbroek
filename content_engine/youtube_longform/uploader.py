@@ -267,7 +267,55 @@ def upload(spec: UploadSpec) -> str:
     if spec.playlist_id:
         _add_to_playlist(token, video_id, spec.playlist_id)
 
+    # Pinned CTA comment — the creator's comment ranks high in the thread
+    # by default (especially if it's first), so this post-upload auto-
+    # comment doubles as a free top-of-comments CTA. "Pinning" the comment
+    # is a Studio-only action (no Data API endpoint as of 2026-04) but
+    # RJM can pin from mobile Studio in 2 taps once uploaded. The comment
+    # text is composed from spec fields so the publisher owns the copy.
+    if spec.pinned_comment:
+        _post_pinned_cta(token, video_id, spec.pinned_comment)
+
     return video_id
+
+
+def _post_pinned_cta(access_token: str, video_id: str, comment_text: str) -> None:
+    """
+    Post a top-level comment from the channel owner as a pinned-ranking
+    CTA. Non-fatal on failure — a publish succeeds even if the comment
+    step fails (comments are a post-hoc enhancement, not a dependency).
+    """
+    url = "https://www.googleapis.com/youtube/v3/commentThreads"
+    body = {
+        "snippet": {
+            "videoId":      video_id,
+            "topLevelComment": {
+                "snippet": {
+                    "textOriginal": comment_text[:10000],  # YouTube's limit
+                }
+            },
+        }
+    }
+    try:
+        r = requests.post(
+            url,
+            params={"part": "snippet"},
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type":  "application/json",
+            },
+            data=json.dumps(body),
+            timeout=30,
+        )
+        if r.status_code in (200, 201):
+            logger.info("Posted CTA comment on %s (pin manually in Studio)", video_id)
+        else:
+            logger.warning(
+                "Could not post CTA comment on %s: %d %s",
+                video_id, r.status_code, r.text[:200],
+            )
+    except Exception as e:
+        logger.warning("CTA comment post failed (non-fatal): %s", e)
 
 
 def estimate_quota_cost(upload_count: int = 1, thumb_per_upload: int = 1, add_to_playlist: bool = True) -> int:
