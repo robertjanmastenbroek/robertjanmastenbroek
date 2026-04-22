@@ -89,15 +89,17 @@ class CompositorStyle:
     """Tunable layout for the compositor — default values match Holy Rave spec."""
     title_position:      str   = "safe_center"     # "safe_center" | "bottom_center" | "top_center"
     title_font_px:       int   = 180               # on a 1920-wide canvas (bumped for text-behind-subject impact)
-    subtitle_font_px:    int   = 48
-    artist_font_px:      int   = 38
+    subtitle_font_px:    int   = 72                # 2026-04-22 v2: 48→72 so scripture reads at mobile stamp-test scale
+    artist_font_px:      int   = 42
     logo_height_px:      int   = 110
     logo_margin_px:      int   = 44
     # Distance from the BOTTOM edge to the baseline of the scripture anchor
-    # (the lowest text line). Mobile safe boundary per 2026 research is
-    # 12.5% bottom padding = 135px on 1080-tall canvas. 160px gives
-    # headroom + clears the watch-history progress-bar clip zone (bottom 4%).
-    text_block_bottom_margin_px: int = 160
+    # (the lowest text line). Live YouTube test on Jericho showed the old
+    # 160px margin put the scripture at 85% vertical — covered on mobile
+    # by the duration badge + watch-history progress bar. Bumped to 240px
+    # so scripture bottom lands at ~78% vertical, well above any UI chrome
+    # surface across all YouTube client versions.
+    text_block_bottom_margin_px: int = 240
     title_letter_spacing: float = 14                # extra px between title letters
     # Gradient overlay for text legibility — a soft darkening band where the
     # text sits so it reads on any background. Anchored to the text block,
