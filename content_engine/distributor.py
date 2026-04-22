@@ -628,13 +628,16 @@ def post_instagram_reel(
             except Exception:
                 pass  # fall back to immediate publish
 
-        # 1. Create media container
+        # 1. Create media container.
+        # share_to_feed is omitted — it's the default for REELS and explicitly
+        # passing it can trigger a whitelist check on apps without Advanced Access.
+        # publish_type=SCHEDULED requires Advanced Access (Meta App Review); we try
+        # it first and fall back to immediate publish if Meta returns code 3.
         container_params: dict = {
             "access_token": access_token,
             "media_type": "REELS",
             "video_url": video_url,
             "caption": caption,
-            "share_to_feed": "true",
         }
         if schedule_unix:
             container_params["publish_type"] = "SCHEDULED"
@@ -645,6 +648,29 @@ def post_instagram_reel(
             params=container_params,
             timeout=30,
         )
+
+        # If scheduling was rejected with a whitelist/permissions error (code 3),
+        # retry immediately without publish_type=SCHEDULED. This happens when the
+        # Meta App hasn't been approved for Advanced Access scheduling.
+        if resp.status_code != 200 and schedule_unix:
+            err_data = resp.json().get("error", {})
+            err_code = err_data.get("code", 0)
+            err_msg  = err_data.get("message", "")
+            if err_code == 3 or "whitelist" in err_msg.lower():
+                logger.warning(
+                    "[distributor] Instagram scheduled Reel rejected (whitelist) — "
+                    "retrying as immediate publish. To enable scheduling, grant "
+                    "'instagram_content_publish' Advanced Access in Meta App Review."
+                )
+                immediate_params = {k: v for k, v in container_params.items()
+                                    if k not in ("publish_type", "scheduled_publish_time")}
+                resp = requests.post(
+                    f"{INSTAGRAM_GRAPH_BASE}/{ig_user_id}/media",
+                    params=immediate_params,
+                    timeout=30,
+                )
+                schedule_unix = None  # publish immediately in step 3
+
         if resp.status_code != 200:
             return {"success": False, "platform": "instagram",
                     "error": resp.json().get("error", {}).get("message", resp.text[:200])}
@@ -866,8 +892,10 @@ def _is_auth_error(result: dict) -> bool:
     """Return True if the native API failure is an authentication error.
 
     Auth errors (expired/revoked token, wrong credentials) should NOT route
-    to Buffer — they must be fixed at the source.  Transient platform errors
-    (5xx, network timeouts, rate limits) are legitimate fallback triggers.
+    to Buffer — they must be fixed at the source. Transient platform errors
+    (5xx, network timeouts, rate limits) and permission/whitelist errors are
+    legitimate fallback triggers — the whitelist case is handled upstream in
+    post_instagram_reel() by retrying without scheduling.
     """
     error_str = str(result.get("error", "")).lower()
     auth_phrases = (
@@ -876,7 +904,6 @@ def _is_auth_error(result: dict) -> bool:
     )
     if any(p in error_str for p in auth_phrases):
         return True
-    # Check numeric error code embedded in error string (e.g. "code 190")
     for code in _AUTH_ERROR_CODES:
         if str(code) in error_str:
             return True
@@ -886,7 +913,15 @@ def _is_auth_error(result: dict) -> bool:
 def _log_native_failure(platform: str, result: dict) -> None:
     """Log a native API failure with the correct severity."""
     error = result.get("error", "unknown error")
-    if _is_auth_error(result):
+    error_lower = error.lower()
+    if "whitelist" in error_lower:
+        logger.critical(
+            f"[distributor] {platform} PERMISSIONS ERROR — Meta App Review required: {error}\n"
+            "  Fix: go to developers.facebook.com → your app → App Review → Permissions,\n"
+            "  request 'instagram_content_publish' at Advanced Access, or switch app to Live mode.\n"
+            "  Until approved, scheduled Reels fall back to immediate publishing (native, no Buffer)."
+        )
+    elif _is_auth_error(result):
         logger.critical(
             f"[distributor] {platform} AUTH ERROR — re-auth needed: {error}\n"
             f"  Run: python3 rjm.py auth {platform.split('_')[0]}  to refresh tokens."

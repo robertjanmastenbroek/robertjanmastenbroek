@@ -214,7 +214,7 @@ def promote_candidates(
 
     results: list[PublishResult] = []
     for i, cand in enumerate(candidates):
-        if limit is not None and i >= limit:
+        if limit is not None and len(results) >= limit:
             logger.info("Hit limit (%d); skipping remaining %d", limit, len(candidates) - i)
             break
 
