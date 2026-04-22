@@ -105,6 +105,7 @@ class ClipFormat(Enum):
     PERFORMANCE = "performance"
     SACRED_ARC = "sacred_arc"
     PERFORMANCE_FAST_CUT = "performance_fast_cut"
+    LONGFORM_TRAILER = "longform_trailer"
 
 
 @dataclass

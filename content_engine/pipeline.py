@@ -185,6 +185,58 @@ def _load_project_env() -> None:
 _load_project_env()
 
 
+def _get_latest_longform_url(track_title: str) -> str | None:
+    """Return the YouTube URL for the most recent successful longform publish of this track.
+
+    Correctness contract: the JSONL is append-only (registry.py appends, never rewrites),
+    so the last matching line is always the most recent publish. If that invariant is ever
+    broken, the returned URL may be stale — add a published_at timestamp comparison then.
+    """
+    jsonl = PROJECT_DIR / "data" / "youtube_longform" / "youtube_longform.jsonl"
+    if not jsonl.exists():
+        return None
+    slug = track_title.lower().strip()
+    best = None
+    try:
+        for line in jsonl.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            raw_url = (entry.get("youtube_url") or "").strip()
+            if (
+                entry.get("track_title", "").lower() == slug
+                and raw_url.startswith("https://")
+                and not entry.get("dry_run")
+            ):
+                best = raw_url
+    except Exception:
+        pass
+    return best
+
+
+def _get_motion_clips_for_track(track_title: str) -> list[str]:
+    """Return holy-rave-motion clips for this track, or [] if none match.
+
+    Only returns clips whose filename contains the track slug. Returns [] (not
+    all clips) when there is no track-specific match — callers are responsible
+    for deciding the fallback, preventing another track's Kling visuals from
+    appearing under the wrong caption.
+    """
+    motion_dir = PROJECT_DIR / "content" / "videos" / "holy-rave-motion"
+    if not motion_dir.exists():
+        return []
+    slug = track_title.lower().strip().replace(" ", "_")
+    return [
+        str(f) for f in motion_dir.rglob("*")
+        if f.is_file() and f.suffix.lower() in (".mp4", ".mov")
+        and slug in f.name.lower()
+    ]
+
+
 def emotional_duration_from_weights(best_clip_length: int, min_s: int = 5, max_s: int = 15) -> int:
     """Clamp emotional clip duration to [5, 15] seconds.
 
@@ -242,11 +294,12 @@ class DailyPipelineConfig:
     # Revert to a balanced mix by passing an explicit formats list.
     formats: list = field(default_factory=lambda: [
         ClipFormat.SACRED_ARC,
-        ClipFormat.SACRED_ARC,
+        ClipFormat.LONGFORM_TRAILER,
         ClipFormat.PERFORMANCE_FAST_CUT,
     ])
     durations: dict = field(default_factory=lambda: {
         ClipFormat.SACRED_ARC: 22,
+        ClipFormat.LONGFORM_TRAILER: 22,
         ClipFormat.TRANSITIONAL: 22,
         ClipFormat.PERFORMANCE_FAST_CUT: 22,
         ClipFormat.EMOTIONAL: 7,
@@ -372,21 +425,23 @@ def run_full_day(
     logger.info(f"[pipeline] Weights loaded — best platform: {weights.best_platform}")
 
     # Locked slot allocation:
-    #   Slots 0-1 → SACRED_ARC (proven viral format: bait hook + slow performance arc)
-    #   Slot 2   → PERFORMANCE_FAST_CUT (Anyma/ISOxo style: 0.4-0.7s cuts on the kick)
-    # Replaces the prior TRANSITIONAL b-roll slot — Short Video Coach research
-    # (2026-04-19) showed b-roll-heavy music posts underperform performance-anchored
-    # posts ~3-5x in 2025-2026. Fast-cut performance keeps the music-source signal
-    # while delivering format variety.
+    #   Slot 0 → SACRED_ARC (proven viral: bait hook + slow performance arc)
+    #   Slot 1 → LONGFORM_TRAILER (short cut of day's longform + YouTube CTA)
+    #   Slot 2 → PERFORMANCE_FAST_CUT (Anyma/ISOxo: 0.4-0.7s cuts on the kick)
+    # LONGFORM_TRAILER replaces the second SACRED_ARC slot. It uses the Kling
+    # morph clips from holy-rave-motion/ as visuals and appends a YouTube link
+    # to every caption. Falls back to SACRED_ARC behaviour when no longform
+    # exists for the selected track.
     if config is None:
         config = DailyPipelineConfig(
             formats=[
                 ClipFormat.SACRED_ARC,
-                ClipFormat.SACRED_ARC,
+                ClipFormat.LONGFORM_TRAILER,
                 ClipFormat.PERFORMANCE_FAST_CUT,
             ],
             durations={
                 ClipFormat.SACRED_ARC: 22,
+                ClipFormat.LONGFORM_TRAILER: 22,
                 ClipFormat.TRANSITIONAL: 22,
                 ClipFormat.PERFORMANCE_FAST_CUT: 22,
                 ClipFormat.EMOTIONAL: emotional_duration_from_weights(weights.best_clip_length),
@@ -641,7 +696,8 @@ def build_daily_clips(
         bait = None
         bait_path = None
 
-        if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC, ClipFormat.PERFORMANCE_FAST_CUT):
+        if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC,
+                   ClipFormat.LONGFORM_TRAILER, ClipFormat.PERFORMANCE_FAST_CUT):
             tm = TransitionalManager()
             bait = tm.pick(category_weights=VIRAL_ONLY_CATEGORY_WEIGHTS)
             if bait:
@@ -654,8 +710,11 @@ def build_daily_clips(
             visual_context = {"category": "emotional"}
 
         # ── Step 2: Generate hook with visual context ─────────────────────────
+        # LONGFORM_TRAILER reuses SACRED_ARC hook templates (proven viral pool)
+        # rather than a separate untested set.
+        hook_fmt = ClipFormat.SACRED_ARC if fmt == ClipFormat.LONGFORM_TRAILER else fmt
         hook_data = generate_hooks_for_format(
-            fmt, track.title, track_facts, weights.hook_weights, used_ids,
+            hook_fmt, track.title, track_facts, weights.hook_weights, used_ids,
             visual_context=visual_context,
             sub_mode_weights=weights.sub_mode_weights,
         )
@@ -676,9 +735,31 @@ def build_daily_clips(
         }
         caption = caption_by_platform.get("instagram", "")
 
+        # LONGFORM_TRAILER: append YouTube CTA to every platform caption.
+        if fmt == ClipFormat.LONGFORM_TRAILER:
+            yt_url = _get_latest_longform_url(track.title)
+            if yt_url:
+                cta_map = {
+                    "instagram":       f"\n\n▶ Full track on YouTube → {yt_url}",
+                    "youtube":         f"\n\n▶ Stream the full version: {yt_url}",
+                    "tiktok":          f"\n▶ Full track → YouTube: {yt_url}",
+                    "facebook":        f"\n\n▶ Watch the full track on YouTube: {yt_url}",
+                    "instagram_story": f"\n▶ YouTube: {yt_url}",
+                    "facebook_story":  f"\n▶ YouTube: {yt_url}",
+                }
+                caption_by_platform = {
+                    p: caption_by_platform.get(p, "") + cta_map.get(p, f"\n▶ {yt_url}")
+                    for p in caption_platforms
+                }
+                caption = caption_by_platform.get("instagram", caption)
+                logger.info(f"[pipeline] LONGFORM_TRAILER: YouTube CTA appended ({yt_url})")
+            else:
+                logger.info(f"[pipeline] LONGFORM_TRAILER: no longform URL for {track.title!r}, CTA skipped")
+
         n_segments = {
             "transitional": 3, "emotional": 2, "performance": 5, "sacred_arc": 3,
             "performance_fast_cut": 1,  # slice list computed by helper, not sampled here
+            "longform_trailer": 3,
         }.get(fmt.value, 3)
 
         # Performance-anchored pool: performances/ + phone-footage/ combined.
@@ -688,7 +769,29 @@ def build_daily_clips(
         perf_pool_all = [v for v in all_videos if perf_dir in v or phone_dir in v]
         segment_slices: list = []  # only populated for PERFORMANCE_FAST_CUT
 
-        if fmt == ClipFormat.SACRED_ARC:
+        if fmt == ClipFormat.LONGFORM_TRAILER:
+            # Prefer Kling morph clips for this track only.
+            # _get_motion_clips_for_track returns [] when no track-specific clips
+            # exist, preventing another track's visuals from appearing here.
+            motion_clips = _get_motion_clips_for_track(track.title)
+            avail_motion = [v for v in motion_clips if v not in used_segments]
+            if not avail_motion:
+                avail_motion = motion_clips  # re-open pool if dedup exhausted it
+            if avail_motion:
+                segments = random.sample(avail_motion, min(n_segments, len(avail_motion)))
+            else:
+                # No track-specific motion clips — fall back to perf pool.
+                # Explicitly exclude holy-rave-motion/ to avoid mismatched visuals.
+                non_motion_videos = [
+                    v for v in all_videos
+                    if "holy-rave-motion" not in v
+                ]
+                avail_perf = [v for v in perf_pool_all if v not in used_segments] or perf_pool_all
+                fallback = avail_perf if avail_perf else non_motion_videos or list(all_videos)
+                segments = random.sample(fallback, min(n_segments, len(fallback)))
+                logger.info("[pipeline] LONGFORM_TRAILER: no motion clips for %r, using perf pool", track.title)
+
+        elif fmt == ClipFormat.SACRED_ARC:
             avail_perf = [v for v in perf_pool_all if v not in used_segments]
             if len(avail_perf) < n_segments:
                 avail_perf = perf_pool_all  # ignore dedup if pool too small
@@ -717,10 +820,10 @@ def build_daily_clips(
 
         output_path = str(Path(output_dir) / f"{fmt.value}_{clip_idx}_{track.title.lower().replace(' ', '_')}.mp4")
 
-        # Visual type tag: SACRED_ARC + PERFORMANCE_FAST_CUT both anchor to
-        # performance footage. Only the deprecated TRANSITIONAL b-roll path
-        # gets "b_roll" — kept for back-compat with older registry entries.
-        if fmt in (ClipFormat.SACRED_ARC, ClipFormat.PERFORMANCE_FAST_CUT):
+        # Visual type tag for the registry / learning loop.
+        if fmt == ClipFormat.LONGFORM_TRAILER:
+            visual_type = "longform_motion"
+        elif fmt in (ClipFormat.SACRED_ARC, ClipFormat.PERFORMANCE_FAST_CUT):
             visual_type = "performance"
         else:
             visual_type = "b_roll"
@@ -770,7 +873,7 @@ def build_daily_clips(
         }
 
         try:
-            if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC):
+            if fmt in (ClipFormat.TRANSITIONAL, ClipFormat.SACRED_ARC, ClipFormat.LONGFORM_TRAILER):
                 if bait_path:
                     render_transitional(
                         bait_clip=bait_path,

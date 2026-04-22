@@ -11,15 +11,14 @@ from content_engine.types import ClipFormat, TrendBrief, UnifiedWeights, TrackIn
 
 
 def test_config_defaults():
-    # Locked slot allocation as of 2026-04-19:
-    #   slots 0-1: SACRED_ARC (proven viral: bait hook + slow performance arc)
-    #   slot 2:    PERFORMANCE_FAST_CUT (Anyma/ISOxo style, 0.4-0.7s cuts)
-    # The TRANSITIONAL b-roll slot was retired after Short Video Coach research
-    # showed b-roll-heavy music posts underperform performance-anchored ones 3-5x.
+    # Locked slot allocation as of 2026-04-22:
+    #   slot 0: SACRED_ARC (proven viral: bait hook + slow performance arc)
+    #   slot 1: LONGFORM_TRAILER (short cut of longform + YouTube CTA)
+    #   slot 2: PERFORMANCE_FAST_CUT (Anyma/ISOxo style, 0.4-0.7s cuts)
     config = DailyPipelineConfig()
     assert len(config.formats) == 3
     assert config.formats[0] == ClipFormat.SACRED_ARC
-    assert config.formats[1] == ClipFormat.SACRED_ARC
+    assert config.formats[1] == ClipFormat.LONGFORM_TRAILER
     assert config.formats[2] == ClipFormat.PERFORMANCE_FAST_CUT
 
 
@@ -254,17 +253,283 @@ def test_sacred_arc_uses_performance_footage_only(tmp_path):
     assert not any("b-roll" in s for s in segments), "b-roll leaked into SACRED_ARC segments"
 
 
-def test_daily_config_default_uses_sacred_arc():
-    """Default daily mix: [SACRED_ARC, SACRED_ARC, PERFORMANCE_FAST_CUT].
+def test_daily_config_default_uses_longform_trailer():
+    """Default daily mix: [SACRED_ARC, LONGFORM_TRAILER, PERFORMANCE_FAST_CUT].
 
-    Slot 2 was TRANSITIONAL b-roll until 2026-04-19; replaced with fast-cut
-    performance after Short Video Coach research showed b-roll-heavy music
-    posts underperform performance-anchored ones 3-5x.
+    Slot 1 was SACRED_ARC until 2026-04-22; replaced with LONGFORM_TRAILER so
+    one daily clip drives traffic to the YouTube longform using the track's
+    Kling morph clips as visuals + a YouTube URL appended to every caption.
     """
     config = DailyPipelineConfig()
     assert config.formats[0] == ClipFormat.SACRED_ARC
-    assert config.formats[1] == ClipFormat.SACRED_ARC
+    assert config.formats[1] == ClipFormat.LONGFORM_TRAILER
     assert config.formats[2] == ClipFormat.PERFORMANCE_FAST_CUT
+
+
+def test_config_durations_includes_longform_trailer():
+    config = DailyPipelineConfig()
+    assert ClipFormat.LONGFORM_TRAILER in config.durations
+    assert config.durations[ClipFormat.LONGFORM_TRAILER] == 22
+
+
+def test_get_latest_longform_url_returns_most_recent(tmp_path):
+    from content_engine.pipeline import _get_latest_longform_url
+    import json as _json
+    jsonl = tmp_path / "youtube_longform.jsonl"
+    jsonl.write_text(
+        _json.dumps({"track_title": "Jericho", "youtube_url": "https://youtube.com/watch?v=OLD", "dry_run": False}) + "\n" +
+        _json.dumps({"track_title": "Jericho", "youtube_url": "https://youtube.com/watch?v=NEW", "dry_run": False}) + "\n" +
+        _json.dumps({"track_title": "Jericho", "youtube_url": "https://youtube.com/watch?v=DRY", "dry_run": True}) + "\n"
+    )
+    import unittest.mock as _mock
+    with _mock.patch("content_engine.pipeline.PROJECT_DIR", tmp_path):
+        (tmp_path / "data" / "youtube_longform").mkdir(parents=True)
+        (tmp_path / "data" / "youtube_longform" / "youtube_longform.jsonl").write_text(jsonl.read_text())
+        url = _get_latest_longform_url("jericho")
+    assert url == "https://youtube.com/watch?v=NEW"
+
+
+def test_get_latest_longform_url_skips_dry_runs(tmp_path):
+    from content_engine.pipeline import _get_latest_longform_url
+    import json as _json
+    import unittest.mock as _mock
+    jsonl_path = tmp_path / "data" / "youtube_longform" / "youtube_longform.jsonl"
+    jsonl_path.parent.mkdir(parents=True)
+    jsonl_path.write_text(
+        _json.dumps({"track_title": "Selah", "youtube_url": "https://youtube.com/watch?v=DRYRUN", "dry_run": True}) + "\n"
+    )
+    with _mock.patch("content_engine.pipeline.PROJECT_DIR", tmp_path):
+        url = _get_latest_longform_url("selah")
+    assert url is None
+
+
+def test_get_latest_longform_url_returns_none_when_missing(tmp_path):
+    from content_engine.pipeline import _get_latest_longform_url
+    import unittest.mock as _mock
+    with _mock.patch("content_engine.pipeline.PROJECT_DIR", tmp_path):
+        url = _get_latest_longform_url("jericho")
+    assert url is None
+
+
+def test_get_motion_clips_for_track_returns_track_specific(tmp_path):
+    from content_engine.pipeline import _get_motion_clips_for_track
+    import unittest.mock as _mock
+    motion = tmp_path / "content" / "videos" / "holy-rave-motion"
+    motion.mkdir(parents=True)
+    (motion / "morph_rjm_selah_handpan_to_water_abc.mp4").touch()
+    (motion / "morph_rjm_selah_oud_to_cave_def.mp4").touch()
+    (motion / "morph_rjm_jericho_warrior_ghi.mp4").touch()
+    with _mock.patch("content_engine.pipeline.PROJECT_DIR", tmp_path):
+        clips = _get_motion_clips_for_track("selah")
+    assert len(clips) == 2
+    assert all("selah" in Path(c).name for c in clips)
+
+
+def test_get_motion_clips_for_track_returns_empty_when_no_track_match(tmp_path):
+    """When holy-rave-motion/ exists but has no clips for the requested track, return [].
+
+    Returning [] (not all clips) prevents another track's Kling visuals from
+    appearing under the wrong track's caption.
+    """
+    from content_engine.pipeline import _get_motion_clips_for_track
+    import unittest.mock as _mock
+    motion = tmp_path / "content" / "videos" / "holy-rave-motion"
+    motion.mkdir(parents=True)
+    (motion / "morph_rjm_selah_handpan_to_water.mp4").touch()
+    (motion / "morph_rjm_selah_oud_to_cave.mp4").touch()
+    with _mock.patch("content_engine.pipeline.PROJECT_DIR", tmp_path):
+        clips = _get_motion_clips_for_track("halleluyah")
+    assert clips == [], f"Expected [] but got {clips!r} — would cause selah visuals under halleluyah caption"
+
+
+def test_longform_trailer_appends_youtube_cta(tmp_path):
+    """LONGFORM_TRAILER captions must include the YouTube URL for the track."""
+    from unittest.mock import patch, MagicMock
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.LONGFORM_TRAILER],
+        durations={ClipFormat.LONGFORM_TRAILER: 22},
+    )
+    # Seed a motion clip so the segment pool is non-empty
+    motion = tmp_path / "content" / "videos" / "holy-rave-motion"
+    motion.mkdir(parents=True)
+    clip = motion / "morph_rjm_jericho_warrior.mp4"
+    clip.touch()
+
+    captured_captions = {}
+
+    def fake_render_transitional(**kwargs):
+        pass
+
+    with (
+        patch("content_engine.pipeline.PROJECT_DIR", tmp_path),
+        patch("content_engine.pipeline._get_latest_longform_url",
+              return_value="https://youtube.com/watch?v=TESTID"),
+        patch("content_engine.pipeline._get_motion_clips_for_track",
+              return_value=[str(clip)]),
+        patch("content_engine.transitional_manager.TransitionalManager") as MockTM,
+        patch("content_engine.generator.generate_hooks_for_format",
+              return_value={"hook": "test hook", "template_id": "t1",
+                            "mechanism": "save", "sub_mode": "DEVOTION"}),
+        patch("content_engine.generator.generate_caption",
+              side_effect=lambda *a, **kw: "base caption"),
+        patch("content_engine.renderer.render_transitional", fake_render_transitional),
+    ):
+        mock_tm = MagicMock()
+        mock_tm.pick.return_value = {"file": "viral/test.mp4", "category": "viral"}
+        mock_tm.full_path.return_value = str(tmp_path / "viral" / "test.mp4")
+        MockTM.return_value = mock_tm
+        (tmp_path / "viral").mkdir(parents=True)
+        (tmp_path / "viral" / "test.mp4").touch()
+
+        clips = build_daily_clips(
+            config, _make_brief(), _make_weights(), _make_track(),
+            peak_sections=[0.0], output_dir=str(tmp_path / "output"),
+        )
+
+    assert clips, "Expected at least one clip"
+    caption_by_platform = clips[0].get("caption_by_platform", {})
+    for platform, cap in caption_by_platform.items():
+        assert "TESTID" in cap, (
+            f"YouTube URL missing from {platform} caption: {cap!r}"
+        )
+
+
+def test_longform_trailer_no_url_renders_without_cta(tmp_path):
+    """When no longform exists, LONGFORM_TRAILER renders cleanly without a CTA."""
+    from unittest.mock import patch, MagicMock
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.LONGFORM_TRAILER],
+        durations={ClipFormat.LONGFORM_TRAILER: 22},
+    )
+    motion = tmp_path / "content" / "videos" / "holy-rave-motion"
+    motion.mkdir(parents=True)
+    clip = motion / "morph_rjm_jericho_warrior.mp4"
+    clip.touch()
+
+    with (
+        patch("content_engine.pipeline.PROJECT_DIR", tmp_path),
+        patch("content_engine.pipeline._get_latest_longform_url", return_value=None),
+        patch("content_engine.pipeline._get_motion_clips_for_track", return_value=[str(clip)]),
+        patch("content_engine.transitional_manager.TransitionalManager") as MockTM,
+        patch("content_engine.generator.generate_hooks_for_format",
+              return_value={"hook": "hook", "template_id": "t1",
+                            "mechanism": "save", "sub_mode": "DEVOTION"}),
+        patch("content_engine.generator.generate_caption", return_value="base caption"),
+        patch("content_engine.renderer.render_transitional"),
+    ):
+        mock_tm = MagicMock()
+        mock_tm.pick.return_value = {"file": "viral/test.mp4", "category": "viral"}
+        mock_tm.full_path.return_value = str(tmp_path / "viral" / "test.mp4")
+        MockTM.return_value = mock_tm
+        (tmp_path / "viral").mkdir(parents=True)
+        (tmp_path / "viral" / "test.mp4").touch()
+
+        clips = build_daily_clips(
+            config, _make_brief(), _make_weights(), _make_track(),
+            peak_sections=[0.0], output_dir=str(tmp_path / "output"),
+        )
+
+    assert clips, "Expected a clip even without YouTube URL"
+    assert clips[0]["format_type"] == "longform_trailer"
+    for cap in clips[0].get("caption_by_platform", {}).values():
+        assert "youtube.com/watch" not in cap
+
+
+def test_longform_trailer_does_not_use_other_tracks_motion_clips(tmp_path):
+    """LONGFORM_TRAILER must not use another track's Kling clips as visuals.
+
+    Regression for: _get_motion_clips_for_track previously returned all clips
+    when no track-specific match existed, causing selah morph visuals to appear
+    under a jericho caption.
+    """
+    from unittest.mock import patch, MagicMock
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.LONGFORM_TRAILER],
+        durations={ClipFormat.LONGFORM_TRAILER: 22},
+    )
+    # Only selah clips in the pool — track is jericho
+    motion = tmp_path / "content" / "videos" / "holy-rave-motion"
+    motion.mkdir(parents=True)
+    selah_clip = motion / "morph_rjm_selah_handpan.mp4"
+    selah_clip.touch()
+    # Perf pool as expected fallback
+    perf = tmp_path / "content" / "videos" / "performances"
+    perf.mkdir(parents=True)
+    perf_clip = perf / "stage_jericho.mp4"
+    perf_clip.touch()
+
+    captured = {}
+
+    def fake_render_transitional(**kwargs):
+        captured["segments"] = kwargs.get("content_segments", [])
+
+    jericho_track = _make_track()  # _make_track uses "jericho" title
+
+    with (
+        patch("content_engine.pipeline.PROJECT_DIR", tmp_path),
+        patch("content_engine.pipeline._get_latest_longform_url", return_value=None),
+        patch("content_engine.transitional_manager.TransitionalManager") as MockTM,
+        patch("content_engine.generator.generate_hooks_for_format",
+              return_value={"hook": "h", "template_id": "t1",
+                            "mechanism": "save", "sub_mode": "DEVOTION"}),
+        patch("content_engine.generator.generate_caption", return_value="cap"),
+        patch("content_engine.renderer.render_transitional", fake_render_transitional),
+    ):
+        mock_tm = MagicMock()
+        mock_tm.pick.return_value = {"file": "viral/test.mp4", "category": "viral"}
+        mock_tm.full_path.return_value = str(tmp_path / "viral" / "test.mp4")
+        MockTM.return_value = mock_tm
+        (tmp_path / "viral").mkdir(parents=True)
+        (tmp_path / "viral" / "test.mp4").touch()
+
+        clips = build_daily_clips(
+            config, _make_brief(), _make_weights(), jericho_track,
+            peak_sections=[0.0], output_dir=str(tmp_path / "output"),
+        )
+
+    assert clips, "Expected clip to render"
+    used = [s["path"] for s in clips[0].get("segments_used", [])]
+    assert not any("selah" in p for p in used), (
+        f"Selah morph clips leaked into jericho LONGFORM_TRAILER: {used}"
+    )
+
+
+def test_longform_trailer_visual_type_is_longform_motion(tmp_path):
+    """Registry entry for LONGFORM_TRAILER must carry visual_type=longform_motion."""
+    from unittest.mock import patch, MagicMock
+    config = DailyPipelineConfig(
+        formats=[ClipFormat.LONGFORM_TRAILER],
+        durations={ClipFormat.LONGFORM_TRAILER: 22},
+    )
+    motion = tmp_path / "content" / "videos" / "holy-rave-motion"
+    motion.mkdir(parents=True)
+    (motion / "morph.mp4").touch()
+
+    with (
+        patch("content_engine.pipeline.PROJECT_DIR", tmp_path),
+        patch("content_engine.pipeline._get_latest_longform_url", return_value=None),
+        patch("content_engine.pipeline._get_motion_clips_for_track",
+              return_value=[str(motion / "morph.mp4")]),
+        patch("content_engine.transitional_manager.TransitionalManager") as MockTM,
+        patch("content_engine.generator.generate_hooks_for_format",
+              return_value={"hook": "h", "template_id": "t1",
+                            "mechanism": "save", "sub_mode": "DEVOTION"}),
+        patch("content_engine.generator.generate_caption", return_value="cap"),
+        patch("content_engine.renderer.render_transitional"),
+    ):
+        mock_tm = MagicMock()
+        mock_tm.pick.return_value = {"file": "viral/test.mp4", "category": "viral"}
+        mock_tm.full_path.return_value = str(tmp_path / "viral" / "test.mp4")
+        MockTM.return_value = mock_tm
+        (tmp_path / "viral").mkdir(parents=True)
+        (tmp_path / "viral" / "test.mp4").touch()
+
+        clips = build_daily_clips(
+            config, _make_brief(), _make_weights(), _make_track(),
+            peak_sections=[0.0], output_dir=str(tmp_path / "output"),
+        )
+
+    assert clips[0]["visual_type"] == "longform_motion"
 
 
 def test_bait_pick_biases_to_viral_category(tmp_path):
