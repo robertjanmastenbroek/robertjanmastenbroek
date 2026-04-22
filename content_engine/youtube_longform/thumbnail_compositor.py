@@ -65,25 +65,138 @@ COLOR_OCHRE         = (200, 136, 58,  255)  # ochre  #c8883a
 @dataclass(frozen=True)
 class CompositorStyle:
     """Tunable layout for the compositor — default values match Holy Rave spec."""
-    title_position:      str   = "bottom_center"   # "bottom_center" | "top_center"
-    title_font_px:       int   = 160               # on a 1920-wide canvas
-    subtitle_font_px:    int   = 44
-    artist_font_px:      int   = 34
+    title_position:      str   = "safe_center"     # "safe_center" | "bottom_center" | "top_center"
+    title_font_px:       int   = 180               # on a 1920-wide canvas (bumped for text-behind-subject impact)
+    subtitle_font_px:    int   = 48
+    artist_font_px:      int   = 38
     logo_height_px:      int   = 110
     logo_margin_px:      int   = 44
-    title_margin_y_px:   int   = 120               # distance from edge to title baseline
-    title_letter_spacing: float = 12                # extra px between title letters (feels more cinematic)
-    # Gradient overlay for text legibility (bottom-anchored darkening).
-    # Without this, bright thumbnails render text as unreadable noise.
+    # Distance from the BOTTOM edge to the baseline of the scripture anchor
+    # (the lowest text line). Mobile safe boundary per 2026 research is
+    # 12.5% bottom padding = 135px on 1080-tall canvas. 160px gives
+    # headroom + clears the watch-history progress-bar clip zone (bottom 4%).
+    text_block_bottom_margin_px: int = 160
+    title_letter_spacing: float = 14                # extra px between title letters
+    # Gradient overlay for text legibility — a soft darkening band where the
+    # text sits so it reads on any background. Anchored to the text block,
+    # not the bottom edge, so when text moves up the gradient follows.
     gradient_strength:   float = 0.55              # 0=off, 1=full black at anchor edge
-    gradient_height_pct: float = 0.45              # gradient covers bottom 45% of frame
+    gradient_height_pct: float = 0.55              # gradient band height (% of canvas)
     # Horizontal gold divider between title and artist for polish.
     divider_enabled:     bool  = True
-    divider_length_pct:  float = 0.08              # % of canvas width
+    divider_length_pct:  float = 0.10              # % of canvas width
     divider_thickness_px: int  = 2
+    # Text-behind-subject effect — segment the foreground subject (person,
+    # hero character) and re-paste it on top of the text layer so the text
+    # appears to exist behind the subject in 3D space. THE single biggest
+    # CTR lever in music-YouTube (Cafe de Anatolia / Sol Selectas / every
+    # MrBeast thumbnail). Uses fal.ai rembg (~$0.002 per thumbnail).
+    text_behind_subject: bool  = True
 
 
 DEFAULT_STYLE = CompositorStyle()
+
+
+# ─── Subject extraction via fal.ai rembg ────────────────────────────────────
+
+_REMBG_ENDPOINT        = "fal-ai/imageutils/rembg"
+_REMBG_COST_USD        = 0.005      # conservative upper-bound for spend_guard
+_REMBG_CACHE_SUFFIX    = "_subject.png"
+
+
+def _extract_subject(base_image_path: Path) -> Optional[Path]:
+    """
+    Run subject/background segmentation on a base Flux image and return a
+    PNG with the subject cut out (transparent background).
+
+    Uses fal.ai rembg (stateless, ~$0.002/call, returns PNG with alpha).
+    Uploads the input to Cloudinary if it's not already public. Caches
+    the output at `<stem>_subject.png` alongside the base so repeated
+    composites on the same input are zero-cost.
+
+    Returns None on any failure — caller falls back to pasting the text
+    directly over the base (the old behavior). This is graceful: a rembg
+    outage never fails the whole publish.
+    """
+    import hashlib
+    from content_engine.youtube_longform import spend_guard
+    from content_engine.youtube_longform.render import upload_image_for_render
+
+    # Cache hit check — rembg is deterministic for same input.
+    cache_path = base_image_path.with_name(
+        base_image_path.stem + _REMBG_CACHE_SUFFIX
+    )
+    if cache_path.exists():
+        logger.info("Subject extraction cached: %s", cache_path.name)
+        return cache_path
+
+    # Budget gate — skip the call (return None → fall back to flat compositing)
+    # if we can't afford it rather than raising and killing the publish.
+    try:
+        spend_guard.check_budget(
+            _REMBG_COST_USD,
+            kind="rembg_subject_extract",
+            note=base_image_path.name,
+        )
+    except Exception as e:
+        logger.warning(
+            "Spend cap hit — skipping subject extraction, falling back to "
+            "flat composite (non-fatal): %s", e,
+        )
+        return None
+
+    # Upload to Cloudinary to get a public URL for fal.ai.
+    try:
+        digest = hashlib.sha256(base_image_path.read_bytes()).hexdigest()[:10]
+        input_url = upload_image_for_render(
+            base_image_path,
+            public_id=f"rembg_input_{digest}",
+        )
+    except Exception as e:
+        logger.warning("Cloudinary upload failed for rembg input: %s", e)
+        return None
+
+    # Import fal_client lazily — same pattern as motion.py / image_gen.py
+    try:
+        from content_engine.youtube_longform.image_gen import _fal_client
+    except Exception as e:
+        logger.warning("Could not load fal_client: %s", e)
+        return None
+
+    try:
+        client = _fal_client()
+        result = client.subscribe(
+            _REMBG_ENDPOINT,
+            arguments={"image_url": input_url},
+            with_logs=False,
+        )
+        image_entry = (result or {}).get("image") or {}
+        output_url = image_entry.get("url")
+        if not output_url:
+            logger.warning("rembg response missing image.url: %s", result)
+            return None
+    except Exception as e:
+        logger.warning("rembg subscribe failed (non-fatal): %s", e)
+        return None
+
+    # Download PNG with alpha to cache_path.
+    try:
+        import requests
+        r = requests.get(output_url, timeout=60)
+        r.raise_for_status()
+        cache_path.write_bytes(r.content)
+    except Exception as e:
+        logger.warning("Could not download rembg result: %s", e)
+        return None
+
+    # Record actual spend only on success.
+    spend_guard.record_spend(
+        _REMBG_COST_USD,
+        kind="rembg_subject_extract",
+        note=base_image_path.name,
+    )
+    logger.info("Subject extracted → %s", cache_path.name)
+    return cache_path
 
 
 # ─── Logo alpha extraction ──────────────────────────────────────────────────
@@ -189,30 +302,6 @@ def _measure_tracked_text(
     return int(total - letter_spacing_px) if text else 0
 
 
-# ─── Gradient overlay ───────────────────────────────────────────────────────
-
-def _apply_bottom_gradient(
-    canvas: Image.Image,
-    style: CompositorStyle,
-) -> None:
-    """
-    Apply a transparent-to-dark gradient over the bottom portion so the
-    text below is readable on any background. Mutates canvas in place.
-    """
-    if style.gradient_strength <= 0:
-        return
-    import numpy as np
-    w, h = canvas.size
-    g_height = int(h * style.gradient_height_pct)
-    # 0 at top of gradient, 1 at bottom
-    ramp = np.linspace(0, style.gradient_strength, g_height)
-    alpha = (ramp * 255).astype(np.uint8)
-    overlay_rgba = np.zeros((g_height, w, 4), dtype=np.uint8)
-    overlay_rgba[..., 3] = alpha[:, None]  # alpha only, RGB stays 0 (black)
-    overlay = Image.fromarray(overlay_rgba, mode="RGBA")
-    canvas.alpha_composite(overlay, dest=(0, h - g_height))
-
-
 # ─── Main public API ────────────────────────────────────────────────────────
 
 def composite_thumbnail(
@@ -225,14 +314,26 @@ def composite_thumbnail(
     style: CompositorStyle = DEFAULT_STYLE,
 ) -> Path:
     """
-    Composite track title + artist + Holy Rave logo onto a base image.
+    Composite track title + artist + scripture anchor + Holy Rave logo
+    onto a base image with the text-behind-subject effect.
+
+    Layer order (bottom → top):
+      1. Flux base image
+      2. Soft darkening gradient anchored to the text-block band (for legibility)
+      3. Title / ochre divider / artist / scripture anchor (all text)
+      4. Holy Rave logo (corner mark)
+      5. Subject-only cutout from fal.ai rembg — pasted on top so the text
+         appears to sit BEHIND the subject, the single biggest CTR lever
+         in music-YouTube thumbnails. Disabled if style.text_behind_subject
+         is False, or if rembg fails (graceful fallback).
+
+    Text vertical position respects the 2026 mobile-safe zone research —
+    scripture-anchor bottom edge lands at ~85% of canvas height, clear of
+    both the mobile viewport crop and the watch-history progress bar.
 
     The base_image_path is the clean Flux output (used by Kling for
-    morph interpolation). The titled version is saved separately and is
-    what YouTube sees as the video thumbnail. Both files coexist.
-
-    Returns the output path (titled JPEG). Defaults to
-    `<base_stem>_titled.jpg` alongside the base.
+    morph interpolation). The titled version is saved separately and
+    only the titled version is what YouTube sees as the video thumbnail.
     """
     if not FONT_TITLE.exists() or not FONT_ARTIST.exists() or not LOGO_PATH.exists():
         raise FileNotFoundError(
@@ -251,85 +352,125 @@ def composite_thumbnail(
     artist_px   = max(16, int(style.artist_font_px * scale))
     logo_h      = max(40, int(style.logo_height_px * scale))
     margin      = max(12, int(style.logo_margin_px * scale))
-    title_margin_y = max(40, int(style.title_margin_y_px * scale))
+    bottom_margin = max(60, int(style.text_block_bottom_margin_px * scale))
     title_tracking = style.title_letter_spacing * scale
 
     title_font    = ImageFont.truetype(str(FONT_TITLE),    title_px)
     artist_font   = ImageFont.truetype(str(FONT_ARTIST),   artist_px)
     subtitle_font = ImageFont.truetype(str(FONT_SUBTITLE), subtitle_px)
 
+    # ── Layout math: anchor BOTTOM of text block to bottom_margin from
+    # the canvas bottom. That puts the entire block inside the 87.5%
+    # mobile-safe boundary while keeping title LOW enough to cross the
+    # subject's torso (enabling the text-behind-subject depth effect).
+    divider_thickness   = max(1, int(style.divider_thickness_px * scale))
+    gap_below_title     = int(title_px * 0.08)    # space from title to divider
+    gap_below_divider   = int(12 * scale)         # space from divider to artist
+    gap_below_artist    = int(artist_px * 0.45)   # space from artist to scripture
+
+    # Going UP from the bottom margin:
+    sub_bottom_y = canvas_h - bottom_margin
+    if subtitle:
+        sub_y = sub_bottom_y - subtitle_px
+        artist_bottom_y = sub_y - gap_below_artist
+    else:
+        artist_bottom_y = sub_bottom_y
+
+    artist_y = artist_bottom_y - artist_px
+
+    if style.divider_enabled:
+        div_y_bottom = artist_y - gap_below_divider
+        div_y        = div_y_bottom - divider_thickness
+        title_bottom_y = div_y - gap_below_title
+    else:
+        title_bottom_y = artist_y - gap_below_title
+
+    # Flux title glyphs sit ~1.1x font_px tall
+    title_y = title_bottom_y - int(title_px * 1.1)
+
+    # ── Pre-compute text widths so we know the maximum horizontal footprint
+    # before deciding text_center_x (subject-aware placement uses this).
+    title_text   = track_title.upper()
+    title_width  = _measure_tracked_text(title_font, title_text, title_tracking)
+    artist_text  = artist_name.upper()
+    artist_width = int(artist_font.getlength(artist_text))
+    sub_width    = int(subtitle_font.getlength(subtitle)) if subtitle else 0
+    max_text_width = max(title_width, artist_width, sub_width)
+
+    # ── Extract subject FIRST (if enabled) so we can use its mask for
+    # subject-aware text placement. The subject PNG is cached so re-running
+    # this compositor on the same base is free.
+    subject_png: Optional[Path] = None
+    if style.text_behind_subject:
+        subject_png = _extract_subject(base_image_path)
+
+    # ── Subject-aware text center x: default to canvas center, but if we
+    # have a subject mask, shift the text into the largest subject-free
+    # horizontal zone. This guarantees the title stays READABLE even
+    # when the behind-subject effect is applied (otherwise a big subject
+    # like a warrior covers half the title).
+    if subject_png is not None:
+        text_center_x = _compute_subject_aware_text_center_x(
+            subject_png, canvas_w, title_y, sub_bottom_y, max_text_width,
+        )
+    else:
+        text_center_x = canvas_w // 2
+
+    # ── Begin compositing on an RGBA working copy.
     canvas = base.copy()
 
-    # 1. Legibility gradient at the bottom.
-    _apply_bottom_gradient(canvas, style)
+    # 1. Legibility gradient — a soft darkening band anchored around the
+    # TEXT BLOCK (not the canvas bottom), so moving text up moves the
+    # gradient with it. The gradient fades from fully transparent at
+    # its top to `gradient_strength` darkness at the bottom-block edge.
+    _apply_text_block_gradient(canvas, style, title_y, sub_bottom_y)
 
     draw = ImageDraw.Draw(canvas)
 
-    # 2. Main title — UPPERCASE, centered horizontally, bottom-positioned.
-    title_text = track_title.upper()
-    title_width = _measure_tracked_text(title_font, title_text, title_tracking)
-    title_x = (canvas_w - title_width) // 2
-    if style.title_position == "top_center":
-        title_y = title_margin_y
-    else:  # bottom_center
-        # Anchor baseline roughly title_margin_y above the bottom.
-        # Cormorant's glyph metrics put the baseline ~0.85 of font_px down
-        # from the top y; account for that so the text sits visually at
-        # the target margin.
-        title_y = canvas_h - title_margin_y - int(title_px * 1.1)
+    # 2. Main title — UPPERCASE, horizontally centered on text_center_x.
+    title_x = text_center_x - title_width // 2
 
     _draw_text_with_shadow(
         draw, canvas,
         (title_x, title_y), title_text,
         font=title_font, color=COLOR_GOLD,
-        shadow_offset=max(2, int(4 * scale)),
-        shadow_blur=max(4, int(8 * scale)),
+        shadow_offset=max(2, int(5 * scale)),
+        shadow_blur=max(4, int(10 * scale)),
         letter_spacing=title_tracking,
     )
 
-    # 3. Artist subtitle under the title, smaller Inter Medium, muted white.
-    artist_text = artist_name.upper()
-    artist_width = int(artist_font.getlength(artist_text))
-    artist_x = (canvas_w - artist_width) // 2
-    artist_y = title_y + int(title_px * 1.25)   # below title glyph
-
-    # 3b. Horizontal gold divider between title and artist.
+    # 3. Ochre horizontal divider (centered on text_center_x).
     if style.divider_enabled:
         div_len = int(canvas_w * style.divider_length_pct)
-        div_x1 = (canvas_w - div_len) // 2
-        div_y  = title_y + int(title_px * 1.05)
-        div_thick = max(1, int(style.divider_thickness_px * scale))
+        div_x1  = text_center_x - div_len // 2
         draw.rectangle(
-            (div_x1, div_y, div_x1 + div_len, div_y + div_thick),
+            (div_x1, div_y, div_x1 + div_len, div_y + divider_thickness),
             fill=COLOR_OCHRE,
         )
-        # Nudge the artist text down a few more px so it clears the divider
-        artist_y = div_y + div_thick + int(12 * scale)
 
+    # 4. Artist line below divider (centered on text_center_x).
+    artist_x = text_center_x - artist_width // 2
     _draw_text_with_shadow(
         draw, canvas,
         (artist_x, artist_y), artist_text,
         font=artist_font, color=COLOR_WHITE_90,
-        shadow_offset=max(1, int(2 * scale)),
-        shadow_blur=max(2, int(4 * scale)),
+        shadow_offset=max(1, int(3 * scale)),
+        shadow_blur=max(2, int(5 * scale)),
     )
 
-    # 4. Optional third line (scripture anchor / chapter marker).
+    # 5. Scripture anchor (subtle salt — users who know the Word recognize it).
     if subtitle:
-        sub_width = int(subtitle_font.getlength(subtitle))
-        sub_x = (canvas_w - sub_width) // 2
-        sub_y = artist_y + int(artist_px * 1.4)
+        sub_x = text_center_x - sub_width // 2
         _draw_text_with_shadow(
             draw, canvas,
             (sub_x, sub_y), subtitle,
             font=subtitle_font, color=COLOR_GOLD_SOFT,
             shadow_offset=max(1, int(2 * scale)),
-            shadow_blur=max(2, int(3 * scale)),
+            shadow_blur=max(2, int(4 * scale)),
         )
 
-    # 5. Holy Rave logo in bottom-right corner, with alpha from luminance.
+    # 6. Holy Rave logo in bottom-right corner, alpha from luminance.
     logo = _logo_with_alpha()
-    # Resize preserving aspect ratio to target height.
     aspect = logo.width / logo.height
     logo_w = int(logo_h * aspect)
     logo_resized = logo.resize((logo_w, logo_h), Image.LANCZOS)
@@ -339,8 +480,23 @@ def composite_thumbnail(
     )
     canvas.alpha_composite(logo_resized, dest=logo_pos)
 
-    # Save as JPEG (flatten onto white — actually flatten onto the canvas
-    # itself; RGBA→JPEG needs an RGB basis).
+    # 7. Text-behind-subject — paste the subject cut-out on top of the
+    # text so the text appears to sit behind the subject in 3D space.
+    # We already extracted subject_png upstream for subject-aware text
+    # placement, so this is a free (cached) re-use of the same PNG.
+    if subject_png is not None:
+        try:
+            subj_img = Image.open(subject_png).convert("RGBA")
+            if subj_img.size != canvas.size:
+                subj_img = subj_img.resize(canvas.size, Image.LANCZOS)
+            canvas.alpha_composite(subj_img, dest=(0, 0))
+            logger.info("Applied text-behind-subject layer")
+        except Exception as e:
+            logger.warning(
+                "Could not overlay subject PNG (non-fatal): %s", e,
+            )
+
+    # ── Flatten RGBA → RGB and save as JPEG.
     if output_path is None:
         output_path = base_image_path.with_name(
             base_image_path.stem + "_titled.jpg"
@@ -354,6 +510,137 @@ def composite_thumbnail(
         output_path.stat().st_size,
     )
     return output_path
+
+
+def _compute_subject_aware_text_center_x(
+    subject_png_path: Path,
+    canvas_w: int,
+    text_top_y: int,
+    text_bottom_y: int,
+    max_text_width: int,
+    overlap_fraction: float = 0.08,
+) -> int:
+    """
+    Look at the subject alpha mask within the vertical text band and return
+    the ideal horizontal center-x for the text block.
+
+    Heuristic:
+      1. Measure subject horizontal density in the text-band rows.
+      2. Find the widest contiguous "subject-free" run of columns
+         (columns where the subject alpha covers <15% of the band height).
+      3. Center the text within that free run.
+      4. Nudge the text CENTER toward the subject by `overlap_fraction`
+         × text_width so the edge letters tuck behind the subject's edge
+         (that's the depth-effect without clobbering readability).
+
+    Returns an x-coordinate usable as the text's horizontal center. If
+    no useful free run exists, falls back to canvas center.
+    """
+    import numpy as np
+    try:
+        subj = np.array(Image.open(subject_png_path).convert("RGBA"))
+    except Exception as e:
+        logger.warning("Could not read subject mask for layout: %s", e)
+        return canvas_w // 2
+
+    if subj.shape[0] < text_bottom_y or subj.shape[1] < canvas_w:
+        return canvas_w // 2
+
+    # Alpha within the text band
+    band = subj[text_top_y:text_bottom_y, :, 3]
+    if band.size == 0:
+        return canvas_w // 2
+
+    # Fraction of each column that's opaque subject within the text band.
+    col_coverage = (band > 128).mean(axis=0)
+    # A column is "free" if <15% of the text band's rows are subject.
+    FREE_THRESHOLD = 0.15
+    free_cols = col_coverage < FREE_THRESHOLD
+
+    # Find the widest contiguous run of free columns.
+    best_start = 0
+    best_end = 0
+    run_start = None
+    for i, is_free in enumerate(free_cols):
+        if is_free:
+            if run_start is None:
+                run_start = i
+        else:
+            if run_start is not None:
+                if (i - run_start) > (best_end - best_start):
+                    best_start, best_end = run_start, i
+                run_start = None
+    if run_start is not None:   # trailing run
+        if (len(free_cols) - run_start) > (best_end - best_start):
+            best_start, best_end = run_start, len(free_cols)
+
+    free_width = best_end - best_start
+    if free_width < max_text_width * 0.7:
+        # Not enough free space to shift — keep text centered as a safe fallback.
+        logger.info(
+            "Subject-aware layout | no large free zone (widest=%dpx < 70%% of title) — "
+            "using canvas center", free_width,
+        )
+        return canvas_w // 2
+
+    # Center of the largest free zone — this is where text would sit with zero overlap.
+    free_center_x = (best_start + best_end) // 2
+
+    # Pull the text center toward the subject for partial overlap (the depth effect).
+    # Pull direction is toward canvas center if subject is off-center.
+    subject_center_x = int((col_coverage * np.arange(canvas_w)).sum()
+                           / max(col_coverage.sum(), 1e-9))
+    pull_direction = 1 if subject_center_x < free_center_x else -1
+    overlap_px = int(max_text_width * overlap_fraction)
+    target_center_x = free_center_x - pull_direction * overlap_px
+
+    # Clamp so the text still fits in the canvas horizontally
+    half_text = max_text_width // 2
+    target_center_x = max(half_text + 20, min(canvas_w - half_text - 20, target_center_x))
+
+    logger.info(
+        "Subject-aware layout | subject_cx=%d free_zone=[%d..%d] free_cx=%d → text_cx=%d",
+        subject_center_x, best_start, best_end, free_center_x, target_center_x,
+    )
+    return target_center_x
+
+
+def _apply_text_block_gradient(
+    canvas: Image.Image,
+    style: CompositorStyle,
+    text_top_y: int,
+    text_bottom_y: int,
+) -> None:
+    """
+    Apply a soft top-transparent → bottom-dark gradient anchored around
+    the text block so the text reads on any background. Unlike the old
+    bottom-anchored gradient, this one follows the text UP when the text
+    moves (safe-zone layout).
+    """
+    if style.gradient_strength <= 0:
+        return
+    import numpy as np
+    w, h = canvas.size
+    # Gradient spans from (text_top_y - pad) to (text_bottom_y + pad) to
+    # soften edges. Clamp to canvas bounds.
+    pad = int(h * 0.08)
+    g_top    = max(0, text_top_y - pad)
+    g_bottom = min(h, text_bottom_y + pad)
+    g_height = g_bottom - g_top
+    if g_height <= 0:
+        return
+
+    # Bell-shaped alpha: 0 at top edge, peaks at mid-block, 0.7×strength at bottom.
+    ramp_up   = np.linspace(0, style.gradient_strength, g_height // 2)
+    ramp_down = np.linspace(style.gradient_strength, style.gradient_strength * 0.55,
+                            g_height - g_height // 2)
+    ramp = np.concatenate([ramp_up, ramp_down])
+    alpha = (ramp * 255).astype(np.uint8)
+
+    overlay_rgba = np.zeros((g_height, w, 4), dtype=np.uint8)
+    overlay_rgba[..., 3] = alpha[:, None]  # alpha only, RGB stays 0 (black)
+    overlay = Image.fromarray(overlay_rgba, mode="RGBA")
+    canvas.alpha_composite(overlay, dest=(0, g_top))
 
 
 # ─── CLI / smoke test ───────────────────────────────────────────────────────
