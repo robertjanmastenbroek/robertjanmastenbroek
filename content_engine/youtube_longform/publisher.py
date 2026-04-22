@@ -279,7 +279,24 @@ def publish_track(req: PublishRequest) -> PublishResult:
                 # Fall back to the first in-chain keyframe if no dedicated
                 # thumbnail is defined. Either way, we generate it HERE so
                 # it's ready before the Kling morph pass.
-                story = motion_mod.story_for_track(req.track_title)
+                #
+                # Story resolution (story_generator.resolve_or_generate_story):
+                #   1. motion.TRACK_STORIES (hand-written, highest quality)
+                #   2. JSON cache from a prior autonomous generation
+                #   3. Fresh Claude-CLI generation from the scripture anchor
+                #   4. motion.DEFAULT_STORY (last-resort fallback)
+                from content_engine.youtube_longform import story_generator
+                from content_engine.audio_engine import (
+                    SCRIPTURE_ANCHORS as _SC, TRACK_BPMS as _BPM,
+                    TRACK_LANGUAGES as _LANG,
+                )
+                _key = req.track_title.lower().strip()
+                story = story_generator.resolve_or_generate_story(
+                    track_title=req.track_title,
+                    scripture_anchor=_SC.get(_key, ""),
+                    bpm=_BPM.get(_key, 130),
+                    language=_LANG.get(_key, "en"),
+                )
                 thumb_kf = story.thumbnail_keyframe or story.keyframes[0]
                 logger.info(
                     "Motion path: thumbnail keyframe = '%s' (%s)",

@@ -571,6 +571,35 @@ DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 # architecture + white-linen priests + altar flames, Shema = cloaked-figure
 # silhouettes + Paleo-Hebrew-light + geometric pattern, etc.
 #
+# ─── FUTURISTIC-ELECTRONIC BLEND (applied to both systems) ──────────────────
+# Holy Rave is electronic music. Every story should weave SUBTLE futuristic /
+# luminous / data-inflected elements into the ancient biblical imagery. NOT
+# heavy-handed sci-fi (no cybernetic warriors, no holographic HUDs, no
+# cyberpunk neon). Think "Ancient Truth. Future Sound." as a visual rule:
+# the biblical material reads first, the futuristic quality registers second
+# as "why is this video's flame glowing so cleanly, why do those Hebrew
+# letters feel alive."
+#
+# 10% presence, never 50%. Pick 1-3 elements per story, not all:
+#   · Paleo-Hebrew letters that glow with holographic pale light
+#   · Ancient flames with subtle plasma/energy quality (clean halo, no smoke
+#     artifacts when we want them crisp — crisp is futuristic)
+#   · Dust particles rendered as faintly luminescent motes
+#   · Bronze/silver ornament with subtle iridescent sheen (chromatic
+#     aberration at highlights)
+#   · Prismatic light shafts through smoke or dust
+#   · Fiber-optic glinting threads woven into hand-loomed garments
+#   · Architectural ornament that subtly rotates/breathes between frames
+#   · Constellations arranging into Paleo-Hebrew letters or sacred symbols
+#   · Particle effects suggesting breath, wind, spirit as clean rendered
+#     geometry (Ezekiel 37 dry bones with subtle circuit-vein glow)
+#   · Minor chromatic aberration or lens flares on sacred objects at peak
+#     intensity moments
+#
+# Banned as too-literal-sci-fi: cybernetic body parts, holographic UI,
+# cyberpunk-color neon (purple/teal/hot-pink), floating text overlays,
+# augmented-reality HUD frames, robot or android subjects.
+#
 # Convenience helper:
 
 def system_for_bpm(bpm: int) -> str:

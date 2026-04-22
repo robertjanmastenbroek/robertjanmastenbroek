@@ -107,6 +107,74 @@ VERSES: dict[str, str] = {
         "was filled with smoke. "
         "— Isaiah 6:3-4"
     ),
+
+    # Deuteronomy 6:4 — the SHEMA
+    "Deuteronomy 6:4": (
+        "Hear, Israel: Yahweh is our God. Yahweh is one. You shall love "
+        "Yahweh your God with all your heart, with all your soul, and with "
+        "all your might. These words, which I command you today, shall be "
+        "on your heart; and you shall teach them diligently to your "
+        "children, and shall talk of them when you sit in your house, and "
+        "when you walk by the way, and when you lie down, and when you "
+        "rise up. You shall bind them for a sign on your hand, and they "
+        "shall be for frontlets between your eyes. You shall write them "
+        "on the door posts of your house and on your gates. "
+        "— Deuteronomy 6:4-9"
+    ),
+
+    # Zechariah 4:6 — "Not by might, nor by power, but by my Spirit"
+    "Zechariah 4:6": (
+        "The angel who talked with me returned and awakened me, as a man "
+        "who is awakened out of his sleep. He said to me, 'What do you "
+        "see?' I said, 'I have seen, and behold, a lamp stand all of gold, "
+        "with its bowl on the top of it, and its seven lamps on it; there "
+        "are seven pipes to each of the lamps which are on the top of it; "
+        "and two olive trees by it, one on the right side of the bowl, "
+        "and the other on the left side of it.' Then he answered and "
+        "spoke to me, saying, 'This is the word of Yahweh to Zerubbabel, "
+        "saying, Not by might, nor by power, but by my Spirit, says "
+        "Yahweh of Armies.' "
+        "— Zechariah 4:1-6"
+    ),
+
+    # Numbers 14:21 — KAVOD (glory filling the earth)
+    "Numbers 14:21": (
+        "But in very deed—as I live, and as all the earth shall be filled "
+        "with Yahweh's glory—all those men who have seen my glory, and my "
+        "signs, which I worked in Egypt and in the wilderness, yet have "
+        "tempted me these ten times, and have not listened to my voice, "
+        "surely they shall not see the land which I swore to their fathers. "
+        "— Numbers 14:21-23"
+    ),
+
+    # Genesis 1:2 — RUACH hovering over the waters
+    "Genesis 1:2": (
+        "In the beginning, God created the heavens and the earth. The earth "
+        "was formless and empty. Darkness was on the surface of the deep, "
+        "and God's Spirit (ruach) was hovering over the surface of the "
+        "waters. God said, 'Let there be light,' and there was light. God "
+        "saw the light, and saw that it was good. God divided the light "
+        "from the darkness. "
+        "— Genesis 1:1-4"
+    ),
+
+    # Ezekiel 37 — valley of dry bones (alternative source for RUACH)
+    "Ezekiel 37": (
+        "Yahweh's hand was on me, and he brought me out in Yahweh's Spirit, "
+        "and set me down in the middle of the valley; and it was full of "
+        "bones. He caused me to pass by them all around: and behold, there "
+        "were very many in the open valley; and behold, they were very dry. "
+        "He said to me, 'Son of man, can these bones live?' I answered, "
+        "'Lord Yahweh, you know.' Then he said to me, 'Prophesy over these "
+        "bones, and tell them, you dry bones, hear Yahweh's word. The Lord "
+        "Yahweh says to these bones: Behold, I will cause breath (ruach) "
+        "to enter into you, and you shall live.' So I prophesied as I was "
+        "commanded. As I prophesied, there was a noise, and behold, a "
+        "shaking; and the bones came together, bone to its bone. I saw, "
+        "and behold, there were sinews on them, and flesh came up, and "
+        "skin covered them above; but there was no breath in them. "
+        "— Ezekiel 37:1-8"
+    ),
 }
 
 
