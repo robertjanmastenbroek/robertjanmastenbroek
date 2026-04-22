@@ -492,6 +492,34 @@ DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 # kinetic / crowd-ritual. Mixing the two signals tells YouTube the channel
 # is unclustered — dilutes the clustering that's already working.
 #
+# ─── STRATEGIC CALL: morph-chain on BOTH systems (2026-04-22) ────────────────
+# The 20-video viral visualizer research (docs/viral_visualizer_analysis.md)
+# found that top organic-house visualizers (Keinemusik "Move", Ben Böhmer
+# "Rust") are near-static single-anchor covers — the "video" is one
+# hand-drawn graphic looped for 6 minutes. Typography does the virality work.
+#
+# WE ARE DELIBERATELY NOT FOLLOWING THAT FORMULA on System A.
+#
+# Rationale (RJM decision): Keinemusik-minimalism works because Keinemusik
+# has the brand equity to make one flat image feel essential. Holy Rave has
+# zero channel equity today. If we ship static covers in the organic bucket
+# we disappear into the pile of producer-tier channels doing the same thing.
+# Going full cinematic morph-chain on organic IS the differentiator — we're
+# the psy-production-values organic-house channel, not the 57th lofi-aesthetic
+# one.
+#
+# Trade-off accepted: ~7× higher per-publish cost on organic ($10.80 vs
+# ~$1.50 static) in exchange for a distinct visual signature YouTube's
+# algorithm and human viewers both recognize. At 3×/week osso-so cadence
+# and ~12 organic publishes/year, the extra spend is ~$110/mo — the price
+# of "stand out."
+#
+# What the two systems DIFFER on (even though both use the same morph-chain
+# pipeline): subject vocabulary, palette, camera energy, setting, time-of-day,
+# emotional register. Same pipeline, different DNA per keyframe. Keeps the
+# Cafe-de-Anatolia vs Astrix audience signal distinct without collapsing
+# into either one's own production convention.
+#
 # Every new MorphStory leans its keyframes into ONE of the two systems:
 #
 # ╔═══════════════════════════════════════════════════════════════════════════
