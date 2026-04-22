@@ -498,19 +498,23 @@ def _add_motion_clips_to_shorts_pool(track_title: str) -> int:
     ]
 
     copied = 0
-    # motion.py writes these files as morph_<clip_id>_<hash>.mp4
-    for src in src_dir.glob("morph_*.mp4"):
-        if not any(p in src.name for p in patterns):
-            continue
-        dst = dst_dir / src.name
-        if dst.exists():
-            continue
-        try:
-            shutil.copy2(src, dst)
-            copied += 1
-            logger.info("Shorts pool: copied %s", src.name)
-        except Exception as e:
-            logger.warning("Could not copy %s to shorts pool: %s", src.name, e)
+    # Collect all morph_*.mp4 (Kling O3 keyframe-morph format, current pipeline)
+    # and motion_*.mp4 (Kling 2.1 ambient-motion format, legacy clips) so the
+    # Shorts pool includes every generated asset regardless of naming convention.
+    candidate_globs = ["morph_*.mp4", "motion_*.mp4"]
+    for glob_pattern in candidate_globs:
+        for src in src_dir.glob(glob_pattern):
+            if not any(p in src.name for p in patterns):
+                continue
+            dst = dst_dir / src.name
+            if dst.exists():
+                continue
+            try:
+                shutil.copy2(src, dst)
+                copied += 1
+                logger.info("Shorts pool: copied %s", src.name)
+            except Exception as e:
+                logger.warning("Could not copy %s to shorts pool: %s", src.name, e)
 
     if copied:
         logger.info(

@@ -325,11 +325,10 @@ def test_get_motion_clips_for_track_returns_track_specific(tmp_path):
     assert all("selah" in Path(c).name for c in clips)
 
 
-def test_get_motion_clips_for_track_returns_empty_when_no_track_match(tmp_path):
-    """When holy-rave-motion/ exists but has no clips for the requested track, return [].
+def test_get_motion_clips_for_track_returns_empty_when_no_track_or_universal_match(tmp_path):
+    """When only another track's named clips exist (no universals), return [].
 
-    Returning [] (not all clips) prevents another track's Kling visuals from
-    appearing under the wrong track's caption.
+    Pure track-slug clips (selah_*) must NOT be returned for a different track.
     """
     from content_engine.pipeline import _get_motion_clips_for_track
     import unittest.mock as _mock
@@ -339,7 +338,43 @@ def test_get_motion_clips_for_track_returns_empty_when_no_track_match(tmp_path):
     (motion / "morph_rjm_selah_oud_to_cave.mp4").touch()
     with _mock.patch("content_engine.pipeline.PROJECT_DIR", tmp_path):
         clips = _get_motion_clips_for_track("halleluyah")
-    assert clips == [], f"Expected [] but got {clips!r} — would cause selah visuals under halleluyah caption"
+    assert clips == [], f"Expected [] but got {clips!r} — selah visuals must not appear under halleluyah caption"
+
+
+def test_get_motion_clips_for_track_includes_universal_archetypes(tmp_path):
+    """Universal clips (rjm_warrior/priestess/temple) are returned for any track.
+
+    These archetypes appear in every track's Kling story and are visually
+    appropriate for any track, including ones with no dedicated morph clips yet.
+    """
+    from content_engine.pipeline import _get_motion_clips_for_track
+    import unittest.mock as _mock
+    motion = tmp_path / "content" / "videos" / "holy-rave-motion"
+    motion.mkdir(parents=True)
+    (motion / "morph_rjm_selah_handpan.mp4").touch()
+    (motion / "morph_rjm_warrior__to__rjm_priestess_abc.mp4").touch()
+    (motion / "morph_rjm_priestess__to__rjm_temple_def.mp4").touch()
+    (motion / "morph_rjm_temple__to__rjm_warrior_ghi.mp4").touch()
+    with _mock.patch("content_engine.pipeline.PROJECT_DIR", tmp_path):
+        # halleluyah has no specific clips — should still get universal archetypes
+        clips = _get_motion_clips_for_track("halleluyah")
+    assert len(clips) == 3, f"Expected 3 universal clips, got {len(clips)}: {clips}"
+    assert not any("selah" in Path(c).name for c in clips), "Selah clip leaked into halleluyah"
+
+
+def test_get_motion_clips_for_track_track_specific_before_universal(tmp_path):
+    """Track-specific clips are returned before universal archetypes."""
+    from content_engine.pipeline import _get_motion_clips_for_track
+    import unittest.mock as _mock
+    motion = tmp_path / "content" / "videos" / "holy-rave-motion"
+    motion.mkdir(parents=True)
+    (motion / "morph_rjm_jericho_wall_abc.mp4").touch()
+    (motion / "morph_rjm_warrior__to__rjm_priestess_def.mp4").touch()
+    with _mock.patch("content_engine.pipeline.PROJECT_DIR", tmp_path):
+        clips = _get_motion_clips_for_track("jericho")
+    assert len(clips) == 2
+    # Track-specific must come first
+    assert "jericho" in Path(clips[0]).name, f"Expected jericho clip first, got {clips[0]!r}"
 
 
 def test_longform_trailer_appends_youtube_cta(tmp_path):

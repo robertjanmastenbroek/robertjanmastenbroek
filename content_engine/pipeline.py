@@ -219,22 +219,36 @@ def _get_latest_longform_url(track_title: str) -> str | None:
 
 
 def _get_motion_clips_for_track(track_title: str) -> list[str]:
-    """Return holy-rave-motion clips for this track, or [] if none match.
+    """Return holy-rave-motion clips for this track plus universal RJM archetype clips.
 
-    Only returns clips whose filename contains the track slug. Returns [] (not
-    all clips) when there is no track-specific match — callers are responsible
-    for deciding the fallback, preventing another track's Kling visuals from
-    appearing under the wrong caption.
+    Priority order:
+    1. Track-specific clips whose filename contains the track slug
+       (e.g. morph_rjm_selah_*, morph_rjm_jericho_*)
+    2. Universal RJM character clips — rjm_warrior / rjm_priestess / rjm_temple
+       appear in every track's Kling story and are visually appropriate for any
+       track, including tracks that have no dedicated morph clips yet.
+
+    Returns [] only when holy-rave-motion/ does not exist. Never returns
+    another track's named clips (selah clips will not appear under halleluyah).
     """
     motion_dir = PROJECT_DIR / "content" / "videos" / "holy-rave-motion"
     if not motion_dir.exists():
         return []
     slug = track_title.lower().strip().replace(" ", "_")
-    return [
-        str(f) for f in motion_dir.rglob("*")
-        if f.is_file() and f.suffix.lower() in (".mp4", ".mov")
-        and slug in f.name.lower()
-    ]
+    # Archetypes shared across all track Kling stories
+    UNIVERSAL = ("rjm_warrior", "rjm_priestess", "rjm_temple")
+    track_clips: list[str] = []
+    universal_clips: list[str] = []
+    for f in motion_dir.rglob("*"):
+        if not f.is_file() or f.suffix.lower() not in (".mp4", ".mov"):
+            continue
+        name = f.name.lower()
+        if slug in name:
+            track_clips.append(str(f))
+        elif any(pat in name for pat in UNIVERSAL):
+            universal_clips.append(str(f))
+    # Track-specific first so the most relevant visuals lead
+    return track_clips + universal_clips
 
 
 def emotional_duration_from_weights(best_clip_length: int, min_s: int = 5, max_s: int = 15) -> int:
