@@ -35,6 +35,7 @@ from content_engine.youtube_longform import (
     registry,
     render,
     scripture as scripture_mod,
+    thumbnail_learning,
     uploader,
 )
 from content_engine.youtube_longform.types import (
@@ -50,6 +51,159 @@ logger = logging.getLogger(__name__)
 
 class PublishError(Exception):
     """Raised when publish fails at any stage."""
+
+
+# ─── CTR quality gate for thumbnail generation ───────────────────────────────
+
+# Max regenerations per publish when the pre-publish check hard-fails.
+# 1 is the sweet spot: a thumbnail that fails after ONE regen with
+# prompt-suggestion feedback is almost certainly an inherent-composition
+# issue in the story's still_prompt, which needs human intervention rather
+# than another random Flux roll. Raise to 2 only after we have 20+ publishes
+# of feedback data showing regens 2+ meaningfully beat regens 1.
+MAX_THUMBNAIL_REGENS = 1
+
+
+def _gated_motion_thumbnail(
+    thumb_kf,                              # motion.Keyframe (frozen dataclass)
+    prompt,                                # prompt_builder.TrackPrompt
+    track_title: str,
+    bpm: int,
+):
+    """
+    Generate a motion-path thumbnail keyframe through the CTR gate.
+
+    Returns a tuple (rendered_keyframe, effective_keyframe) where:
+      - rendered_keyframe: motion._RenderedKeyframe with local_path + remote_url
+      - effective_keyframe: the Keyframe dataclass actually used (may be the
+        original thumb_kf, or a modified copy with prompt-suggestion additions
+        appended). Returned so motion.generate_morph_loop can use the SAME
+        first-frame definition and the morph chain stays seam-continuous.
+
+    Behavior:
+      1. Render the thumbnail keyframe (Flux 2 Pro /edit).
+      2. Run pre_publish_check. If pass/soft_fail → return unchanged.
+      3. If hard_fail → regenerate ONCE with suggestions appended to the
+         still_prompt (changes the Flux cache digest so we get a fresh image).
+      4. Of the two candidates, return whichever has higher corpus similarity.
+         Both candidates + the verdict are logged to thumbnail_learning_events.
+
+    Net cost of worst-case regen: ~$0.075 (one extra Flux call). Cost
+    avoided by gating: the full ~$7 Jericho-class publish that would
+    ship with an unreadable mobile thumbnail.
+    """
+    from content_engine.youtube_longform.motion import Keyframe as MKf
+    # First render + gate
+    rendered = motion_mod._generate_keyframe(thumb_kf, prompt)
+    check = thumbnail_learning.pre_publish_check(
+        image_path=rendered.local_path,
+        bpm=bpm,
+        track_title=f"{track_title} / {thumb_kf.keyframe_id} / attempt=1",
+    )
+    logger.info(
+        "Thumbnail CTR gate | %s | attempt=1 | severity=%s | sim=%.2f | bright=%.0f",
+        track_title, check.severity, check.corpus_sim.mean_similarity,
+        check.composition.brightness_mean,
+    )
+    if check.severity != "hard_fail" or MAX_THUMBNAIL_REGENS < 1:
+        return rendered, thumb_kf
+
+    if not check.suggested_prompt_additions:
+        # Hard-fail with no usable suggestions (e.g. corpus unavailable).
+        # Ship the original — nothing better to do automatically.
+        logger.warning(
+            "Thumbnail hard-failed but no prompt suggestions available — "
+            "shipping original. Issues: %s", check.issues,
+        )
+        return rendered, thumb_kf
+
+    # Regenerate ONCE with suggestions appended. New still_prompt → new
+    # Flux cache digest → fresh generation.
+    addition = ". ".join(check.suggested_prompt_additions)
+    regen_kf = MKf(
+        keyframe_id=thumb_kf.keyframe_id,
+        still_prompt=f"{thumb_kf.still_prompt} {addition}",
+    )
+    logger.info(
+        "Thumbnail CTR gate | %s | regen attempt=2 with additions: %s",
+        track_title, addition[:160],
+    )
+    rendered2 = motion_mod._generate_keyframe(regen_kf, prompt)
+    check2 = thumbnail_learning.pre_publish_check(
+        image_path=rendered2.local_path,
+        bpm=bpm,
+        track_title=f"{track_title} / {regen_kf.keyframe_id} / attempt=2",
+    )
+    logger.info(
+        "Thumbnail CTR gate | %s | attempt=2 | severity=%s | sim=%.2f | bright=%.0f",
+        track_title, check2.severity, check2.corpus_sim.mean_similarity,
+        check2.composition.brightness_mean,
+    )
+
+    # Pick winner by composite score: severity beats sim beats brightness.
+    def _score(c):
+        sev_rank = {"pass": 3, "soft_fail": 2, "hard_fail": 1}[c.severity]
+        return (sev_rank, c.corpus_sim.mean_similarity, c.composition.brightness_mean)
+
+    if _score(check2) > _score(check):
+        logger.info("Thumbnail CTR gate | %s | regen WINS (shipped)", track_title)
+        return rendered2, regen_kf
+    logger.info("Thumbnail CTR gate | %s | original WINS (regen worse — shipped original)", track_title)
+    return rendered, thumb_kf
+
+
+def _gated_stills_hero(prompt, track_title: str, bpm: int) -> ImageAsset:
+    """
+    Generate a stills-path hero image through the CTR gate.
+
+    Analogous to _gated_motion_thumbnail but for the stills-only path,
+    where the hero image IS the whole video background (no morph chain to
+    worry about). Regenerates with suggestions appended to
+    TrackPrompt.flux_prompt when hard-failing.
+    """
+    from dataclasses import replace
+
+    hero = image_gen.generate_hero(prompt)
+    check = thumbnail_learning.pre_publish_check(
+        image_path=hero.local_path,
+        bpm=bpm,
+        track_title=f"{track_title} / stills-hero / attempt=1",
+    )
+    logger.info(
+        "Hero CTR gate | %s | attempt=1 | severity=%s | sim=%.2f | bright=%.0f",
+        track_title, check.severity, check.corpus_sim.mean_similarity,
+        check.composition.brightness_mean,
+    )
+    if check.severity != "hard_fail" or MAX_THUMBNAIL_REGENS < 1 or not check.suggested_prompt_additions:
+        return hero
+
+    addition = ". ".join(check.suggested_prompt_additions)
+    new_prompt = replace(prompt, flux_prompt=f"{prompt.flux_prompt} {addition}")
+    logger.info(
+        "Hero CTR gate | %s | regen attempt=2 with additions: %s",
+        track_title, addition[:160],
+    )
+    hero2 = image_gen.generate_hero(new_prompt)
+    check2 = thumbnail_learning.pre_publish_check(
+        image_path=hero2.local_path,
+        bpm=bpm,
+        track_title=f"{track_title} / stills-hero / attempt=2",
+    )
+    logger.info(
+        "Hero CTR gate | %s | attempt=2 | severity=%s | sim=%.2f | bright=%.0f",
+        track_title, check2.severity, check2.corpus_sim.mean_similarity,
+        check2.composition.brightness_mean,
+    )
+
+    def _score(c):
+        sev_rank = {"pass": 3, "soft_fail": 2, "hard_fail": 1}[c.severity]
+        return (sev_rank, c.corpus_sim.mean_similarity, c.composition.brightness_mean)
+
+    if _score(check2) > _score(check):
+        logger.info("Hero CTR gate | %s | regen WINS (shipped)", track_title)
+        return hero2
+    logger.info("Hero CTR gate | %s | original WINS (regen worse — shipped original)", track_title)
+    return hero
 
 
 # ─── Description template ────────────────────────────────────────────────────
@@ -279,6 +433,13 @@ def publish_track(req: PublishRequest) -> PublishResult:
     t_start = time.time()
     result = PublishResult(request=req)
 
+    # Captured by the image-gen phase's CTR gate when it regenerates the
+    # thumbnail keyframe. The render phase then applies this override to
+    # the story it re-fetches from the global catalog so the pre-roll
+    # morphs from the ACTUAL shipped thumbnail (and the morph chain's
+    # start frame stays untouched). None = no override, use story as-is.
+    effective_thumbnail_keyframe = None
+
     # Dedup guard — registry prevents accidental double-publish. Bypass with
     # req.force=True for legitimate re-publishes (e.g., after deleting the
     # previous YouTube upload because thumbnails/links needed fixing).
@@ -361,19 +522,43 @@ def publish_track(req: PublishRequest) -> PublishResult:
                     thumb_kf.keyframe_id,
                     "dedicated" if story.thumbnail_keyframe else "first in chain",
                 )
-                rendered = motion_mod._generate_keyframe(thumb_kf, prompt)
+                # CTR gate — generate, score vs 528-thumbnail viral corpus +
+                # composition baselines, regenerate once on hard-fail with
+                # diagnosis-suggested prompt additions. The effective_kf we
+                # get back is used downstream by generate_morph_loop so the
+                # morph chain starts from the ACTUAL approved first frame
+                # (preserves the thumbnail promise).
+                rendered, effective_thumb_kf = _gated_motion_thumbnail(
+                    thumb_kf=thumb_kf,
+                    prompt=prompt,
+                    track_title=req.track_title,
+                    bpm=prompt.bpm,
+                )
+                # Capture the effective thumbnail keyframe — when the gate
+                # regenerated, this is the new (better-CTR) version. The
+                # render phase below will inject it into the fresh story
+                # fetch so the preroll morphs from the SHIPPED thumbnail.
+                # When gate didn't regen (effective == original), this
+                # still gets set — downstream code treats "already matches"
+                # as a no-op merge.
+                effective_thumbnail_keyframe = effective_thumb_kf
                 result.hero_image = ImageAsset(
                     role="hero",
                     local_path=rendered.local_path,
                     remote_url=rendered.remote_url,
                     width=cfg.HERO_WIDTH,
                     height=cfg.HERO_HEIGHT,
-                    prompt_used=thumb_kf.still_prompt,
+                    prompt_used=effective_thumb_kf.still_prompt,
                     variant_index=0,
                 )
             else:
-                # Stills-only publish: use prompt_builder's hero slot.
-                result.hero_image = image_gen.generate_hero(prompt)
+                # Stills-only publish: use prompt_builder's hero slot,
+                # gated by the same pre-publish CTR check.
+                result.hero_image = _gated_stills_hero(
+                    prompt=prompt,
+                    track_title=req.track_title,
+                    bpm=prompt.bpm,
+                )
 
             result.thumbnails = [
                 ImageAsset(
@@ -403,6 +588,22 @@ def publish_track(req: PublishRequest) -> PublishResult:
                 # Motion path: Kling O3 keyframe-chain morph loop rendered
                 # across the full track duration on Shotstack v1 (PAYG).
                 story = motion_mod.story_for_track(req.track_title)
+
+                # If the pre-publish CTR gate regenerated the thumbnail
+                # keyframe upstream, promote it into the story now so the
+                # pre-roll shot morphs from the SHIPPED thumbnail, not the
+                # canonical-story thumbnail that was rejected by the gate.
+                # The morph chain keyframes[] are untouched — that's by
+                # design: the chain loops independently of the thumbnail.
+                if effective_thumbnail_keyframe is not None:
+                    from dataclasses import replace as _replace
+                    story = _replace(story, thumbnail_keyframe=effective_thumbnail_keyframe)
+                    logger.info(
+                        "Motion render: applied gated thumbnail override "
+                        "'%s' → story.thumbnail_keyframe",
+                        effective_thumbnail_keyframe.keyframe_id,
+                    )
+
                 logger.info(
                     "Motion path: story '%s' with %d keyframes / %d morphs",
                     story.story_id, len(story.keyframes), len(story.morphs),

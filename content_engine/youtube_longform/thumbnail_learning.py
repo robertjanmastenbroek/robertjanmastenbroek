@@ -397,6 +397,226 @@ VIRAL_BASELINE = {
     "center_bias_min": 1.1,      # center noticeably more saturated than outer
 }
 
+# Pre-publish gate thresholds. Kept DISTINCT from the post-publish diagnosis
+# thresholds above: pre-publish is "would this ship?" and should be more
+# tolerant than post-publish analysis ("did this underperform?").
+#
+# Thresholds were calibrated against the live 528-thumbnail viral corpus
+# (2026-04-22). Key insight from the calibration: viral-to-viral mean
+# similarity varies widely (p10=0.48, p50=0.64, p90=0.78) because the
+# corpus is intentionally diverse across sub-genres, so strict mean-sim
+# thresholds false-positive on GOOD thumbnails. The objective visual
+# metrics (brightness, dominant palette) are more reliable hard gates.
+#
+# Design: only hard-fail on thumbnails that are OBJECTIVELY broken
+# (unreadable on mobile, off-brand palette, very weak subject). Corpus
+# drift is surfaced as a soft signal — worth logging but not worth
+# burning $0.08/publish regenerating on a noisy metric.
+PRE_PUBLISH_HARD_DRIFT_THRESHOLD    = 0.38   # below corpus p3 — outright off-theme
+PRE_PUBLISH_SOFT_DRIFT_THRESHOLD    = 0.48   # below corpus p10 — warn in logs
+PRE_PUBLISH_HARD_BRIGHTNESS_MIN     = 45     # below this = unreadable mobile thumb
+PRE_PUBLISH_HARD_ISSUES_COUNT       = 4      # 4+ composition issues = regen
+
+
+# ─── Pre-publish quality gate ────────────────────────────────────────────────
+
+@dataclass
+class PrePublishCheckResult:
+    """
+    Verdict from the pre-upload quality gate. The caller (publisher) uses
+    `severity` to decide whether to ship, warn, or regenerate.
+
+    severity semantics:
+      - "pass":      ship as-is.
+      - "soft_fail": 1-2 minor composition nits; warn in logs but ship.
+                     Regenerating every near-miss burns the fal.ai budget
+                     for marginal quality gains.
+      - "hard_fail": corpus drift OR unreadable brightness OR 3+ compo
+                     issues. Regenerate once with suggested_prompt_additions
+                     appended to the still prompt. If the regen also fails,
+                     ship the BETTER of the two (higher corpus similarity).
+
+    suggested_prompt_additions: short phrases to append to the still prompt
+    on regen. Each phrase is lifted from `diagnose()`s suggestion templates
+    so pre/post gate rewrites stay consistent.
+    """
+    passed:                       bool
+    severity:                     str   # "pass" | "soft_fail" | "hard_fail"
+    composition:                  CompositionScore
+    corpus_sim:                   CorpusSimilarity
+    issues:                       list[str]
+    suggested_prompt_additions:   list[str]
+
+
+def pre_publish_check(
+    image_path: Path,
+    bpm:        int,
+    *,
+    log_event:  bool = True,
+    track_title: str = "",
+) -> PrePublishCheckResult:
+    """
+    Pre-upload quality gate for a freshly generated thumbnail keyframe.
+
+    Runs the same composition + corpus-similarity scorers used by the
+    post-publish weekly report, but applies a SEPARATE set of thresholds
+    calibrated for "should we ship this" vs "did this underperform".
+
+    Called from publisher.publish_track() right after the hero/thumbnail
+    keyframe image is written — BEFORE any Kling morph spending or
+    Shotstack render. A hard_fail here costs one extra Flux call
+    (~$0.08) to regenerate; failing to gate means shipping a
+    low-CTR thumbnail that wastes the whole upload's opportunity.
+
+    When the corpus is absent (first-ever run, never harvested) this
+    returns severity="soft_fail" with a single drift issue — we don't
+    want to block publishes on missing-corpus infrastructure. Operator
+    fixes the corpus, next run gates properly.
+    """
+    composition = score_composition(image_path)
+    corpus_sim  = score_vs_corpus(image_path, bpm, top_k=30)
+
+    issues: list[str] = []
+    suggestions: list[str] = []
+    hard_flags = 0   # count of "hard" issues — 1 triggers hard_fail by itself
+
+    # ── Corpus-drift gate ───────────────────────────────────────────────
+    # Two-tier: hard gate only fires on DEEP drift (below p3 of the
+    # viral distribution), soft gate warns on moderate drift (below p10).
+    # Middle ground is fine — the corpus is diverse.
+    if corpus_sim.nearest_title.startswith("(") and "corpus" in corpus_sim.nearest_title.lower():
+        # Infrastructure failure: corpus missing or unreadable. Don't
+        # block a live publish on that; caller can warn.
+        issues.append(
+            f"Corpus unavailable ({corpus_sim.nearest_title}) — similarity gate "
+            f"degraded to soft-fail. Populate content/images/proven_viral/."
+        )
+    elif corpus_sim.mean_similarity < PRE_PUBLISH_HARD_DRIFT_THRESHOLD:
+        issues.append(
+            f"HARD: off-theme — mean sim {corpus_sim.mean_similarity:.2f} < "
+            f"hard floor {PRE_PUBLISH_HARD_DRIFT_THRESHOLD:.2f} (below viral p3). "
+            f"Nearest viral: \"{corpus_sim.nearest_title}\" "
+            f"({corpus_sim.nearest_views:,} views, sim {corpus_sim.nearest_similarity:.2f})"
+        )
+        hard_flags += 1
+    elif corpus_sim.mean_similarity < PRE_PUBLISH_SOFT_DRIFT_THRESHOLD:
+        issues.append(
+            f"mild drift — mean sim {corpus_sim.mean_similarity:.2f} < "
+            f"soft floor {PRE_PUBLISH_SOFT_DRIFT_THRESHOLD:.2f}. Nearest viral: "
+            f"\"{corpus_sim.nearest_title}\" (sim {corpus_sim.nearest_similarity:.2f})"
+        )
+
+    # ── Composition gates ───────────────────────────────────────────────
+    if composition.brightness_mean < PRE_PUBLISH_HARD_BRIGHTNESS_MIN:
+        issues.append(
+            f"HARD: unreadably dark — brightness {composition.brightness_mean:.0f} "
+            f"< hard floor {PRE_PUBLISH_HARD_BRIGHTNESS_MIN}. YouTube mobile "
+            f"thumbnail will be a black square."
+        )
+        suggestions.append(
+            "brighter golden-hour light on the subject's face, warm amber rim-lighting, "
+            "overall exposure raised"
+        )
+        hard_flags += 1
+    elif composition.brightness_mean < VIRAL_BASELINE["brightness_min"]:
+        issues.append(
+            f"brightness {composition.brightness_mean:.0f} < viral baseline "
+            f"{VIRAL_BASELINE['brightness_min']}"
+        )
+        suggestions.append(
+            "brighter golden-hour light on the subject's face, warm amber rim-lighting"
+        )
+
+    if composition.saturation_mean < VIRAL_BASELINE["saturation_min"]:
+        issues.append(
+            f"low saturation {composition.saturation_mean:.2f} < viral baseline "
+            f"{VIRAL_BASELINE['saturation_min']:.2f}"
+        )
+        suggestions.append(
+            "deeper saturated tones, rich terracotta and gold and indigo, "
+            "cinematic grade with color punch"
+        )
+
+    if composition.contrast < VIRAL_BASELINE["contrast_min"]:
+        issues.append(
+            f"flat contrast {composition.contrast:.0f} < viral baseline "
+            f"{VIRAL_BASELINE['contrast_min']}"
+        )
+        suggestions.append(
+            "dramatic side-lighting with deep obsidian-black shadow on one side, "
+            "single golden key light carving the face"
+        )
+
+    if composition.center_bias < VIRAL_BASELINE["center_bias_min"]:
+        issues.append(
+            f"weak center focus — center-bias {composition.center_bias:.2f} < "
+            f"{VIRAL_BASELINE['center_bias_min']:.2f}"
+        )
+        suggestions.append(
+            "tighter crop so the subject's face occupies 70 percent of the frame, "
+            "shallow depth of field with background fully blurred"
+        )
+
+    if not composition.palette_on_brand:
+        issues.append(
+            f"off-palette — dominant RGB {composition.dominant_rgb} not in "
+            f"locked Holy Rave token set"
+        )
+        suggestions.append(
+            "dominant palette of terracotta #b8532a and indigo-night #1a2a4a "
+            "with liturgical gold #d4af37 accent only"
+        )
+
+    # ── Verdict ─────────────────────────────────────────────────────────
+    severity: str
+    if hard_flags > 0 or len(issues) >= PRE_PUBLISH_HARD_ISSUES_COUNT:
+        severity = "hard_fail"
+    elif issues:
+        severity = "soft_fail"
+    else:
+        severity = "pass"
+
+    result = PrePublishCheckResult(
+        passed=(severity == "pass"),
+        severity=severity,
+        composition=composition,
+        corpus_sim=corpus_sim,
+        issues=issues,
+        suggested_prompt_additions=suggestions,
+    )
+
+    if log_event:
+        cfg.ensure_workspace()
+        LEARNING_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with open(LEARNING_LOG, "a") as f:
+            f.write(json.dumps({
+                "timestamp":         datetime.now(timezone.utc).isoformat(),
+                "event":             "pre_publish_check",
+                "track_title":       track_title,
+                "image_path":        str(image_path),
+                "bpm":               bpm,
+                "severity":          severity,
+                "mean_similarity":   round(corpus_sim.mean_similarity, 3),
+                "nearest_viral":     corpus_sim.nearest_title,
+                "nearest_sim":       round(corpus_sim.nearest_similarity, 3),
+                "brightness":        round(composition.brightness_mean, 1),
+                "saturation":        round(composition.saturation_mean, 3),
+                "contrast":          round(composition.contrast, 1),
+                "center_bias":       round(composition.center_bias, 3),
+                "palette_on_brand":  composition.palette_on_brand,
+                "issue_count":       len(issues),
+            }) + "\n")
+
+    logger.info(
+        "pre_publish_check | %s | sev=%s | sim=%.2f | bright=%.0f | sat=%.2f | "
+        "contrast=%.0f | center=%.2f | palette=%s | issues=%d",
+        track_title or image_path.name, severity,
+        corpus_sim.mean_similarity, composition.brightness_mean,
+        composition.saturation_mean, composition.contrast,
+        composition.center_bias, composition.palette_on_brand, len(issues),
+    )
+    return result
+
 
 def diagnose(
     video_id:      str,
