@@ -51,6 +51,46 @@ from content_engine.youtube_longform.prompt_builder import build_prompt
 logger = logging.getLogger("test_morph_loop")
 
 
+def _truncate_story(story: motion.MorphStory, n: int) -> motion.MorphStory:
+    """
+    Truncate a MorphStory to the first N keyframes and synthesize a closing
+    wrap morph (kf_N → kf_1) using the canonical story's final morph as a
+    structural template. The canonical wrap morph was already written to
+    close the full ring (kf_last → kf_1), so its motion language is a
+    reasonable starting point even when N < len(keyframes).
+
+    Used to keep test runs cheap on long-chain stories like Halleluyah
+    (9 keyframes, ~$7.80 at 10s Kling O3) without mutating motion.STORIES.
+    A 3-keyframe subset gives the same visual vocabulary at ~$2.75.
+    """
+    if n < 2:
+        raise ValueError(f"--keyframes must be >= 2 (got {n})")
+    if n >= len(story.keyframes):
+        return story  # no-op: full story
+
+    kept_kfs     = story.keyframes[:n]
+    kept_morphs  = list(story.morphs[:n - 1])   # chains 1→2 … N-1→N
+    canonical_wrap = story.morphs[-1]           # kf_last → kf_1 in original
+
+    last_kf_id  = kept_kfs[-1].keyframe_id
+    first_kf_id = kept_kfs[0].keyframe_id
+    synth_wrap = motion.MorphClip(
+        clip_id=f"{last_kf_id}__to__{first_kf_id}__synth_wrap",
+        from_kf_id=last_kf_id,
+        to_kf_id=first_kf_id,
+        motion_prompt=canonical_wrap.motion_prompt,
+        duration_s=canonical_wrap.duration_s,
+    )
+    kept_morphs.append(synth_wrap)
+
+    return motion.MorphStory(
+        story_id=f"{story.story_id}__first{n}",
+        keyframes=kept_kfs,
+        morphs=kept_morphs,
+        thumbnail_keyframe=story.thumbnail_keyframe,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--track",    default="Jericho",
@@ -59,6 +99,12 @@ def main() -> int:
                         help="Story ID from motion.STORIES")
     parser.add_argument("--seconds",  type=int, default=cfg.KLING_O3_CLIP_SECONDS,
                         help="Kling O3 clip length per morph (5 or 10)")
+    parser.add_argument("--keyframes", type=int, default=0,
+                        help="Truncate the story to the first N keyframes + synthesize a "
+                             "wrap morph from kf_N back to kf_1. 0 = full story. Use this "
+                             "to keep tests cheap on long-chain stories — e.g. Halleluyah "
+                             "has 9 keyframes; --keyframes 3 gives a 30s @ 10s Kling test "
+                             "at ~$2.75 instead of ~$7.80 for the full chain.")
     parser.add_argument("--loops",    type=int, default=1,
                         help="How many full chain-loops to stitch. Ignored when --preview-seconds is set.")
     parser.add_argument("--preview-seconds", type=int, default=0,
@@ -70,20 +116,31 @@ def main() -> int:
     parser.add_argument("--no-stitch", action="store_true", help="Render clips but skip stitch")
     args = parser.parse_args()
 
+    if args.seconds not in (5, 10):
+        print("✗ --seconds must be 5 or 10 (Kling O3 constraint)", file=sys.stderr)
+        return 1
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
 
-    # Validate story + clip length
+    # Validate story + optional keyframe truncation.
+    # When --keyframes is set, register the truncated story in motion.STORIES
+    # under a new id so generate_morph_loop() can look it up normally. This
+    # keeps the production API (story_id lookup) untouched — truncation is a
+    # pure test-harness concern.
     if args.story not in motion.STORIES:
         print(f"✗ Unknown story '{args.story}'. Available: {list(motion.STORIES)}", file=sys.stderr)
         return 1
     story = motion.STORIES[args.story]
 
-    if args.seconds not in (5, 10):
-        print("✗ --seconds must be 5 or 10 (Kling O3 constraint)", file=sys.stderr)
-        return 1
+    original_keyframe_count = len(story.keyframes)
+    if args.keyframes > 0:
+        story = _truncate_story(story, args.keyframes)
+        motion.STORIES[story.story_id] = story  # runtime-only registration
+        args.story = story.story_id             # redirect generator to the subset
+
     if args.loops < 1:
         print("✗ --loops must be >= 1", file=sys.stderr)
         return 1
@@ -110,8 +167,13 @@ def main() -> int:
     else:
         preview_seconds = loop_seconds * args.loops
 
+    truncated_suffix = (
+        f"  [truncated from {original_keyframe_count} keyframes]"
+        if args.keyframes > 0 else ""
+    )
+
     print("═══════════════════════════════════════════════════════════════")
-    print(f"  Morph-loop test — story '{args.story}'")
+    print(f"  Morph-loop test — story '{args.story}'{truncated_suffix}")
     print(f"  Target track:   {args.track}")
     print(f"  Keyframes:      {kf_count}  ({[kf.keyframe_id for kf in story.keyframes]})")
     print(f"  Morphs:         {morph_count}  (Kling O3 @ ${0.084*args.seconds:.2f}/{args.seconds}s each)")
@@ -236,9 +298,8 @@ def main() -> int:
     print(f"Spend:      ~${cost:.2f}")
     print(f"Preview:    {desktop}")
     print(f"Source MP4: {preview_path}")
-    print("\nIf the morph chain reads well, the same 3-keyframe loop becomes the")
-    print(f"Jericho publish background (looped ~{420 // loop_seconds}× across the 7-min track).")
-    print("If quality is premium enough, we scale to 6–8 keyframes per track.")
+    print(f"\nIf the morph chain reads well, the loop becomes the track's publish")
+    print(f"background (looped to fill the full track length).")
     return 0
 
 
