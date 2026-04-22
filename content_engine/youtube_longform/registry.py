@@ -37,21 +37,47 @@ REGISTRY_FILE = cfg.REGISTRY_DIR / "youtube_longform.jsonl"
 
 def already_published(track_title: str) -> Optional[dict]:
     """
-    Return the first registered upload for this track if one exists.
-    Used to prevent accidental double-publish on retry.
+    Return a registry row for this track, preferring a SUCCESSFUL
+    publish (youtube_id set, no error, not a dry-run) over any
+    failure/dry-run row that happens to precede it in the JSONL.
+    Used by the publisher's dedup guard.
+
+    The earlier version returned the FIRST row by track name. That was
+    wrong whenever a dry-run or errored row preceded a successful
+    publish — the publisher's guard (`not dry_run and not error`)
+    would pass on the first row, and the cron would re-render the
+    track and waste money. 2026-04-22 Selah re-run bug: worktree
+    registry had the success, main's registry had only
+    dry-run + error rows preceding that, dedup returned the first
+    (dry-run) row, publisher decided the track wasn't really published
+    yet, and $3.77 evaporated re-generating what already existed.
+
+    Return priority:
+      1. First row where youtube_id is set and error is None and
+         dry_run is False  (the real "already published" signal)
+      2. First row matching the track name otherwise (may be a
+         failure/dry-run — lets callers inspect prior-attempt context)
+      3. None if the track never appears.
     """
     if not REGISTRY_FILE.exists():
         return None
     key = track_title.lower().strip()
+    first_seen: Optional[dict] = None
     with open(REGISTRY_FILE, "r") as f:
         for line in f:
             try:
                 row = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if row.get("track_title", "").lower().strip() == key:
-                return row
-    return None
+            if row.get("track_title", "").lower().strip() != key:
+                continue
+            if (row.get("youtube_id")
+                    and not row.get("error")
+                    and not row.get("dry_run")):
+                return row   # Successful publish — use this
+            if first_seen is None:
+                first_seen = row
+    return first_seen
 
 
 def append(result: PublishResult) -> None:
