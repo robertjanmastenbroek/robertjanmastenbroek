@@ -577,11 +577,13 @@ DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 # heavy-handed sci-fi (no cybernetic warriors, no holographic HUDs, no
 # cyberpunk neon). Think "Ancient Truth. Future Sound." as a visual rule:
 # the biblical material reads first, the futuristic quality registers second
-# as "why is this video's flame glowing so cleanly, why do those Hebrew
-# letters feel alive."
+# as "why is this video's flame glowing so cleanly."
 #
 # 10% presence, never 50%. Pick 1-3 elements per story, not all:
-#   · Paleo-Hebrew letters that glow with holographic pale light
+#   · Ancient carved symbols or unreadable glyphic marks glowing with
+#     holographic pale light (NEVER specify a specific letter or word —
+#     diffusion models can't reliably render non-Latin script; they default
+#     to a visually similar Latin character and the result looks off-brand)
 #   · Ancient flames with subtle plasma/energy quality (clean halo, no smoke
 #     artifacts when we want them crisp — crisp is futuristic)
 #   · Dust particles rendered as faintly luminescent motes
@@ -590,7 +592,8 @@ DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 #   · Prismatic light shafts through smoke or dust
 #   · Fiber-optic glinting threads woven into hand-loomed garments
 #   · Architectural ornament that subtly rotates/breathes between frames
-#   · Constellations arranging into Paleo-Hebrew letters or sacred symbols
+#   · Constellations arranging into abstract geometric patterns or sacred
+#     symbols (NOT into specific letters of any alphabet — see rule above)
 #   · Particle effects suggesting breath, wind, spirit as clean rendered
 #     geometry (Ezekiel 37 dry bones with subtle circuit-vein glow)
 #   · Minor chromatic aberration or lens flares on sacred objects at peak
@@ -599,6 +602,16 @@ DEFAULT_STORY: MorphStory = RJM_HERO_STORY
 # Banned as too-literal-sci-fi: cybernetic body parts, holographic UI,
 # cyberpunk-color neon (purple/teal/hot-pink), floating text overlays,
 # augmented-reality HUD frames, robot or android subjects.
+#
+# Banned as unrenderable: any specific word, letter, or inscription the
+# model is asked to render as recognizable text. Hebrew / Paleo-Hebrew /
+# Greek / Aramaic / Latin — all unreliable in Flux. The 2026-04-22 Not By
+# Might thumbnail asked for the Paleo-Hebrew letter ר and got a Latin R
+# back. Refer instead to "ancient carved marks", "unreadable inscriptions",
+# "glyphic ornament", "abstract glowing symbols" — the imagery without the
+# literacy requirement. If a track title truly requires rendered text (e.g.
+# a title card), generate it as a separate Shotstack overlay after the
+# fact, never inside a Flux/Kling prompt.
 #
 # Convenience helper:
 
@@ -1741,9 +1754,9 @@ _SHEMA_KEYFRAMES: list[Keyframe] = [
             "small square dark-leather box containing parchment, "
             "bound by a long black leather strap wound seven times "
             "around the forearm in tight neat coils and continuing up "
-            "over the back of the hand in a specific ritual pattern "
-            "spelling the Hebrew letter Shin, the leather deeply worn "
-            "and aged, the Hebrew letters SHADDAI visibly impressed "
+            "over the back of the hand in the specific ritual braid-"
+            "pattern of Hebrew tefillin binding, the leather deeply worn "
+            "and aged, a single raised sacred ornament visibly impressed "
             "into the box, the skin sun-darkened and strong, a single "
             "silver ring on the hand, deep indigo-night background "
             "with only the hand illuminated by a cool moon-silver key "
@@ -1760,8 +1773,8 @@ _SHEMA_KEYFRAMES: list[Keyframe] = [
             "Wide cinematic heroic shot of the two stone tablets of "
             "the Law carved from dark rough-hewn granite, resting "
             "upright against a vertical desert stone at deep night, "
-            "each tablet incised deeply with Paleo-Hebrew letters of "
-            "the Ten Commandments glowing a faint cool silver as if "
+            "each tablet incised deeply with rows of ancient carved "
+            "glyphic marks glowing a faint cool silver as if "
             "freshly cut, the desert stretching dark behind under a "
             "vast Milky Way overhead, subtle silver starlight catching "
             "the tablet edges, no fire anywhere, no human figures, "
@@ -1817,7 +1830,7 @@ _SHEMA_KEYFRAMES: list[Keyframe] = [
             "cedar-wood doorpost at night with a small hand-hewn "
             "silver mezuzah case attached vertically to the post at "
             "eye-height, the silver case aged and subtly embossed "
-            "with the Hebrew letter SHIN, a tiny rolled parchment "
+            "with a single raised sacred ornament mark, a tiny rolled parchment "
             "scroll inside just visible through a small open window, "
             "the cedar grain deeply textured, a weathered sun-darkened "
             "Hebrew hand just entering the frame from the right "
@@ -1841,12 +1854,13 @@ _SHEMA_KEYFRAMES: list[Keyframe] = [
             "bronze oil lamp burning between them casting warm amber "
             "light on the elder's weathered face and long gray-"
             "streaked beard, his hand extended open-palm as he teaches "
-            "the Shema, the Hebrew letters of the prayer faintly "
-            "visible as cool silver impressions in the air just above "
-            "the children's heads, the tent walls in deep indigo "
+            "the Shema, fine silver glyphic ornament marks faintly "
+            "visible as cool impressions in the air just above "
+            "the children's heads (abstract decorative marks, not "
+            "specific readable letters), the tent walls in deep indigo "
             "shadow, subtle star-glow visible through the open tent "
             "flap behind, cinematic middle heroic framing, palette "
-            "indigo-night + warm-amber-lamp + silver-letter-glow + "
+            "indigo-night + warm-amber-lamp + silver-ornament-glow + "
             "cedar-wool, Iron Age Levant c. 1000 BCE Shema teaching, "
             "photographic realism, 16:9, --style raw"
         ),
@@ -1856,11 +1870,10 @@ _SHEMA_KEYFRAMES: list[Keyframe] = [
         still_prompt=(
             "Macro cinematic overhead close-up of an unrolled ancient "
             "parchment scroll of the Shema prayer lying flat on a "
-            "low dark wooden table at night, deep black iron-gall ink "
-            "Paleo-Hebrew lettering flowing vertically down the "
-            "parchment in crisp columns with the opening verse "
-            "Shema Yisrael carefully calligraphed in Paleo-Hebrew, "
-            "the parchment "
+            "low dark wooden table at night, flowing vertical columns "
+            "of ancient Paleo-Hebrew calligraphic script in deep black "
+            "iron-gall ink across the parchment (unreadable decorative "
+            "marks, not specific readable words), the parchment "
             "weathered and amber-aged with visible fiber texture, a "
             "single small bronze oil lamp at the upper corner of "
             "frame casting warm amber light across the scroll, subtle "
@@ -1878,14 +1891,15 @@ _SHEMA_KEYFRAMES: list[Keyframe] = [
             "Wide cinematic overhead heroic shot looking straight up "
             "into a vast deep-indigo-black night sky filled with the "
             "full Milky Way galactic arch, among the thousands of "
-            "bright silver stars an arrangement of Paleo-Hebrew "
-            "letters forms from the constellations themselves — the "
-            "letters שְׁמַע יִשְׂרָאֵל (Shema Yisrael) faintly traced in "
-            "glowing silver-pale connecting lines between stars, the "
-            "letters ghostly and cool against the cosmic background, "
+            "bright silver stars an arrangement of sacred geometric "
+            "glyph-shapes forms from the constellations themselves — "
+            "abstract ancient-looking silver-pale connecting lines "
+            "between stars in the rough visual cadence of Paleo-Hebrew "
+            "script without resolving into any specific readable word, "
+            "the shapes ghostly and cool against the cosmic background, "
             "no ground visible, pure overhead sky, cinematic ultra-"
             "wide heroic overhead framing, palette deep-indigo-night "
-            "+ silver-starlight + obsidian-space + pale-letter-glow, "
+            "+ silver-starlight + obsidian-space + pale-glyph-glow, "
             "Iron Age Levant c. 1000 BCE sky-covenant imagery, "
             "photographic realism, 16:9, --style raw"
         ),
@@ -1972,7 +1986,7 @@ _SHEMA_MORPHS: list[MorphClip] = [
             "doorway into a goat-hair tent interior lit by a single "
             "amber oil lamp, the view settling on an elder teaching "
             "the Shema to five seated children with cool silver "
-            "letters of the prayer forming faintly in the air above "
+            "glyphic ornament marks forming faintly in the air above "
             "their heads. Slow reverent interior pass, covenantal "
             "intimacy register."
         ),
@@ -1983,7 +1997,7 @@ _SHEMA_MORPHS: list[MorphClip] = [
         to_kf_id="rjm_shema_open_scroll",
         motion_prompt=(
             "Cinematic drone camera descending from the silver "
-            "letters floating above the children, tracking forward "
+            "glyphic ornament floating above the children, tracking forward "
             "toward the elder's teaching hand and the low wooden "
             "table in front of him, converging in macro overhead "
             "close-up on an unrolled parchment Shema scroll laid flat "
@@ -1997,12 +2011,13 @@ _SHEMA_MORPHS: list[MorphClip] = [
         to_kf_id="rjm_shema_letters_sky",
         motion_prompt=(
             "Cinematic drone camera hovering over the Shema scroll as "
-            "the black iron-gall Paleo-Hebrew letters begin to "
-            "luminesce and lift upward from the parchment in glowing "
+            "the black iron-gall Paleo-Hebrew calligraphic ornament begins "
+            "to luminesce and lift upward from the parchment in glowing "
             "silver, rising through the tent ceiling and into the "
-            "night sky where they settle among the Milky Way stars "
-            "forming the letters שְׁמַע יִשְׂרָאֵל traced in silver lines "
-            "between distant stars. Slow awed vertical ascent, "
+            "night sky where it settles among the Milky Way stars "
+            "forming abstract sacred geometric shapes traced in silver "
+            "lines between distant stars (unreadable decorative pattern, "
+            "not specific letters). Slow awed vertical ascent, "
             "covenantal register."
         ),
     ),
@@ -2032,7 +2047,7 @@ _SHEMA_THUMBNAIL_KEYFRAME = Keyframe(
         "of the Milky Way inside each pupil, weathered bearded jaw, "
         "a black leather tefillin strap wound across his forehead "
         "with the dark-leather shel-rosh box centered above the brow "
-        "impressed with the Hebrew letter SHIN, faint silver-thread "
+        "impressed with a single raised sacred ornament mark, faint silver-thread "
         "embroidery at his shoulder catching cool starlight, cool "
         "silver moonlight from the right carving half his face, deep "
         "obsidian-indigo shadow on the opposite side, face occupies "

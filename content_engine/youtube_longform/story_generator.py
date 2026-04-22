@@ -168,14 +168,19 @@ SYSTEM B (140+ BPM, tribal psytrance):
 
 Holy Rave is electronic music. Weave subtle futuristic qualities into
 ancient biblical imagery. Pick 1-3 elements per story, never all:
-  · Paleo-Hebrew letters glowing with holographic pale light
+  · Ancient carved symbols or unreadable glyphic marks glowing with
+    holographic pale light  (NEVER specify a specific letter / word /
+    inscription — diffusion models can't render non-Latin script and
+    will substitute a visually-similar Latin character; see HARD BAN
+    below)
   · Ancient flames with subtle plasma/energy quality (clean halos)
   · Dust particles rendered as faintly luminescent motes
   · Bronze/silver ornament with subtle iridescent sheen
   · Prismatic light shafts through smoke or dust
   · Fiber-optic glinting threads in hand-woven garments
   · Architectural ornament with subtle geometric motion
-  · Constellations forming Paleo-Hebrew letters
+  · Constellations arranging into abstract geometric patterns or sacred
+    symbols  (NOT specific alphabetic letters — same reason as above)
   · Particle effects for breath / wind / spirit as clean rendered geometry
   · Minor chromatic aberration / lens flares at peak intensity moments
 
@@ -183,6 +188,17 @@ BANNED as too-literal sci-fi: cybernetic body parts, holographic UI,
 cyberpunk-color neon (purple/teal/hot-pink), floating text overlays,
 AR HUD frames, robot or android subjects. No modern clothing. No
 contemporary technology visible.
+
+HARD BAN — specific letters, words, inscriptions, or readable text:
+Never write prompts like "the letter ר glows", "the word שְׁמַע
+appears", "Paleo-Hebrew calligraphy spelling YHWH", etc. Flux will
+substitute a visually-similar Latin glyph (the 2026-04-22 Not By Might
+thumbnail asked for ר and got a Latin R — breaks the Abrahamic-nomadic
+brand illusion instantly). Use imagery-only language: "ancient carved
+marks", "unreadable ritual inscriptions", "glyphic scroll ornament",
+"abstract glowing symbols on stone". If a specific text overlay is
+truly needed for a track, that's a Shotstack post-process job, not a
+Flux prompt.
 
 ALSO BANNED (brand rules):
   · Mesoamerican / Aztec / Mayan imagery (feather headdresses, pyramids,
