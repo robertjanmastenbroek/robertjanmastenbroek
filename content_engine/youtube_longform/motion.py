@@ -858,12 +858,382 @@ SELAH_STORY: MorphStory = MorphStory(
 STORIES[SELAH_STORY.story_id] = SELAH_STORY
 
 
+# ─── STYLE VARIETY DOCTRINE ──────────────────────────────────────────────────
+# Every new track story MUST visually diverge from the previously-shipped ones
+# to prevent channel monotony. Every story picks a distinct combination from
+# the matrix below — think of them as "style DNA" dimensions:
+#
+#   PERIOD / ERA
+#     · iron_age_levant_c1200      (Jericho: warrior-era Canaan)
+#     · first_temple_c1000          (Kadosh: Solomon's temple, sacred)
+#     · bronze_age_mesopotamia      (Selah: contemplative oasis culture)
+#     · exodus_wilderness_c1450     (Exodus-family tracks: caravan/tent)
+#     · second_temple_intertest.    (On All Flesh / Ruach: prophetic)
+#
+#   PALETTE-KEY
+#     · golden_hour_warm            (Jericho)
+#     · pre_dawn_mist               (Selah — cool + gold)
+#     · fiery_ecstatic              (Halleluyah — amber/red/black-night)
+#     · white_silver_sacred         (Kadosh — white linen, silver, indigo)
+#     · sky_wind_breath             (Ruach — pale blue + cloud white)
+#     · crimson_supplication        (Have Mercy On Me — blood red + gold)
+#
+#   SUBJECT-FOCUS
+#     · character_heroic_portrait   (Jericho warrior/priestess close-ups)
+#     · contemplative_solo          (Selah handpan/oud/elder meditative)
+#     · ecstatic_crowd_ritual       (Halleluyah dancers, fire circle)
+#     · sacred_architecture         (Kadosh temple interior, menorah, altar)
+#     · prophetic_vision            (Ruach breath/wind/spirit imagery)
+#     · single_lament               (Have Mercy On Me solo kneeling figure)
+#
+#   CAMERA-ENERGY (matched to BPM tier)
+#     · floating_slow      — 126 and below (meditative)
+#     · flowing_medium     — 127-138 (processional/gathering)
+#     · sweeping_ecstatic  — 139+ (ecstatic psytrance; fast arcs, particle bursts)
+#
+# Two stories must not share more than 2 of the 4 dimensions. Jericho
+# (iron_age + golden_hour + character_heroic + sweeping_ecstatic) vs Halleluyah
+# (second_temple + fiery_ecstatic + ecstatic_crowd_ritual + sweeping_ecstatic)
+# share only "sweeping_ecstatic" — good separation.
+#
+# When adding a new track, pick the combination that differs most from what's
+# already published recently. The weekly thumbnail-learning report will flag
+# when the corpus-similarity scores start clustering (channel drift warning).
+
+# ─── HALLELUYAH — 140 BPM tribal psytrance, ecstatic crowd ritual ────────────
+# Deliberate divergence from Jericho: celebration vs confrontation. No walls,
+# no warrior/priestess duo, no cool indigo-dusk. Instead: ecstatic fire-circle,
+# spinning drum ritual, the hot saturated amber-red of night ceremony, the
+# aerial geometry of spiral dance. This is the "release" to Jericho's "siege."
+
+_HALLELUYAH_KEYFRAMES: list[Keyframe] = [
+    Keyframe(
+        keyframe_id="rjm_halleluyah_fire_dancer",
+        still_prompt=(
+            "Close-up heroic cinematic portrait of an Iron Age Hebrew "
+            "ecstatic female dancer in her late twenties mid-spin around a "
+            "desert bonfire, face tilted upward toward the night sky with "
+            "eyes softly closed in ecstatic praise, wild dark curled hair "
+            "whipping outward from the spin, layered silver coin necklaces "
+            "and silver bangle bracelets catching the firelight, a "
+            "hand-woven crimson-and-gold shawl trailing through the air "
+            "behind her, warm bronze sparks and glowing embers flying "
+            "through the frame, a deep-red-and-black starry desert night "
+            "behind her, harsh amber fire-lit side-lighting from below "
+            "the frame, deep obsidian shadows, high contrast, shallow "
+            "depth of field, saturated amber-crimson-black palette, Iron "
+            "Age Levant ceremonial fire-dance c. 1000 BCE, photographic "
+            "realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_halleluyah_drum_circle",
+        still_prompt=(
+            "Wide cinematic heroic establishing shot of an Iron Age Hebrew "
+            "drum circle of seven hand-drummers seated around a roaring "
+            "central desert bonfire at deep night, each drummer silhouetted "
+            "in warm amber backlight striking hand-hewn goatskin drums and "
+            "darbukas, flames reaching tall into the black sky with orange "
+            "sparks spiraling upward, the ground a deep warm ochre with "
+            "dark cast shadows, a ring of torches planted in the sand "
+            "beyond the circle, cinematic ultra-wide heroic framing from "
+            "slightly above, saturated amber-crimson-black palette, Iron "
+            "Age Levant ceremonial drum circle c. 1000 BCE, photographic "
+            "realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_halleluyah_torches",
+        still_prompt=(
+            "Wide cinematic establishing shot of three tall hand-hewn "
+            "bronze-banded wooden torches planted vertically in the "
+            "desert sand at deep night, each flame reaching over three "
+            "meters skyward in an amber-orange column, thick black smoke "
+            "trailing upward into a starry indigo-black sky, glowing "
+            "embers and ash swirling in the warm updraft around the "
+            "torches, the far desert horizon in deep indigo shadow, a "
+            "distant glow of a larger bonfire in the background blurred, "
+            "cinematic ultra-wide heroic framing from low angle, "
+            "saturated amber-crimson-black palette, Iron Age Levant "
+            "ceremonial night c. 1000 BCE, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_halleluyah_chanting_elder",
+        still_prompt=(
+            "Close-up heroic cinematic portrait of an Iron Age Hebrew "
+            "elder in his sixties standing with both hands raised above "
+            "his head in ecstatic praise, his mouth open mid-shout "
+            "(halleluyah on his lips), eyes blazing open looking toward "
+            "the heavens, a long gray-streaked beard, weathered "
+            "sun-darkened skin, wearing a rough-spun ivory linen tunic "
+            "and a hand-woven crimson-and-gold striped tallit-style "
+            "prayer shawl draped over his shoulders with tzitzit tassels, "
+            "hand-wrought silver beaded necklaces, warm amber firelight "
+            "up-lighting his face from below in dramatic Rembrandt "
+            "lighting, obsidian-black shadows behind him, high contrast, "
+            "shallow depth of field, saturated amber-crimson-black "
+            "palette, Iron Age Levant c. 1000 BCE ecstatic praise, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_halleluyah_spiral_dance",
+        still_prompt=(
+            "Aerial cinematic establishing shot looking straight down at "
+            "a large spiral formation of twenty Iron Age Hebrew ecstatic "
+            "dancers moving counter-clockwise around a central desert "
+            "bonfire at deep night, each figure silhouetted in the amber "
+            "glow with arms lifted, crimson and ochre fabrics trailing, "
+            "concentric spiral paths traced in the sand by their feet, "
+            "the central fire throwing golden light radially outward, "
+            "orange embers drifting in the updraft, the geometry forming "
+            "a sacred-dance spiral, cinematic overhead heroic framing, "
+            "saturated amber-crimson-black palette, Iron Age Levant "
+            "spiral dance c. 1000 BCE, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_halleluyah_raised_hand",
+        still_prompt=(
+            "Macro cinematic close-up of a single weathered Iron Age "
+            "Hebrew hand raised high toward a star-filled indigo-black "
+            "desert night sky, the hand strong and sun-darkened with "
+            "visible knuckles and tendons, three hand-wrought silver "
+            "bangles on the wrist, a single polished lapis-lazuli signet "
+            "ring on the middle finger, warm amber sparks and bright "
+            "embers rising past the fingers toward the stars, a bright "
+            "firelight glow from below the frame, black shadow around "
+            "the arm, saturated amber-crimson-black palette with "
+            "star-silver accent, Iron Age Levant praise gesture c. 1000 "
+            "BCE, photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_halleluyah_embers",
+        still_prompt=(
+            "Macro cinematic abstract shot of a dense cloud of glowing "
+            "bronze embers and golden ash rising in a swirling updraft "
+            "against a pitch-black night sky, some embers bright white-"
+            "hot at their cores trailing amber and crimson halos, "
+            "individual embers in sharp focus with shallow depth blurring "
+            "the rest into a warm bokeh, no humans or objects visible, "
+            "pure elemental texture, saturated amber-crimson-black "
+            "palette, ceremonial fire c. 1000 BCE ember cloud, "
+            "photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_halleluyah_tambourine",
+        still_prompt=(
+            "Close-up cinematic heroic shot of a large Iron Age Hebrew "
+            "hand-hewn wooden tambourine lifted high overhead with both "
+            "hands, struck mid-ring with a burst of sparks from its "
+            "impact, eight polished bronze zills catching firelight, "
+            "the tambourine frame painted with faded ancient Levantine "
+            "geometric patterns in ochre and crimson, the wielder's "
+            "silhouetted arms and upper body below the tambourine "
+            "catching amber backlight, a blurred ecstatic crowd below, "
+            "warm fire-glow from behind, obsidian shadows, saturated "
+            "amber-crimson-black palette, Iron Age Levant celebration "
+            "c. 1000 BCE, photographic realism, 16:9, --style raw"
+        ),
+    ),
+    Keyframe(
+        keyframe_id="rjm_halleluyah_crowd_chant",
+        still_prompt=(
+            "Wide cinematic heroic establishing shot of a crowd of "
+            "thirty silhouetted Iron Age Hebrew celebrants facing a "
+            "single torch-bearing priest at the front of the gathering, "
+            "all of them with arms raised overhead in unified ecstatic "
+            "praise, the torch a bright amber column of flame throwing "
+            "golden light across the crowd from behind, a deep starry "
+            "black desert night sky overhead, faces lost in silhouette "
+            "except rim-lit edges in amber, hands and raised fabrics "
+            "catching firelight, thick dust and embers swirling through "
+            "the frame, cinematic ultra-wide heroic framing, saturated "
+            "amber-crimson-black palette, Iron Age Levant ecstatic "
+            "gathering c. 1000 BCE, photographic realism, 16:9, "
+            "--style raw"
+        ),
+    ),
+]
+
+_HALLELUYAH_MORPHS: list[MorphClip] = [
+    MorphClip(
+        clip_id="rjm_halleluyah_fire_dancer__to__drum_circle",
+        from_kf_id="rjm_halleluyah_fire_dancer",
+        to_kf_id="rjm_halleluyah_drum_circle",
+        motion_prompt=(
+            "Sweeping cinematic drone camera spinning outward around the "
+            "ecstatic fire dancer as her spin accelerates, her trailing "
+            "crimson shawl arcing through the frame, the drone pulls "
+            "backward in a wide aerial orbit revealing the full ring of "
+            "seven hand-drummers seated around the central bonfire, the "
+            "flames leaping tall in the deep night. Fast sweeping drone "
+            "motion matching 140 BPM ecstatic energy, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_halleluyah_drum_circle__to__torches",
+        from_kf_id="rjm_halleluyah_drum_circle",
+        to_kf_id="rjm_halleluyah_torches",
+        motion_prompt=(
+            "Cinematic drone camera rising rapidly through the shower of "
+            "rising embers and sparks from the central bonfire, ascending "
+            "through swirling warm ash into the black star-filled sky, "
+            "then sweeping laterally and descending past three tall "
+            "torch flames planted in the sand, the camera arcing in a "
+            "wide aerial curve around the torch column. Fast drone "
+            "kinetic motion matching 140 BPM ecstatic energy, never "
+            "static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_halleluyah_torches__to__chanting_elder",
+        from_kf_id="rjm_halleluyah_torches",
+        to_kf_id="rjm_halleluyah_chanting_elder",
+        motion_prompt=(
+            "Sweeping cinematic drone camera gliding through the warm "
+            "flame of the central torch, the fire filling the frame in "
+            "amber-red, then resolving through the flame to reveal the "
+            "face of the chanting Hebrew elder directly ahead with his "
+            "hands lifted skyward and mouth open mid-shout, the drone "
+            "pulls back with orbital motion carving his face in dramatic "
+            "firelight. Fast drone motion matching 140 BPM ecstatic "
+            "energy, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_halleluyah_chanting_elder__to__spiral_dance",
+        from_kf_id="rjm_halleluyah_chanting_elder",
+        to_kf_id="rjm_halleluyah_spiral_dance",
+        motion_prompt=(
+            "Cinematic drone camera pulling back quickly from the "
+            "chanting elder, the drone ascending vertically in a smooth "
+            "straight rise while rotating ninety degrees to face "
+            "straight down, revealing from above a sacred spiral "
+            "formation of twenty ecstatic dancers circling a central "
+            "bonfire, the aerial geometry clarifying as the drone "
+            "climbs. Fast drone motion matching 140 BPM ecstatic "
+            "energy, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_halleluyah_spiral_dance__to__raised_hand",
+        from_kf_id="rjm_halleluyah_spiral_dance",
+        to_kf_id="rjm_halleluyah_raised_hand",
+        motion_prompt=(
+            "Cinematic drone camera diving rapidly down from the aerial "
+            "spiral view toward one specific dancer below, accelerating "
+            "into a close-up of that dancer's raised hand, the hand "
+            "filling the frame against the starry night sky above, "
+            "embers streaming past the fingers. Fast drone dive motion "
+            "matching 140 BPM ecstatic energy, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_halleluyah_raised_hand__to__embers",
+        from_kf_id="rjm_halleluyah_raised_hand",
+        to_kf_id="rjm_halleluyah_embers",
+        motion_prompt=(
+            "Cinematic drone camera tracking the bright embers rising "
+            "past the raised hand upward into the black sky, the hand "
+            "falling out of the frame below as the drone follows the "
+            "embers higher and higher, the surrounding embers "
+            "multiplying into a dense glowing swirling cloud of "
+            "elemental fire-light. Fast drone ascent matching 140 BPM "
+            "ecstatic energy, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_halleluyah_embers__to__tambourine",
+        from_kf_id="rjm_halleluyah_embers",
+        to_kf_id="rjm_halleluyah_tambourine",
+        motion_prompt=(
+            "Cinematic drone camera surging through the ember cloud as "
+            "the embers compress and converge into a circular form "
+            "directly ahead, the convergence resolving into the polished "
+            "bronze zills of a tambourine being struck overhead, the "
+            "drone orbits around the tambourine catching the impact "
+            "burst of sparks. Fast drone motion matching 140 BPM "
+            "ecstatic energy, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_halleluyah_tambourine__to__crowd_chant",
+        from_kf_id="rjm_halleluyah_tambourine",
+        to_kf_id="rjm_halleluyah_crowd_chant",
+        motion_prompt=(
+            "Cinematic drone camera pulling back rapidly from the "
+            "tambourine while arcing laterally, the tambourine shrinking "
+            "in the frame revealing it was held by one figure at the "
+            "front of a massive crowd of ecstatic celebrants, the drone "
+            "continues pulling back and rising until the whole crowd "
+            "and the torch-bearing priest at the front are visible in "
+            "a wide ecstatic tableau. Fast drone motion matching 140 "
+            "BPM ecstatic energy, never static."
+        ),
+    ),
+    MorphClip(
+        clip_id="rjm_halleluyah_crowd_chant__to__fire_dancer",
+        from_kf_id="rjm_halleluyah_crowd_chant",
+        to_kf_id="rjm_halleluyah_fire_dancer",
+        motion_prompt=(
+            "Cinematic drone camera diving forward through the ecstatic "
+            "crowd toward the torch at the front, then continuing past "
+            "the torch flame and resolving into a close orbital shot "
+            "around the fire dancer mid-spin, the crimson shawl trailing "
+            "through the frame and embers swirling, the drone closes "
+            "its orbit completing the hypnotic loop. Fast drone motion "
+            "matching 140 BPM ecstatic energy, seamlessly closing the "
+            "loop."
+        ),
+    ),
+]
+
+_HALLELUYAH_THUMBNAIL_KEYFRAME = Keyframe(
+    keyframe_id="rjm_halleluyah_thumbnail",
+    still_prompt=(
+        "Ultra-close cinematic thumbnail portrait of an Iron Age Hebrew "
+        "ecstatic female priestess-dancer in her late twenties, piercing "
+        "direct eye contact with the camera, face tilted slightly "
+        "upward with a joyful half-smile of ecstatic praise, deep brown "
+        "eyes blazing with reflected firelight, strong cheekbones, warm "
+        "olive skin, layered silver coin necklaces catching amber "
+        "firelight, three silver bangles on her raised right wrist "
+        "visible at the frame edge, wild dark curled hair crowned with "
+        "a silver diadem set with crimson carnelian, warm glowing "
+        "bronze embers and sparks swirling through the air around her "
+        "face, harsh amber fire-lit key-lighting from the right, deep "
+        "obsidian-black shadow on the opposite side, face occupies 70 "
+        "percent of the frame, extremely high contrast, ultra-saturated "
+        "amber-crimson tones against pitch-black background, Iron Age "
+        "Levant ecstatic praise c. 1000 BCE, photographic realism, "
+        "16:9, --style raw"
+    ),
+)
+
+HALLELUYAH_STORY: MorphStory = MorphStory(
+    story_id="halleluyah_ecstatic_fire_circle",
+    keyframes=_HALLELUYAH_KEYFRAMES,
+    morphs=_HALLELUYAH_MORPHS,
+    thumbnail_keyframe=_HALLELUYAH_THUMBNAIL_KEYFRAME,
+)
+
+STORIES[HALLELUYAH_STORY.story_id] = HALLELUYAH_STORY
+
+
 # Per-track narrative override. Lowercase keys. Scripture-anchored where
-# applicable. Add new tracks as their stories are written — Halleluyah,
-# Kadosh, Not By Might, etc. each get their own dedicated chain.
+# applicable. Add new tracks as their stories are written — Kadosh,
+# Not By Might, etc. each get their own dedicated chain with distinct
+# style DNA (see "STYLE VARIETY DOCTRINE" above).
 TRACK_STORIES: dict[str, MorphStory] = {
-    "jericho":   JERICHO_EXTENDED_STORY,
-    "selah":     SELAH_STORY,
+    "jericho":    JERICHO_EXTENDED_STORY,       # iron_age + golden_hour + character + ecstatic
+    "selah":      SELAH_STORY,                  # bronze_age + pre_dawn_mist + contemplative + slow
+    "halleluyah": HALLELUYAH_STORY,             # iron_age + fiery + ecstatic_crowd + ecstatic
     # Add future tracks here as their stories are written.
 }
 
@@ -1310,6 +1680,11 @@ def stitch_full_track(
     job_id = r.json()["response"]["id"]
     logger.info("Shotstack job id: %s", job_id)
 
+    # Record the render_id in a persistent log so later cleanup retries
+    # are possible even if this process dies. Format: one JSON per line
+    # with timestamp, env, render_id, output_label, target_duration_s.
+    _log_shotstack_render(job_id, shotstack_env, output_label, target_duration_s)
+
     deadline = time.time() + cfg.SHOTSTACK_TIMEOUT
     final_url = None
     while time.time() < deadline:
@@ -1336,6 +1711,26 @@ def stitch_full_track(
                     f.write(chunk)
     logger.info("Full-track render written: %s", local_path)
 
+    # Shotstack cleanup protocol (per RJM 2026-04-22):
+    #   render → download → VERIFY → delete
+    # Only purge the Shotstack-side copy after we've confirmed the local
+    # MP4 exists, is non-trivial size, and has a valid MP4 container
+    # header. If any check fails we keep the Shotstack copy so re-download
+    # is possible, and log the problem loudly.
+    if _verify_local_mp4(local_path):
+        _delete_shotstack_render_assets(
+            render_id=job_id,
+            env=shotstack_env,
+            api_key=cfg.SHOTSTACK_API_KEY,
+        )
+    else:
+        logger.error(
+            "Local MP4 verification FAILED for %s — leaving Shotstack copy "
+            "intact so you can re-download manually. Check disk space + "
+            "network stability.",
+            local_path,
+        )
+
     return RenderedVideo(
         local_path=local_path,
         remote_url=final_url,
@@ -1345,6 +1740,181 @@ def stitch_full_track(
         codec=cfg.VIDEO_CODEC,
         audio_codec=cfg.AUDIO_CODEC,
     )
+
+
+SHOTSTACK_RENDER_LOG = cfg.REGISTRY_DIR / "shotstack_renders.jsonl"
+
+
+def _log_shotstack_render(
+    render_id:    str,
+    env:          str,
+    output_label: str,
+    duration_s:   int,
+) -> None:
+    """
+    Append a line to data/youtube_longform/shotstack_renders.jsonl so
+    cleanup retries work even if this process dies mid-pipeline.
+    Each row: {timestamp, env, render_id, output_label, duration_s, deleted}
+    'deleted' starts false and is flipped to true when the asset-delete
+    call returns 2xx/404 (scripts/cleanup_shotstack.py can also flip it).
+    """
+    cfg.ensure_workspace()
+    SHOTSTACK_RENDER_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(SHOTSTACK_RENDER_LOG, "a") as f:
+        f.write(json.dumps({
+            "timestamp":    datetime.now(timezone.utc).isoformat(),
+            "env":          env,
+            "render_id":    render_id,
+            "output_label": output_label,
+            "duration_s":   duration_s,
+            "deleted":      False,
+        }) + "\n")
+
+
+def _mark_shotstack_render_deleted(render_id: str) -> None:
+    """Mark a render as cleaned up by rewriting the JSONL line's `deleted` flag."""
+    if not SHOTSTACK_RENDER_LOG.exists():
+        return
+    rows: list[dict] = []
+    with open(SHOTSTACK_RENDER_LOG) as f:
+        for line in f:
+            try:
+                row = json.loads(line)
+                if row.get("render_id") == render_id:
+                    row["deleted"] = True
+                rows.append(row)
+            except json.JSONDecodeError:
+                continue
+    with open(SHOTSTACK_RENDER_LOG, "w") as f:
+        for row in rows:
+            f.write(json.dumps(row) + "\n")
+
+
+def _verify_local_mp4(path: Path, min_bytes: int = 1_000_000) -> bool:
+    """
+    Pre-delete integrity check. Confirms:
+      1. file exists
+      2. size >= min_bytes (default 1 MB — a completed Selah is ~260 MB,
+         partial downloads would be much smaller)
+      3. first 12 bytes contain the 'ftyp' MP4 box marker at offset 4
+         (every valid ISO-BMFF/MP4 file starts with `<size><ftyp>...`)
+    Non-destructive — only reads the first 12 bytes.
+    """
+    try:
+        if not path.exists():
+            logger.error("Verify: %s does not exist", path)
+            return False
+        size = path.stat().st_size
+        if size < min_bytes:
+            logger.error(
+                "Verify: %s is only %d bytes (< %d min) — partial download?",
+                path, size, min_bytes,
+            )
+            return False
+        with open(path, "rb") as f:
+            head = f.read(12)
+        if len(head) < 12 or head[4:8] != b"ftyp":
+            logger.error(
+                "Verify: %s lacks 'ftyp' MP4 header (got %r) — corrupt?",
+                path, head,
+            )
+            return False
+        logger.info("Verify OK: %s (%.1f MB, valid MP4 container)", path, size / 1024 / 1024)
+        return True
+    except Exception as e:
+        logger.error("Verify %s raised: %s", path, e)
+        return False
+
+
+def _delete_shotstack_render_assets(
+    render_id: str,
+    env: str,
+    api_key: str,
+) -> int:
+    """
+    Delete every asset (video + thumbnail + poster) associated with a
+    render_id from Shotstack's storage to free the 500 MB free-tier cap.
+
+    Correct API paths (verified 2026-04-22 from Shotstack docs):
+      GET    https://api.shotstack.io/serve/{env}/assets/render/{render_id}
+             → returns list of asset IDs generated by this render
+      DELETE https://api.shotstack.io/serve/{env}/assets/{asset_id}
+             → removes the asset
+
+    Returns the number of assets successfully deleted (or already-gone).
+
+    Non-fatal on failure; logs the issue. Called only after local MP4
+    is verified complete, so a failed delete means the Shotstack copy
+    lingers (auto-expires in 24-72h) but local is safe.
+    """
+    if not (render_id and api_key):
+        return 0
+
+    list_url = f"https://api.shotstack.io/serve/{env}/assets/render/{render_id}"
+    try:
+        r = requests.get(list_url, headers={"x-api-key": api_key}, timeout=20)
+    except Exception as e:
+        logger.warning("Shotstack asset-list for render %s failed: %s", render_id, e)
+        return 0
+
+    if r.status_code == 404:
+        logger.debug("Shotstack assets for render %s already gone (404)", render_id)
+        return 0
+    if not r.ok:
+        logger.warning(
+            "Shotstack asset-list for render %s returned %d: %s",
+            render_id, r.status_code, r.text[:200],
+        )
+        return 0
+
+    # Response shape: {"data": [{"id": "...", ...}, ...]}
+    # OR {"response": {"data": [...]}} — support both
+    try:
+        payload = r.json()
+    except Exception:
+        logger.warning("Shotstack asset-list for render %s returned non-JSON", render_id)
+        return 0
+
+    data = payload.get("data") or payload.get("response", {}).get("data") or []
+    if isinstance(data, dict):
+        data = [data]   # Single asset response, wrap in list
+
+    deleted = 0
+    for item in data:
+        attrs = item.get("attributes") or item
+        asset_id = attrs.get("id") or item.get("id")
+        if not asset_id:
+            continue
+        delete_url = f"https://api.shotstack.io/serve/{env}/assets/{asset_id}"
+        try:
+            d = requests.delete(
+                delete_url, headers={"x-api-key": api_key}, timeout=20,
+            )
+            if 200 <= d.status_code < 300 or d.status_code == 404:
+                deleted += 1
+                logger.info(
+                    "Shotstack asset freed: %s (render %s, env %s)",
+                    asset_id, render_id, env,
+                )
+            else:
+                logger.warning(
+                    "Shotstack asset delete %s returned %d: %s",
+                    asset_id, d.status_code, d.text[:200],
+                )
+        except Exception as e:
+            logger.warning("Shotstack asset delete %s raised: %s", asset_id, e)
+
+    if deleted == 0 and data:
+        logger.warning(
+            "Shotstack: found %d assets for render %s but deleted 0 — "
+            "check API key permissions or env. Assets will auto-expire.",
+            len(data), render_id,
+        )
+    elif deleted > 0:
+        # Persist the cleanup so retries know this render is done
+        _mark_shotstack_render_deleted(render_id)
+
+    return deleted
 
 
 # ─── Cost helpers ────────────────────────────────────────────────────────────
