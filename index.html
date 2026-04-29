@@ -1069,6 +1069,35 @@
         }
 
         /* ─────────────────────────────────────────────
+           PLATFORMS PIVOT — subtle "find me elsewhere" link
+           shown beneath each Spotify CTA
+           ───────────────────────────────────────────── */
+        .platforms-pivot {
+            margin: 1.25rem 0 0;
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 0.95rem;
+            color: var(--text-mute);
+            letter-spacing: 0.015em;
+            line-height: 1.6;
+        }
+        .platforms-pivot a {
+            color: var(--ochre);
+            text-decoration: none;
+            border-bottom: 1px solid var(--ochre-soft);
+            padding-bottom: 1px;
+            margin-left: 0.15rem;
+            transition: color 0.35s var(--ease-warm), border-color 0.35s var(--ease-warm);
+            white-space: nowrap;
+        }
+        .platforms-pivot a:hover,
+        .platforms-pivot a:focus-visible {
+            color: var(--terracotta);
+            border-color: var(--terracotta);
+            outline: none;
+        }
+
+        /* ─────────────────────────────────────────────
            BOOKING
            ───────────────────────────────────────────── */
         .booking-inner {
@@ -1355,6 +1384,7 @@
                     <span class="dot"></span>
                     <a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank" rel="noopener">Instagram</a>
                 </p>
+                <p class="platforms-pivot">Also on Apple Music, Tidal, Deezer — <a href="/links">every platform &rarr;</a></p>
             </div>
             <div class="hero-portrait reveal">
                 <svg class="sigil sigil--hero"><use href="#sigil"/></svg>
@@ -1415,6 +1445,7 @@
             <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" class="btn btn-ghost">
                 Open Full Catalogue
             </a>
+            <p class="platforms-pivot">Also on Apple Music, Tidal, Deezer — <a href="/links">every platform &rarr;</a></p>
         </div>
 
         <div class="catalogue-section reveal">
@@ -1450,6 +1481,7 @@
                 </svg>
                 Add to Spotify — it's free
             </a>
+            <p class="platforms-pivot">Also on Apple Music, Tidal, Deezer — <a href="/links">every platform &rarr;</a></p>
         </div>
     </section>
 
@@ -1548,6 +1580,7 @@
                 </svg>
                 Follow on Spotify — free
             </a>
+            <p class="platforms-pivot">Also on Apple Music, Tidal, Deezer — <a href="/links">every platform &rarr;</a></p>
             <p class="support-secondary">
                 Want to go further? <a href="/offering">Support the mission financially →</a>
             </p>
