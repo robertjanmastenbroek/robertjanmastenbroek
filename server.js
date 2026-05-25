@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const db = require('./lib/db');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -53,23 +54,13 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       await sendThankYouEmail(email, name);
     }
 
-    // Holy Rave ticket — mark registration as confirmed (with overbooking guard)
+    // Holy Rave ticket — mark registration as confirmed (DB-backed, with overbooking guard)
     if (regId && regId.startsWith('hr_')) {
-      const tickets = readTickets();
       const week = session.metadata?.week || getWeekMonday();
-      if (tickets[week]) {
-        const reg = tickets[week].find(r => r.id === regId);
-        if (reg && reg.status === 'pending') {
-          const confirmed = tickets[week].filter(t => t.status === 'confirmed').length;
-          if (confirmed >= TICKETS_MAX) {
-            console.warn(`Holy Rave overbook blocked: ${regId} — week ${week} already at ${confirmed}/${TICKETS_MAX}`);
-            // Leave as pending — do not confirm beyond capacity
-          } else {
-            reg.status = 'confirmed';
-            writeTickets(tickets);
-            console.log(`Holy Rave registration confirmed: ${regId} (${reg.firstName} ${reg.lastName})`);
-          }
-        }
+      try {
+        await db.confirmRegistration(regId, week);
+      } catch (err) {
+        console.error('Webhook confirm error:', err.message);
       }
     }
   }
@@ -136,46 +127,26 @@ app.get('/api/mrr', async (req, res) => {
 });
 
 // ─── Supporter Count (humans, not euros) ─────────────────────────────────────
-// Returns the number of active monthly supporters. Never returns less than
-// SUPPORTER_BASE_COUNT (env var, default 4) — that's the off-platform floor
-// for existing supporters who pledged outside Stripe at launch.
+// Returns the number of people who've subscribed via email or Holy Rave.
+// Cached for 5 minutes. Falls back to the Stripe active subscription count
+// if the database isn't available.
 let supporterCache = { count: 0, fetchedAt: 0 };
-const SUPPORTER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const SUPPORTER_CACHE_TTL = 5 * 60 * 1000;
 const SUPPORTER_BASE_COUNT = parseInt(process.env.SUPPORTER_BASE_COUNT || '4', 10);
 
 app.get('/api/supporters-count', async (req, res) => {
   if (Date.now() - supporterCache.fetchedAt < SUPPORTER_CACHE_TTL) {
-    return res.json({ count: supporterCache.count });
-  }
-
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return res.json({ count: SUPPORTER_BASE_COUNT });
+    return res.json({ count: Math.max(SUPPORTER_BASE_COUNT, supporterCache.count) });
   }
 
   try {
-    let activeCount = 0;
-    let hasMore = true;
-    let startingAfter = undefined;
-
-    const stripe = getStripe();
-    while (hasMore) {
-      const params = { status: 'active', limit: 100 };
-      if (startingAfter) params.starting_after = startingAfter;
-      const subs = await stripe.subscriptions.list(params);
-      activeCount += subs.data.length;
-      hasMore = subs.has_more;
-      if (hasMore) startingAfter = subs.data[subs.data.length - 1].id;
-    }
-
-    const total = Math.max(SUPPORTER_BASE_COUNT, activeCount + SUPPORTER_BASE_COUNT);
-    // NOTE: we ADD the base rather than MAX it, so the 4 off-platform supporters
-    // are always counted alongside Stripe supporters. Adjust if you prefer MAX.
-    const finalCount = activeCount + SUPPORTER_BASE_COUNT;
-    supporterCache = { count: finalCount, fetchedAt: Date.now() };
-    res.json({ count: finalCount });
+    const dbCount = await db.getSubscriberCount();
+    const total = dbCount + SUPPORTER_BASE_COUNT;
+    supporterCache = { count: total, fetchedAt: Date.now() };
+    res.json({ count: total });
   } catch (err) {
     console.error('Supporter count error:', err.message);
-    res.json({ count: supporterCache.count || SUPPORTER_BASE_COUNT });
+    res.json({ count: Math.max(SUPPORTER_BASE_COUNT, supporterCache.count || SUPPORTER_BASE_COUNT) });
   }
 });
 
@@ -268,16 +239,13 @@ app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Invalid email' });
 
-  // Save to file
+  // Save to database
   try {
-    const subPath = path.join(__dirname, 'data', 'subscribers.json');
-    let subs = [];
-    try { subs = JSON.parse(fs.readFileSync(subPath, 'utf8')); } catch (e) {}
-    if (!subs.find(s => s.email === email)) {
-      subs.push({ email, subscribedAt: new Date().toISOString() });
-      fs.writeFileSync(subPath, JSON.stringify(subs, null, 2));
-    }
-  } catch (e) { console.error('Subscriber save error:', e.message); }
+    await db.addSubscriber(email, null, null, 'email_form');
+  } catch (e) {
+    console.error('Subscriber DB save error:', e.message);
+    // Continue — don't block the welcome email on DB failure
+  }
 
   // Send welcome email
   const resend = getResend();
@@ -304,7 +272,6 @@ app.post('/api/subscribe', async (req, res) => {
 
 // ─── Holy Rave Weekly Tickets ────────────────────────────────────────────────
 const TICKETS_MAX = 50;
-const TICKETS_FILE = path.join(__dirname, 'data', 'holy-rave-tickets.json');
 
 function getWeekMonday() {
   const now = new Date();
@@ -316,48 +283,16 @@ function getWeekMonday() {
   return monday.toISOString().split('T')[0];
 }
 
-function readTickets() {
-  try {
-    const raw = fs.readFileSync(TICKETS_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
-}
-
-function writeTickets(data) {
-  const dir = path.dirname(TICKETS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(TICKETS_FILE, JSON.stringify(data, null, 2));
-}
-
 // GET /api/holy-rave/tickets — remaining spots for the current week
-app.get('/api/holy-rave/tickets', (req, res) => {
-  const tickets = readTickets();
-  const week = getWeekMonday();
-  const weekTickets = tickets[week] || [];
-  const oneHourAgo = Date.now() - 60 * 60 * 1000;
-
-  // Expire pending registrations older than 1 hour
-  const expiredIds = [];
-  for (const t of weekTickets) {
-    if (t.status === 'pending' && new Date(t.createdAt).getTime() < oneHourAgo) {
-      expiredIds.push(t.id);
-    }
+app.get('/api/holy-rave/tickets', async (req, res) => {
+  try {
+    const week = getWeekMonday();
+    const stats = await db.getWeekStats(week);
+    res.json(stats);
+  } catch (err) {
+    console.error('Tickets error:', err.message);
+    res.json({ week: getWeekMonday(), total: TICKETS_MAX, sold: 0, remaining: TICKETS_MAX });
   }
-  if (expiredIds.length > 0) {
-    tickets[week] = weekTickets.filter(t => !expiredIds.includes(t.id));
-    writeTickets(tickets);
-  }
-  const activeTickets = tickets[week] || [];
-
-  const confirmed = activeTickets.filter(t => t.status === 'confirmed').length;
-  res.json({
-    week,
-    total: TICKETS_MAX,
-    sold: confirmed,
-    remaining: Math.max(0, TICKETS_MAX - confirmed),
-  });
 });
 
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
@@ -369,65 +304,34 @@ app.post('/api/holy-rave/register', async (req, res) => {
   }
 
   const amt = Math.max(0, parseInt(amount, 10) || 0);
-
-  // Check availability + purge abandoned pending registrations (>1hr old)
-  const tickets = readTickets();
   const week = getWeekMonday();
-  const weekTickets = tickets[week] || [];
-  const oneHourAgo = Date.now() - 60 * 60 * 1000;
-
-  // Expire pending registrations older than 1 hour (abandoned checkouts)
-  const expiredIds = [];
-  for (const t of weekTickets) {
-    if (t.status === 'pending' && new Date(t.createdAt).getTime() < oneHourAgo) {
-      expiredIds.push(t.id);
-    }
-  }
-  if (expiredIds.length > 0) {
-    tickets[week] = weekTickets.filter(t => !expiredIds.includes(t.id));
-    console.log(`Holy Rave expired ${expiredIds.length} abandoned pending registration(s) for week ${week}`);
-  }
-  // Re-read after purge
-  const activeWeekTickets = tickets[week] || [];
-
-  const confirmed = activeWeekTickets.filter(t => t.status === 'confirmed').length;
-  if (confirmed >= TICKETS_MAX) {
-    return res.status(400).json({ error: 'All spots are taken this week. Check back Monday.' });
-  }
-
-  // Check duplicate email this week (any status — confirmed OR pending)
-  if (activeWeekTickets.some(t => t.email === email)) {
-    return res.status(400).json({ error: 'This email already has a spot this week.' });
-  }
-
-  const id = 'hr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
-
-  const registration = {
-    id,
-    firstName,
-    lastName,
-    email,
-    amount: amt,
-    status: amt === 0 ? 'confirmed' : 'pending',
-    createdAt: new Date().toISOString(),
-  };
-
-  if (!tickets[week]) tickets[week] = [];
-  tickets[week].push(registration);
-
-  // Free ticket — confirm immediately
-  if (amt === 0) {
-    writeTickets(tickets);
-    return res.json({ id, confirmed: true });
-  }
-
-  // Paid ticket — create Stripe Checkout
-  const stripe = getStripe();
-  if (!stripe) {
-    return res.status(503).json({ error: 'Payment system not available.' });
-  }
 
   try {
+    // Check availability
+    const stats = await db.getWeekStats(week);
+    if (stats.remaining <= 0) {
+      return res.status(400).json({ error: 'All spots are taken this week. Check back Monday.' });
+    }
+
+    // Check duplicate email
+    if (await db.isDuplicateEmail(week, email)) {
+      return res.status(400).json({ error: 'This email already has a spot this week.' });
+    }
+
+    const id = 'hr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+
+    // Free ticket — confirm immediately
+    if (amt === 0) {
+      await db.createRegistration({ id, firstName, lastName, email, amount: 0, week });
+      return res.json({ id, confirmed: true });
+    }
+
+    // Paid ticket — create Stripe Checkout
+    const stripe = getStripe();
+    if (!stripe) {
+      return res.status(503).json({ error: 'Payment system not available.' });
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -453,42 +357,40 @@ app.post('/api/holy-rave/register', async (req, res) => {
       cancel_url: `${SITE_URL}/holy-rave`,
     });
 
-    registration.stripeSessionId = session.id;
-    writeTickets(tickets);
+    await db.createRegistration({
+      id, firstName, lastName, email, amount: amt, week,
+      stripeSessionId: session.id,
+    });
 
     res.json({ id, checkoutUrl: session.url });
   } catch (err) {
-    console.error('Holy Rave checkout error:', err.message);
-    // Remove the pending registration on checkout failure
-    tickets[week] = tickets[week].filter(r => r.id !== id);
-    if (tickets[week].length === 0) delete tickets[week];
-    writeTickets(tickets);
-    res.status(500).json({ error: 'Could not create checkout session. Please try again.' });
+    console.error('Holy Rave register error:', err.message);
+    res.status(500).json({ error: 'Could not complete registration. Please try again.' });
   }
 });
 
 // GET /api/holy-rave/verify — check registration status
-app.get('/api/holy-rave/verify', (req, res) => {
+app.get('/api/holy-rave/verify', async (req, res) => {
   const { id } = req.query;
   if (!id) return res.status(400).json({ error: 'Missing registration ID.' });
 
-  const tickets = readTickets();
-  // Search across all weeks
-  for (const week of Object.keys(tickets)) {
-    const reg = tickets[week].find(r => r.id === id);
-    if (reg) {
-      return res.json({
-        id: reg.id,
-        firstName: reg.firstName,
-        lastName: reg.lastName,
-        email: reg.email,
-        status: reg.status,
-        amount: reg.amount,
-      });
+  try {
+    const reg = await db.getRegistrationById(id);
+    if (!reg) {
+      return res.status(404).json({ error: 'Registration not found.' });
     }
+    res.json({
+      id: reg.id,
+      firstName: reg.first_name,
+      lastName: reg.last_name,
+      email: reg.email,
+      status: reg.status,
+      amount: reg.amount_cents,
+    });
+  } catch (err) {
+    console.error('Verify error:', err.message);
+    res.status(500).json({ error: 'Could not verify registration.' });
   }
-
-  res.status(404).json({ error: 'Registration not found.' });
 });
 
 // ─── Health check ─────────────────────────────────────────────────────────────
@@ -571,6 +473,12 @@ async function sendThankYouEmail(email, name) {
   }
 }
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  // Auto-run DB schema migration (idempotent — skips if tables exist)
+  try {
+    await db.ensureSchema();
+  } catch (err) {
+    console.warn('[db] Schema migration skipped — DATABASE_URL not set?', err.message);
+  }
 });
