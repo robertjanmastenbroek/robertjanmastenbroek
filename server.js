@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -46,8 +47,30 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     const session = event.data.object;
     const email = session.customer_details?.email;
     const name = session.customer_details?.name;
+    const regId = session.client_reference_id || session.metadata?.registration_id;
+
     if (email) {
       await sendThankYouEmail(email, name);
+    }
+
+    // Holy Rave ticket — mark registration as confirmed (with overbooking guard)
+    if (regId && regId.startsWith('hr_')) {
+      const tickets = readTickets();
+      const week = session.metadata?.week || getWeekMonday();
+      if (tickets[week]) {
+        const reg = tickets[week].find(r => r.id === regId);
+        if (reg && reg.status === 'pending') {
+          const confirmed = tickets[week].filter(t => t.status === 'confirmed').length;
+          if (confirmed >= TICKETS_MAX) {
+            console.warn(`Holy Rave overbook blocked: ${regId} — week ${week} already at ${confirmed}/${TICKETS_MAX}`);
+            // Leave as pending — do not confirm beyond capacity
+          } else {
+            reg.status = 'confirmed';
+            writeTickets(tickets);
+            console.log(`Holy Rave registration confirmed: ${regId} (${reg.firstName} ${reg.lastName})`);
+          }
+        }
+      }
     }
   }
 
@@ -247,7 +270,6 @@ app.post('/api/subscribe', async (req, res) => {
 
   // Save to file
   try {
-    const fs = require('fs');
     const subPath = path.join(__dirname, 'data', 'subscribers.json');
     let subs = [];
     try { subs = JSON.parse(fs.readFileSync(subPath, 'utf8')); } catch (e) {}
@@ -280,15 +302,213 @@ app.post('/api/subscribe', async (req, res) => {
   res.json({ ok: true });
 });
 
+// ─── Holy Rave Weekly Tickets ────────────────────────────────────────────────
+const TICKETS_MAX = 50;
+const TICKETS_FILE = path.join(__dirname, 'data', 'holy-rave-tickets.json');
+
+function getWeekMonday() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 1=Mon, ...
+  const diff = day === 0 ? 6 : day - 1;
+  const monday = new Date(now);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(now.getDate() - diff);
+  return monday.toISOString().split('T')[0];
+}
+
+function readTickets() {
+  try {
+    const raw = fs.readFileSync(TICKETS_FILE, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function writeTickets(data) {
+  const dir = path.dirname(TICKETS_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(TICKETS_FILE, JSON.stringify(data, null, 2));
+}
+
+// GET /api/holy-rave/tickets — remaining spots for the current week
+app.get('/api/holy-rave/tickets', (req, res) => {
+  const tickets = readTickets();
+  const week = getWeekMonday();
+  const weekTickets = tickets[week] || [];
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+
+  // Expire pending registrations older than 1 hour
+  const expiredIds = [];
+  for (const t of weekTickets) {
+    if (t.status === 'pending' && new Date(t.createdAt).getTime() < oneHourAgo) {
+      expiredIds.push(t.id);
+    }
+  }
+  if (expiredIds.length > 0) {
+    tickets[week] = weekTickets.filter(t => !expiredIds.includes(t.id));
+    writeTickets(tickets);
+  }
+  const activeTickets = tickets[week] || [];
+
+  const confirmed = activeTickets.filter(t => t.status === 'confirmed').length;
+  res.json({
+    week,
+    total: TICKETS_MAX,
+    sold: confirmed,
+    remaining: Math.max(0, TICKETS_MAX - confirmed),
+  });
+});
+
+// POST /api/holy-rave/register — create a registration + optional Stripe checkout
+app.post('/api/holy-rave/register', async (req, res) => {
+  const { firstName, lastName, email, amount } = req.body;
+
+  if (!firstName || !lastName || !email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Please fill in all fields correctly.' });
+  }
+
+  const amt = Math.max(0, parseInt(amount, 10) || 0);
+
+  // Check availability + purge abandoned pending registrations (>1hr old)
+  const tickets = readTickets();
+  const week = getWeekMonday();
+  const weekTickets = tickets[week] || [];
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+
+  // Expire pending registrations older than 1 hour (abandoned checkouts)
+  const expiredIds = [];
+  for (const t of weekTickets) {
+    if (t.status === 'pending' && new Date(t.createdAt).getTime() < oneHourAgo) {
+      expiredIds.push(t.id);
+    }
+  }
+  if (expiredIds.length > 0) {
+    tickets[week] = weekTickets.filter(t => !expiredIds.includes(t.id));
+    console.log(`Holy Rave expired ${expiredIds.length} abandoned pending registration(s) for week ${week}`);
+  }
+  // Re-read after purge
+  const activeWeekTickets = tickets[week] || [];
+
+  const confirmed = activeWeekTickets.filter(t => t.status === 'confirmed').length;
+  if (confirmed >= TICKETS_MAX) {
+    return res.status(400).json({ error: 'All spots are taken this week. Check back Monday.' });
+  }
+
+  // Check duplicate email this week (any status — confirmed OR pending)
+  if (activeWeekTickets.some(t => t.email === email)) {
+    return res.status(400).json({ error: 'This email already has a spot this week.' });
+  }
+
+  const id = 'hr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+
+  const registration = {
+    id,
+    firstName,
+    lastName,
+    email,
+    amount: amt,
+    status: amt === 0 ? 'confirmed' : 'pending',
+    createdAt: new Date().toISOString(),
+  };
+
+  if (!tickets[week]) tickets[week] = [];
+  tickets[week].push(registration);
+
+  // Free ticket — confirm immediately
+  if (amt === 0) {
+    writeTickets(tickets);
+    return res.json({ id, confirmed: true });
+  }
+
+  // Paid ticket — create Stripe Checkout
+  const stripe = getStripe();
+  if (!stripe) {
+    return res.status(503).json({ error: 'Payment system not available.' });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      currency: 'eur',
+      client_reference_id: id,
+      customer_email: email,
+      line_items: [{
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Holy Rave — Weekly Ticket',
+            description: `${firstName} ${lastName} — pay what you want`,
+          },
+          unit_amount: amt,
+        },
+        quantity: 1,
+      }],
+      metadata: {
+        registration_id: id,
+        week,
+      },
+      success_url: `${SITE_URL}/holy-rave/confirmed?id=${id}`,
+      cancel_url: `${SITE_URL}/holy-rave`,
+    });
+
+    registration.stripeSessionId = session.id;
+    writeTickets(tickets);
+
+    res.json({ id, checkoutUrl: session.url });
+  } catch (err) {
+    console.error('Holy Rave checkout error:', err.message);
+    // Remove the pending registration on checkout failure
+    tickets[week] = tickets[week].filter(r => r.id !== id);
+    if (tickets[week].length === 0) delete tickets[week];
+    writeTickets(tickets);
+    res.status(500).json({ error: 'Could not create checkout session. Please try again.' });
+  }
+});
+
+// GET /api/holy-rave/verify — check registration status
+app.get('/api/holy-rave/verify', (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ error: 'Missing registration ID.' });
+
+  const tickets = readTickets();
+  // Search across all weeks
+  for (const week of Object.keys(tickets)) {
+    const reg = tickets[week].find(r => r.id === id);
+    if (reg) {
+      return res.json({
+        id: reg.id,
+        firstName: reg.firstName,
+        lastName: reg.lastName,
+        email: reg.email,
+        status: reg.status,
+        amount: reg.amount,
+      });
+    }
+  }
+
+  res.status(404).json({ error: 'Registration not found.' });
+});
+
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.send('OK'));
 
 // ─── SPA-style routing — serve index.html for any unmatched routes ────────────
 app.get('*', (req, res) => {
-  // Try to serve a matching HTML file first (e.g. /offering → /offering/index.html)
-  const htmlPath = path.join(__dirname, req.path, 'index.html');
-  res.sendFile(htmlPath, (err) => {
-    if (err) res.sendFile(path.join(__dirname, 'index.html'));
+  const reqPath = req.path === '/' ? '' : req.path;
+
+  // Try 1: /path/index.html (e.g. /offering → /offering/index.html)
+  const indexPath = path.join(__dirname, reqPath, 'index.html');
+  // Try 2: /path.html (e.g. /holy-rave/confirmed → /holy-rave/confirmed.html)
+  const htmlPath = path.join(__dirname, reqPath + '.html');
+
+  res.sendFile(indexPath, (err) => {
+    if (!err) return;
+    res.sendFile(htmlPath, (err2) => {
+      if (!err2) return;
+      res.sendFile(path.join(__dirname, 'index.html'));
+    });
   });
 });
 
