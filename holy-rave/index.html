@@ -722,7 +722,7 @@
 
             <!-- LEFT: Circle Meter -->
             <div class="meter-col">
-                <p class="eyebrow"><span class="pin"></span>Weekly · Free Entry</p>
+                <p class="eyebrow"><span class="pin"></span>Weekly · Pay What Feels Right</p>
 
                 <div class="meter-wrap" id="meterWrap">
                     <svg class="meter-svg" viewBox="0 0 200 200">
@@ -800,9 +800,9 @@
                         <div class="amount-section">
                             <label class="amount-label">Pay What Feels Right <em>— nobody turned away</em></label>
                             <div class="amount-options" id="amountOptions">
-                                <button type="button" class="amount-btn free-btn selected" data-amount="0">Free</button>
+                                <button type="button" class="amount-btn free-btn" data-amount="0">Free</button>
                                 <button type="button" class="amount-btn" data-amount="700">€7</button>
-                                <button type="button" class="amount-btn" data-amount="1200">€12</button>
+                                <button type="button" class="amount-btn selected" data-amount="1200">€12</button>
                                 <button type="button" class="amount-btn" data-amount="2000">€20</button>
                             </div>
                             <div class="custom-amount-row" id="customRow">
@@ -851,7 +851,7 @@
         // ── State ──
         const TOTAL_SPOTS = 50;
         const CIRCUMFERENCE = 2 * Math.PI * 88; // ~552.92
-        let selectedAmount = 0;
+        let selectedAmount = 1200; // default €12
         let ticketsRemaining = TOTAL_SPOTS;
         let isSoldOut = false;
 
