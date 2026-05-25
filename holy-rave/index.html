@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Holy Rave — Weekly Tickets · Robert-Jan Mastenbroek</title>
-    <meta name="description" content="Reserve your spot at Holy Rave — weekly event in Tenerife. Pay what feels right. Every ticket admits you + 1 friend. 50 spots per week.">
+    <meta name="description" content="Reserve your spot at Holy Rave — weekly event in Tenerife. Pay what feels right. 50 tickets per week. Each admits you + 1 friend.">
     <meta property="og:title" content="Holy Rave — Reserve Your Spot">
-    <meta property="og:description" content="Weekly event in Tenerife. Pay what feels right. Bring a friend for free. 50 spots — first come, first served.">
+    <meta property="og:description" content="Weekly event in Tenerife. Pay what feels right. 50 tickets — each admits you + 1 friend.">
     <meta property="og:image" content="https://robertjanmastenbroek.com/images/og-image.png">
     <meta property="og:url" content="https://robertjanmastenbroek.com/holy-rave">
     <meta name="twitter:card" content="summary_large_image">
@@ -732,7 +732,7 @@
                     </svg>
                     <div class="meter-center">
                         <span class="meter-spots-left" id="spotsLeft">50</span>
-                        <span class="meter-label">spots left</span>
+                        <span class="meter-label">tickets left</span>
                         <span class="meter-of">of 50</span>
                     </div>
                 </div>
@@ -768,7 +768,7 @@
             <div class="form-col">
                 <div class="form-card" id="formCard">
                     <h1>Reserve <em>Your Spot</em></h1>
-                    <p class="form-sub">No one turned away. Every ticket admits you + one friend. 50 spots per week — resets every Monday. If you're able to contribute, it helps keep the music free for everyone.</p>
+                    <p class="form-sub">No one turned away. 50 tickets per week — each admits you + one friend. If you're able to contribute, it helps keep the music free for everyone.</p>
 
                     <div class="divider">
                         <span class="line"></span>
@@ -820,14 +820,13 @@
 
                     <p class="form-note">
                         Your ticket admits <strong>you + 1 friend</strong>.<br>
-                        Location shared by email 24h before the event.<br>
-                        Spots reset every Monday for the next event.
+                        Location shared by email 24h before the event.
                     </p>
 
                     <!-- Sold out banner (hidden by default) -->
                     <div class="sold-out-banner" id="soldOutBanner">
                         <h3>This week is full.</h3>
-                        <p>Spots reset on Monday. Come back then to grab yours.<br>Join the WhatsApp community to get notified first.</p>
+                        <p>This week is full. Join the WhatsApp community to get notified when new tickets drop.</p>
                         <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" rel="noopener"
                            style="display:inline-block;margin-top:1rem;padding:0.75rem 1.5rem;background:var(--ochre);color:var(--dark);text-decoration:none;font-size:0.72rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;">
                             Join WhatsApp
@@ -957,7 +956,7 @@
             formError.textContent = '';
 
             if (isSoldOut) {
-                formError.textContent = 'All spots are taken this week. Check back Monday.';
+                formError.textContent = 'All tickets are taken this week. Check back soon.';
                 return;
             }
 

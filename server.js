@@ -310,7 +310,7 @@ app.post('/api/holy-rave/register', async (req, res) => {
     // Check availability
     const stats = await db.getWeekStats(week);
     if (stats.remaining <= 0) {
-      return res.status(400).json({ error: 'All spots are taken this week. Check back Monday.' });
+      return res.status(400).json({ error: 'All tickets are taken this week. Check back soon.' });
     }
 
     // Check duplicate email
