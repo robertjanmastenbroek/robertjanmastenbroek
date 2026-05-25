@@ -237,6 +237,19 @@
       letter-spacing: 0.26em;
     }
 
+    .link-btn--event {
+      background: rgba(184, 83, 42, 0.12);
+      border-color: rgba(184, 83, 42, 0.35);
+    }
+    .link-btn--event:hover,
+    .link-btn--event:focus-visible {
+      background: var(--terracotta);
+      border-color: var(--terracotta);
+      color: var(--text);
+      letter-spacing: 0.26em;
+      box-shadow: 0 10px 30px rgba(184, 83, 42, 0.32);
+    }
+
     .link-btn--whatsapp {
       background: rgba(37, 211, 102, 0.1);
       border-color: rgba(37, 211, 102, 0.3);
@@ -327,6 +340,11 @@
 
     <nav class="links" aria-label="Platform links">
       <a
+        class="link-btn link-btn--event"
+        href="/holy-rave"
+      >Holy Rave — Free Weekly Event</a>
+
+      <a
         class="link-btn"
         href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds"
         target="_blank"
@@ -362,21 +380,11 @@
       >SoundCloud</a>
 
       <a
-        class="link-btn"
-        href="/holy-rave"
-      >Holy Rave — Free Weekly Event</a>
-
-      <a
         class="link-btn link-btn--whatsapp"
         href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3"
         target="_blank"
         rel="noopener noreferrer"
       >Join WhatsApp Community</a>
-
-      <a
-        class="link-btn link-btn--cta"
-        href="/offering"
-      >Support the Mission</a>
     </nav>
 
     <p class="footer">
