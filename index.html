@@ -12,10 +12,10 @@
         gtag('config', 'G-JZG345ND51');
     </script>
     <title>Robert-Jan Mastenbroek — Melodic Afrohouse · Organic Electronic</title>
-    <meta name="description" content="Melodic Afrohouse with organic influences. 125–135 BPM. Handpan, tribal percussion, Middle Eastern textures. New track every Friday — follow on Spotify.">
+    <meta name="description" content="Melodic Afrohouse with organic influences. Handpan, tribal percussion, Middle Eastern textures. New track every Friday — follow on Spotify.">
     <meta name="keywords" content="Robert-Jan Mastenbroek, melodic afrohouse, organic house, afro house, ethnic electronic, Middle Eastern electronic, handpan, Tenerife DJ, Sunset Sessions, Holy Rave">
     <meta property="og:title" content="Robert-Jan Mastenbroek — Melodic Afrohouse · Organic Electronic">
-    <meta property="og:description" content="Melodic Afrohouse with organic influences — 125–135 BPM. Handpan, tribal percussion, Middle Eastern textures. New track every Friday.">
+    <meta property="og:description" content="Melodic Afrohouse with organic influences. Handpan, tribal percussion, Middle Eastern textures. New track every Friday.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://robertjanmastenbroek.com/images/og-image.png">
     <meta property="og:image:width" content="1200">
@@ -32,7 +32,7 @@
       "alternateName": "RJM",
       "url": "https://robertjanmastenbroek.com",
       "image": "https://robertjanmastenbroek.com/images/og-image.png",
-      "description": "Dutch producer of melodic Afrohouse with organic influences. 125–135 BPM. Creator of Holy Rave and Sunset Sessions in Tenerife.",
+      "description": "Dutch producer of melodic Afrohouse with organic influences. Creator of Holy Rave and Sunset Sessions in Tenerife.",
       "genre": ["Melodic Afrohouse", "Organic House", "Afro House", "Ethnic Electronic", "Middle Eastern Electronic"],
       "foundingLocation": {
         "@type": "Place",
@@ -670,6 +670,51 @@
             margin-top: 3rem;
         }
 
+        /* ─────────────────────────────────────────────
+           VIDEOS
+           ───────────────────────────────────────────── */
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .video-card {
+            aspect-ratio: 16 / 9;
+            background: var(--card-bg);
+            border: 1px solid var(--border-faint);
+            overflow: hidden;
+            position: relative;
+            transition: all 0.5s var(--ease-warm);
+        }
+        .video-card:hover {
+            border-color: var(--terracotta);
+            box-shadow: 0 24px 60px var(--terracotta-glow), 0 0 0 1px var(--terracotta-soft);
+            transform: translateY(-4px);
+        }
+        .video-card iframe,
+        .video-card video {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+            object-fit: cover;
+        }
+        .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(160deg, rgba(26, 42, 74, 0.3), var(--card-bg));
+            border: 2px dashed var(--border-warm);
+        }
+        @media (max-width: 720px) {
+            .video-grid { grid-template-columns: 1fr; }
+        }
+
         .catalogue-section {
             margin-top: 6rem;
         }
@@ -1206,13 +1251,13 @@
         <div class="atmosphere"></div>
         <div class="hero-frame">
             <div class="hero-copy reveal">
-                <p class="eyebrow"><span class="pin"></span>Melodic Afrohouse &middot; 125–135 BPM</p>
+                <p class="eyebrow"><span class="pin"></span>Melodic Afrohouse &middot; Organic Electronic</p>
                 <h1>
                     <span class="h1-top">Ancient truth.</span>
                     <span class="h1-bottom">Future sound.</span>
                 </h1>
                 <p class="lede">
-                    Melodic Afrohouse with organic influences — warm percussion, handpan textures, Middle Eastern depth.
+                    Warm percussion, handpan textures, Middle Eastern depth — music for sunsets, dancefloors, and the moments in between.
                     <em>New track every Friday.</em>
                 </p>
                 <div class="hero-cta">
@@ -1232,7 +1277,7 @@
             <div class="hero-portrait reveal">
                 <svg class="sigil sigil--hero"><use href="#sigil"/></svg>
                 <div class="hero-portrait-inner">
-                    <img src="/images/robert-jan-mastenbroek.jpg"
+                    <img src="/images/robert-jan-profile-new.png"
                          alt="Robert-Jan Mastenbroek — melodic Afrohouse producer, Tenerife"
                          width="420" height="560"
                          loading="eager" decoding="async">
@@ -1246,7 +1291,7 @@
         <header class="section-head reveal">
             <p class="section-eyebrow">Track 01</p>
             <h2>The <em>Catalogue</em></h2>
-            <p class="section-sub">Melodic Afrohouse with organic influences — warm percussion, handpan, Middle Eastern textures. 125–135 BPM.</p>
+            <p class="section-sub">Melodic Afrohouse with organic influences — warm percussion, handpan, Middle Eastern textures. Built for sunsets and dancefloors.</p>
             <div class="divider">
                 <span class="line"></span>
                 <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
@@ -1304,7 +1349,7 @@
             <h3>Sunset <em>Sessions</em></h3>
             <div class="event-details">
                 <span>◈ Location revealed to community every Friday</span>
-                <span>◈ Melodic Afrohouse · 125–135 BPM</span>
+                <span>◈ Melodic Afrohouse · Organic Electronic</span>
                 <span>◈ Come as you are — safe, high-energy space</span>
             </div>
             <div class="spots-indicator" id="spotsIndicator">
@@ -1313,6 +1358,37 @@
             <a href="/holy-rave" class="btn btn-primary">
                 Reserve Your Spot
             </a>
+        </div>
+    </section>
+
+    <!-- ═══ VIDEOS ═══ -->
+    <section id="videos" class="section">
+        <header class="section-head reveal">
+            <p class="section-eyebrow">Watch</p>
+            <h2>Sunset <em>Sessions</em></h2>
+            <p class="section-sub">See what a Friday night looks like. New videos from every event.</p>
+            <div class="divider">
+                <span class="line"></span>
+                <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
+                <span class="line"></span>
+            </div>
+        </header>
+        <div class="video-grid reveal">
+            <!-- Add your video embeds here — YouTube, Vimeo, or direct MP4 -->
+            <div class="video-card">
+                <div class="video-placeholder">
+                    <svg class="sigil sigil--md" style="color: var(--ochre); opacity: 0.4; margin-bottom: 1rem;"><use href="#sigil"/></svg>
+                    <p style="color: var(--text-mute); font-size: 0.85rem;">Drop your event videos here</p>
+                    <p style="color: var(--terracotta); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;">YouTube · Vimeo · MP4</p>
+                </div>
+            </div>
+            <div class="video-card">
+                <div class="video-placeholder">
+                    <svg class="sigil sigil--md" style="color: var(--ochre); opacity: 0.4; margin-bottom: 1rem;"><use href="#sigil"/></svg>
+                    <p style="color: var(--text-mute); font-size: 0.85rem;">Drop your event videos here</p>
+                    <p style="color: var(--terracotta); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;">YouTube · Vimeo · MP4</p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -1368,7 +1444,7 @@
         <div class="footer-grid">
             <div class="footer-brand">
                 <h4><svg class="sigil sigil--sm"><use href="#sigil"/></svg> Robert-Jan Mastenbroek</h4>
-                <p>Dutch producer of melodic Afrohouse with organic influences. 125–135 BPM. Handpan, tribal percussion, Middle Eastern textures. Weekly Sunset Sessions in Tenerife. Creator of Holy Rave.</p>
+                <p>Dutch producer of melodic Afrohouse with organic influences. Handpan, tribal percussion, Middle Eastern textures. Weekly Sunset Sessions in Tenerife. Creator of Holy Rave.</p>
                 <div class="social-links">
                     <a href="https://open.spotify.com/artist/2Seaafm5k1hAuCkpdq7yds" target="_blank" title="Spotify" aria-label="Spotify">
                         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
