@@ -17,11 +17,11 @@
     <meta property="og:title" content="Robert-Jan Mastenbroek — Melodic Afrohouse · Organic Electronic">
     <meta property="og:description" content="Melodic Afrohouse with organic influences — 125–135 BPM. Handpan, tribal percussion, Middle Eastern textures. New track every Friday.">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+    <meta property="og:image" content="https://robertjanmastenbroek.com/images/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+    <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/og-image.png">
     <meta name="theme-color" content="#0a0a0a">
     <link rel="canonical" href="https://robertjanmastenbroek.com/">
     <script type="application/ld+json">
@@ -31,7 +31,7 @@
       "name": "Robert-Jan Mastenbroek",
       "alternateName": "RJM",
       "url": "https://robertjanmastenbroek.com",
-      "image": "https://robertjanmastenbroek.com/images/holy-rave-bg.jpg",
+      "image": "https://robertjanmastenbroek.com/images/og-image.png",
       "description": "Dutch producer of melodic Afrohouse with organic influences. 125–135 BPM. Creator of Holy Rave and Sunset Sessions in Tenerife.",
       "genre": ["Melodic Afrohouse", "Organic House", "Afro House", "Ethnic Electronic", "Middle Eastern Electronic"],
       "foundingLocation": {
@@ -688,7 +688,7 @@
            ───────────────────────────────────────────── */
         #event {
             position: relative;
-            background-image: url('images/holy-rave-bg.jpg');
+            background-image: url('images/sunset-session-1.png');
             background-size: cover;
             background-position: center top;
             background-attachment: scroll;
@@ -904,7 +904,10 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(ellipse at center top, rgba(200, 136, 58, 0.08), transparent 60%);
+            background:
+                radial-gradient(ellipse at center top, rgba(200, 136, 58, 0.08), transparent 60%),
+                url('images/sunset-session-5.png') center/cover no-repeat;
+            opacity: 0.15;
             pointer-events: none;
         }
         .email-inner {

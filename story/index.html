@@ -16,11 +16,11 @@
     <meta property="og:title" content="The Story — Robert-Jan Mastenbroek">
     <meta property="og:description" content="From €6 million to a camper van on a beach in Tenerife. The story behind the music.">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+    <meta property="og:image" content="https://robertjanmastenbroek.com/images/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+    <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/og-image.png">
     <meta property="og:url" content="https://robertjanmastenbroek.com/story">
     <link rel="canonical" href="https://robertjanmastenbroek.com/story">
     <!-- Favicons — Holy Rave flame mark -->
@@ -200,25 +200,27 @@
             overflow: hidden;
             background: linear-gradient(180deg, var(--indigo-deep) 0%, var(--dark-bg) 70%, var(--dark-bg) 100%);
         }
-        .story-hero::before,
+        .story-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(15, 23, 48, 0.7) 0%, rgba(10, 10, 10, 0.88) 100%),
+                url('/images/sunset-session-3.png') center/cover no-repeat;
+            pointer-events: none;
+            z-index: 0;
+        }
         .story-hero::after {
             content: '';
             position: absolute;
             border-radius: 50%;
-            filter: blur(120px);
+            filter: blur(80px);
             pointer-events: none;
-        }
-        .story-hero::before {
+            z-index: 0;
             width: 55vw; height: 55vw;
             top: -18vw; right: -10vw;
-            background: radial-gradient(circle, rgba(184, 83, 42, 0.32) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(184, 83, 42, 0.25) 0%, transparent 70%);
             animation: drift-warm 28s var(--ease-warm) infinite alternate;
-        }
-        .story-hero::after {
-            width: 50vw; height: 50vw;
-            bottom: -15vw; left: -15vw;
-            background: radial-gradient(circle, rgba(26, 42, 74, 0.52) 0%, transparent 70%);
-            animation: drift-cool 34s var(--ease-warm) infinite alternate;
         }
         @keyframes drift-warm {
             0%   { transform: translate(0, 0);       opacity: 0.85; }

@@ -7,10 +7,10 @@
   <meta name="description" content="Keep Holy Rave free. Send me to the rooms that need it most. Here am I. Send me. — Isaiah 6:8">
   <meta property="og:title" content="Send Me · Keep Holy Rave Free">
   <meta property="og:description" content="Every dancefloor. Every city. Every person. Here am I. Send me.">
-  <meta property="og:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+  <meta property="og:image" content="https://robertjanmastenbroek.com/images/og-image.png">
   <meta property="og:url" content="https://robertjanmastenbroek.com/offering">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/holy-rave-bg.jpg">
+  <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/og-image.png">
   <link rel="canonical" href="https://robertjanmastenbroek.com/offering">
   <!-- Favicons — Holy Rave flame mark -->
   <link rel="icon" href="/favicon.ico" sizes="any">
@@ -149,25 +149,27 @@
       overflow: hidden;
       background: linear-gradient(180deg, var(--indigo-deep) 0%, var(--dark) 60%, var(--dark) 100%);
     }
-    .hero::before,
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(15, 23, 48, 0.7) 0%, rgba(10, 10, 10, 0.88) 100%),
+        url('/images/sunset-session-4.png') center/cover no-repeat;
+      pointer-events: none;
+      z-index: 0;
+    }
     .hero::after {
       content: '';
       position: absolute;
       border-radius: 50%;
-      filter: blur(120px);
+      filter: blur(80px);
       pointer-events: none;
-    }
-    .hero::before {
+      z-index: 0;
       width: 55vw; height: 55vw;
       top: -18vw; right: -10vw;
-      background: radial-gradient(circle, rgba(184, 83, 42, 0.30) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(184, 83, 42, 0.2) 0%, transparent 70%);
       animation: drift-warm 28s var(--ease-warm) infinite alternate;
-    }
-    .hero::after {
-      width: 50vw; height: 50vw;
-      bottom: -15vw; left: -15vw;
-      background: radial-gradient(circle, rgba(26, 42, 74, 0.55) 0%, transparent 70%);
-      animation: drift-cool 34s var(--ease-warm) infinite alternate;
     }
     @keyframes drift-warm {
       0%   { transform: translate(0, 0);       opacity: 0.85; }
