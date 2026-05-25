@@ -670,51 +670,6 @@
             margin-top: 3rem;
         }
 
-        /* ─────────────────────────────────────────────
-           VIDEOS
-           ───────────────────────────────────────────── */
-        .video-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        .video-card {
-            aspect-ratio: 16 / 9;
-            background: var(--card-bg);
-            border: 1px solid var(--border-faint);
-            overflow: hidden;
-            position: relative;
-            transition: all 0.5s var(--ease-warm);
-        }
-        .video-card:hover {
-            border-color: var(--terracotta);
-            box-shadow: 0 24px 60px var(--terracotta-glow), 0 0 0 1px var(--terracotta-soft);
-            transform: translateY(-4px);
-        }
-        .video-card iframe,
-        .video-card video {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-            object-fit: cover;
-        }
-        .video-placeholder {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(160deg, rgba(26, 42, 74, 0.3), var(--card-bg));
-            border: 2px dashed var(--border-warm);
-        }
-        @media (max-width: 720px) {
-            .video-grid { grid-template-columns: 1fr; }
-        }
-
         .catalogue-section {
             margin-top: 6rem;
         }
@@ -1358,37 +1313,6 @@
             <a href="/holy-rave" class="btn btn-primary">
                 Reserve Your Spot
             </a>
-        </div>
-    </section>
-
-    <!-- ═══ VIDEOS ═══ -->
-    <section id="videos" class="section">
-        <header class="section-head reveal">
-            <p class="section-eyebrow">Watch</p>
-            <h2>Sunset <em>Sessions</em></h2>
-            <p class="section-sub">See what a Friday night looks like. New videos from every event.</p>
-            <div class="divider">
-                <span class="line"></span>
-                <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
-                <span class="line"></span>
-            </div>
-        </header>
-        <div class="video-grid reveal">
-            <!-- Add your video embeds here — YouTube, Vimeo, or direct MP4 -->
-            <div class="video-card">
-                <div class="video-placeholder">
-                    <svg class="sigil sigil--md" style="color: var(--ochre); opacity: 0.4; margin-bottom: 1rem;"><use href="#sigil"/></svg>
-                    <p style="color: var(--text-mute); font-size: 0.85rem;">Drop your event videos here</p>
-                    <p style="color: var(--terracotta); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;">YouTube · Vimeo · MP4</p>
-                </div>
-            </div>
-            <div class="video-card">
-                <div class="video-placeholder">
-                    <svg class="sigil sigil--md" style="color: var(--ochre); opacity: 0.4; margin-bottom: 1rem;"><use href="#sigil"/></svg>
-                    <p style="color: var(--text-mute); font-size: 0.85rem;">Drop your event videos here</p>
-                    <p style="color: var(--terracotta); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;">YouTube · Vimeo · MP4</p>
-                </div>
-            </div>
         </div>
     </section>
 
