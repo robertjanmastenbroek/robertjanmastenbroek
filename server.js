@@ -271,7 +271,7 @@ app.post('/api/subscribe', async (req, res) => {
 });
 
 // ─── Holy Rave Weekly Tickets ────────────────────────────────────────────────
-const TICKETS_MAX = 50;
+const TICKETS_MAX = 100; // total tickets (each reservation = 2 tickets)
 
 function getWeekMonday() {
   const now = new Date();
@@ -297,20 +297,24 @@ app.get('/api/holy-rave/tickets', async (req, res) => {
 
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
 app.post('/api/holy-rave/register', async (req, res) => {
-  const { firstName, lastName, email, amount } = req.body;
+  const { firstName, lastName, email, amount, quantity } = req.body;
 
   if (!firstName || !lastName || !email || !email.includes('@')) {
     return res.status(400).json({ error: 'Please fill in all fields correctly.' });
   }
 
   const amt = Math.max(0, parseInt(amount, 10) || 0);
+  const qty = Math.min(5, Math.max(1, parseInt(quantity, 10) || 1)); // 1–5 reservations
+  const ticketCount = qty * 2; // each reservation = 2 tickets
   const week = getWeekMonday();
 
   try {
-    // Check availability
+    // Check availability (in tickets, not reservations)
     const stats = await db.getWeekStats(week);
-    if (stats.remaining <= 0) {
-      return res.status(400).json({ error: 'All tickets are taken this week. Check back soon.' });
+    if (stats.remaining < ticketCount) {
+      return res.status(400).json({
+        error: `Only ${stats.remaining} tickets left — not enough for ${ticketCount}. Try fewer.`
+      });
     }
 
     // Check duplicate email
@@ -322,8 +326,8 @@ app.post('/api/holy-rave/register', async (req, res) => {
 
     // Free ticket — confirm immediately
     if (amt === 0) {
-      await db.createRegistration({ id, firstName, lastName, email, amount: 0, week });
-      return res.json({ id, confirmed: true });
+      await db.createRegistration({ id, firstName, lastName, email, amount: 0, quantity: qty, week });
+      return res.json({ id, confirmed: true, tickets: ticketCount });
     }
 
     // Paid ticket — create Stripe Checkout
@@ -331,6 +335,8 @@ app.post('/api/holy-rave/register', async (req, res) => {
     if (!stripe) {
       return res.status(503).json({ error: 'Payment system not available.' });
     }
+
+    const totalCents = amt * qty;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -342,10 +348,10 @@ app.post('/api/holy-rave/register', async (req, res) => {
         price_data: {
           currency: 'eur',
           product_data: {
-            name: 'Holy Rave — Weekly Ticket',
-            description: `${firstName} ${lastName} — pay what you want`,
+            name: `Holy Rave — ${ticketCount} Tickets`,
+            description: `${firstName} ${lastName} — ${qty}× you + friend`,
           },
-          unit_amount: amt,
+          unit_amount: totalCents,
         },
         quantity: 1,
       }],
@@ -358,11 +364,11 @@ app.post('/api/holy-rave/register', async (req, res) => {
     });
 
     await db.createRegistration({
-      id, firstName, lastName, email, amount: amt, week,
+      id, firstName, lastName, email, amount: totalCents, quantity: qty, week,
       stripeSessionId: session.id,
     });
 
-    res.json({ id, checkoutUrl: session.url });
+    res.json({ id, checkoutUrl: session.url, tickets: ticketCount });
   } catch (err) {
     console.error('Holy Rave register error:', err.message);
     res.status(500).json({ error: 'Could not complete registration. Please try again.' });

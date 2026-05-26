@@ -731,9 +731,9 @@
                                 stroke-dasharray="552.92" stroke-dashoffset="552.92"/>
                     </svg>
                     <div class="meter-center">
-                        <span class="meter-spots-left" id="spotsLeft">50</span>
+                        <span class="meter-spots-left" id="spotsLeft">100</span>
                         <span class="meter-label">tickets left</span>
-                        <span class="meter-of">of 50</span>
+                        <span class="meter-of">of 100</span>
                     </div>
                 </div>
 
@@ -768,7 +768,7 @@
             <div class="form-col">
                 <div class="form-card" id="formCard">
                     <h1>Reserve <em>Your Spot</em></h1>
-                    <p class="form-sub">No one turned away. 50 tickets per week — each admits you + one friend. If you're able to contribute, it helps keep the music free for everyone.</p>
+                    <p class="form-sub">100 tickets per week. Each reservation gives you <strong>2 tickets</strong> — one for you, one for a friend. Pay what feels right. Nobody turned away.</p>
 
                     <div class="divider">
                         <span class="line"></span>
@@ -796,6 +796,16 @@
                                    placeholder="you@email.com" required autocomplete="email">
                         </div>
 
+                        <!-- Group size -->
+                        <div class="amount-section" style="margin-bottom: 1rem;">
+                            <label class="amount-label">How Many Tickets? <em>— each reservation = 2 tickets (you + friend)</em></label>
+                            <div class="amount-options" id="quantityOptions" style="grid-template-columns: repeat(3, 1fr);">
+                                <button type="button" class="amount-btn selected" data-quantity="1">2 tickets<br><small style="font-size:0.65rem;opacity:0.7;">you + 1</small></button>
+                                <button type="button" class="amount-btn" data-quantity="2">4 tickets<br><small style="font-size:0.65rem;opacity:0.7;">you + 3</small></button>
+                                <button type="button" class="amount-btn" data-quantity="3">6 tickets<br><small style="font-size:0.65rem;opacity:0.7;">you + 5</small></button>
+                            </div>
+                        </div>
+
                         <!-- Amount selector -->
                         <div class="amount-section">
                             <label class="amount-label">Pay What Feels Right <em>— nobody turned away</em></label>
@@ -819,7 +829,7 @@
                     </form>
 
                     <p class="form-note">
-                        Your ticket admits <strong>you + 1 friend</strong>.<br>
+                        Each reservation = <strong>2 tickets</strong> (you + 1 friend).<br>
                         Location shared by email 24h before the event.
                     </p>
 
@@ -849,11 +859,12 @@
 
     <script>
         // ── State ──
-        const TOTAL_SPOTS = 50;
+        const TOTAL_TICKETS = 100;
         const CIRCUMFERENCE = 2 * Math.PI * 88; // ~552.92
         let selectedAmount = 1200; // default €12
-        let ticketsRemaining = TOTAL_SPOTS;
+        let ticketsRemaining = TOTAL_TICKETS;
         let isSoldOut = false;
+        let selectedQuantity = 1; // 1 reservation = 2 tickets
 
         // ── DOM refs ──
         const meterFill = document.getElementById('meterFill');
@@ -881,8 +892,8 @@
         }
 
         function updateMeter() {
-            const sold = TOTAL_SPOTS - ticketsRemaining;
-            const pct = sold / TOTAL_SPOTS;
+            const sold = TOTAL_TICKETS - ticketsRemaining;
+            const pct = sold / TOTAL_TICKETS;
             const offset = CIRCUMFERENCE * (1 - pct);
 
             // Animate meter
@@ -920,6 +931,17 @@
                 submitBtn.disabled = false;
             }
         }
+
+        // ── Quantity selector ──
+        const quantityOptions = document.getElementById('quantityOptions');
+        quantityOptions.addEventListener('click', (e) => {
+            const btn = e.target.closest('.amount-btn');
+            if (!btn || !btn.dataset.quantity) return;
+            quantityOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedQuantity = parseInt(btn.dataset.quantity, 10) || 1;
+            updateMeter();
+        });
 
         // ── Amount selector ──
         amountOptions.addEventListener('click', (e) => {
@@ -995,7 +1017,7 @@
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, amount }),
+                    body: JSON.stringify({ firstName, lastName, email, amount, quantity: selectedQuantity }),
                 });
                 const data = await res.json();
 

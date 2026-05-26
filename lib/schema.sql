@@ -19,12 +19,19 @@ CREATE TABLE IF NOT EXISTS holy_rave_registrations (
   last_name VARCHAR(100) NOT NULL,
   email VARCHAR(255) NOT NULL,
   amount_cents INTEGER DEFAULT 0,
+  quantity INTEGER DEFAULT 1,                -- number of 2-ticket reservations (default 1 = you + 1 friend)
   status VARCHAR(20) DEFAULT 'pending',      -- 'pending' | 'confirmed' | 'expired'
   week VARCHAR(10) NOT NULL,                 -- YYYY-MM-DD (Monday)
   stripe_session_id VARCHAR(255),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   confirmed_at TIMESTAMPTZ
 );
+
+-- Migration: add quantity column if it doesn't exist (for existing DBs)
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_subscribers_email ON subscribers(email);
