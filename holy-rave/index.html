@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holy Rave — Weekly Tickets · Robert-Jan Mastenbroek</title>
-    <meta name="description" content="Reserve your spot at Holy Rave — weekly event in Tenerife. Pay what feels right. 50 tickets per week. Each admits you + 1 friend.">
+    <title>Holy Rave — Sunset Sessions · Robert-Jan Mastenbroek</title>
+    <meta name="description" content="Weekly open-air sunset sessions in Tenerife. Melodic Afrohouse · Organic Techno. Pay what feels right — every ticket includes a free guest pass.">
     <meta property="og:title" content="Holy Rave — Reserve Your Spot">
     <meta property="og:description" content="Weekly event in Tenerife. Pay what feels right. 50 tickets — each admits you + 1 friend.">
     <meta property="og:image" content="https://robertjanmastenbroek.com/images/og-image.png">
@@ -722,7 +722,7 @@
 
             <!-- LEFT: Circle Meter -->
             <div class="meter-col">
-                <p class="eyebrow"><span class="pin"></span>Weekly · Pay What Feels Right</p>
+                <p class="eyebrow"><span class="pin"></span>Holy Rave — Sunset Sessions</p>
 
                 <div class="meter-wrap" id="meterWrap">
                     <svg class="meter-svg" viewBox="0 0 200 200">
@@ -731,9 +731,9 @@
                                 stroke-dasharray="552.92" stroke-dashoffset="552.92"/>
                     </svg>
                     <div class="meter-center">
-                        <span class="meter-spots-left" id="spotsLeft">100</span>
+                        <span class="meter-spots-left" id="spotsLeft">50</span>
                         <span class="meter-label">tickets left</span>
-                        <span class="meter-of">of 100</span>
+                        <span class="meter-of">of 50</span>
                     </div>
                 </div>
 
@@ -742,25 +742,25 @@
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                         </svg>
-                        Every Friday — location revealed to ticket holders
+                        Weekly Session — Friday, Saturday, or Sunday
                     </div>
                     <div class="meter-event-detail">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                         </svg>
-                        Melodic Afrohouse · Organic Electronic
+                        Melodic Afrohouse · Organic Techno · Outdoor Sessions
                     </div>
                     <div class="meter-event-detail">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
                         </svg>
-                        Tenerife — exact spot shared 24h before
+                        Tenerife Open-Air — Coordinates emailed 24h before
                     </div>
                 </div>
 
                 <div class="plus-one-badge">
                     <span class="count">+1</span>
-                    Every ticket admits you <strong>&nbsp;+ 1 friend free</strong>
+                    Your name goes on the list. <strong>Bring one friend free</strong> — no extra ticket needed.
                 </div>
             </div>
 
@@ -768,7 +768,14 @@
             <div class="form-col">
                 <div class="form-card" id="formCard">
                     <h1>Reserve <em>Your Spot</em></h1>
-                    <p class="form-sub">100 tickets per week. Each reservation gives you <strong>2 tickets</strong> — one for you, one for a friend. Pay what feels right. Nobody turned away.</p>
+                    <p class="form-sub">A weekly open-air sunset session featuring premium electronic music, exceptional vibes, and an authentic community. Come to dance, stay to connect. Location changes weekly between 3 exclusive outdoor spots in Tenerife.</p>
+
+                    <!-- 3-Step Flow -->
+                    <div style="margin: 1.5rem 0 2rem; padding: 1.25rem; background: rgba(200,136,58,0.06); border: 1px solid var(--border-warm); font-size: 0.82rem; line-height: 1.8; color: var(--text-soft);">
+                        <p style="margin-bottom: 0.75rem;"><strong style="color: var(--ochre);">① Reserve Your Spot</strong><br>Secure your ticket below. Every ticket automatically includes an extra guest pass for one friend.</p>
+                        <p style="margin-bottom: 0.75rem;"><strong style="color: var(--ochre);">② Get the Coordinates</strong><br>The specific outdoor location and chosen weekend date (Friday, Saturday, or Sunday) are emailed directly to ticket holders 24 hours before the session.</p>
+                        <p><strong style="color: var(--ochre);">③ Show Up &amp; Vibe</strong><br>Join us open-air to watch the sunset, listen to the set, and connect. Whether you come to dance or just sit back and watch, you belong here.</p>
+                    </div>
 
                     <div class="divider">
                         <span class="line"></span>
@@ -796,16 +803,6 @@
                                    placeholder="you@email.com" required autocomplete="email">
                         </div>
 
-                        <!-- Group size -->
-                        <div class="amount-section" style="margin-bottom: 1rem;">
-                            <label class="amount-label">How Many Tickets? <em>— each reservation = 2 tickets (you + friend)</em></label>
-                            <div class="amount-options" id="quantityOptions" style="grid-template-columns: repeat(3, 1fr);">
-                                <button type="button" class="amount-btn selected" data-quantity="1">2 tickets<br><small style="font-size:0.65rem;opacity:0.7;">you + 1</small></button>
-                                <button type="button" class="amount-btn" data-quantity="2">4 tickets<br><small style="font-size:0.65rem;opacity:0.7;">you + 3</small></button>
-                                <button type="button" class="amount-btn" data-quantity="3">6 tickets<br><small style="font-size:0.65rem;opacity:0.7;">you + 5</small></button>
-                            </div>
-                        </div>
-
                         <!-- Amount selector -->
                         <div class="amount-section">
                             <label class="amount-label">Pay What Feels Right <em>— nobody turned away</em></label>
@@ -821,6 +818,10 @@
                                        placeholder="Custom amount" min="1" step="1">
                             </div>
                         </div>
+
+                        <p style="text-align:center; font-size:0.75rem; color:var(--text-mute); margin-top:0.75rem; letter-spacing:0.04em;">
+                            Your name goes on the list. Bring one friend with you for free — no extra ticket needed.
+                        </p>
 
                         <button type="submit" class="submit-btn" id="submitBtn">
                             Reserve My Spot
@@ -859,12 +860,11 @@
 
     <script>
         // ── State ──
-        const TOTAL_TICKETS = 100;
+        const TOTAL_TICKETS = 50;
         const CIRCUMFERENCE = 2 * Math.PI * 88; // ~552.92
         let selectedAmount = 1200; // default €12
         let ticketsRemaining = TOTAL_TICKETS;
         let isSoldOut = false;
-        let selectedQuantity = 1; // 1 reservation = 2 tickets
 
         // ── DOM refs ──
         const meterFill = document.getElementById('meterFill');
@@ -931,17 +931,6 @@
                 submitBtn.disabled = false;
             }
         }
-
-        // ── Quantity selector ──
-        const quantityOptions = document.getElementById('quantityOptions');
-        quantityOptions.addEventListener('click', (e) => {
-            const btn = e.target.closest('.amount-btn');
-            if (!btn || !btn.dataset.quantity) return;
-            quantityOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedQuantity = parseInt(btn.dataset.quantity, 10) || 1;
-            updateMeter();
-        });
 
         // ── Amount selector ──
         amountOptions.addEventListener('click', (e) => {
@@ -1017,7 +1006,7 @@
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, amount, quantity: selectedQuantity }),
+                    body: JSON.stringify({ firstName, lastName, email, amount }),
                 });
                 const data = await res.json();
 
