@@ -365,7 +365,10 @@ app.post('/api/holy-rave/register', async (req, res) => {
     res.json({ id, checkoutUrl: session.url });
   } catch (err) {
     console.error('Holy Rave register error:', err.message);
-    res.status(500).json({ error: 'Could not complete registration. Please try again.' });
+    // Pass through Stripe and DB errors so the user sees what's wrong
+    const message = err.message || 'Could not complete registration. Please try again.';
+    const isStripe = err.type && err.type.startsWith('Stripe');
+    res.status(isStripe ? 402 : 500).json({ error: message });
   }
 });
 
