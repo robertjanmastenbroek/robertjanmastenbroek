@@ -269,7 +269,7 @@ app.post('/api/subscribe', async (req, res) => {
         reply_to: 'mastenbroekrobertjan@gmail.com',
         to: email,
         subject: 'New music. Every Friday.',
-        html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,sans-serif}.w{max-width:520px;margin:0 auto;padding:48px 32px}h1{font-size:26px;color:#fff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase}.gold{color:#d4af37}p{font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px}hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0}.footer{font-size:13px;color:#555}</style></head><body><div class="w"><p class="gold" style="font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">Robert-Jan Mastenbroek</p><h1>You're <span class="gold">in.</span></h1><hr><p>New music drops every Friday.</p><p>You'll hear it first.</p><hr><p class="footer">All the glory belongs to Jesus.<br>— Robert-Jan</p></div></body></html>`,
+        html: `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Robert-Jan Mastenbroek</p><h1 style="font-size:26px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You're <span style="color:#d4af37">in.</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px">New music drops every Friday.</p><p style="font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px">You'll hear it first.</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
       });
       // Notify RJM
       await resend.emails.send({
@@ -499,7 +499,7 @@ async function sendHolyRaveConfirmation(email, firstName, lastName) {
         reply_to: 'mastenbroekrobertjan@gmail.com',
       to: email,
       subject: "You're in — Holy Rave this weekend",
-      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.w{max-width:520px;margin:0 auto;padding:48px 32px}h1{font-size:28px;color:#fff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase}.gold{color:#d4af37}p{font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px}.highlight{color:#fff}.hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0}.cta{display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase}.ft{font-size:13px;color:#555}</style></head><body><div class="w"><p class="gold" style="font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">Holy Rave · Sunset Sessions</p><h1>You're <span class="gold">in.</span></h1><hr class="hr"><p>${greeting}</p><p class="highlight">Your spot is confirmed — you + one friend.</p><p>The session is this weekend (Friday, Saturday, or Sunday). The exact location and time will land in your inbox <strong>24 hours before</strong> the event.</p><p>Come to dance, stay to connect. Whether it's your first time or your tenth — you belong here.</p><hr class="hr"><p class="ft">Location + more info:</p><a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" class="cta">WhatsApp Community →</a>&nbsp;&nbsp;&nbsp;<a href="https://www.instagram.com/robertjanmastenbroek/" class="cta">Instagram →</a><hr class="hr"><p class="ft">All the glory belongs to Jesus.<br>— Robert-Jan</p></div></body></html>`,
+      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · Sunset Sessions</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You're <span style="color:#d4af37">in.</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">${greeting}</p><p style="margin:0 0 20px;color:#ffffff">Your spot is confirmed — you + one friend.</p><p style="margin:0 0 20px;color:#a0a0a0">The session is this weekend (Friday, Saturday, or Sunday). The exact location and time will land in your inbox <strong style="color:#ffffff">24 hours before</strong> the event.</p><p style="margin:0 0 20px;color:#a0a0a0">Come to dance, stay to connect. Whether it's your first time or your tenth — you belong here.</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0 0 8px">Location + more info:</p><a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">WhatsApp Community →</a>&nbsp;&nbsp;&nbsp;<a href="https://www.instagram.com/robertjanmastenbroek/" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">Instagram →</a><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
     });
     console.log(`Holy Rave confirmation sent to ${email}`);
   } catch (err) {
@@ -521,45 +521,7 @@ async function sendThankYouEmail(email, name) {
         reply_to: 'mastenbroekrobertjan@gmail.com',
       to: email,
       subject: "You're part of Holy Rave now.",
-      html: `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 0; padding: 0; background: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    .wrapper { max-width: 560px; margin: 0 auto; padding: 48px 32px; }
-    h1 { font-size: 28px; color: #ffffff; margin: 0 0 8px 0; letter-spacing: 2px; text-transform: uppercase; }
-    .gold { color: #d4af37; }
-    p { font-size: 16px; line-height: 1.8; color: #a0a0a0; margin: 0 0 20px 0; }
-    .highlight { color: #ffffff; }
-    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 32px 0; }
-    .cta-link { display: inline-block; color: #d4af37; font-size: 14px; text-decoration: none; letter-spacing: 1px; text-transform: uppercase; }
-    .footer { font-size: 13px; color: #555; }
-  </style>
-</head>
-<body>
-  <div class="wrapper">
-    <p style="color: #d4af37; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 24px;">Holy Rave · Sacred Music for Every Dancefloor</p>
-    <h1>You're <span class="gold">in.</span></h1>
-    <hr class="divider">
-    <p>${greeting}</p>
-    <p>Something just shifted.</p>
-    <p class="highlight">Your name is now part of what keeps this going — every free event, every track released as an offering, every person who finds their way to a dancefloor and screams Hallelujah without knowing why.</p>
-    <p>That's partly yours now.</p>
-    <p>I don't take that lightly. Every euro that comes in goes back out — toward the sound, the travel, the food at the door, the ability to say "free" without hesitation to anyone who shows up.</p>
-    <p>Watch your inbox. You'll hear from me personally — not a newsletter, not a broadcast. Just me, writing to the people who've decided to be part of this.</p>
-    <hr class="divider">
-    <p class="footer">Come find us:</p>
-    <a href="https://www.instagram.com/robertjanmastenbroek/" class="cta-link">Instagram →</a>&nbsp;&nbsp;&nbsp;
-    <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" class="cta-link">WhatsApp Community →</a>
-    <hr class="divider">
-    <p class="footer">All the glory belongs to Jesus.<br>— Robert-Jan</p>
-  </div>
-</body>
-</html>
-      `,
+      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You're <span style="color:#d4af37">in.</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:32px 0"><p style="font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px">${greeting}</p><p style="font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px">Something just shifted.</p><p style="font-size:16px;line-height:1.8;color:#ffffff;margin:0 0 20px">Your name is now part of what keeps this going — every free event, every track released as an offering, every person who finds their way to a dancefloor and screams Hallelujah without knowing why.</p><p style="font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px">That's partly yours now.</p><p style="font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px">I don't take that lightly. Every euro that comes in goes back out — toward the sound, the travel, the food at the door, the ability to say "free" without hesitation to anyone who shows up.</p><p style="font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px">Watch your inbox. You'll hear from me personally — not a newsletter, not a broadcast. Just me, writing to the people who've decided to be part of this.</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:32px 0"><p style="font-size:13px;color:#555;margin:0 0 8px">Come find us:</p><a href="https://www.instagram.com/robertjanmastenbroek/" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">Instagram →</a>&nbsp;&nbsp;&nbsp;<a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">WhatsApp Community →</a><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:32px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
     });
     console.log(`Thank-you email sent to ${email}`);
   } catch (err) {
