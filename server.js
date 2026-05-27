@@ -50,15 +50,16 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     const name = session.customer_details?.name;
     const regId = session.client_reference_id || session.metadata?.registration_id;
 
-    if (email) {
-      await sendThankYouEmail(email, name);
-    }
-
     // Holy Rave ticket — mark registration as confirmed (DB-backed, with overbooking guard)
     if (regId && regId.startsWith('hr_')) {
       const week = session.metadata?.week || getWeekMonday();
       try {
-        await db.confirmRegistration(regId, week);
+        const confirmed = await db.confirmRegistration(regId, week);
+        if (confirmed && email) {
+          const firstName = name ? name.split(' ')[0] : '';
+          const lastName = name ? name.split(' ').slice(1).join(' ') : '';
+          await sendHolyRaveConfirmation(email, firstName, lastName);
+        }
       } catch (err) {
         console.error('Webhook confirm error:', err.message);
       }
@@ -323,6 +324,8 @@ app.post('/api/holy-rave/register', async (req, res) => {
     // Free ticket — confirm immediately
     if (amt === 0) {
       await db.createRegistration({ id, firstName, lastName, email, amount: 0, week });
+      sendHolyRaveConfirmation(email, firstName, lastName).catch(e =>
+        console.error('Free ticket email error:', e.message));
       return res.json({ id, confirmed: true });
     }
 
@@ -417,7 +420,28 @@ app.get('*', (req, res) => {
   });
 });
 
-// ─── Email ────────────────────────────────────────────────────────────────────
+// ─── Holy Rave Confirmation Email ─────────────────────────────────────────────
+async function sendHolyRaveConfirmation(email, firstName, lastName) {
+  const name = firstName || '';
+  const greeting = name ? `Hey ${name},` : 'Hey,';
+
+  const resend = getResend();
+  if (!resend) { console.warn('Resend not configured, skipping confirmation email'); return; }
+
+  try {
+    await resend.emails.send({
+      from: 'Robert-Jan <robert-jan@robertjanmastenbroek.com>',
+      to: email,
+      subject: "You're in — Holy Rave this weekend",
+      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.w{max-width:520px;margin:0 auto;padding:48px 32px}h1{font-size:28px;color:#fff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase}.gold{color:#d4af37}p{font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px}.highlight{color:#fff}.hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0}.cta{display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase}.ft{font-size:13px;color:#555}</style></head><body><div class="w"><p class="gold" style="font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">Holy Rave · Sunset Sessions</p><h1>You're <span class="gold">in.</span></h1><hr class="hr"><p>${greeting}</p><p class="highlight">Your spot is confirmed — you + one friend.</p><p>The session is this weekend (Friday, Saturday, or Sunday). The exact location and time will land in your inbox <strong>24 hours before</strong> the event.</p><p>Come to dance, stay to connect. Whether it's your first time or your tenth — you belong here.</p><hr class="hr"><p class="ft">Location + more info:</p><a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" class="cta">WhatsApp Community →</a>&nbsp;&nbsp;&nbsp;<a href="https://www.instagram.com/robertjanmastenbroek/" class="cta">Instagram →</a><hr class="hr"><p class="ft">All the glory belongs to Jesus.<br>— Robert-Jan</p></div></body></html>`,
+    });
+    console.log(`Holy Rave confirmation sent to ${email}`);
+  } catch (err) {
+    console.error('Confirmation email error:', err.message);
+  }
+}
+
+// ─── Offering Thank-You Email ─────────────────────────────────────────────────
 async function sendThankYouEmail(email, name) {
   const firstName = name ? name.split(' ')[0] : '';
   const greeting = firstName ? `Hey ${firstName},` : 'Hey,';
