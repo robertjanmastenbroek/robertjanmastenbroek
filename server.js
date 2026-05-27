@@ -59,10 +59,19 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
           const firstName = name ? name.split(' ')[0] : '';
           const lastName = name ? name.split(' ').slice(1).join(' ') : '';
           await sendHolyRaveConfirmation(email, firstName, lastName);
+          syncToResendAudience(email, firstName, lastName).catch(e =>
+            console.error('Webhook audience sync error:', e.message));
         }
       } catch (err) {
         console.error('Webhook confirm error:', err.message);
       }
+    } else if (email) {
+      // Non-Holy-Rave checkout (offering/support) — send thank-you + sync audience
+      const firstName = name ? name.split(' ')[0] : '';
+      const lastName = name ? name.split(' ').slice(1).join(' ') : '';
+      await sendThankYouEmail(email, name);
+      syncToResendAudience(email, firstName, lastName).catch(e =>
+        console.error('Offering audience sync error:', e.message));
     }
   }
 
@@ -245,8 +254,11 @@ app.post('/api/subscribe', async (req, res) => {
     await db.addSubscriber(email, null, null, 'email_form');
   } catch (e) {
     console.error('Subscriber DB save error:', e.message);
-    // Continue — don't block the welcome email on DB failure
   }
+
+  // Sync to Resend audience (fire-and-forget)
+  syncToResendAudience(email, null, null).catch(e =>
+    console.error('Audience sync error:', e.message));
 
   // Send welcome email
   const resend = getResend();
@@ -328,6 +340,8 @@ app.post('/api/holy-rave/register', async (req, res) => {
       await db.createRegistration({ id, firstName, lastName, email, amount: 0, week });
       sendHolyRaveConfirmation(email, firstName, lastName).catch(e =>
         console.error('Free ticket email error:', e.message));
+      syncToResendAudience(email, firstName, lastName).catch(e =>
+        console.error('Free ticket audience sync error:', e.message));
       return res.json({ id, confirmed: true });
     }
 
@@ -421,6 +435,33 @@ app.get('*', (req, res) => {
     });
   });
 });
+
+// ─── Resend Audience Sync ─────────────────────────────────────────────────────
+// Adds contacts to a Resend audience for broadcast/automation emails.
+// Requires RESEND_AUDIENCE_ID in Railway variables.
+async function syncToResendAudience(email, firstName, lastName) {
+  const audienceId = process.env.RESEND_AUDIENCE_ID;
+  if (!audienceId) return; // silently skip if not configured
+
+  try {
+    await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        first_name: firstName || '',
+        last_name: lastName || '',
+        unsubscribed: false,
+      }),
+    });
+    console.log(`[resend] Contact synced: ${email}`);
+  } catch (err) {
+    console.error('[resend] Audience sync error:', err.message);
+  }
+}
 
 // ─── Holy Rave Confirmation Email ─────────────────────────────────────────────
 async function sendHolyRaveConfirmation(email, firstName, lastName) {
