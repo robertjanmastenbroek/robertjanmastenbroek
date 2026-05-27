@@ -415,6 +415,28 @@ app.get('/api/holy-rave/verify', async (req, res) => {
   }
 });
 
+// ─── Admin: Sync all existing DB contacts to Resend audience ──────────────────
+app.get('/api/admin/sync-audience', async (req, res) => {
+  try {
+    const contacts = await db.getSubscribersWithHolyRave();
+    let synced = 0;
+    let errors = 0;
+    for (const c of contacts) {
+      try {
+        await syncToResendAudience(c.email, c.first_name, c.last_name);
+        synced++;
+      } catch (e) {
+        errors++;
+        console.error(`Sync failed for ${c.email}:`, e.message);
+      }
+    }
+    res.json({ total: contacts.length, synced, errors });
+  } catch (err) {
+    console.error('Admin sync error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.send('OK'));
 
