@@ -254,6 +254,7 @@ app.post('/api/subscribe', async (req, res) => {
     try {
       await resend.emails.send({
         from: 'Robert-Jan <robert-jan@robertjanmastenbroek.com>',
+        reply_to: 'mastenbroekrobertjan@gmail.com',
         to: email,
         subject: 'New music. Every Friday.',
         html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,sans-serif}.w{max-width:520px;margin:0 auto;padding:48px 32px}h1{font-size:26px;color:#fff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase}.gold{color:#d4af37}p{font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px}hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0}.footer{font-size:13px;color:#555}</style></head><body><div class="w"><p class="gold" style="font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">Robert-Jan Mastenbroek</p><h1>You're <span class="gold">in.</span></h1><hr><p>New music drops every Friday.</p><p>You'll hear it first.</p><hr><p class="footer">All the glory belongs to Jesus.<br>— Robert-Jan</p></div></body></html>`,
@@ -261,6 +262,7 @@ app.post('/api/subscribe', async (req, res) => {
       // Notify RJM
       await resend.emails.send({
         from: 'robert-jan@robertjanmastenbroek.com',
+        reply_to: 'mastenbroekrobertjan@gmail.com',
         to: 'robert-jan@robertjanmastenbroek.com',
         subject: `New subscriber: ${email}`,
         html: `<p style="font-family:sans-serif">New subscriber: <strong>${email}</strong></p>`,
@@ -431,6 +433,7 @@ async function sendHolyRaveConfirmation(email, firstName, lastName) {
   try {
     await resend.emails.send({
       from: 'Robert-Jan <robert-jan@robertjanmastenbroek.com>',
+        reply_to: 'mastenbroekrobertjan@gmail.com',
       to: email,
       subject: "You're in — Holy Rave this weekend",
       html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.w{max-width:520px;margin:0 auto;padding:48px 32px}h1{font-size:28px;color:#fff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase}.gold{color:#d4af37}p{font-size:16px;line-height:1.8;color:#a0a0a0;margin:0 0 20px}.highlight{color:#fff}.hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0}.cta{display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase}.ft{font-size:13px;color:#555}</style></head><body><div class="w"><p class="gold" style="font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">Holy Rave · Sunset Sessions</p><h1>You're <span class="gold">in.</span></h1><hr class="hr"><p>${greeting}</p><p class="highlight">Your spot is confirmed — you + one friend.</p><p>The session is this weekend (Friday, Saturday, or Sunday). The exact location and time will land in your inbox <strong>24 hours before</strong> the event.</p><p>Come to dance, stay to connect. Whether it's your first time or your tenth — you belong here.</p><hr class="hr"><p class="ft">Location + more info:</p><a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" class="cta">WhatsApp Community →</a>&nbsp;&nbsp;&nbsp;<a href="https://www.instagram.com/robertjanmastenbroek/" class="cta">Instagram →</a><hr class="hr"><p class="ft">All the glory belongs to Jesus.<br>— Robert-Jan</p></div></body></html>`,
@@ -452,6 +455,7 @@ async function sendThankYouEmail(email, name) {
   try {
     await resend.emails.send({
       from: 'Robert-Jan <robert-jan@robertjanmastenbroek.com>',
+        reply_to: 'mastenbroekrobertjan@gmail.com',
       to: email,
       subject: "You're part of Holy Rave now.",
       html: `
