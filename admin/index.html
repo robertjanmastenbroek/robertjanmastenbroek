@@ -121,6 +121,93 @@
     .field-group textarea { min-height: 70px; resize: vertical; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .form-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+
+    /* Image selector */
+    .image-preview {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #0a0a0a;
+      border: 1px solid rgba(200,136,58,0.12);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.3rem;
+      position: relative;
+    }
+    .image-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .image-preview .placeholder { font-size: 0.72rem; color: #555; text-align: center; line-height: 1.5; padding: 1rem; }
+
+    /* Pexels search modal */
+    .pexels-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 150;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    .pexels-overlay.visible { display: flex; align-items: flex-start; justify-content: center; }
+    .pexels-panel {
+      background: #121216;
+      border: 1px solid rgba(200,136,58,0.18);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 800px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .pexels-panel h2 { font-size: 1.1rem; font-weight: 500; margin-bottom: 1rem; color: #f5f1e8; }
+    .pexels-panel h2 em { color: #c8883a; font-style: italic; }
+    .pexels-search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .pexels-search-bar input {
+      flex: 1;
+      padding: 0.65rem 0.85rem;
+      background: #0a0a0a;
+      border: 1px solid rgba(200,136,58,0.12);
+      color: #f5f1e8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .pexels-search-bar input:focus { border-color: #c8883a; }
+    .pexels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+    .pexels-item {
+      aspect-ratio: 16 / 11;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, transform 0.2s;
+      position: relative;
+      background: #0a0a0a;
+    }
+    .pexels-item:hover { border-color: #c8883a; transform: scale(1.02); }
+    .pexels-item.selected { border-color: #d4af37; }
+    .pexels-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pexels-item .photographer {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.3rem 0.5rem;
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.5);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pexels-loading { text-align: center; padding: 3rem; color: #555; font-size: 0.85rem; }
+    .pexels-close {
+      float: right; background: none; border: none; color: #7a7266;
+      font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; padding: 0.25rem 0.5rem; transition: color 0.2s;
+    }
+    .pexels-close:hover { color: #c8883a; }
+
     .message { font-size: 0.78rem; color: #c8883a; min-height: 1.2rem; margin-top: 0.5rem; }
     .error { color: #b8532a; }
     .loading { opacity: 0.5; pointer-events: none; }
@@ -215,11 +302,36 @@
         <label>Description</label>
         <textarea id="fDescription" placeholder="An evening of melodic Afrohouse..."></textarea>
       </div>
+      <div class="field-group">
+        <label>Event Image</label>
+        <div style="display:flex;gap:0.5rem;">
+          <input type="text" id="fImageUrl" placeholder="https://images.pexels.com/... or paste URL" style="flex:1;">
+          <button class="btn" type="button" onclick="openPexels()">Browse</button>
+        </div>
+        <div class="image-preview" id="imagePreview">
+          <span class="placeholder">No image selected · Click "Browse" to search Pexels or paste a URL</span>
+        </div>
+      </div>
       <div class="form-actions">
         <button class="btn btn-primary" id="formSubmitBtn" onclick="saveEvent()">Create Event</button>
         <button class="btn" onclick="closeForm()">Cancel</button>
       </div>
       <div id="formMessage" class="message"></div>
+    </div>
+  </div>
+
+  <!-- Pexels Image Search Modal -->
+  <div class="pexels-overlay" id="pexelsOverlay">
+    <div class="pexels-panel">
+      <button class="pexels-close" onclick="closePexels()">Close</button>
+      <h2>Search <em>Images</em></h2>
+      <div class="pexels-search-bar">
+        <input type="text" id="pexelsQuery" placeholder="Search sunset, afrohouse, tribal, ocean..." value="sunset tenerife ocean">
+        <button class="btn btn-primary" onclick="searchPexels()">Search</button>
+      </div>
+      <div class="pexels-grid" id="pexelsGrid">
+        <div class="pexels-loading">Enter a search term and click Search</div>
+      </div>
     </div>
   </div>
 
@@ -292,12 +404,91 @@
       editingSlug = null;
       document.getElementById('formTitle').innerHTML = '<em>New</em> Event';
       document.getElementById('formSubmitBtn').textContent = 'Create Event';
-      ['fSlug','fDate','fTitle','fLocation','fTime','fLimit','fLocationDetail','fDescription'].forEach(id => document.getElementById(id).value = '');
+      ['fSlug','fDate','fTitle','fLocation','fTime','fLimit','fLocationDetail','fDescription','fImageUrl'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('fLimit').value = '50';
-      document.getElementById('fTime').value = 'Sunset (~19:00)';
+      document.getElementById('fTime').value = '20:00 – 23:00';
+      clearImagePreview();
       document.getElementById('formOverlay').classList.add('visible');
       document.getElementById('formMessage').textContent = '';
     }
+
+    function clearImagePreview() {
+      const preview = document.getElementById('imagePreview');
+      preview.innerHTML = '<span class="placeholder">No image selected · Click "Browse" to search Pexels or paste a URL</span>';
+    }
+
+    function updateImagePreview(url) {
+      const preview = document.getElementById('imagePreview');
+      if (url) {
+        preview.innerHTML = `<img src="${url}" alt="Event image" onerror="this.outerHTML='<span class=\\'placeholder\\'>Failed to load image</span>'">`;
+      } else {
+        clearImagePreview();
+      }
+    }
+
+    // ── Pexels image search ──────────────────────────────────────────────
+    function openPexels() {
+      document.getElementById('pexelsOverlay').classList.add('visible');
+      searchPexels();
+    }
+
+    function closePexels() {
+      document.getElementById('pexelsOverlay').classList.remove('visible');
+    }
+
+    let pexelsPage = 1;
+    let pexelsQuery = '';
+
+    async function searchPexels(page) {
+      const grid = document.getElementById('pexelsGrid');
+      const query = document.getElementById('pexelsQuery').value.trim() || 'sunset tenerife ocean';
+
+      if (!page || page === 1) {
+        pexelsPage = 1;
+        grid.innerHTML = '<div class="pexels-loading">Searching...</div>';
+      }
+      pexelsQuery = query;
+      if (page) pexelsPage = page;
+
+      try {
+        const data = await api(`/api/admin/pexels-search?q=${encodeURIComponent(pexelsQuery)}&per_page=20&page=${pexelsPage}`);
+        if (!data.photos || data.photos.length === 0) {
+          grid.innerHTML = '<div class="pexels-loading">No images found. Try a different search term.</div>';
+          return;
+        }
+        grid.innerHTML = data.photos.map(p => `
+          <div class="pexels-item" onclick="selectPexelsImage('${p.src.medium}', '${p.photographer}', '${p.url}')">
+            <img src="${p.src.tiny}" alt="${p.alt || ''}" loading="lazy" crossorigin>
+            <span class="photographer">${p.photographer}</span>
+          </div>
+        `).join('');
+
+        // Pagination
+        if (data.total_results > pexelsPage * 20) {
+          const loadMore = document.createElement('div');
+          loadMore.style.cssText = 'grid-column:1/-1;text-align:center;padding:1rem;';
+          loadMore.innerHTML = `<button class="btn" onclick="searchPexels(${pexelsPage + 1})">Load More</button>`;
+          grid.appendChild(loadMore);
+        }
+      } catch (err) {
+        grid.innerHTML = '<div class="pexels-loading">Error: ' + err.message + '</div>';
+      }
+    }
+
+    function selectPexelsImage(url, photographer, pexelsUrl) {
+      document.getElementById('fImageUrl').value = url;
+      updateImagePreview(url);
+      closePexels();
+    }
+
+    // Enter key triggers search in pexels modal
+    document.getElementById('pexelsQuery').addEventListener('keydown', e => { if (e.key === 'Enter') searchPexels(); });
+
+    // Image URL input updates preview on change
+    document.getElementById('fImageUrl').addEventListener('input', function() {
+      if (this.value.trim()) updateImagePreview(this.value.trim());
+      else clearImagePreview();
+    });
 
     function closeForm() { document.getElementById('formOverlay').classList.remove('visible'); }
 
@@ -314,6 +505,7 @@
           ticket_limit: parseInt(document.getElementById('fLimit').value, 10) || 50,
           location_detail: document.getElementById('fLocationDetail').value.trim(),
           description: document.getElementById('fDescription').value.trim(),
+          image_url: document.getElementById('fImageUrl').value.trim() || null,
         };
         if (!body.slug || !body.title || !body.location || !body.event_date) {
           throw new Error('Slug, title, location, and date are required');
@@ -363,8 +555,11 @@
         document.getElementById('fLimit').value = e.ticket_limit || 50;
         document.getElementById('fLocationDetail').value = e.location_detail || '';
         document.getElementById('fDescription').value = e.description || '';
+        document.getElementById('fImageUrl').value = e.image_url || '';
+        if (e.image_url) updateImagePreview(e.image_url);
+        else clearImagePreview();
         document.getElementById('formOverlay').classList.add('visible');
-        document.getElementById('formMessage').textContent = 'Edit title/date/slug then save.';
+        document.getElementById('formMessage').textContent = 'Edit fields then save.';
       } catch (err) { msg(err.message, true); }
     }
 

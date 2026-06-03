@@ -646,6 +646,30 @@ app.get('/api/holy-rave/events/past', async (req, res) => {
   }
 });
 
+// ─── Pexels image search (protected by PEXELS_API_KEY) ───────────────────────
+app.get('/api/admin/pexels-search', requireAdmin, async (req, res) => {
+  const query = req.query.q || 'sunset ocean tenerife';
+  const perPage = Math.min(parseInt(req.query.per_page, 10) || 20, 40);
+  const page = parseInt(req.query.page, 10) || 1;
+  const apiKey = process.env.PEXELS_API_KEY;
+
+  if (!apiKey) {
+    return res.status(503).json({ error: 'Pexels API key not configured. Set PEXELS_API_KEY in Railway.' });
+  }
+
+  try {
+    const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}`, {
+      headers: { 'Authorization': apiKey },
+    });
+    if (!r.ok) throw new Error('Pexels API error: ' + r.status);
+    const data = await r.json();
+    res.json(data);
+  } catch (err) {
+    console.error('Pexels search error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Admin: Create/update/delete events (protected by ADMIN_API_KEY) ─────────
 function requireAdmin(req, res, next) {
   const apiKey = req.headers['x-api-key'];
@@ -669,13 +693,13 @@ app.get('/api/admin/events', requireAdmin, async (req, res) => {
 
 // POST /api/admin/events — create a new event
 app.post('/api/admin/events', requireAdmin, async (req, res) => {
-  const { slug, title, location, location_detail, event_date, event_time, description, ticket_limit } = req.body;
+  const { slug, title, location, location_detail, event_date, event_time, description, ticket_limit, image_url } = req.body;
   if (!slug || !title || !location || !event_date) {
     return res.status(400).json({ error: 'Missing required fields: slug, title, location, event_date' });
   }
 
   try {
-    await db.seedEvent({ slug, title, location, location_detail, event_date, event_time, description, ticket_limit: ticket_limit || 50 });
+    await db.seedEvent({ slug, title, location, location_detail, event_date, event_time, description, ticket_limit: ticket_limit || 50, image_url: image_url || null });
     res.json({ ok: true, slug });
   } catch (err) {
     console.error('Admin create event error:', err.message);
