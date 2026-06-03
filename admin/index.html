@@ -562,9 +562,11 @@
       formData.append('image', file);
 
       try {
+        const headers = {};
+        if (adminToken) headers['x-admin-token'] = adminToken;
         const res = await fetch('/api/admin/event-images/upload', {
           method: 'POST',
-          credentials: 'same-origin',
+          headers,
           body: formData,
         });
         const data = await res.json();
