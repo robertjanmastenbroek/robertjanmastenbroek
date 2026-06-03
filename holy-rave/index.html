@@ -3218,9 +3218,7 @@
                 document.getElementById('resendTimer').textContent = '';
 
                 showToast('Phone verified \u2713', 'success');
-
-                // Auto-advance to step 2
-                goToStep(2);
+                setTimeout(function() { goToStep(2); }, 600);
 
             } catch (err) {
                 // Shake all fields
