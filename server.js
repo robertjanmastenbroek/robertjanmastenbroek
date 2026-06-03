@@ -1481,8 +1481,7 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   const slugPart = slug && slug.startsWith('holy-rave/') ? slug : 'holy-rave/' + (slug || '');
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
 
-  // Compact SMS — emojis removed for carrier compatibility, URLs short
-  const message = `Holy Rave ticket! ${locStr}${mapStr ? ' Maps: ' + mapsUrl : ''} ${dateStr} ${timeStr} You+1${codeStr} See you there. ${link}`;
+  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${mapStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow at the door.\n\n${link}`;
 
   const sender = getFromNumber(phone);
   console.log(`[sms] Sending ticket to ${phone} from: "${sender}"`);
