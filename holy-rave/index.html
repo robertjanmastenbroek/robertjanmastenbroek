@@ -1137,13 +1137,6 @@
             box-shadow: 0 0 0 3px var(--ochre-dim);
         }
         .custom-amount-row.selected { border-color: var(--ochre); }
-        .custom-amount-prefix {
-            padding: 0.8rem 0.75rem 0.8rem 1rem;
-            color: var(--gold);
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: var(--font-serif);
-        }
         .custom-amount-input {
             flex: 1;
             padding: 0.8rem 1rem 0.8rem 0.25rem;
@@ -1862,9 +1855,8 @@
                                     <button type="button" class="amount-btn" data-amount="5000">€50</button>
                                 </div>
                                 <div class="custom-amount-row" id="customRow">
-                                    <span class="custom-amount-prefix">€</span>
                                     <input type="number" id="customAmount" class="custom-amount-input"
-                                           placeholder="Custom amount" min="1" step="1">
+                                           placeholder="€ Custom amount" min="1" step="1">
                                 </div>
                             </div>
                             <p style="text-align:center;font-size:0.75rem;color:var(--text-mute);margin:0 0 1rem;letter-spacing:0.04em;">
@@ -2959,12 +2951,24 @@
         function updateAmountDisplay(cents) {
             const el = document.getElementById('amountDisplay');
             if (!el) return;
-            if (cents === 0) {
-                el.textContent = 'Free';
-                document.getElementById('amountSummary').innerHTML = "You\u2019re in &mdash; <strong>\u20ac0</strong> &middot; No payment needed";
+            const euro = (cents / 100).toFixed(2);
+            el.textContent = '\u20ac' + (cents / 100).toFixed(0);
+
+            // Update CTA button text dynamically
+            const btn = document.getElementById('submitBtn');
+            if (btn) btn.textContent = 'Pay \u20ac' + (cents / 100).toFixed(2);
+
+            // Update summary under CTA
+            const summary = document.getElementById('amountSummary');
+            if (cents <= 100) {
+                // €1 = verification fee
+                summary.innerHTML = '<strong>\u20ac1 verification</strong> &middot; just to know you\u2019re real';
+            } else if (cents <= 1200) {
+                // €2-12: supportive
+                summary.innerHTML = 'You\u2019ll pay <strong>\u20ac' + (cents / 100).toFixed(0) + '</strong> &middot; helps keep the music playing';
             } else {
-                el.textContent = '\u20ac' + (cents / 100).toFixed(0);
-                document.getElementById('amountSummary').innerHTML = "You\u2019ll pay <strong>\u20ac" + (cents / 100).toFixed(0) + "</strong> &middot; Secure via Stripe";
+                // €13+: generous
+                summary.innerHTML = 'You\u2019ll pay <strong>\u20ac' + (cents / 100).toFixed(0) + '</strong> &middot; Secure via Stripe <span style="color:var(--ochre);">\u2661</span>';
             }
         }
 
