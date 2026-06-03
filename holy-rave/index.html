@@ -1660,8 +1660,8 @@
                          width="44" height="44"
                          loading="lazy">
                     <div class="host-info">
-                        <div class="host-name">Hosted by Robert-Jan</div>
-                        <div class="host-cred">36 tracks · Independently owned · <a href="/story">Full story →</a></div>
+                        <div class="host-name">Hosted by Robert-Jan Mastenbroek</div>
+                        <div class="host-cred">Singer, DJ &amp; Producer · Event Creator · <a href="/story">Full story →</a></div>
                     </div>
                 </div>
 
@@ -2986,9 +2986,10 @@
                     if (!btn) return;
                     amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
                     document.getElementById('customRow').classList.remove('selected');
-                    document.getElementById('customAmount').value = '';
+                    const amt = parseInt(btn.dataset.amount, 10) || 0;
+                    document.getElementById('customAmount').value = amt / 100;
                     btn.classList.add('selected');
-                    selectedAmount = parseInt(btn.dataset.amount, 10) || 0;
+                    selectedAmount = amt;
                     updateAmountDisplay(selectedAmount);
                 });
             }
