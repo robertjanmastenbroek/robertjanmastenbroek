@@ -734,6 +734,26 @@ app.post('/api/subscribe', async (req, res) => {
   res.json({ ok: true });
 });
 
+// ─── Holy Rave OG image proxy (for social media crawlers, no JS) ────────────
+// Serves a minimal HTML page with event-specific OG meta tags so Facebook,
+// Twitter, LinkedIn, Telegram, WhatsApp etc. show the correct preview.
+app.get('/holy-rave/og/:slug', async (req, res) => {
+  try {
+    const event = await db.getEventBySlug(req.params.slug);
+    if (!event) return res.redirect('/holy-rave');
+    const date = new Date(event.event_date + 'T12:00:00');
+    const dateStr = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    const imageUrl = event.image_url
+      ? (event.image_url.startsWith('http') ? event.image_url : SITE_URL + event.image_url)
+      : SITE_URL + '/images/og-image.png';
+    const title = `Holy Rave — ${dateStr} · ${event.location || 'Tenerife'}`;
+    const desc = `50 tickets · Pay what feels right · You + 1 friend · ${event.event_time || 'Sunset'} at ${event.location || 'Tenerife South'}`;
+    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><meta property="og:title" content="${title}"><meta property="og:description" content="${desc}"><meta property="og:image" content="${imageUrl}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:type" content="website"><meta property="og:url" content="${SITE_URL}/holy-rave/${event.slug}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${imageUrl}"><meta http-equiv="refresh" content="0;url=${SITE_URL}/holy-rave/${event.slug}"></head><body></body></html>`);
+  } catch (err) {
+    res.redirect('/holy-rave');
+  }
+});
+
 // ─── Holy Rave Events (event-specific, replaces weekly auto-reset) ──────────
 
 // GET /api/holy-rave/events — list upcoming events with ticket counts
@@ -1445,17 +1465,44 @@ app.get('/api/stripe/publishable-key', (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 // ─── Holy Rave event pages — serve holy-rave/index.html for /holy-rave/:slug ──
-app.get('/holy-rave/:slug', (req, res) => {
+app.get('/holy-rave/:slug', async (req, res) => {
   const slug = req.params.slug;
 
-  // confirmation page is a separate file
   if (slug === 'confirmed') {
     return res.sendFile(path.join(__dirname, 'holy-rave', 'confirmed.html'), (err) => {
       if (err) res.sendFile(path.join(__dirname, 'index.html'));
     });
   }
 
-  // Everything else serves the holy-rave index.html; JS reads the slug from URL
+  // Inject OG meta tags for social media crawlers (they don't execute JS)
+  try {
+    const event = await db.getEventBySlug(slug);
+    if (event) {
+      const date = new Date(event.event_date + 'T12:00:00');
+      const dateStr = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      const imageUrl = event.image_url
+        ? (event.image_url.startsWith('http') ? event.image_url : SITE_URL + event.image_url)
+        : SITE_URL + '/images/og-image.png';
+      const ogTitle = `Holy Rave — ${dateStr} · ${event.location || 'Tenerife'}`;
+      const ogDesc = `50 tickets · Pay what feels right · You + 1 friend · ${event.event_time || 'Sunset'} at ${event.location || 'Tenerife South'}`;
+
+      const htmlPath = path.join(__dirname, 'holy-rave', 'index.html');
+      const fs = require('fs');
+      fs.readFile(htmlPath, 'utf8', (err, data) => {
+        if (err) return res.sendFile(path.join(__dirname, 'index.html'));
+        // Replace OG meta tags with event-specific ones
+        const injected = data
+          .replace(/<meta property="og:title" content="[^"]*"/, `<meta property="og:title" content="${ogTitle}"`)
+          .replace(/<meta property="og:description" content="[^"]*"/, `<meta property="og:description" content="${ogDesc}"`)
+          .replace(/<meta property="og:image" content="[^"]*"/, `<meta property="og:image" content="${imageUrl}"`)
+          .replace(/<meta name="twitter:image" content="[^"]*"/, `<meta name="twitter:image" content="${imageUrl}"`);
+        res.send(injected);
+      });
+      return;
+    }
+  } catch (e) {}
+
+  // Fallback: serve file as-is
   res.sendFile(path.join(__dirname, 'holy-rave', 'index.html'), (err) => {
     if (err) res.sendFile(path.join(__dirname, 'index.html'));
   });

@@ -2218,6 +2218,20 @@
 
         function renderDetail(event) {
             const date = new Date(event.event_date + 'T12:00:00');
+
+            // Update OG meta tags for social sharing (only on detail pages)
+            const ogImage = document.querySelector('meta[property="og:image"]');
+            const twImage = document.querySelector('meta[name="twitter:image"]');
+            const ogTitle = document.querySelector('meta[property="og:title"]');
+            const ogDesc = document.querySelector('meta[property="og:description"]');
+            const fullImageUrl = event.image_url
+                ? (event.image_url.startsWith('http') ? event.image_url : window.location.origin + event.image_url)
+                : window.location.origin + '/images/og-image.png';
+            if (ogImage) ogImage.content = fullImageUrl;
+            if (twImage) twImage.content = fullImageUrl;
+            if (ogTitle) ogTitle.content = 'Holy Rave — ' + date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' · ' + (event.location || 'Tenerife');
+            if (ogDesc) ogDesc.content = '50 tickets. Pay what feels right. You + 1 friend. ' + (event.event_time || 'Sunset') + ' at ' + (event.location || 'Tenerife South') + '.';
+
             document.getElementById('detailTitle').innerHTML =
                 `<em>${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</em> · ${event.location || 'Tenerife'}`;
             document.getElementById('detailEyebrow').innerHTML = '<span class="pin"></span>Holy Rave';
