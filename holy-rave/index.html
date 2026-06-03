@@ -1679,7 +1679,6 @@
                 <!-- Social proof ticker -->
                 <div class="social-ticker" id="socialTicker">
                     <span class="ticker-name" id="tickerName">—</span>
-                    <span class="ticker-action">just reserved</span>
                 </div>
 
                 <p class="detail-description" id="detailDesc">
@@ -2704,10 +2703,11 @@
         }
 
         // ──────────────────────────────────────────────────────
-        // SOCIAL PROOF TICKER
+        // SOCIAL PROOF TICKER — flowing rotation of recent registrants
         // ──────────────────────────────────────────────────────
         let tickerIndex = 0;
         let tickerData = [];
+        let tickerInterval = null;
 
         async function startSocialProof(eventId) {
             try {
@@ -2715,29 +2715,41 @@
                 if (res.ok) {
                     tickerData = await res.json();
                     if (tickerData.length > 0) {
-                        showTickerItem(0);
-                        setInterval(nextTicker, 5000);
+                        showTickerItem(0, true);
+                        // Random interval between 4-7 seconds for organic feel
+                        const next = () => {
+                            tickerInterval = setTimeout(() => {
+                                nextTicker();
+                                next();
+                            }, 4000 + Math.random() * 3000);
+                        };
+                        next();
                     }
                 }
             } catch (e) {}
         }
 
-        function showTickerItem(i) {
+        function showTickerItem(i, immediate) {
             if (!tickerData[i]) return;
             const el = document.getElementById('tickerName');
-            if (el) {
-                el.style.opacity = '0';
-                setTimeout(() => {
-                    el.textContent = tickerData[i].name;
-                    el.style.opacity = '1';
-                }, 200);
-            }
+            if (!el) return;
+
+            const duration = immediate ? 0 : 400;
+            el.style.transition = 'opacity ' + duration + 'ms ease, transform ' + duration + 'ms ease';
+            el.style.transform = 'translateY(6px)';
+            el.style.opacity = '0';
+
+            setTimeout(() => {
+                el.textContent = tickerData[i].name + ' just reserved';
+                el.style.transform = 'translateY(0)';
+                el.style.opacity = '1';
+            }, duration);
         }
 
         function nextTicker() {
             if (tickerData.length === 0) return;
             tickerIndex = (tickerIndex + 1) % tickerData.length;
-            showTickerItem(tickerIndex);
+            showTickerItem(tickerIndex, false);
         }
 
         // ──────────────────────────────────────────────────────
