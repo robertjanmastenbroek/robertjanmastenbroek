@@ -134,25 +134,23 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
             const reg = await db.getRegistrationById(regId);
             if (reg && reg.phone) {
               const eventMeta = session.metadata || {};
-              const slug = eventMeta.event_slug || 'holy-rave';
-              // Fetch location_detail for the SMS
-              let detail = '';
+              let evTitle = 'Holy Rave', evDate = '', evTime = '', evLoc = '', evSlug = 'holy-rave', evDetail = '';
               if (reg.event_id) {
                 try {
                   const sql = db.getSql();
-                  const [ev] = await sql`SELECT location_detail FROM events WHERE id = ${reg.event_id}`;
-                  detail = ev?.location_detail || '';
+                  const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, slug FROM events WHERE id = ${reg.event_id}`;
+                  if (ev) { evTitle = ev.title; evDate = ev.event_date; evTime = ev.event_time; evLoc = ev.location; evSlug = ev.slug; evDetail = ev.location_detail; }
                 } catch(e) {}
               }
               sendTicketSMS(
                 reg.phone,
-                'Holy Rave',
-                eventMeta.event_date,
-                null,
-                eventMeta.event_location,
-                slug,
+                evTitle,
+                evDate || eventMeta.event_date,
+                evTime,
+                evLoc || eventMeta.event_location,
+                evSlug,
                 regId,
-                detail
+                evDetail
               ).catch(e => console.error('Webhook SMS error:', e.message));
             }
           } catch (e) {
@@ -190,17 +188,21 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
                 console.error('PI webhook audience sync error:', e.message));
             }
             if (reg.phone) {
-              const slug = pi.metadata?.event_slug || 'holy-rave';
-              let detail = '';
+              let evTitle = 'Holy Rave', evDate = '', evTime = '', evLoc = '', evSlug = 'holy-rave', evDetail = '';
               if (reg.event_id) {
                 try {
                   const sql = db.getSql();
-                  const [ev] = await sql`SELECT location_detail FROM events WHERE id = ${reg.event_id}`;
-                  detail = ev?.location_detail || '';
+                  const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, slug FROM events WHERE id = ${reg.event_id}`;
+                  if (ev) { evTitle = ev.title; evDate = ev.event_date; evTime = ev.event_time; evLoc = ev.location; evSlug = ev.slug; evDetail = ev.location_detail; }
                 } catch(e) {}
               }
-              sendTicketSMS(reg.phone, 'Holy Rave', pi.metadata?.event_date, null, pi.metadata?.event_location, slug, regId, detail)
-                .catch(e => console.error('PI webhook SMS error:', e.message));
+              sendTicketSMS(
+                reg.phone, evTitle,
+                evDate || pi.metadata?.event_date,
+                evTime,
+                evLoc || pi.metadata?.event_location,
+                evSlug, regId, evDetail
+              ).catch(e => console.error('PI webhook SMS error:', e.message));
             }
           }
         }
@@ -1016,9 +1018,19 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
     if (reg.phone && reg.event_id) {
       try {
         const sql = db.getSql();
-        const [ev] = await sql`SELECT location_detail FROM events WHERE id = ${reg.event_id}`;
-        sendTicketSMS(reg.phone, 'Holy Rave', '', null, '', '', regId, ev?.location_detail || '')
-          .catch(e => console.error('Confirm SMS error:', e.message));
+        const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, slug FROM events WHERE id = ${reg.event_id}`;
+        if (ev) {
+          sendTicketSMS(
+            reg.phone,
+            ev.title || 'Holy Rave',
+            ev.event_date,
+            ev.event_time,
+            ev.location,
+            ev.slug || 'holy-rave',
+            regId,
+            ev.location_detail || ''
+          ).catch(e => console.error('Confirm SMS error:', e.message));
+        }
       } catch(e) {}
     }
 
