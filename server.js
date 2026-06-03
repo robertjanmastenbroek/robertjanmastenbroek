@@ -1301,6 +1301,26 @@ app.get('/api/images/event/:shortId', async (req, res) => {
   }
 });
 
+// ─── Twilio configuration check (for debugging) ─────────────────────────────
+app.get('/api/debug/twilio', (req, res) => {
+  const sid = process.env.TWILIO_ACCOUNT_SID || '';
+  const token = process.env.TWILIO_AUTH_TOKEN || '';
+  const fromNumber = process.env.TWILIO_FROM_NUMBER || '';
+  res.json({
+    sidSet: !!sid,
+    sidPrefix: sid ? sid.substring(0, 6) + '...' : null,
+    tokenSet: !!token,
+    fromNumberSet: !!fromNumber,
+    fromNumber: fromNumber || null,
+    testTwilio: (() => {
+      try {
+        const t = getTwilio();
+        return !!t;
+      } catch (e) { return false; }
+    })(),
+  });
+});
+
 // ─── Resend configuration check (for debugging) ──────────────────────────────
 app.get('/api/debug/resend', (req, res) => {
   const apiKey = process.env.RESEND_API_KEY || '';
@@ -1461,7 +1481,8 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   const slugPart = slug && slug.startsWith('holy-rave/') ? slug : 'holy-rave/' + (slug || '');
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
 
-  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${mapStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow this message at the door.\n\n${link}`;
+  // Compact SMS — emojis removed for carrier compatibility, URLs short
+  const message = `Holy Rave ticket! ${locStr}${mapStr ? ' Maps: ' + mapsUrl : ''} ${dateStr} ${timeStr} You+1${codeStr} See you there. ${link}`;
 
   const sender = getFromNumber(phone);
   console.log(`[sms] Sending ticket to ${phone} from: "${sender}"`);
