@@ -965,6 +965,104 @@
             gap: 1rem;
         }
 
+        /* ── Phone verification ── */
+        .verify-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .verify-row .field-input { flex: 1; }
+        .verify-btn {
+            padding: 0.8rem 1.25rem;
+            background: var(--ochre);
+            border: none;
+            color: var(--dark);
+            font-family: var(--font-sans);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-warm);
+            white-space: nowrap;
+        }
+        .verify-btn:hover { background: var(--terracotta); color: var(--text); }
+        .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .verify-status {
+            font-size: 0.75rem;
+            min-height: 1.2rem;
+            margin-top: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .verify-status .check { color: #4ade80; font-weight: 600; }
+        .verify-status .spinner {
+            width: 14px; height: 14px;
+            border: 2px solid var(--border-warm);
+            border-top-color: var(--ochre);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+        }
+        .verify-status .error { color: var(--terracotta); }
+        .verify-status .info { color: var(--text-mute); }
+
+        /* 6-digit code input */
+        .code-input-wrap {
+            display: none;
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 0.75rem 0;
+        }
+        .code-input-wrap.visible { display: flex; }
+        .code-digit {
+            width: 44px;
+            height: 52px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+            font-family: var(--font-sans);
+            background: rgba(10,10,10,0.6);
+            border: 1px solid var(--border-warm);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s var(--ease-warm), box-shadow 0.2s var(--ease-warm);
+            border-radius: 0;
+            caret-color: var(--ochre);
+        }
+        .code-digit:focus {
+            border-color: var(--ochre);
+            box-shadow: 0 0 0 2px var(--ochre-dim);
+        }
+        .code-digit.filled {
+            border-color: var(--ochre-soft);
+            background: rgba(200,136,58,0.08);
+        }
+        .code-digit.error {
+            border-color: var(--terracotta);
+            animation: shake 0.4s var(--ease-warm);
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25%      { transform: translateX(-4px); }
+            75%      { transform: translateX(4px); }
+        }
+
+        .resend-timer {
+            font-size: 0.7rem;
+            color: var(--text-mute);
+            text-align: center;
+            margin-top: 0.25rem;
+            letter-spacing: 0.02em;
+        }
+        .resend-timer a {
+            color: var(--ochre);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .resend-timer a:hover { color: var(--terracotta); }
+
         .amount-section { margin: 1.5rem 0 1rem; }
         .amount-label {
             display: block;
@@ -1680,8 +1778,8 @@
                                        placeholder="you@email.com" required autocomplete="email">
                             </div>
                             <div class="field-group">
-                                <label class="field-label" for="phone">Phone <span style="color:var(--text-mute);font-weight:300;text-transform:none;letter-spacing:0.02em;">— your ticket arrives here</span></label>
-                                <div style="display:flex;gap:0.5rem;align-items:stretch;">
+                                <label class="field-label" for="phone">Phone <span style="color:var(--text-mute);font-weight:300;text-transform:none;letter-spacing:0.02em;">— your ticket arrives here by SMS</span></label>
+                                <div class="verify-row">
                                     <select id="phoneCountry" class="field-input" style="width:auto;min-width:4.5rem;padding:0.95rem 0.5rem;appearance:auto;-webkit-appearance:auto;">
                                         <option value="+34" selected>🇪🇸 +34</option>
                                         <option value="+31">🇳🇱 +31</option>
@@ -1699,10 +1797,25 @@
                                         <option value="+41">🇨🇭 +41</option>
                                         <option value="+32">🇧🇪 +32</option>
                                     </select>
-                                    <input type="tel" id="phoneNumber" class="field-input" style="flex:1;"
+                                    <input type="tel" id="phoneNumber" class="field-input"
                                            placeholder="612 345 678" autocomplete="tel-national">
+                                    <button type="button" class="verify-btn" id="verifySendBtn" onclick="sendVerificationCode()">
+                                        Send Code
+                                    </button>
                                 </div>
-                                <p style="font-size:0.68rem;color:var(--text-mute);margin-top:0.3rem;letter-spacing:0.04em;">Your ticket and location details will be sent here via WhatsApp</p>
+
+                                <!-- 6-digit code input (shown after sending) -->
+                                <div class="code-input-wrap" id="codeInputWrap">
+                                    <input type="text" class="code-digit" id="cd0" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code" oninput="codeDigitInput(this, 0)" onkeydown="codeDigitKeydown(this, event)" onfocus="this.select()">
+                                    <input type="text" class="code-digit" id="cd1" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="codeDigitInput(this, 1)" onkeydown="codeDigitKeydown(this, event)">
+                                    <input type="text" class="code-digit" id="cd2" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="codeDigitInput(this, 2)" onkeydown="codeDigitKeydown(this, event)">
+                                    <input type="text" class="code-digit" id="cd3" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="codeDigitInput(this, 3)" onkeydown="codeDigitKeydown(this, event)">
+                                    <input type="text" class="code-digit" id="cd4" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="codeDigitInput(this, 4)" onkeydown="codeDigitKeydown(this, event)">
+                                    <input type="text" class="code-digit" id="cd5" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="codeDigitInput(this, 5)" onkeydown="codeDigitKeydown(this, event)">
+                                </div>
+
+                                <div class="verify-status" id="verifyStatus"></div>
+                                <div class="resend-timer" id="resendTimer"></div>
                             </div>
                             <button type="button" class="step-btn" style="margin-top:1.25rem;" onclick="goToStep(2)">
                                 Check Availability →
@@ -2086,6 +2199,11 @@
                     document.getElementById('formError').textContent = 'Please enter a valid phone number (e.g. ' + phoneCountry + ' 612 345 678).';
                     return;
                 }
+                // Phone must be verified via 6-digit code
+                if (!phoneVerified) {
+                    document.getElementById('formError').textContent = 'Verify your phone number first — click "Send Code" and enter the 6-digit code.';
+                    return;
+                }
             }
             document.getElementById('formError').textContent = '';
 
@@ -2414,6 +2532,206 @@
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             const input = document.getElementById('firstName');
             if (input) setTimeout(() => input.focus(), 500);
+        }
+
+        // ──────────────────────────────────────────────────────
+        // PHONE VERIFICATION STATE
+        // ──────────────────────────────────────────────────────
+        let phoneVerified = false;
+        let maskedPhone = '';
+
+        // ──────────────────────────────────────────────────────
+        // PHONE VERIFICATION — send code
+        // ──────────────────────────────────────────────────────
+        async function sendVerificationCode() {
+            const error = document.getElementById('formError');
+            error.textContent = '';
+
+            const country = document.getElementById('phoneCountry')?.value || '+34';
+            const number = document.getElementById('phoneNumber')?.value.trim() || '';
+            if (!number) {
+                error.textContent = 'Enter your phone number first.';
+                return;
+            }
+            const fullPhone = country + ' ' + number;
+            if (!/^\+\d{1,4}\s?\d{4,15}$/.test(fullPhone.replace(/\s+/g, ' '))) {
+                error.textContent = 'Enter a valid phone number with country code.';
+                return;
+            }
+
+            const btn = document.getElementById('verifySendBtn');
+            btn.textContent = 'Sending...';
+            btn.disabled = true;
+            setVerifyStatus('Sending code...', 'info');
+
+            try {
+                const res = await fetch('/api/verify/phone/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: fullPhone }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                maskedPhone = data.masked;
+                phoneVerified = false;
+
+                // Show code input
+                document.getElementById('codeInputWrap').classList.add('visible');
+                setVerifyStatus('Code sent to ' + data.masked, 'info');
+                document.getElementById('cd0').focus();
+
+                // Start resend timer (60s)
+                startResendTimer(fullPhone);
+
+            } catch (err) {
+                setVerifyStatus(err.message, 'error');
+                btn.textContent = 'Send Code';
+                btn.disabled = false;
+            }
+        }
+
+        // ── Code digit input handling ──
+        function codeDigitInput(input, index) {
+            // Only allow digits
+            input.value = input.value.replace(/\D/g, '');
+            if (input.value) {
+                input.classList.add('filled');
+                input.classList.remove('error');
+                // Auto-advance to next
+                if (index < 5) document.getElementById('cd' + (index + 1)).focus();
+                else {
+                    // All 6 digits entered — auto-verify
+                    document.getElementById('cd5').blur();
+                    checkVerificationCode();
+                }
+            } else {
+                input.classList.remove('filled');
+            }
+        }
+
+        function codeDigitKeydown(input, event) {
+            const idx = parseInt(input.id.replace('cd', ''), 10);
+            if (event.key === 'Backspace' && !input.value && idx > 0) {
+                const prev = document.getElementById('cd' + (idx - 1));
+                prev.focus();
+                prev.value = '';
+                prev.classList.remove('filled');
+            }
+        }
+
+        // ── Check verification code ──
+        async function checkVerificationCode() {
+            const country = document.getElementById('phoneCountry')?.value || '+34';
+            const number = document.getElementById('phoneNumber')?.value.trim() || '';
+            const fullPhone = country + ' ' + number;
+
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += document.getElementById('cd' + i).value || '';
+            }
+            if (code.length !== 6) return;
+
+            setVerifyStatus('Verifying...', 'info');
+
+            try {
+                const res = await fetch('/api/verify/phone/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: fullPhone, code }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                phoneVerified = true;
+                setVerifyStatus('<span class="check">\u2713</span> Phone verified', 'check');
+
+                // Lock inputs
+                document.getElementById('verifySendBtn').textContent = 'Verified';
+                document.getElementById('verifySendBtn').disabled = true;
+                document.getElementById('phoneNumber').disabled = true;
+                document.getElementById('phoneCountry').disabled = true;
+                for (let i = 0; i < 6; i++) {
+                    document.getElementById('cd' + i).disabled = true;
+                    document.getElementById('cd' + i).classList.add('filled');
+                }
+                document.getElementById('resendTimer').textContent = '';
+
+                showToast('Phone verified \u2713', 'success');
+
+            } catch (err) {
+                // Shake all fields
+                for (let i = 0; i < 6; i++) {
+                    const el = document.getElementById('cd' + i);
+                    el.classList.add('error');
+                    el.value = '';
+                    el.classList.remove('filled');
+                    setTimeout(() => el.classList.remove('error'), 500);
+                }
+                document.getElementById('cd0').focus();
+                setVerifyStatus(err.message, 'error');
+            }
+        }
+
+        // ── Resend timer ──
+        let resendTimeout = null;
+
+        function startResendTimer(phone) {
+            let seconds = 60;
+            const timerEl = document.getElementById('resendTimer');
+
+            function tick() {
+                if (phoneVerified) { timerEl.textContent = ''; return; }
+                if (seconds <= 0) {
+                    timerEl.innerHTML = 'Didn\'t receive it? <a onclick="resendCode(\'' + phone.replace(/'/g, "\\'") + '\')">Send again</a>';
+                    return;
+                }
+                timerEl.textContent = 'Resend in ' + seconds + 's';
+                seconds--;
+                resendTimeout = setTimeout(tick, 1000);
+            }
+            tick();
+        }
+
+        async function resendCode(phone) {
+            document.getElementById('resendTimer').textContent = '';
+            const btn = document.getElementById('verifySendBtn');
+            btn.textContent = 'Sending...';
+            btn.disabled = true;
+            setVerifyStatus('Sending new code...', 'info');
+
+            try {
+                const res = await fetch('/api/verify/phone/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                setVerifyStatus('New code sent to ' + data.masked, 'info');
+                // Clear code inputs
+                for (let i = 0; i < 6; i++) {
+                    document.getElementById('cd' + i).value = '';
+                    document.getElementById('cd' + i).classList.remove('filled');
+                }
+                document.getElementById('cd0').focus();
+                startResendTimer(phone);
+
+            } catch (err) {
+                setVerifyStatus(err.message, 'error');
+                btn.textContent = 'Send Code';
+                btn.disabled = false;
+            }
+        }
+
+        function setVerifyStatus(html, type) {
+            const el = document.getElementById('verifyStatus');
+            el.innerHTML = html;
+            el.className = 'verify-status';
+            if (type === 'error') el.classList.add('error');
+            else if (type === 'check') el.classList.add('check');
+            else el.classList.add('info');
         }
 
         // ──────────────────────────────────────────────────────

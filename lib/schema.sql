@@ -88,6 +88,17 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_registrations_week ON holy_rave_registrations(week);
 CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON holy_rave_registrations(event_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_status ON holy_rave_registrations(status);
+-- Phone verification codes (6-digit OTP, 5-minute expiry)
+CREATE TABLE IF NOT EXISTS phone_verifications (
+  id SERIAL PRIMARY KEY,
+  phone VARCHAR(30) NOT NULL,
+  code VARCHAR(6) NOT NULL,
+  verified BOOLEAN DEFAULT FALSE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_phone_verifications_phone ON phone_verifications(phone);
+
 CREATE INDEX IF NOT EXISTS idx_registrations_week_status ON holy_rave_registrations(week, status);
 CREATE INDEX IF NOT EXISTS idx_registrations_event_status ON holy_rave_registrations(event_id, status);
 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);

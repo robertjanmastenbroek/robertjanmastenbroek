@@ -266,6 +266,74 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// ─── Phone Verification Endpoints ────────────────────────────────────────────
+
+// Rate limiter for code sends: 1 per 60s per phone
+const verifyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 1,
+  keyGenerator: (req) => req.body?.phone || req.ip,
+  message: { error: 'Please wait 60 seconds before requesting another code.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// POST /api/verify/phone/send — generate + SMS a 6-digit code
+app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Phone number is required.' });
+
+  const phoneErr = validatePhone(phone);
+  if (phoneErr) return res.status(400).json({ error: phoneErr });
+
+  try {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+
+    await db.storeVerificationCode(phone, code);
+
+    // Send SMS via Twilio
+    const twilio = getTwilio();
+    if (twilio && TWILIO_FROM_NUMBER) {
+      await twilio.messages.create({
+        body: `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`,
+        from: TWILIO_FROM_NUMBER,
+        to: phone.replace(/\s+/g, ''),
+      });
+      console.log(`[verify] Code sent to ${phone}`);
+    } else {
+      // Fallback: log the code (dev mode)
+      console.log(`[verify] DEV MODE — Code for ${phone}: ${code}`);
+    }
+
+    // Mask phone for response
+    const cleaned = phone.replace(/\s+/g, '');
+    const masked = cleaned.slice(0, -4).replace(/\d/g, '*') + cleaned.slice(-4);
+
+    res.json({ ok: true, masked });
+  } catch (err) {
+    console.error('[verify] Send error:', err.message);
+    res.status(500).json({ error: 'Failed to send verification code. Try again.' });
+  }
+});
+
+// POST /api/verify/phone/check — validate the 6-digit code
+app.post('/api/verify/phone/check', async (req, res) => {
+  const { phone, code } = req.body;
+  if (!phone || !code) return res.status(400).json({ error: 'Phone and code are required.' });
+  if (!/^\d{6}$/.test(code)) return res.status(400).json({ error: 'Code must be 6 digits.' });
+
+  try {
+    const result = await db.checkVerificationCode(phone, code);
+    if (!result) {
+      return res.status(400).json({ error: 'Invalid or expired code. Request a new one.' });
+    }
+    res.json({ ok: true, verified: true });
+  } catch (err) {
+    console.error('[verify] Check error:', err.message);
+    res.status(500).json({ error: 'Could not verify code. Try again.' });
+  }
+});
+
 // ─── MRR Counter ────────────────────────────────────────────────────────────
 // Cached so we don't hammer the Stripe API on every page load
 let mrrCache = { value: 0, fetchedAt: 0 };
