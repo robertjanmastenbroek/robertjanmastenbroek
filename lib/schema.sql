@@ -99,6 +99,18 @@ CREATE TABLE IF NOT EXISTS phone_verifications (
 );
 CREATE INDEX IF NOT EXISTS idx_phone_verifications_phone ON phone_verifications(phone);
 
+-- Migration: add maps_url to events
+DO $$ BEGIN
+  ALTER TABLE events ADD COLUMN IF NOT EXISTS maps_url VARCHAR(500);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+-- Migration: add confirmation_code to registrations
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS confirmation_code VARCHAR(20);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_registrations_week_status ON holy_rave_registrations(week, status);
 CREATE INDEX IF NOT EXISTS idx_registrations_event_status ON holy_rave_registrations(event_id, status);
 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);

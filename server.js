@@ -962,6 +962,44 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
   }
 });
 
+// POST /api/holy-rave/confirm-payment — confirm a registration after successful PaymentIntent
+// Called by the frontend after stripe.confirmPayment() succeeds, so we don't rely
+// solely on the webhook (which requires STRIPE_WEBHOOK_SECRET to be configured).
+app.post('/api/holy-rave/confirm-payment', async (req, res) => {
+  const { regId, paymentIntentId } = req.body;
+  if (!regId) return res.status(400).json({ error: 'Registration ID required.' });
+
+  try {
+    const reg = await db.getRegistrationById(regId);
+    if (!reg) return res.status(404).json({ error: 'Registration not found.' });
+    if (reg.status === 'confirmed') return res.json({ ok: true, already: true });
+
+    const confirmed = await db.confirmRegistration(regId, null);
+    if (!confirmed) return res.status(409).json({ error: 'Could not confirm — event may be full.' });
+
+    // Fire-and-forget: send email + SMS + sync
+    if (reg.email) {
+      sendHolyRaveConfirmation(reg.email, reg.first_name, reg.last_name).catch(e =>
+        console.error('Confirm email error:', e.message));
+      syncToResendAudience(reg.email, reg.first_name, reg.last_name, reg.phone).catch(e =>
+        console.error('Confirm sync error:', e.message));
+    }
+    if (reg.phone && reg.event_id) {
+      try {
+        const sql = db.getSql();
+        const [ev] = await sql`SELECT location_detail FROM events WHERE id = ${reg.event_id}`;
+        sendTicketSMS(reg.phone, 'Holy Rave', '', null, '', '', regId, ev?.location_detail || '')
+          .catch(e => console.error('Confirm SMS error:', e.message));
+      } catch(e) {}
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[confirm-payment] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/holy-rave/verify — check registration status
 app.get('/api/holy-rave/verify', async (req, res) => {
   const { id } = req.query;
@@ -1282,7 +1320,7 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
 // ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
 // Sends a ticket SMS with event location and time via Twilio.
 // Falls back to logging if Twilio isn't configured.
-async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail) {
+async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl) {
   if (!phone || !TWILIO_FROM_NUMBER) {
     console.log(`[sms] Skipping SMS (no phone or from number) for ${phone}`);
     return;

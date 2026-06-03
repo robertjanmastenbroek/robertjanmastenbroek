@@ -2540,6 +2540,13 @@
             currentRegId = pendingRegId;
             fireConfetti();
             showToast('Payment successful! \u2713', 'success');
+
+            // Confirm the registration in the database (bypasses webhook dependency)
+            fetch('/api/holy-rave/confirm-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ regId: pendingRegId, paymentIntentId: pendingPaymentIntentId }),
+            }).catch(e => console.error('[confirm] Direct confirm error:', e));
         }
 
         function closePaymentOverlay() {
@@ -2567,14 +2574,19 @@
             try {
                 const { paymentIntent } = await stripe.retrievePaymentIntent(piClientSecret);
                 if (paymentIntent.status === 'succeeded') {
-                    // Confirm registration via webhook or direct call
-                    // The webhook will handle it, but show confirmation immediately
                     const regId = pendingRegId || 'hr_' + Date.now().toString(36);
                     document.getElementById('formCard').style.display = 'none';
                     document.getElementById('confirmOverlay').classList.add('visible');
                     document.getElementById('confirmName').textContent = 'Your payment is confirmed!';
                     fireConfetti();
                     showToast('Payment successful! \u2713', 'success');
+
+                    // Confirm in DB
+                    fetch('/api/holy-rave/confirm-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ regId: pendingRegId || piId, paymentIntentId: piId }),
+                    }).catch(e => console.error('[3ds] confirm error:', e));
 
                     // Clean URL
                     const cleanUrl = window.location.pathname;
