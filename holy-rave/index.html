@@ -1534,6 +1534,7 @@
             .detail-hero { padding: 3rem 1.5rem 2rem; }
             .detail-hero .meta-row { gap: 1rem; font-size: 0.8rem; }
             .sticky-mobile-bar { display: block; }
+            .sticky-mobile-bar.hidden { display: none; }
             .detail-page { padding-bottom: 6rem; }
         }
         @media (max-width: 480px) {
@@ -2029,9 +2030,9 @@
         </div>
 
         <!-- ═══ STICKY MOBILE CTA ═══ -->
-        <div class="sticky-mobile-bar" id="stickyBar">
-            <button class="sticky-btn" onclick="scrollToForm()">
-                Reserve My Spot
+        <div class="sticky-mobile-bar hidden" id="stickyBar">
+            <button class="sticky-btn" id="stickyCtaBtn" onclick="handleStickyCta()">
+                Continue
             </button>
         </div>
 
@@ -2469,6 +2470,30 @@
             const labels = { 1: 'Step 1 of 3 — Your details', 2: 'Step 2 of 3 — Choose your contribution', 3: 'Step 3 of 3 — Confirming' };
             document.getElementById('stepLabel').textContent = labels[target] || '';
             step = target;
+
+            // Update sticky mobile CTA based on current step
+            const stickyBtn = document.getElementById('stickyCtaBtn');
+            const stickyBar = document.getElementById('stickyBar');
+            if (!stickyBtn || !stickyBar) return;
+            if (target === 1) {
+                stickyBtn.textContent = 'Continue →';
+                stickyBar.classList.remove('hidden');
+            } else if (target === 2) {
+                stickyBtn.textContent = 'Pay & Reserve';
+                stickyBar.classList.remove('hidden');
+            } else {
+                stickyBar.classList.add('hidden');
+            }
+        }
+
+        function handleStickyCta() {
+            if (step === 1) {
+                // Try to advance to step 2 (validation happens inside goToStep)
+                goToStep(2);
+            } else if (step === 2) {
+                // Submit the form (same as clicking Pay & Reserve)
+                document.getElementById('registerForm').requestSubmit();
+            }
         }
 
         // Form submission
