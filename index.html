@@ -1284,6 +1284,12 @@
                         <div class="label">Spots Left</div>
                     </div>
                 </div>
+                <div id="heroCta" style="display:none;margin-top:1.5rem;">
+                    <a href="/holy-rave" class="btn btn-primary" id="heroReserveBtn">
+                        Get Your Tickets <span style="font-weight:300;font-size:0.7rem;letter-spacing:0.04em;text-transform:none;margin-left:0.25rem;">→</span>
+                    </a>
+                    <p style="font-size:0.68rem;color:var(--text-mute);margin-top:0.6rem;letter-spacing:0.06em;">€1 minimum · You + 1 friend included</p>
+                </div>
                 <p class="platforms-pivot">Also on Apple Music, Amazon Music, SoundCloud — <a href="/links">every platform &rarr;</a></p>
             </div>
             <div class="hero-portrait reveal">
@@ -1618,6 +1624,17 @@
                 if (remaining <= 0) {
                     content.style.display = 'none';
                     soldOut.style.display = 'block';
+                }
+
+                // Reserve buttons → point directly to this event's page
+                const reserveBtn = document.getElementById('reserveBtn');
+                if (reserveBtn) {
+                    reserveBtn.href = '/holy-rave/' + next.slug;
+                }
+                const heroBtn = document.getElementById('heroReserveBtn');
+                if (heroBtn) {
+                    heroBtn.href = '/holy-rave/' + next.slug;
+                    document.getElementById('heroCta').style.display = 'block';
                 }
 
                 // Hero stats
