@@ -94,6 +94,15 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
             if (reg && reg.phone) {
               const eventMeta = session.metadata || {};
               const slug = eventMeta.event_slug || 'holy-rave';
+              // Fetch location_detail for the SMS
+              let detail = '';
+              if (reg.event_id) {
+                try {
+                  const sql = db.getSql();
+                  const [ev] = await sql`SELECT location_detail FROM events WHERE id = ${reg.event_id}`;
+                  detail = ev?.location_detail || '';
+                } catch(e) {}
+              }
               sendTicketSMS(
                 reg.phone,
                 'Holy Rave',
@@ -101,7 +110,8 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
                 null,
                 eventMeta.event_location,
                 slug,
-                regId
+                regId,
+                detail
               ).catch(e => console.error('Webhook SMS error:', e.message));
             }
           } catch (e) {
@@ -140,7 +150,15 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
             }
             if (reg.phone) {
               const slug = pi.metadata?.event_slug || 'holy-rave';
-              sendTicketSMS(reg.phone, 'Holy Rave', pi.metadata?.event_date, null, pi.metadata?.event_location, slug, regId)
+              let detail = '';
+              if (reg.event_id) {
+                try {
+                  const sql = db.getSql();
+                  const [ev] = await sql`SELECT location_detail FROM events WHERE id = ${reg.event_id}`;
+                  detail = ev?.location_detail || '';
+                } catch(e) {}
+              }
+              sendTicketSMS(reg.phone, 'Holy Rave', pi.metadata?.event_date, null, pi.metadata?.event_location, slug, regId, detail)
                 .catch(e => console.error('PI webhook SMS error:', e.message));
             }
           }
@@ -877,7 +895,16 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       syncToResendAudience(email, firstName, lastName, phone).catch(e =>
         console.error('Free ticket audience sync error:', e.message));
       // Send ticket SMS (fire-and-forget)
-      sendTicketSMS(phone, eventTitle, eventDateStr, (eventDateStr ? '' : null), eventLocationStr, eventSlug, id).catch(e =>
+      // For free tickets, fetch location_detail from DB
+      let freeDetail = '';
+      if (eventId) {
+        try {
+          const sql = db.getSql();
+          const [ev] = await sql`SELECT location_detail FROM events WHERE id = ${eventId}`;
+          freeDetail = ev?.location_detail || '';
+        } catch(e) {}
+      }
+      sendTicketSMS(phone, eventTitle, eventDateStr, null, eventLocationStr, eventSlug, id, freeDetail).catch(e =>
         console.error('Free ticket SMS error:', e.message));
       return res.json({ id, confirmed: true });
     }
@@ -1255,7 +1282,7 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
 // ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
 // Sends a ticket SMS with event location and time via Twilio.
 // Falls back to logging if Twilio isn't configured.
-async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId) {
+async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail) {
   if (!phone || !TWILIO_FROM_NUMBER) {
     console.log(`[sms] Skipping SMS (no phone or from number) for ${phone}`);
     return;
@@ -1270,10 +1297,11 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   const dateStr = eventDate ? new Date(eventDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '';
   const timeStr = eventTime || '20:00 – 23:00';
   const locStr = eventLocation || 'Tenerife South';
+  const detailStr = locationDetail ? ` · ${locationDetail}` : '';
   const slugPart = slug || 'holy-rave';
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
 
-  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend\n\nShow this message at the door (no printed ticket needed).\n\n${link}`;
+  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${detailStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend\n\nShow this message at the door (no printed ticket needed).\n\n${link}`;
 
   try {
     const result = await twilio.messages.create({
