@@ -281,6 +281,9 @@ app.get('/holy-rave', async (req, res) => {
 // Also intercept detail pages to inject OG tags before static middleware
 app.get('/holy-rave/:slug', async (req, res) => {
   const slug = req.params.slug;
+  // Block framing — prevents email client sandboxed browsers from loading the page
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self';");
+
   if (slug === 'confirmed') {
     return res.sendFile(path.join(__dirname, 'holy-rave', 'confirmed.html'), (err) => {
       if (err) res.sendFile(path.join(__dirname, 'index.html'));
