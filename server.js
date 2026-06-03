@@ -1321,6 +1321,27 @@ app.get('/api/images/event/:shortId', async (req, res) => {
   }
 });
 
+// ─── Twilio test SMS (for debugging) ────────────────────────────────────────
+app.post('/api/debug/send-test-sms', async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Phone required' });
+
+  const twilio = getTwilio();
+  if (!twilio) return res.status(503).json({ error: 'Twilio not configured' });
+  if (!TWILIO_FROM_NUMBER) return res.status(503).json({ error: 'TWILIO_FROM_NUMBER not set' });
+
+  try {
+    const result = await twilio.messages.create({
+      body: 'Test SMS from Holy Rave server — if you receive this, Twilio is working correctly.',
+      from: getFromNumber(phone),
+      to: phone.replace(/\s+/g, ''),
+    });
+    res.json({ ok: true, sid: result.sid, status: result.status });
+  } catch (err) {
+    res.status(500).json({ error: err.message, code: err.code });
+  }
+});
+
 // ─── Twilio configuration check (for debugging) ─────────────────────────────
 app.get('/api/debug/twilio', (req, res) => {
   const sid = process.env.TWILIO_ACCOUNT_SID || '';
