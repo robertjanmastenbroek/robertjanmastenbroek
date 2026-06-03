@@ -2065,6 +2065,8 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Something went wrong.');
 
+                console.log('[register] Response:', { hasClientSecret: !!data.clientSecret, hasCheckoutUrl: !!data.checkoutUrl, id: data.id });
+
                 if (data.clientSecret) {
                     // Embedded Stripe Checkout — mount on our page
                     await mountStripeCheckout(data.clientSecret, data.id, firstName, lastName);
@@ -2146,7 +2148,22 @@
 
             const stripe = await getStripeInstance();
             if (!stripe) {
-                // Fallback: redirect
+                // No publishable key — fall back to redirect
+                console.warn('[stripe] No publishable key — falling back to redirect');
+                const data = await fetch('/api/holy-rave/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        firstName: pendingFirstName,
+                        lastName: pendingLastName,
+                        email: document.getElementById('email').value.trim(),
+                        phone: (document.getElementById('phoneCountry')?.value || '+34') + ' ' + (document.getElementById('phoneNumber')?.value.trim() || ''),
+                        amount: selectedAmount,
+                        eventSlug: currentSlug,
+                    }),
+                });
+                const d = await data.json();
+                if (d.checkoutUrl) { window.location.href = d.checkoutUrl; return; }
                 document.getElementById('formError').textContent = 'Payment system unavailable. Please try again.';
                 goToStep(2);
                 document.getElementById('submitBtn').disabled = false;
@@ -2164,14 +2181,30 @@
 
                 stripeEmbedded.mount('#stripeCheckoutContainer');
 
-                // Listen for completion
                 stripeEmbedded.addEventListener('complete', () => {
                     handleStripeComplete();
                 });
             } catch (err) {
-                console.error('Embedded checkout error:', err);
+                console.error('[stripe] Embedded checkout mount error:', err);
                 overlay.style.display = 'none';
-                document.getElementById('formError').textContent = 'Could not load payment form. Please try again.';
+                // Fallback to redirect
+                try {
+                    const data = await fetch('/api/holy-rave/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            firstName: pendingFirstName,
+                            lastName: pendingLastName,
+                            email: document.getElementById('email').value.trim(),
+                            phone: (document.getElementById('phoneCountry')?.value || '+34') + ' ' + (document.getElementById('phoneNumber')?.value.trim() || ''),
+                            amount: selectedAmount,
+                            eventSlug: currentSlug,
+                        }),
+                    });
+                    const d = await data.json();
+                    if (d.checkoutUrl) { window.location.href = d.checkoutUrl; return; }
+                } catch (e) {}
+                document.getElementById('formError').textContent = 'Could not load payment. Please try again.';
                 goToStep(2);
                 document.getElementById('submitBtn').disabled = false;
             }
