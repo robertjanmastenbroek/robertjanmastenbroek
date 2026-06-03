@@ -211,7 +211,8 @@
     .pexels-close:hover { color: #c8883a; }
 
     /* Cropper.js overrides for dark theme */
-    .cropper-container { max-height: 55vh; }
+    .cropper-container-wrap { max-height: 40vh; overflow: hidden; }
+    .cropper-container { max-height: 40vh; }
     .cropper-view-box { outline: 1px solid #c8883a; outline-color: rgba(200,136,58,0.6); }
     .cropper-line { background-color: #c8883a; }
     .cropper-point { background-color: #c8883a; }
@@ -235,6 +236,8 @@
       padding: 1.5rem;
       width: 100%;
       max-width: 700px;
+      max-height: 95vh;
+      overflow-y: auto;
     }
     .cropper-panel h3 { font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; color: #f5f1e8; }
     .cropper-panel h3 em { color: #c8883a; font-style: italic; }
