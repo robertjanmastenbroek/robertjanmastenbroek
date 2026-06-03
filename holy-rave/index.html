@@ -2633,6 +2633,9 @@
                         currentEvent = event;
                         updateDetailMeter(event);
                     }).catch(e => console.error('[refresh] Meter error:', e));
+                    // Also refresh velocity + ticker
+                    loadVelocity();
+                    startSocialProof();
                 }
             }).catch(e => console.error('[confirm] Direct confirm error:', e));
         }
@@ -2691,6 +2694,8 @@
                                 currentEvent = event;
                                 updateDetailMeter(event);
                             }).catch(e => console.error('[3ds] Meter refresh error:', e));
+                            loadVelocity();
+                            startSocialProof();
                         }
                     }).catch(e => console.error('[3ds] confirm error:', e));
 

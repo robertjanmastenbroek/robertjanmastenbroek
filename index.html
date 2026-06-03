@@ -1283,6 +1283,11 @@
                         <div class="num live" id="statSpotsLeft">—</div>
                         <div class="label">Spots Left</div>
                     </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <div class="num" id="statVelocity">—</div>
+                        <div class="label">Taken Today</div>
+                    </div>
                 </div>
                 <div id="heroCta" style="display:none;margin-top:1.5rem;">
                     <a href="/holy-rave" class="btn btn-primary" id="heroReserveBtn">
@@ -1376,6 +1381,13 @@
                 <div class="spots-indicator" id="spotsIndicator">
                     <span class="count" id="spotsCount">—</span> spots left of <span id="spotsTotal">50</span>
                 </div>
+
+                <!-- Social proof ticker -->
+                <p style="font-size:0.8rem;color:var(--text-mute);margin-bottom:0.25rem;letter-spacing:0.03em;min-height:1.6rem;transition:opacity 0.4s ease;" id="homeTicker"><span id="homeTickerName" style="color:var(--ochre);font-weight:500;">—</span></p>
+
+                <!-- Velocity -->
+                <p style="font-size:0.72rem;color:var(--text-mute);margin-bottom:1rem;letter-spacing:0.04em;display:none;" id="homeVelocity"><strong id="homeVelocityCount" style="color:var(--ochre);">0</strong> spots taken in the last 24 hours</p>
+
                 <div style="margin:1.5rem 0 0.5rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
                     <a href="/holy-rave" class="btn btn-primary" id="reserveBtn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0;">
@@ -1582,6 +1594,55 @@
         window.addEventListener('scroll', onScroll, { passive: true });
         onScroll();
 
+        // ── Homepage velocity (from the next event) ──
+        async function loadHomeVelocity(slug) {
+            try {
+                const res = await fetch('/api/holy-rave/events/' + slug + '/velocity');
+                if (!res.ok) return;
+                const data = await res.json();
+                document.getElementById('statVelocity').textContent = data.count || '0';
+                if (data.count >= 3) {
+                    document.getElementById('statVelocity').className = 'num live';
+                    document.getElementById('homeVelocityCount').textContent = data.count;
+                    document.getElementById('homeVelocity').style.display = 'block';
+                }
+            } catch (e) {}
+        }
+
+        // ── Homepage social proof ticker ──
+        let homeTickerData = [];
+        let homeTickerIndex = 0;
+
+        async function loadHomeTicker(slug) {
+            try {
+                const res = await fetch('/api/holy-rave/events/' + slug + '/recent');
+                if (!res.ok) return;
+                homeTickerData = await res.json();
+                if (homeTickerData.length > 0) {
+                    showHomeTicker(0);
+                    setInterval(nextHomeTicker, 5000);
+                }
+            } catch (e) {}
+        }
+
+        function showHomeTicker(i) {
+            if (!homeTickerData[i]) return;
+            const el = document.getElementById('homeTickerName');
+            if (!el) return;
+            el.style.opacity = '0';
+            el.style.transition = 'opacity 0.4s ease';
+            setTimeout(() => {
+                el.textContent = homeTickerData[i].name + ' just reserved';
+                el.style.opacity = '1';
+            }, 200);
+        }
+
+        function nextHomeTicker() {
+            if (homeTickerData.length === 0) return;
+            homeTickerIndex = (homeTickerIndex + 1) % homeTickerData.length;
+            showHomeTicker(homeTickerIndex);
+        }
+
         // ── Live data: next event + hero stats + subscriber count ──
         async function loadNextEvent() {
             const loading = document.getElementById('eventLoading');
@@ -1674,6 +1735,10 @@
                 document.getElementById('statSpotsLeft').textContent = remaining > 0 ? remaining : 'Full';
                 if (remaining <= 0) document.getElementById('statSpotsLeft').classList.remove('live');
                 if (remaining > 0 && remaining <= 10) document.getElementById('statSpotsLeft').classList.add('live');
+
+                // Load velocity + social proof for this event
+                loadHomeVelocity(next.slug);
+                loadHomeTicker(next.slug);
             } catch (e) {
                 loading.textContent = 'Could not load event data.';
             }
