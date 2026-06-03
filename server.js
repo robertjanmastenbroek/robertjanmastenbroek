@@ -1141,6 +1141,33 @@ app.get('/api/admin/pexels-search', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Admin: Registrations management ─────────────────────────────────────────
+
+// GET /api/admin/events/:slug/registrations — list all registrations for an event
+app.get('/api/admin/events/:slug/registrations', requireAdmin, async (req, res) => {
+  try {
+    const event = await db.getEventBySlug(req.params.slug);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    const registrations = await db.getRegistrationsByEventId(event.id);
+    res.json(registrations);
+  } catch (err) {
+    console.error('Admin registrations error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/registrations/:id — cancel a registration
+app.delete('/api/admin/registrations/:id', requireAdmin, async (req, res) => {
+  try {
+    const cancelled = await db.cancelRegistration(req.params.id);
+    if (!cancelled) return res.status(400).json({ error: 'Could not cancel — registration may already be confirmed' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Admin cancel registration error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Admin: Create/update/delete events ──────────────────────────────────────
 
 // GET /api/admin/events — list all events (for admin panel)

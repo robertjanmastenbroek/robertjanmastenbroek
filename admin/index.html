@@ -627,6 +627,20 @@
   </div>
 
   <!-- Toast -->
+  <!-- Registrations Panel -->
+  <div class="form-overlay" id="regOverlay">
+    <div class="form-panel" style="max-width:700px;">
+      <h2>Registrations: <em id="regTitle">—</em></h2>
+      <p style="font-size:0.78rem;color:#7a7266;margin-bottom:1rem;" id="regCount"></p>
+      <div id="regList" style="font-size:0.82rem;">
+        <p style="color:#555;text-align:center;padding:2rem;">Loading...</p>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="closeRegistrations()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -673,6 +687,7 @@
               <td>${e.tickets_sold || 0}/${e.ticket_limit || 50}</td>
               <td><span class="status-badge ${e.status}">${e.status}</span></td>
               <td class="actions">
+                <button class="btn" onclick="showRegistrations('${e.slug}','${e.title || e.slug}')">View</button>
                 <button class="btn" onclick="editEvent('${e.slug}')">Edit</button>
                 <button class="btn ${e.status === 'upcoming' ? 'btn-primary' : ''}" onclick="toggleStatus('${e.slug}','${e.status}')">
                   ${e.status === 'upcoming' ? 'Mark Past' : 'Mark Upcoming'}
@@ -1186,6 +1201,56 @@
       localStorage.removeItem('hr_admin_token');
       document.getElementById('loginScreen').classList.remove('hidden');
       document.getElementById('dashboard').classList.remove('visible');
+    }
+
+    // ── Registrations panel ────────────────────────────────────────────────
+    let currentRegSlug = null;
+
+    async function showRegistrations(slug, title) {
+      currentRegSlug = slug;
+      document.getElementById('regTitle').textContent = title;
+      document.getElementById('regOverlay').classList.add('visible');
+      document.getElementById('regList').innerHTML = '<p style="color:#555;text-align:center;padding:2rem;">Loading...</p>';
+      try {
+        const data = await api('/api/admin/events/' + slug + '/registrations');
+        if (data.length === 0) {
+          document.getElementById('regList').innerHTML = '<p style="color:#555;text-align:center;padding:2rem;">No registrations yet.</p>';
+          document.getElementById('regCount').textContent = '0 registrations';
+          return;
+        }
+        document.getElementById('regCount').textContent = data.length + ' registration' + (data.length !== 1 ? 's' : '');
+        document.getElementById('regList').innerHTML = data.map(r => {
+          const statusClass = r.status === 'confirmed' ? 'upcoming' : r.status === 'cancelled' || r.status === 'expired' ? 'past' : 'cancelled';
+          const amt = (r.amount_cents || 0) / 100;
+          const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid rgba(212,175,55,0.06);gap:0.5rem;flex-wrap:wrap;">' +
+            '<div style="flex:1;min-width:150px;"><strong>' + (r.first_name || '') + ' ' + (r.last_name || '') + '</strong><br><span style="color:#7a7266;font-size:0.75rem;">' + (r.email || '') + (r.phone ? ' · ' + r.phone : '') + '</span></div>' +
+            '<div style="text-align:right;font-size:0.75rem;">' +
+            '<span class="status-badge ' + statusClass + '">' + (r.status || '—') + '</span>' +
+            (r.confirmation_code ? ' <span style="color:#555;font-size:0.7rem;">' + r.confirmation_code + '</span>' : '') +
+            '<br><span style="color:#555;">€' + amt.toFixed(2) + ' · ' + date + '</span></div>' +
+            (r.status !== 'cancelled' && r.status !== 'refunded' && r.status !== 'expired' ?
+              '<button class="btn btn-danger" style="font-size:0.6rem;padding:0.3rem 0.6rem;" onclick="cancelRegistration(\'' + r.id + '\')">Cancel</button>' : '') +
+            '</div>';
+        }).join('');
+      } catch (err) {
+        document.getElementById('regList').innerHTML = '<p style="color:#b8532a;text-align:center;padding:2rem;">Error: ' + err.message + '</p>';
+      }
+    }
+
+    function closeRegistrations() {
+      document.getElementById('regOverlay').classList.remove('visible');
+    }
+
+    async function cancelRegistration(id) {
+      if (!confirm('Cancel this registration? This cannot be undone.')) return;
+      try {
+        await api('/api/admin/registrations/' + id, { method: 'DELETE' });
+        showToast('Registration cancelled');
+        showRegistrations(currentRegSlug, document.getElementById('regTitle').textContent);
+      } catch (err) {
+        showToast(err.message);
+      }
     }
 
     // Check auth on page load
