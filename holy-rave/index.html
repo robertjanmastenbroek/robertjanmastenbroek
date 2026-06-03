@@ -2117,6 +2117,12 @@
                         hero.classList.add('has-image');
                     };
                     img.src = fullUrl;
+
+                    // Also update OG tags for the hub page
+                    const ogImage = document.querySelector('meta[property="og:image"]');
+                    const twImage = document.querySelector('meta[name="twitter:image"]');
+                    if (ogImage) ogImage.content = fullUrl;
+                    if (twImage) twImage.content = fullUrl;
                 }
             } catch (err) {
                 grid.innerHTML = '';

@@ -1465,6 +1465,26 @@ app.get('/api/stripe/publishable-key', (req, res) => {
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.send('OK'));
 
+// ─── Holy Rave hub page — inject live OG image for social sharing ────────────
+app.get('/holy-rave', async (req, res) => {
+  let ogImage = SITE_URL + '/images/og-image.png';
+  try {
+    const events = await db.getUpcomingEvents(1);
+    const next = events?.[0];
+    if (next?.image_url) {
+      ogImage = next.image_url.startsWith('http') ? next.image_url : SITE_URL + next.image_url;
+    }
+  } catch (e) {}
+  const fs = require('fs');
+  fs.readFile(path.join(__dirname, 'holy-rave', 'index.html'), 'utf8', (err, data) => {
+    if (err) return res.sendFile(path.join(__dirname, 'index.html'));
+    const injected = data
+      .replace(/<meta property="og:image" content="[^"]*"/, '<meta property="og:image" content="' + ogImage + '"')
+      .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + ogImage + '"');
+    res.send(injected);
+  });
+});
+
 // ─── Holy Rave event pages — serve holy-rave/index.html for /holy-rave/:slug ──
 app.get('/holy-rave/:slug', async (req, res) => {
   const slug = req.params.slug;
