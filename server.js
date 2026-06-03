@@ -259,14 +259,20 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 app.use(express.json());
 
 // Holy Rave hub must be handled BEFORE express.static or static wins
+// ─── Server-rendered /holy-rave hub — inject OG image from next event ──────
 app.get('/holy-rave', async (req, res) => {
   let ogImage = SITE_URL + '/images/og-image.png';
+  let eventsJson = '[]';
   try {
-    const events = await db.getUpcomingEvents(1);
+    const events = await db.getUpcomingEvents(5);
     const next = events?.[0];
     if (next?.image_url) {
       ogImage = next.image_url.startsWith('http') ? next.image_url : SITE_URL + next.image_url;
     }
+    eventsJson = JSON.stringify(events.map(e => ({
+      ...e,
+      event_date: e.event_date instanceof Date ? e.event_date.toISOString().split('T')[0] : e.event_date,
+    })));
   } catch (e) {}
   const fs = require('fs');
   fs.readFile(path.join(__dirname, 'holy-rave', 'index.html'), 'utf8', (err, data) => {
@@ -274,14 +280,16 @@ app.get('/holy-rave', async (req, res) => {
     const injected = data
       .replace(/<meta property="og:image" content="[^"]*"/, '<meta property="og:image" content="' + ogImage + '"')
       .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + ogImage + '"')
+      .replace('const slug = pathParts.length', 'const __INITIAL_EVENTS__ = ' + eventsJson + ';\n        const slug = pathParts.length')
       .replace('name="twitter:card" content="summary_large_image"', 'name="twitter:card" content="summary_large_image"\n    <meta property="og:type" content="website">\n    <meta property="fb:app_id" content="61573212765627">');
     res.send(injected);
   });
 });
-// Also intercept detail pages to inject OG tags before static middleware
+
+// ─── Server-rendered /holy-rave/:slug — inject OG tags + event data + JSON-LD ─
 app.get('/holy-rave/:slug', async (req, res) => {
   const slug = req.params.slug;
-  // Block framing — prevents email client sandboxed browsers from loading the page
+  // Block framing
   res.setHeader('Content-Security-Policy', "frame-ancestors 'self';");
 
   if (slug === 'confirmed') {
@@ -299,6 +307,29 @@ app.get('/holy-rave/:slug', async (req, res) => {
         : SITE_URL + '/images/og-image.png';
       const ogTitle = 'Holy Rave \u2014 ' + dateStr + ' \u00b7 ' + (event.location || 'Tenerife');
       const ogDesc = '50 tickets \u00b7 Pay what feels right \u00b7 You + 1 friend \u00b7 ' + (event.event_time || 'Sunset') + ' at ' + (event.location || 'Tenerife South') + '.';
+
+      // Build JSON-LD with real event data
+      const ldJson = {
+        '@context': 'https://schema.org',
+        '@type': 'MusicEvent',
+        name: event.title || 'Holy Rave',
+        description: event.description || 'An intimate sunset session.',
+        startDate: date.toISOString(),
+        endDate: new Date(date.getTime() + 3 * 60 * 60 * 1000).toISOString(),
+        eventStatus: 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        organizer: { '@type': 'Person', name: 'Robert-Jan Mastenbroek', url: SITE_URL },
+        performer: { '@type': 'Person', name: 'Robert-Jan Mastenbroek' },
+        location: { '@type': 'Place', name: event.location || 'Tenerife', address: { '@type': 'PostalAddress', addressLocality: event.location || 'Tenerife', addressCountry: 'ES' } },
+        offers: {
+          '@type': 'Offer',
+          price: '1.00',
+          priceCurrency: 'EUR',
+          availability: (event.remaining || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+          url: SITE_URL + '/holy-rave/' + slug,
+        },
+      };
+
       const fs = require('fs');
       fs.readFile(path.join(__dirname, 'holy-rave', 'index.html'), 'utf8', (err, data) => {
         if (err) return res.sendFile(path.join(__dirname, 'index.html'));
@@ -307,7 +338,17 @@ app.get('/holy-rave/:slug', async (req, res) => {
           .replace(/<meta property="og:description" content="[^"]*"/, '<meta property="og:description" content="' + ogDesc + '"')
           .replace(/<meta property="og:image" content="[^"]*"/, '<meta property="og:image" content="' + imageUrl + '"')
           .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + imageUrl + '"')
-          .replace('name="twitter:card" content="summary_large_image"', 'name="twitter:card" content="summary_large_image"\n    <meta property="og:type" content="website">\n    <meta property="fb:app_id" content="61573212765627">');
+          .replace('name="twitter:card" content="summary_large_image"', 'name="twitter:card" content="summary_large_image"\n    <meta property="og:type" content="website">\n    <meta property="fb:app_id" content="61573212765627">')
+          // Inject event data as JSON in ldJsonDetail script
+          .replace(/("ldJsonDetail">\s*)\{[^}]*\}/, '$1' + JSON.stringify(ldJson))
+          // Also inject as JS variable so frontend skips API call
+          .replace('const slug = pathParts.length', 'const __INITIAL_EVENT__ = ' + JSON.stringify({
+            slug, title: event.title, description: event.description,
+            event_date: event.event_date, event_time: event.event_time,
+            location: event.location, ticket_limit: event.ticket_limit,
+            tickets_sold: event.tickets_sold, remaining: event.remaining,
+            image_url: event.image_url,
+          }) + ';\n        const slug = pathParts.length');
         res.send(injected);
       });
       return;

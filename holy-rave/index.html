@@ -2182,43 +2182,48 @@
             observeReveal();
         }
 
+        function renderEvents(events) {
+            const grid = document.getElementById('eventsGrid');
+            const noEvents = document.getElementById('noEvents');
+            const countEl = document.getElementById('hubEventCount');
+            const upcoming = events.filter(function(e) { return e.status === 'upcoming'; });
+            countEl.textContent = upcoming.length;
+            if (upcoming.length === 0) { grid.innerHTML = ''; noEvents.style.display = 'block'; return null; }
+            noEvents.style.display = 'none';
+            grid.innerHTML = upcoming.map(function(e) { return buildEventCard(e); }).join('');
+            updateStructuredData(upcoming, true);
+            return upcoming;
+        }
+
+        function setHeroFromEvent(event) {
+            if (!event || !event.image_url) return;
+            const hero = document.getElementById('hubHero');
+            const fullUrl = event.image_url.startsWith('http') ? event.image_url : window.location.origin + event.image_url;
+            const img = new Image();
+            img.onload = function() { hero.style.backgroundImage = 'url(' + fullUrl + ')'; hero.classList.add('has-image'); };
+            img.src = fullUrl;
+            const ogImage = document.querySelector('meta[property="og:image"]');
+            const twImage = document.querySelector('meta[name="twitter:image"]');
+            if (ogImage) ogImage.content = fullUrl;
+            if (twImage) twImage.content = fullUrl;
+        }
+
         async function loadEvents() {
             const grid = document.getElementById('eventsGrid');
             const noEvents = document.getElementById('noEvents');
             const countEl = document.getElementById('hubEventCount');
+            if (typeof __INITIAL_EVENTS__ !== 'undefined' && __INITIAL_EVENTS__) {
+                var upcoming = renderEvents(__INITIAL_EVENTS__);
+                if (upcoming) setHeroFromEvent(upcoming[0]);
+                return;
+            }
             try {
                 const res = await fetch('/api/holy-rave/events');
                 if (!res.ok) throw new Error('Failed');
                 const events = await res.json();
-                const upcoming = events.filter(e => e.status === 'upcoming');
-                countEl.textContent = upcoming.length;
-                if (upcoming.length === 0) {
-                    grid.innerHTML = '';
-                    noEvents.style.display = 'block';
-                    return;
-                }
-                noEvents.style.display = 'none';
-                grid.innerHTML = upcoming.map(e => buildEventCard(e)).join('');
-                updateStructuredData(upcoming, true);
-
-                // Set hero background to the next event's image
-                const first = upcoming[0];
-                if (first && first.image_url) {
-                    const hero = document.getElementById('hubHero');
-                    const fullUrl = first.image_url.startsWith('http') ? first.image_url : window.location.origin + first.image_url;
-                    const img = new Image();
-                    img.onload = function() {
-                        hero.style.backgroundImage = 'url(' + fullUrl + ')';
-                        hero.classList.add('has-image');
-                    };
-                    img.src = fullUrl;
-
-                    // Also update OG tags for the hub page
-                    const ogImage = document.querySelector('meta[property="og:image"]');
-                    const twImage = document.querySelector('meta[name="twitter:image"]');
-                    if (ogImage) ogImage.content = fullUrl;
-                    if (twImage) twImage.content = fullUrl;
-                }
+                var upcoming = renderEvents(events);
+                if (!upcoming) return;
+                setHeroFromEvent(upcoming[0]);
             } catch (err) {
                 grid.innerHTML = '';
                 noEvents.style.display = 'block';
@@ -2373,6 +2378,14 @@
         }
 
         async function loadEventDetail(slug) {
+            // Server-rendered data — skip API call if available
+            if (typeof __INITIAL_EVENT__ !== 'undefined' && __INITIAL_EVENT__) {
+                currentEvent = __INITIAL_EVENT__;
+                renderDetail(__INITIAL_EVENT__);
+                startSocialProof(__INITIAL_EVENT__.id || '');
+                loadVelocity(__INITIAL_EVENT__.id || '');
+                return;
+            }
             try {
                 const res = await fetch('/api/holy-rave/events/' + slug);
                 if (!res.ok) throw new Error('Not found');
