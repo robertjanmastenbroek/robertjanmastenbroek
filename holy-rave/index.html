@@ -2328,7 +2328,7 @@
                     document.getElementById('customAmount').focus();
                     return;
                 }
-                amount = Math.max(100, val) * 100; // Minimum €1
+                amount = Math.max(100, val * 100); // Minimum €1 (val is in euros, convert to cents)
             }
 
             const btn = document.getElementById('submitBtn');
