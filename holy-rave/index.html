@@ -266,7 +266,16 @@
             text-align: center;
             padding: 9rem 2rem 5rem;
             background: linear-gradient(180deg, var(--indigo-deep) 0%, var(--dark-rich) 50%, var(--dark) 100%);
+            background-size: cover;
+            background-position: center top;
             overflow: hidden;
+            transition: background-image 1.2s var(--ease-slow);
+        }
+        .hub-hero.has-image {
+            background: linear-gradient(180deg, rgba(15,23,48,0.7) 0%, rgba(10,10,10,0.85) 60%, rgba(10,10,10,0.95) 100%);
+            background-size: cover;
+            background-position: center top;
+            background-blend-mode: overlay;
         }
         .hub-hero .atmosphere { z-index: 0; }
         .hub-hero-content {
@@ -1552,7 +1561,7 @@
          ══════════════════════════════════════════════════ -->
     <div id="hubMode" class="hub-mode">
 
-        <section class="hub-hero">
+        <section class="hub-hero" id="hubHero">
             <div class="atmosphere"></div>
             <div class="hub-hero-content reveal">
                 <p class="eyebrow"><span class="pin"></span>Holy Rave — Sunset Sessions</p>
@@ -2079,6 +2088,19 @@
                 }
                 noEvents.style.display = 'none';
                 grid.innerHTML = upcoming.map(e => buildEventCard(e)).join('');
+
+                // Set hero background to the next event's image
+                const first = upcoming[0];
+                if (first && first.image_url) {
+                    const hero = document.getElementById('hubHero');
+                    const fullUrl = first.image_url.startsWith('http') ? first.image_url : window.location.origin + first.image_url;
+                    const img = new Image();
+                    img.onload = function() {
+                        hero.style.backgroundImage = 'url(' + fullUrl + ')';
+                        hero.classList.add('has-image');
+                    };
+                    img.src = fullUrl;
+                }
             } catch (err) {
                 grid.innerHTML = '';
                 noEvents.style.display = 'block';
