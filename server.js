@@ -264,6 +264,14 @@ app.get('/api/admin/me', (req, res) => {
   res.json({ authenticated: !!(req.session && req.session.isAdmin) });
 });
 
+// ─── Supabase Auth config (expose URL + publishable key to frontend) ─────────
+app.get('/api/auth/config', (req, res) => {
+  res.json({
+    url: process.env.SUPABASE_URL || '',
+    key: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '',
+  });
+});
+
 // ─── Supabase Auth Endpoints (user accounts) ─────────────────────────────────
 
 // POST /api/auth/signup — create account with email + password

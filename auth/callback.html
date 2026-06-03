@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Redirecting...</title><meta name="robots" content="noindex">
+<style>body{background:#0a0a0a;color:#7a7266;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;font-size:0.9rem;}</style>
+</head>
+<body>
+  <p>Signing you in...</p>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/config');
+        const { url, key } = await r.json();
+        if (!url || !key) throw new Error('No config');
+        const { createClient } = globalThis.supabase;
+        const sb = createClient(url, key);
+        const { data: { session }, error } = await sb.auth.getSession();
+        if (error || !session) throw new Error(error?.message || 'No session');
+        localStorage.setItem('hr_access_token', session.access_token);
+        localStorage.setItem('hr_refresh_token', session.refresh_token);
+        localStorage.setItem('hr_user', JSON.stringify({
+          id: session.user.id,
+          email: session.user.email,
+          firstName: session.user.user_metadata?.first_name || session.user.user_metadata?.full_name?.split(' ')[0] || '',
+          lastName: session.user.user_metadata?.last_name || session.user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+          phone: session.user.user_metadata?.phone || '',
+        }));
+        window.location.href = '/';
+      } catch(e) {
+        document.body.innerHTML = '<p style="color:#b8532a;">Auth failed: ' + e.message + '</p><a href="/auth/login" style="color:#c8883a;">Try again</a>';
+      }
+    })();
+  </script>
+</body>
+</html>
