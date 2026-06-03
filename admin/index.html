@@ -1240,7 +1240,10 @@
             '<div style="text-align:right;font-size:0.75rem;">' +
             '<span class="status-badge ' + statusClass + '">' + (r.status || '—') + '</span>' +
             (r.confirmation_code ? ' <span style="color:#555;font-size:0.7rem;">' + r.confirmation_code + '</span>' : '') +
-            '<br><span style="color:#555;">€' + amt.toFixed(2) + ' · ' + date + '</span></div>' +
+            (r.sms_status ? ' <span style="color:#555;font-size:0.65rem;">SMS:' + r.sms_status + '</span>' : '') +
+            '<br><span style="color:#555;">€' + amt.toFixed(2) + ' · ' + date + '</span>' +
+            (r.utm_source ? '<br><span style="color:#555;font-size:0.65rem;">' + r.utm_source + (r.utm_medium ? '/' + r.utm_medium : '') + '</span>' : '') +
+            '</div>' +
             (r.status !== 'cancelled' && r.status !== 'refunded' && r.status !== 'expired' ?
               '<button class="btn btn-danger" style="font-size:0.6rem;padding:0.3rem 0.6rem;" onclick="cancelRegistration(\'' + r.id + '\')">Cancel</button>' : '') +
             '</div>';

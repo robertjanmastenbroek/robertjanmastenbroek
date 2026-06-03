@@ -2118,6 +2118,12 @@
         let currentRegId = null;
         let step = 1;
 
+        // ── UTM capture — parse from URL on page load ──
+        const utmParams = new URLSearchParams(window.location.search);
+        const utmSource = utmParams.get('utm_source') || '';
+        const utmMedium = utmParams.get('utm_medium') || '';
+        const utmCampaign = utmParams.get('utm_campaign') || '';
+
         // ──────────────────────────────────────────────────────
         // MODE DISPATCH
         // ──────────────────────────────────────────────────────
@@ -2666,7 +2672,7 @@
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, phone, phoneVerified, amount, eventSlug: currentSlug }),
+                    body: JSON.stringify({ firstName, lastName, email, phone, phoneVerified, amount, eventSlug: currentSlug, utmSource, utmMedium, utmCampaign }),
                     signal: controller.signal,
                 });
                 clearTimeout(timeout);

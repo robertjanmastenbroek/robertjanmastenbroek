@@ -950,7 +950,7 @@ app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
 
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
 app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
-  const { firstName, lastName, email, phone, amount, eventSlug, phoneVerified } = req.body;
+  const { firstName, lastName, email, phone, amount, eventSlug, phoneVerified, utmSource, utmMedium, utmCampaign } = req.body;
 
   if (!firstName || !lastName || !email) {
     return res.status(400).json({ error: 'Please fill in all fields correctly.' });
@@ -1028,6 +1028,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       // Stripe not configured — save as pending registration
       await db.createRegistration({
         id, firstName, lastName, email, phone, phoneVerified: !!phoneVerified, amount: amt, week, eventId,
+        utmSource, utmMedium, utmCampaign,
       });
       return res.json({ id, confirmed: false, note: 'Payment system not available. Registration saved without payment.' });
     }
@@ -1072,6 +1073,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     await db.createRegistration({
       id, firstName, lastName, email, phone, phoneVerified: !!phoneVerified, amount: amt, week, eventId,
       stripeSessionId: paymentIntent.id,
+      utmSource, utmMedium, utmCampaign,
     });
 
     // Sync to Resend (fire-and-forget, happens regardless)
@@ -1736,10 +1738,48 @@ async function sendThankYouEmail(email, name) {
 // ─── Abandoned registration reminders ──────────────────────────────────────
 // Runs every 5 minutes. Sends a reminder email to anyone who started
 // registration but didn't complete payment, after 20 minutes of inactivity.
+// ─── Abandoned email templates ──────────────────────────────────────────────
+function buildAbandonedEmail(step, firstName, eventDate, eventSlug, regId) {
+  const name = firstName || 'there';
+  const link = `${SITE_URL}/holy-rave/${eventSlug || ''}?resume=${regId}&utm_source=email&utm_medium=abandoned`;
+
+  const emails = {
+    0: { // 15 minutes — friendly nudge
+      subject: 'Still thinking about Holy Rave?',
+      body: `<p style="margin:0 0 20px;color:#a0a0a0">Hey ${name},</p>
+<p style="margin:0 0 20px;color:#ffffff">You started reserving a spot for Holy Rave but didn't finish. No pressure — just a friendly nudge.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">Every ticket is €1 minimum — just enough to know you're real. If you want to contribute more to keep the music playing, you're welcome to. Either way, the spot is yours + one friend.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">There are only 50 spots and they're going fast.</p>`,
+    },
+    1: { // 2 hours — scarcity
+      subject: 'Your Holy Rave spot is still open',
+      body: `<p style="margin:0 0 20px;color:#a0a0a0">Hey ${name},</p>
+<p style="margin:0 0 20px;color:#ffffff">Your spot is still there, but there are only 50 tickets and they're going fast.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">Every ticket is €1 minimum — just enough to know you're real. Your name goes on the list and you bring a friend for free.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">If the vibe feels right, we'd love to have you. If not — no hard feelings.</p>`,
+    },
+    2: { // 24 hours — last call
+      subject: 'Last chance — Holy Rave spot closing soon',
+      body: `<p style="margin:0 0 20px;color:#a0a0a0">Hey ${name},</p>
+<p style="margin:0 0 20px;color:#ffffff">This is your last reminder — your pending spot will be released soon.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">If you still want to come, now's the time. €1 minimum, you + one friend, a sunset session you won't forget.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">If not — catch you at the next one.</p>`,
+    },
+  };
+
+  const { subject, body } = emails[step] || emails[0];
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · ${eventDate}</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You left a spot <span style="color:#d4af37">open</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0">${body}<table cellpadding="0" cellspacing="0" style="margin:32px auto"><tr><td align="center" bgcolor="#d4af37" style="border-radius:0;padding:14px 32px"><a href="${link}" target="_blank" style="color:#0a0a0a;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-decoration:none;display:inline-block">Complete Your Reservation →</a></td></tr></table><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`;
+
+  return { subject, html };
+}
+
 async function sendAbandonedReminders() {
   try {
     const pending = await db.getPendingRegistrations(20);
     if (pending.length === 0) return;
+
+    const resendClient = getResend();
+    if (!resendClient) return;
 
     for (const reg of pending) {
       const eventDate = reg.event_date
@@ -1748,19 +1788,19 @@ async function sendAbandonedReminders() {
           : new Date(reg.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }))
         : 'soon';
 
-      const resendClient = getResend();
-      if (!resendClient) return;
+      const step = reg.email_sequence_step || 0;
+      const { subject, html } = buildAbandonedEmail(step, reg.first_name, eventDate, reg.slug, reg.id);
 
       try {
         await resendClient.emails.send({
           from: 'Robert-Jan <robert-jan@robertjanmastenbroek.com>',
           reply_to: 'mastenbroekrobertjan@gmail.com',
           to: reg.email,
-          subject: 'Still thinking about Holy Rave?',
-          html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · ${eventDate}</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You left a spot <span style="color:#d4af37">open</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">Hey ${reg.first_name || 'there'},</p><p style="margin:0 0 20px;color:#ffffff">You started reserving a spot for Holy Rave but didn't finish. No pressure — just a friendly nudge.</p><p style="margin:0 0 20px;color:#a0a0a0">Every ticket is €1 minimum — just enough to know you're real. If you want to contribute more to keep the music playing, you're welcome to. Either way, the spot is yours + one friend.</p><p style="margin:0 0 20px;color:#a0a0a0">There are only 50 tickets and they're going fast. Your spot won't wait forever.</p><table cellpadding="0" cellspacing="0" style="margin:32px auto"><tr><td align="center" bgcolor="#d4af37" style="border-radius:0;padding:14px 32px"><a href="${SITE_URL}/holy-rave/${reg.slug || ''}?resume=${reg.id}" target="_blank" style="color:#0a0a0a;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-decoration:none;display:inline-block">Complete Your Reservation →</a></td></tr></table><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
+          subject,
+          html,
         });
-        await db.markReminderSent(reg.id);
-        console.log('[reminder] Sent to ' + reg.email + ' for ' + (reg.event_title || 'Holy Rave'));
+        await db.markEmailStep(reg.id, step + 1);
+        console.log('[reminder] Step ' + step + ' sent to ' + reg.email + ' for ' + (reg.event_title || 'Holy Rave'));
       } catch (err) {
         console.error('[reminder] Failed for ' + reg.email + ':', err.message);
       }
