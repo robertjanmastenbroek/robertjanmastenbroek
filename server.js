@@ -806,6 +806,24 @@ app.get('/api/images/event/:shortId', async (req, res) => {
   }
 });
 
+// ─── Stripe configuration check (for debugging) ──────────────────────────────
+app.get('/api/debug/stripe', (req, res) => {
+  const secretKey = process.env.STRIPE_SECRET_KEY || '';
+  const pubKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
+  res.json({
+    secretKeySet: !!secretKey,
+    secretKeyPrefix: secretKey ? secretKey.substring(0, 8) + '...' : null,
+    pubKeySet: !!pubKey,
+    pubKeyPrefix: pubKey ? pubKey.substring(0, 8) + '...' : null,
+    testStripe: (() => {
+      try {
+        const stripe = getStripe();
+        return !!stripe;
+      } catch(e) { return false; }
+    })(),
+  });
+});
+
 // ─── Stripe publishable key (for frontend Embedded Checkout) ─────────────────
 app.get('/api/stripe/publishable-key', (req, res) => {
   res.json({ key: STRIPE_PUBLISHABLE_KEY });

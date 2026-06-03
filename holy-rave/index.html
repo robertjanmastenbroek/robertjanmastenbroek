@@ -1694,6 +1694,9 @@
                             <button type="submit" class="step-btn" id="submitBtn">
                                 Reserve My Spot
                             </button>
+                            <p style="text-align:center;font-size:0.72rem;color:var(--text-mute);margin-top:0.5rem;letter-spacing:0.03em;" id="amountSummary">
+                                You'll pay <strong id="amountDisplay">€12</strong> · Secure via Stripe
+                            </p>
                             <p class="form-error" id="formError"></p>
                         </div>
 
@@ -1721,6 +1724,14 @@
             <div style="max-width:520px;margin:3rem auto;position:relative;">
                 <button onclick="closeStripeCheckout()" style="position:absolute;top:-0.5rem;right:0;background:none;border:none;color:var(--text-mute);font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer;padding:0.5rem;z-index:10;transition:color 0.3s;" onmouseover="this.style.color='var(--ochre)'" onmouseout="this.style.color=''">Close ×</button>
                 <div id="stripeCheckoutContainer"></div>
+                <div id="stripeFallback" style="display:none;text-align:center;margin-top:1.5rem;padding:2rem;border:1px solid var(--border-warm);background:rgba(10,10,10,0.3);">
+                    <p style="color:var(--text-soft);font-size:0.85rem;margin-bottom:1rem;line-height:1.6;">
+                        The payment form couldn't load directly. You can still complete your booking via Stripe's secure checkout page.
+                    </p>
+                    <a id="stripeRedirectBtn" href="#" target="_blank" class="btn btn-primary" style="display:inline-flex;">
+                        Pay with Card →
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -2173,13 +2184,22 @@
                 });
             } catch (err) {
                 console.error('[stripe] Embedded checkout mount error:', err);
+                // Show fallback button instead of immediately redirecting
+                if (checkoutUrl) {
+                    document.getElementById('stripeRedirectBtn').href = checkoutUrl;
+                    document.getElementById('stripeFallback').style.display = 'block';
+                    return;
+                }
                 overlay.style.display = 'none';
-                // Fallback to redirect using the already-created session URL
-                if (checkoutUrl) { window.location.href = checkoutUrl; return; }
                 document.getElementById('formError').textContent = 'Could not load payment. Please try again.';
                 goToStep(2);
                 document.getElementById('submitBtn').disabled = false;
             }
+        }
+
+        function showStripeFallback(checkoutUrl) {
+            document.getElementById('stripeRedirectBtn').href = checkoutUrl;
+            document.getElementById('stripeFallback').style.display = 'block';
         }
 
         function handleStripeComplete() {
@@ -2313,6 +2333,24 @@
         }
 
         // ──────────────────────────────────────────────────────
+        // AMOUNT DISPLAY — update step 2 text
+        // ──────────────────────────────────────────────────────
+        function updateAmountDisplay(cents) {
+            const el = document.getElementById('amountDisplay');
+            if (!el) return;
+            if (cents === 0) {
+                el.textContent = 'Free';
+                document.getElementById('amountSummary').innerHTML = "You\u2019re in &mdash; <strong>\u20ac0</strong> &middot; No payment needed";
+            } else {
+                el.textContent = '\u20ac' + (cents / 100).toFixed(0);
+                document.getElementById('amountSummary').innerHTML = "You\u2019ll pay <strong>\u20ac" + (cents / 100).toFixed(0) + "</strong> &middot; Secure via Stripe";
+            }
+        }
+
+        // Initialize amount display
+        updateAmountDisplay(selectedAmount);
+
+        // ──────────────────────────────────────────────────────
         // AMOUNT SELECTOR
         // ──────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
@@ -2326,6 +2364,7 @@
                     document.getElementById('customAmount').value = '';
                     btn.classList.add('selected');
                     selectedAmount = parseInt(btn.dataset.amount, 10) || 0;
+                    updateAmountDisplay(selectedAmount);
                 });
             }
             const customAmount = document.getElementById('customAmount');
@@ -2340,6 +2379,7 @@
                         amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
                         document.getElementById('customRow').classList.add('selected');
                         selectedAmount = val * 100;
+                        updateAmountDisplay(selectedAmount);
                     }
                 });
             }
