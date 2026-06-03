@@ -2000,6 +2000,17 @@
                         <span id="paymentAmountDisplay" style="font-family:var(--font-serif);font-size:2.2rem;font-weight:500;color:var(--gold);"></span>
                     </div>
 
+                    <!-- Apple Pay / Google Pay button (shown on supported devices) -->
+                    <div id="walletButtonContainer" style="min-height:0px;transition:min-height 0.3s;">
+                        <div style="display:none;" id="walletButtonDiv">
+                            <!-- PaymentRequestButton mounts here -->
+                        </div>
+                        <div id="walletDivider" style="display:none;text-align:center;margin:0.75rem 0;font-size:0.72rem;color:var(--text-mute);letter-spacing:0.12em;position:relative;">
+                            <span style="background:var(--card-bg);padding:0 0.75rem;position:relative;z-index:1;">or pay with card</span>
+                            <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border-faint);"></div>
+                        </div>
+                    </div>
+
                     <div id="paymentElementContainer" style="min-height:180px;">
                         <!-- Payment Element mounts here -->
                     </div>
@@ -2691,6 +2702,39 @@
 
             try {
                 paymentElements = stripe.elements({ clientSecret, appearance: STRIPE_APPEARANCE });
+
+                // Payment Request Button (Apple Pay / Google Pay)
+                const paymentRequest = stripe.paymentRequest({
+                    country: 'NL',
+                    currency: 'eur',
+                    total: { label: 'Holy Rave', amount: amountCents },
+                    requestPayerName: true,
+                    requestPayerEmail: true,
+                    requestPayerPhone: true,
+                });
+                const canMakePayment = await paymentRequest.canMakePayment();
+                if (canMakePayment) {
+                    const prButton = paymentElements.create('paymentRequestButton', {
+                        paymentRequest: paymentRequest,
+                        style: {
+                            paymentRequestButton: {
+                                type: 'buy',
+                                theme: canMakePayment.applePay ? 'black' : 'dark',
+                                height: '48px',
+                            },
+                        },
+                    });
+                    document.getElementById('walletButtonDiv').style.display = 'block';
+                    document.getElementById('walletDivider').style.display = 'block';
+                    document.getElementById('walletButtonContainer').style.minHeight = '80px';
+                    prButton.mount('#walletButtonDiv');
+
+                    paymentRequest.on('paymentmethod', async (event) => {
+                        event.complete('success');
+                        handlePaymentSuccess();
+                    });
+                }
+
                 paymentElement = paymentElements.create('payment', {
                     layout: { type: 'tabs', spacedAccordionItems: false },
                 });
