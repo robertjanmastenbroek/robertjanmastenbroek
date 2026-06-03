@@ -1061,19 +1061,26 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
         syncToResendAudience(reg.email, reg.first_name, reg.last_name, reg.phone).catch(e =>
           console.error('Confirm sync error:', e.message));
       }
-      if (reg.phone && ev) {
-            sendTicketSMS(
-              reg.phone,
-              ev.title || 'Holy Rave',
-              ev.event_date,
-              ev.event_time,
-              ev.location,
-              ev.slug || 'holy-rave',
-              regId,
-              ev.location_detail || '',
-              ev.maps_url || null,
-              reg.confirmation_code || ''
-            ).catch(e => console.error('Confirm SMS error:', e.message));
+      if (reg.phone) {
+        if (ev) {
+          sendTicketSMS(
+            reg.phone,
+            ev.title || 'Holy Rave',
+            ev.event_date,
+            ev.event_time,
+            ev.location,
+            ev.slug || 'holy-rave',
+            regId,
+            ev.location_detail || '',
+            ev.maps_url || null,
+            reg.confirmation_code || ''
+          ).catch(e => console.error('Confirm SMS error:', e.message));
+        } else {
+          // Fallback SMS if event lookup failed — at least user gets notified
+          const fallbackLink = `${SITE_URL}/holy-rave${regId ? '?confirmed=' + regId : ''}`;
+          const fallbackMsg = `Holy Rave confirmed! Check your email for event details. ${fallbackLink}`;
+          sendTicketSMS(reg.phone, 'Holy Rave', null, null, null, null, regId, null, null, reg.confirmation_code);
+        }
       }
     });
 
