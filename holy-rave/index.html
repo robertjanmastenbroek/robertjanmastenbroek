@@ -549,6 +549,7 @@
             display: none;
             min-height: 100vh;
             padding-top: 5rem;
+            padding-bottom: 5rem;
         }
         .detail-page.active { display: flex; flex-direction: column; }
 
@@ -642,7 +643,7 @@
             align-items: start;
         }
 
-        /* ── Detail: Left — Meter + Info ── */
+        /* ── Detail: Left — Meter + Info + Host ── */
         .meter-col {
             display: flex;
             flex-direction: column;
@@ -710,6 +711,38 @@
             margin-top: 0.2rem;
         }
 
+        /* ── Social proof ticker ── */
+        .social-ticker {
+            min-height: 2rem;
+            margin: 0.5rem 0 1rem;
+            font-size: 0.78rem;
+            color: var(--text-soft);
+            letter-spacing: 0.03em;
+            font-weight: 300;
+            transition: opacity 0.6s var(--ease-warm);
+        }
+        .social-ticker .ticker-name {
+            color: var(--ochre);
+            font-weight: 500;
+        }
+        .social-ticker .ticker-action {
+            color: var(--gold-soft);
+        }
+
+        /* ── Velocity indicator ── */
+        .velocity-indicator {
+            font-size: 0.72rem;
+            color: var(--text-mute);
+            letter-spacing: 0.06em;
+            margin-bottom: 0.75rem;
+            display: none;
+        }
+        .velocity-indicator.visible { display: block; }
+        .velocity-indicator strong {
+            color: var(--ochre);
+            font-weight: 600;
+        }
+
         .detail-description {
             max-width: 400px;
             margin: 1rem auto 1.5rem;
@@ -740,14 +773,124 @@
             line-height: 1;
         }
 
-        /* ── Detail: Right — Form ── */
+        /* ── Host credibility (Airbnb pattern) ── */
+        .host-block {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 1rem 1.25rem;
+            margin-top: 1.5rem;
+            background: rgba(10,10,10,0.4);
+            border: 1px solid var(--border-faint);
+            width: 100%;
+            max-width: 360px;
+            text-align: left;
+        }
+        .host-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 1px solid var(--ochre-soft);
+        }
+        .host-info {
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        .host-info .host-name {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .host-info .host-cred {
+            color: var(--text-mute);
+            font-size: 0.72rem;
+        }
+        .host-info .host-cred a {
+            color: var(--ochre);
+            text-decoration: none;
+            border-bottom: 1px solid var(--ochre-dim);
+            transition: color 0.3s var(--ease-warm);
+        }
+        .host-info .host-cred a:hover { color: var(--terracotta); }
+
+        /* ── Timeline / what to expect ── */
+        .timeline-section {
+            width: 100%;
+            max-width: 360px;
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            background: rgba(10,10,10,0.3);
+            border: 1px solid var(--border-faint);
+            text-align: left;
+        }
+        .timeline-section h4 {
+            font-family: var(--font-serif);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--ochre);
+            margin-bottom: 1rem;
+            letter-spacing: 0.04em;
+        }
+        .timeline-item {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.7rem;
+            font-size: 0.78rem;
+            color: var(--text-soft);
+            line-height: 1.5;
+        }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-item .time {
+            color: var(--gold);
+            font-weight: 500;
+            white-space: nowrap;
+            min-width: 3.2rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+        }
+        .timeline-item .desc { font-weight: 300; }
+
+        /* ── Detail: Right — Form (multi-step) ── */
         .form-col { position: relative; z-index: 2; }
+
+        /* Step progress dots */
+        .step-progress {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.75rem;
+            align-items: center;
+        }
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-warm);
+            transition: all 0.4s var(--ease-warm);
+        }
+        .step-dot.active {
+            background: var(--gold);
+            box-shadow: 0 0 8px var(--gold-soft);
+        }
+        .step-dot.done {
+            background: var(--ochre);
+        }
+        .step-line {
+            width: 24px;
+            height: 1px;
+            background: var(--border-faint);
+            transition: background 0.4s var(--ease-warm);
+        }
+        .step-line.done { background: var(--ochre-soft); }
+
         .form-card {
             background: var(--card-bg);
             border: 1px solid var(--border-faint);
             padding: 2.5rem 2.25rem;
             position: relative;
             overflow: hidden;
+            transition: opacity 0.3s var(--ease-warm), transform 0.3s var(--ease-warm);
         }
         .form-card::before {
             content: '';
@@ -773,8 +916,19 @@
             color: var(--text-soft);
             font-size: 0.9rem;
             line-height: 1.7;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             font-weight: 300;
+        }
+
+        /* Step containers */
+        .form-step {
+            display: none;
+            animation: stepIn 0.4s var(--ease-warm);
+        }
+        .form-step.active { display: block; }
+        @keyframes stepIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .field-group { margin-bottom: 1.15rem; }
@@ -811,7 +965,7 @@
             gap: 1rem;
         }
 
-        .amount-section { margin: 1.75rem 0 1.25rem; }
+        .amount-section { margin: 1.5rem 0 1rem; }
         .amount-label {
             display: block;
             font-size: 0.7rem;
@@ -836,7 +990,7 @@
             margin-bottom: 0.75rem;
         }
         .amount-btn {
-            padding: 0.75rem 0.5rem;
+            padding: 0.85rem 0.5rem;
             background: transparent;
             border: 1px solid var(--border-warm);
             color: var(--text-soft);
@@ -846,6 +1000,7 @@
             cursor: pointer;
             transition: all 0.3s var(--ease-warm);
             letter-spacing: 0.03em;
+            position: relative;
         }
         .amount-btn:hover { border-color: var(--ochre); color: var(--text); }
         .amount-btn.selected {
@@ -853,11 +1008,27 @@
             border-color: var(--ochre);
             color: var(--ochre);
             font-weight: 600;
+            transform: scale(1.02);
         }
         .amount-btn.free-btn.selected {
             background: rgba(184, 83, 42, 0.15);
             border-color: var(--terracotta);
             color: var(--terracotta);
+        }
+        /* "Most chosen" badge */
+        .amount-btn.recommended::after {
+            content: 'Most chosen';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--gold);
+            color: var(--dark);
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.15rem 0.45rem;
+            line-height: 1.2;
         }
         .custom-amount-row {
             display: flex;
@@ -892,11 +1063,10 @@
         }
         .custom-amount-input::placeholder { color: var(--text-mute); }
 
-        .submit-btn {
+        .step-btn {
             display: block;
             width: 100%;
             padding: 1.1rem 2rem;
-            margin-top: 1.5rem;
             background: var(--gold);
             color: var(--dark);
             border: 1px solid var(--gold);
@@ -910,7 +1080,7 @@
             position: relative;
             overflow: hidden;
         }
-        .submit-btn::after {
+        .step-btn::after {
             content: '';
             position: absolute;
             inset: 0;
@@ -918,15 +1088,31 @@
             transform: translateX(-110%);
             transition: transform 0.75s var(--ease-warm);
         }
-        .submit-btn:hover::after { transform: translateX(110%); }
-        .submit-btn:hover {
+        .step-btn:hover::after { transform: translateX(110%); }
+        .step-btn:hover {
             background: var(--terracotta);
             border-color: var(--terracotta);
             color: var(--text);
             box-shadow: 0 12px 36px var(--terracotta-glow);
             transform: translateY(-1px);
         }
-        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .step-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .step-btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: none;
+            border: none;
+            color: var(--text-mute);
+            font-family: var(--font-sans);
+            font-size: 0.72rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0.5rem 0;
+            transition: color 0.3s var(--ease-warm);
+        }
+        .step-btn-back:hover { color: var(--ochre); }
 
         .form-error {
             font-size: 0.75rem;
@@ -1006,6 +1192,91 @@
             max-width: 400px;
             margin: 0 auto 1rem;
         }
+        .confirmation-overlay .confetti-container {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 9999;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            animation: confettiFall linear forwards;
+        }
+        @keyframes confettiFall {
+            0%   { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .confirm-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            align-items: center;
+            margin-top: 1.5rem;
+        }
+        .confirm-actions .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.5rem;
+            background: transparent;
+            border: 1px solid var(--border-warm);
+            color: var(--text-soft);
+            font-family: var(--font-sans);
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-warm);
+            text-decoration: none;
+        }
+        .confirm-actions .btn-icon:hover {
+            border-color: var(--ochre);
+            color: var(--ochre);
+            background: var(--ochre-dim);
+        }
+        .confirm-actions .btn-icon svg {
+            width: 16px; height: 16px;
+        }
+
+        /* ── Sticky mobile CTA ── */
+        .sticky-mobile-bar {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 99;
+            padding: 0.85rem 1.25rem;
+            background: rgba(7,7,8,0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-faint);
+        }
+        .sticky-mobile-bar .sticky-btn {
+            width: 100%;
+            padding: 0.95rem;
+            background: var(--gold);
+            color: var(--dark);
+            border: none;
+            font-family: var(--font-sans);
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-warm);
+        }
+        .sticky-mobile-bar .sticky-btn:hover {
+            background: var(--terracotta);
+            color: var(--text);
+        }
 
         /* ─────────────────────────────────────────────
            FOOTER
@@ -1062,6 +1333,8 @@
             .form-card { padding: 2rem 1.25rem; }
             .detail-hero { padding: 3rem 1.5rem 2rem; }
             .detail-hero .meta-row { gap: 1rem; font-size: 0.8rem; }
+            .sticky-mobile-bar { display: block; }
+            .detail-page { padding-bottom: 6rem; }
         }
         @media (max-width: 480px) {
             .events-grid { grid-template-columns: 1fr; }
@@ -1208,7 +1481,7 @@
         </div>
 
         <div class="detail-grid">
-            <!-- LEFT: Meter + Info -->
+            <!-- LEFT: Meter + Info + Host + Timeline -->
             <div class="meter-col reveal">
                 <div class="meter-wrap" id="detailMeterWrap">
                     <svg class="meter-svg" viewBox="0 0 200 200">
@@ -1223,6 +1496,17 @@
                     </div>
                 </div>
 
+                <!-- Velocity indicator -->
+                <div class="velocity-indicator" id="velocityIndicator">
+                    <strong id="velocityCount">0</strong> spots taken in the last 24 hours
+                </div>
+
+                <!-- Social proof ticker -->
+                <div class="social-ticker" id="socialTicker">
+                    <span class="ticker-name" id="tickerName">—</span>
+                    <span class="ticker-action">just reserved</span>
+                </div>
+
                 <p class="detail-description" id="detailDesc">
                     An evening of melodic Afrohouse and organic electronic music as the sun drops into the Atlantic.
                     No dress code. No faith test. Just you, the music, and whoever you brought.
@@ -1232,13 +1516,52 @@
                     <span class="num">+1</span>
                     Your name goes on the list. <strong>Bring one friend free</strong> — no extra ticket needed.
                 </div>
+
+                <!-- Host credibility (Airbnb pattern) -->
+                <div class="host-block">
+                    <img src="/images/robert-jan-profile-new.png"
+                         alt="Robert-Jan Mastenbroek"
+                         class="host-avatar"
+                         width="44" height="44"
+                         loading="lazy">
+                    <div class="host-info">
+                        <div class="host-name">Hosted by Robert-Jan</div>
+                        <div class="host-cred">36 tracks · Independently owned · <a href="/story">Full story →</a></div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="timeline-section">
+                    <h4>An evening at Holy Rave</h4>
+                    <div class="timeline-item">
+                        <span class="time">19:00</span>
+                        <span class="desc">Arrive · Sunset drinks · Settle in</span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="time">19:30</span>
+                        <span class="desc">First set · Melodic Afrohouse · Warm-up</span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="time">20:15</span>
+                        <span class="desc">Golden hour · Handpan interlude</span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="time">20:45</span>
+                        <span class="desc">Tribal psytrance · Peak energy</span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="time">21:30</span>
+                        <span class="desc">Cool-down · Connection · Goodnight</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- RIGHT: Form -->
+            <!-- RIGHT: Multi-step Form -->
             <div class="form-col reveal">
 
-                <!-- Confirmation state (shown after successful registration) -->
+                <!-- Confirmation state -->
                 <div class="confirmation-overlay" id="confirmOverlay">
+                    <div class="confetti-container" id="confettiContainer"></div>
                     <svg class="sigil sigil--md sigil-mark"><use href="#sigil"/></svg>
                     <h2>You're <em>in.</em></h2>
                     <p id="confirmName">Your spot is reserved.</p>
@@ -1248,61 +1571,106 @@
                         <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
                         <span class="line"></span>
                     </div>
-                    <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" rel="noopener"
-                       class="btn btn-ghost" style="display:inline-flex;margin-top:0.5rem;">
-                        Join WhatsApp Community
-                    </a>
+                    <div class="confirm-actions">
+                        <button class="btn-icon" id="addToCalendarBtn" onclick="downloadCalendar()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            Add to Calendar
+                        </button>
+                        <button class="btn-icon" onclick="shareWithFriend()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                            Tell a Friend
+                        </button>
+                        <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" rel="noopener"
+                           class="btn-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                            </svg>
+                            Join WhatsApp Community
+                        </a>
+                    </div>
                 </div>
 
-                <!-- Registration form -->
+                <!-- Registration form (multi-step) -->
                 <div class="form-card" id="formCard">
-                    <h2>Reserve <em>Your Spot</em></h2>
-                    <p class="form-sub" id="formSub">Secure your ticket below. The location is confirmed and shown on your ticket.</p>
+                    <!-- Progress dots -->
+                    <div class="step-progress" id="stepProgress">
+                        <span class="step-dot active" data-step="1"></span>
+                        <span class="step-line" data-step="1"></span>
+                        <span class="step-dot" data-step="2"></span>
+                        <span class="step-line" data-step="2"></span>
+                        <span class="step-dot" data-step="3"></span>
+                    </div>
 
-                    <form id="registerForm" onsubmit="handleRegister(event)">
-                        <div class="field-row">
-                            <div class="field-group">
-                                <label class="field-label" for="firstName">First Name</label>
-                                <input type="text" id="firstName" class="field-input"
-                                       placeholder="John" required autocomplete="given-name">
-                            </div>
-                            <div class="field-group">
-                                <label class="field-label" for="lastName">Last Name</label>
-                                <input type="text" id="lastName" class="field-input"
-                                       placeholder="Doe" required autocomplete="family-name">
-                            </div>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label" for="email">Email</label>
-                            <input type="email" id="email" class="field-input"
-                                   placeholder="you@email.com" required autocomplete="email">
-                        </div>
-
-                        <div class="amount-section">
-                            <label class="amount-label">Pay What Feels Right <em>— nobody turned away</em></label>
-                            <div class="amount-options" id="amountOptions">
-                                <button type="button" class="amount-btn free-btn" data-amount="0">Free</button>
-                                <button type="button" class="amount-btn" data-amount="700">€7</button>
-                                <button type="button" class="amount-btn selected" data-amount="1200">€12</button>
-                                <button type="button" class="amount-btn" data-amount="2000">€20</button>
-                            </div>
-                            <div class="custom-amount-row" id="customRow">
-                                <span class="custom-amount-prefix">€</span>
-                                <input type="number" id="customAmount" class="custom-amount-input"
-                                       placeholder="Custom amount" min="1" step="1">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="submit-btn" id="submitBtn">
-                            Reserve My Spot
-                        </button>
-                        <p class="form-error" id="formError"></p>
-                    </form>
-
-                    <p class="form-note">
-                        Each reservation = <strong>2 tickets</strong> (you + 1 friend).
+                    <p class="form-sub" id="formSub">
+                        <span id="stepLabel">Step 1 of 3 — Your details</span>
                     </p>
+
+                    <form id="registerForm">
+                        <!-- STEP 1: Name + Email -->
+                        <div class="form-step active" data-step="1">
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label class="field-label" for="firstName">First Name</label>
+                                    <input type="text" id="firstName" class="field-input"
+                                           placeholder="John" required autocomplete="given-name">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label" for="lastName">Last Name</label>
+                                    <input type="text" id="lastName" class="field-input"
+                                           placeholder="Doe" required autocomplete="family-name">
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="email">Email</label>
+                                <input type="email" id="email" class="field-input"
+                                       placeholder="you@email.com" required autocomplete="email">
+                            </div>
+                            <button type="button" class="step-btn" style="margin-top:1.25rem;" onclick="goToStep(2)">
+                                Check Availability →
+                            </button>
+                        </div>
+
+                        <!-- STEP 2: Amount -->
+                        <div class="form-step" data-step="2">
+                            <div class="amount-section">
+                                <label class="amount-label">Pay What Feels Right <em>— nobody turned away</em></label>
+                                <div class="amount-options" id="amountOptions">
+                                    <button type="button" class="amount-btn free-btn" data-amount="0">Free</button>
+                                    <button type="button" class="amount-btn" data-amount="700">€7</button>
+                                    <button type="button" class="amount-btn selected recommended" data-amount="1200">€12</button>
+                                    <button type="button" class="amount-btn" data-amount="2000">€20</button>
+                                </div>
+                                <div class="custom-amount-row" id="customRow">
+                                    <span class="custom-amount-prefix">€</span>
+                                    <input type="number" id="customAmount" class="custom-amount-input"
+                                           placeholder="Custom amount" min="1" step="1">
+                                </div>
+                            </div>
+                            <p style="text-align:center;font-size:0.75rem;color:var(--text-mute);margin:0 0 1rem;letter-spacing:0.04em;">
+                                Each reservation = <strong>2 tickets</strong> (you + 1 friend).
+                            </p>
+                            <button type="button" class="step-btn-back" onclick="goToStep(1)" style="margin-bottom:0.5rem;">← Back to details</button>
+                            <button type="submit" class="step-btn" id="submitBtn">
+                                Reserve My Spot
+                            </button>
+                            <p class="form-error" id="formError"></p>
+                        </div>
+
+                        <!-- STEP 3: Confirming (transient) -->
+                        <div class="form-step" data-step="3" style="text-align:center;padding:2rem 0;">
+                            <div style="display:inline-block;width:28px;height:28px;border:2px solid var(--border-warm);border-top-color:var(--ochre);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:1rem;"></div>
+                            <p style="color:var(--text-soft);font-size:0.85rem;">Reserving your spot…</p>
+                        </div>
+                    </form>
 
                     <div class="sold-out-banner" id="soldOutBanner">
                         <h3>This event is full.</h3>
@@ -1314,6 +1682,13 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- ═══ STICKY MOBILE CTA ═══ -->
+        <div class="sticky-mobile-bar" id="stickyBar">
+            <button class="sticky-btn" onclick="scrollToForm()">
+                Reserve My Spot
+            </button>
         </div>
 
         <!-- Detail footer -->
@@ -1331,19 +1706,18 @@
         // ──────────────────────────────────────────────────────
         // STATE
         // ──────────────────────────────────────────────────────
-        const CIRCUMFERENCE = 2 * Math.PI * 88; // ~552.92
+        const CIRCUMFERENCE = 2 * Math.PI * 88;
         let selectedAmount = 1200;
         let currentEvent = null;
         let currentSlug = null;
+        let currentRegId = null;
+        let step = 1;
 
         // ──────────────────────────────────────────────────────
-        // MODE DISPATCH — determine hub vs detail from URL
+        // MODE DISPATCH
         // ──────────────────────────────────────────────────────
         const pathParts = window.location.pathname.split('/').filter(Boolean);
-        // /holy-rave → hub, /holy-rave/something → detail
         const slug = pathParts.length >= 2 ? pathParts[1] : null;
-
-        // Check for ?confirmed= param (returning from Stripe)
         const urlParams = new URLSearchParams(window.location.search);
         const confirmedId = urlParams.get('confirmed');
 
@@ -1360,14 +1734,9 @@
         async function showHubMode() {
             document.getElementById('hubMode').style.display = 'block';
             document.getElementById('detailMode').classList.remove('active');
-
-            // Set canonical to hub
             const canon = document.querySelector('link[rel="canonical"]');
             if (canon) canon.href = 'https://robertjanmastenbroek.com/holy-rave';
-
             await loadEvents();
-
-            // Reveal observer
             observeReveal();
         }
 
@@ -1375,21 +1744,17 @@
             const grid = document.getElementById('eventsGrid');
             const noEvents = document.getElementById('noEvents');
             const countEl = document.getElementById('hubEventCount');
-
             try {
                 const res = await fetch('/api/holy-rave/events');
-                if (!res.ok) throw new Error('Failed to load');
+                if (!res.ok) throw new Error('Failed');
                 const events = await res.json();
-
                 const upcoming = events.filter(e => e.status === 'upcoming');
                 countEl.textContent = upcoming.length;
-
                 if (upcoming.length === 0) {
                     grid.innerHTML = '';
                     noEvents.style.display = 'block';
                     return;
                 }
-
                 noEvents.style.display = 'none';
                 grid.innerHTML = upcoming.map(e => buildEventCard(e)).join('');
             } catch (err) {
@@ -1406,8 +1771,6 @@
             const pct = e.ticket_limit > 0 ? (e.tickets_sold / e.ticket_limit) * 100 : 0;
             const isUrgent = e.remaining <= 10;
             const isSoldOut = e.remaining <= 0;
-
-            // Relative date label
             const now = new Date();
             const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
             let dateLabel = '';
@@ -1415,7 +1778,6 @@
             else if (diffDays === 1) dateLabel = 'Tomorrow';
             else if (diffDays <= 7) dateLabel = `${diffDays} days away`;
             else dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-
             return `
                 <a href="/holy-rave/${e.slug}" class="event-card reveal">
                     <div class="event-card-image">
@@ -1450,16 +1812,12 @@
         async function showDetailMode(slug, confirmedId) {
             document.getElementById('hubMode').style.display = 'none';
             document.getElementById('detailMode').classList.add('active');
-
-            // Set canonical to event page
             const canon = document.querySelector('link[rel="canonical"]');
             if (canon) canon.href = `https://robertjanmastenbroek.com/holy-rave/${slug}`;
-
             if (confirmedId) {
-                // Coming back from Stripe — show confirmation
+                currentRegId = confirmedId;
                 showConfirmation(confirmedId);
             }
-
             await loadEventDetail(slug);
             observeReveal();
         }
@@ -1468,10 +1826,11 @@
             try {
                 const res = await fetch('/api/holy-rave/events/' + slug);
                 if (!res.ok) throw new Error('Not found');
-
                 const event = await res.json();
                 currentEvent = event;
                 renderDetail(event);
+                startSocialProof(event.id);
+                loadVelocity(event.id);
             } catch (err) {
                 document.getElementById('detailTitle').innerHTML = 'Event <em>not found</em>';
                 document.getElementById('formCard').style.display = 'none';
@@ -1480,40 +1839,25 @@
 
         function renderDetail(event) {
             const date = new Date(event.event_date + 'T12:00:00');
-
-            // Title
             document.getElementById('detailTitle').innerHTML =
                 `<em>${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</em> · ${event.location || 'Tenerife'}`;
-
-            // Eyebrow
             document.getElementById('detailEyebrow').innerHTML = '<span class="pin"></span>Holy Rave';
-
-            // Meta
             document.getElementById('detailTime').textContent = event.event_time || 'Sunset';
             document.getElementById('detailLocation').textContent = event.location || 'Tenerife South';
-
-            // Description
             if (event.description) {
                 document.getElementById('detailDesc').textContent = event.description;
             }
-
-            // Countdown
             const now = new Date();
             const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
             const countdownEl = document.getElementById('countdownWrap');
             if (diffDays > 0 && diffDays <= 30) {
                 countdownEl.style.display = 'block';
-                const label = diffDays === 1 ? 'Tomorrow' : diffDays + ' days away';
-                document.getElementById('countdownLabel').innerHTML = `<strong>${label}</strong>`;
+                document.getElementById('countdownLabel').innerHTML = `<strong>${diffDays === 1 ? 'Tomorrow' : diffDays + ' days away'}</strong>`;
             } else if (diffDays <= 0) {
                 countdownEl.style.display = 'block';
                 document.getElementById('countdownLabel').innerHTML = '<strong>Today</strong>';
             }
-
-            // Meter
             updateDetailMeter(event);
-
-            // "of X" text
             document.getElementById('detailOf').textContent = 'of ' + event.ticket_limit;
         }
 
@@ -1521,69 +1865,248 @@
             const sold = event.tickets_sold || 0;
             const total = event.ticket_limit || 50;
             const remaining = event.remaining;
-            const pct = sold / total;
-            const offset = CIRCUMFERENCE * (1 - pct);
-
+            const offset = CIRCUMFERENCE * (1 - (sold / total));
             const fill = document.getElementById('detailMeterFill');
             const spots = document.getElementById('detailSpotsLeft');
-
             fill.style.strokeDashoffset = offset;
             spots.textContent = remaining;
-
-            if (remaining <= 0) {
-                spots.classList.add('urgent');
-                spots.textContent = '0';
-                fill.classList.add('sold-out');
-                setDetailSoldOut(true);
-            } else if (remaining <= 10) {
-                spots.classList.add('urgent');
-                fill.classList.remove('sold-out');
-                setDetailSoldOut(false);
-            } else {
-                spots.classList.remove('urgent');
-                fill.classList.remove('sold-out');
-                setDetailSoldOut(false);
-            }
+            spots.classList.toggle('urgent', remaining <= 10);
+            fill.classList.toggle('sold-out', remaining <= 0);
+            setDetailSoldOut(remaining <= 0);
         }
 
         function setDetailSoldOut(soldOut) {
             const form = document.getElementById('formCard');
             const banner = document.getElementById('soldOutBanner');
             const btn = document.getElementById('submitBtn');
-
             if (soldOut) {
                 form.style.opacity = '0.5';
                 form.style.pointerEvents = 'none';
                 banner.classList.add('visible');
-                btn.disabled = true;
+                if (btn) btn.disabled = true;
             } else {
                 form.style.opacity = '';
                 form.style.pointerEvents = '';
                 banner.classList.remove('visible');
-                btn.disabled = false;
+                if (btn) btn.disabled = false;
             }
         }
 
-        // ── Confirmation (from Stripe return) ──
-        async function showConfirmation(id) {
+        // ──────────────────────────────────────────────────────
+        // MULTI-STEP FORM
+        // ──────────────────────────────────────────────────────
+        function goToStep(target) {
+            if (target === 2) {
+                // Validate step 1
+                const first = document.getElementById('firstName').value.trim();
+                const last = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                if (!first || !last || !email) {
+                    document.getElementById('formError').textContent = 'Please fill in all fields.';
+                    return;
+                }
+                if (!email.includes('@') || !email.includes('.')) {
+                    document.getElementById('formError').textContent = 'Please enter a valid email address.';
+                    return;
+                }
+            }
+            document.getElementById('formError').textContent = '';
+
+            document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.form-step[data-step="${target}"]`).classList.add('active');
+
+            document.querySelectorAll('.step-dot').forEach(el => {
+                const s = parseInt(el.dataset.step, 10);
+                el.classList.toggle('active', s === target);
+                el.classList.toggle('done', s < target);
+            });
+            document.querySelectorAll('.step-line').forEach(el => {
+                const s = parseInt(el.dataset.step, 10);
+                el.classList.toggle('done', s < target);
+            });
+
+            const labels = { 1: 'Step 1 of 3 — Your details', 2: 'Step 2 of 3 — Choose your contribution', 3: 'Step 3 of 3 — Confirming' };
+            document.getElementById('stepLabel').textContent = labels[target] || '';
+            step = target;
+        }
+
+        // Form submission
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const error = document.getElementById('formError');
+            error.textContent = '';
+
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            let amount = selectedAmount;
+            const customRow = document.getElementById('customRow');
+            if (customRow.classList.contains('selected')) {
+                const val = parseInt(document.getElementById('customAmount').value, 10);
+                if (isNaN(val)) {
+                    error.textContent = 'Please enter a custom amount or select a preset.';
+                    document.getElementById('customAmount').focus();
+                    return;
+                }
+                amount = Math.max(0, val) * 100;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            goToStep(3); // Show loading state
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/holy-rave/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, lastName, email, amount, eventSlug: currentSlug }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+                if (data.checkoutUrl) {
+                    window.location.href = data.checkoutUrl;
+                } else {
+                    currentRegId = data.id;
+                    showInlineConfirmation(firstName, lastName, data.id);
+                }
+            } catch (err) {
+                error.textContent = err.message;
+                goToStep(2);
+                btn.disabled = false;
+            }
+        });
+
+        function showInlineConfirmation(firstName, lastName, regId) {
+            document.getElementById('formCard').style.display = 'none';
             const overlay = document.getElementById('confirmOverlay');
-            const form = document.getElementById('formCard');
-
-            form.style.display = 'none';
             overlay.classList.add('visible');
+            document.getElementById('confirmName').textContent = firstName + ' ' + lastName + ', your spot is reserved.';
+            currentRegId = regId;
+            fireConfetti();
+        }
 
+        async function showConfirmation(id) {
+            document.getElementById('formCard').style.display = 'none';
+            const overlay = document.getElementById('confirmOverlay');
+            overlay.classList.add('visible');
+            currentRegId = id;
+            fireConfetti();
             try {
                 const res = await fetch('/api/holy-rave/verify?id=' + encodeURIComponent(id));
                 if (res.ok) {
                     const data = await res.json();
-                    const name = data.firstName + ' ' + data.lastName;
-                    document.getElementById('confirmName').textContent = name + ', your spot is reserved.';
+                    document.getElementById('confirmName').textContent = data.firstName + ' ' + (data.lastName || '') + ', your spot is reserved.';
                 }
             } catch (e) {}
         }
 
         // ──────────────────────────────────────────────────────
-        // FORM: Amount selector
+        // CONFETTI
+        // ──────────────────────────────────────────────────────
+        function fireConfetti() {
+            const container = document.getElementById('confettiContainer');
+            if (!container) return;
+            const colors = ['#d4af37', '#c8883a', '#b8532a', '#f5f1e8', '#1a2a4a'];
+            for (let i = 0; i < 40; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.width = (4 + Math.random() * 6) + 'px';
+                piece.style.height = (4 + Math.random() * 6) + 'px';
+                piece.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+                piece.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(piece);
+                setTimeout(() => piece.remove(), 4000);
+            }
+        }
+
+        // ──────────────────────────────────────────────────────
+        // SOCIAL PROOF TICKER
+        // ──────────────────────────────────────────────────────
+        let tickerIndex = 0;
+        let tickerData = [];
+
+        async function startSocialProof(eventId) {
+            try {
+                const res = await fetch('/api/holy-rave/events/' + currentSlug + '/recent');
+                if (res.ok) {
+                    tickerData = await res.json();
+                    if (tickerData.length > 0) {
+                        showTickerItem(0);
+                        setInterval(nextTicker, 5000);
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function showTickerItem(i) {
+            if (!tickerData[i]) return;
+            const el = document.getElementById('tickerName');
+            if (el) {
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    el.textContent = tickerData[i].name;
+                    el.style.opacity = '1';
+                }, 200);
+            }
+        }
+
+        function nextTicker() {
+            if (tickerData.length === 0) return;
+            tickerIndex = (tickerIndex + 1) % tickerData.length;
+            showTickerItem(tickerIndex);
+        }
+
+        // ──────────────────────────────────────────────────────
+        // VELOCITY INDICATOR
+        // ──────────────────────────────────────────────────────
+        async function loadVelocity(eventId) {
+            try {
+                const res = await fetch('/api/holy-rave/events/' + currentSlug + '/velocity');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.count >= 3) {
+                        document.getElementById('velocityCount').textContent = data.count;
+                        document.getElementById('velocityIndicator').classList.add('visible');
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // ──────────────────────────────────────────────────────
+        // ADD TO CALENDAR
+        // ──────────────────────────────────────────────────────
+        function downloadCalendar() {
+            if (currentRegId) {
+                window.open('/api/holy-rave/ticket/' + currentRegId + '/calendar.ics', '_blank');
+            }
+        }
+
+        // ──────────────────────────────────────────────────────
+        // SHARE WITH FRIEND
+        // ──────────────────────────────────────────────────────
+        function shareWithFriend() {
+            const url = window.location.origin + '/holy-rave/' + currentSlug;
+            const text = 'I\'m going to Holy Rave — get your spot at ' + url;
+            const wa = 'https://wa.me/?text=' + encodeURIComponent(text);
+            window.open(wa, '_blank');
+        }
+
+        // ──────────────────────────────────────────────────────
+        // STICKY MOBILE CTA — scroll to form
+        // ──────────────────────────────────────────────────────
+        function scrollToForm() {
+            const el = document.getElementById('formCard');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const input = document.getElementById('firstName');
+            if (input) setTimeout(() => input.focus(), 500);
+        }
+
+        // ──────────────────────────────────────────────────────
+        // AMOUNT SELECTOR
         // ──────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             const amountOptions = document.getElementById('amountOptions');
@@ -1598,7 +2121,6 @@
                     selectedAmount = parseInt(btn.dataset.amount, 10) || 0;
                 });
             }
-
             const customAmount = document.getElementById('customAmount');
             if (customAmount) {
                 customAmount.addEventListener('focus', () => {
@@ -1617,79 +2139,6 @@
         });
 
         // ──────────────────────────────────────────────────────
-        // FORM: Submission
-        // ──────────────────────────────────────────────────────
-        async function handleRegister(e) {
-            e.preventDefault();
-            const error = document.getElementById('formError');
-            error.textContent = '';
-
-            const firstName = document.getElementById('firstName').value.trim();
-            const lastName = document.getElementById('lastName').value.trim();
-            const email = document.getElementById('email').value.trim();
-
-            if (!firstName || !lastName || !email) {
-                error.textContent = 'Please fill in all fields.';
-                return;
-            }
-            if (!email.includes('@') || !email.includes('.')) {
-                error.textContent = 'Please enter a valid email address.';
-                return;
-            }
-
-            let amount = selectedAmount;
-            const customRow = document.getElementById('customRow');
-            if (customRow.classList.contains('selected')) {
-                const val = parseInt(document.getElementById('customAmount').value, 10);
-                if (isNaN(val)) {
-                    error.textContent = 'Please enter a custom amount or select a preset.';
-                    document.getElementById('customAmount').focus();
-                    return;
-                }
-                amount = Math.max(0, val) * 100;
-            }
-
-            const btn = document.getElementById('submitBtn');
-            btn.textContent = 'Reserving…';
-            btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/holy-rave/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        firstName,
-                        lastName,
-                        email,
-                        amount,
-                        eventSlug: currentSlug,
-                    }),
-                });
-                const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(data.error || 'Something went wrong.');
-                }
-
-                if (data.checkoutUrl) {
-                    // Paid ticket — redirect to Stripe
-                    window.location.href = data.checkoutUrl;
-                } else {
-                    // Free ticket — show confirmation inline
-                    const form = document.getElementById('formCard');
-                    const overlay = document.getElementById('confirmOverlay');
-                    form.style.display = 'none';
-                    overlay.classList.add('visible');
-                    document.getElementById('confirmName').textContent = firstName + ' ' + lastName + ', your spot is reserved.';
-                }
-            } catch (err) {
-                error.textContent = err.message;
-                btn.textContent = 'Reserve My Spot';
-                btn.disabled = false;
-            }
-        }
-
-        // ──────────────────────────────────────────────────────
         // REVEAL ON SCROLL
         // ──────────────────────────────────────────────────────
         function observeReveal() {
@@ -1701,16 +2150,13 @@
                     }
                 });
             }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-
             document.querySelectorAll('.reveal').forEach(el => {
-                if (!el.classList.contains('visible')) {
-                    observer.observe(el);
-                }
+                if (!el.classList.contains('visible')) observer.observe(el);
             });
         }
 
         // ──────────────────────────────────────────────────────
-        // POLL: Refresh ticket count every 30s on detail view
+        // POLL: Refresh ticket count every 30s
         // ──────────────────────────────────────────────────────
         if (currentSlug) {
             setInterval(async () => {
@@ -1724,6 +2170,19 @@
                 } catch (e) {}
             }, 30000);
         }
+
+        // ──────────────────────────────────────────────────────
+        // KEYBOARD: Enter on step 1 → step 2
+        // ──────────────────────────────────────────────────────
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && step === 1) {
+                const active = document.querySelector('.form-step.active[data-step="1"]');
+                if (active) {
+                    e.preventDefault();
+                    goToStep(2);
+                }
+            }
+        });
     </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const db = require('./lib/db');
@@ -80,6 +81,15 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// ─── Rate Limiting — prevent bot hoarding on 50-person events ──────────────
+const registerLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5,                    // 5 registrations per IP per window
+  message: { error: 'Too many requests. Join the WhatsApp community to be notified of future events.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // ─── MRR Counter ────────────────────────────────────────────────────────────
 // Cached so we don't hammer the Stripe API on every page load
@@ -336,8 +346,91 @@ app.get('/api/holy-rave/tickets', async (req, res) => {
   }
 });
 
+// GET /api/holy-rave/events/:slug/recent — social proof: recent registrations
+app.get('/api/holy-rave/events/:slug/recent', async (req, res) => {
+  try {
+    const event = await db.getEventBySlug(req.params.slug);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    const recent = await db.getRecentRegistrations(event.id, 5);
+    const anonymized = recent.map(r => ({
+      name: r.first_name + ' ' + r.last_name.charAt(0) + '.',
+      time: r.created_at,
+    }));
+    res.json(anonymized);
+  } catch (err) {
+    console.error('Recent registrations error:', err.message);
+    res.json([]);
+  }
+});
+
+// GET /api/holy-rave/events/:slug/velocity — how many tickets sold in last 24h
+app.get('/api/holy-rave/events/:slug/velocity', async (req, res) => {
+  try {
+    const event = await db.getEventBySlug(req.params.slug);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    const count = await db.getRegistrationVelocity(event.id);
+    res.json({ count });
+  } catch (err) {
+    console.error('Velocity error:', err.message);
+    res.json({ count: 0 });
+  }
+});
+
+// GET /api/holy-rave/ticket/:id/calendar.ics — add-to-calendar download
+app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
+  try {
+    const reg = await db.getRegistrationById(req.params.id);
+    if (!reg) return res.status(404).send('Not found');
+
+    let eventTitle = 'Holy Rave';
+    let eventDate = new Date();
+    let eventLocation = 'Tenerife';
+
+    if (reg.event_id) {
+      const sql = db.getSql();
+      const [ev] = await sql`
+        SELECT title, event_date, event_time, location
+        FROM events WHERE id = ${reg.event_id}
+      `;
+      if (ev) {
+        eventTitle = ev.title;
+        eventDate = new Date(ev.event_date + 'T' + (ev.event_time === 'Sunset' ? '19:00:00' : '18:00:00'));
+        eventLocation = ev.location;
+      }
+    }
+
+    const endDate = new Date(eventDate);
+    endDate.setHours(endDate.getHours() + 3);
+
+    const fmt = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Holy Rave//Events//EN',
+      'BEGIN:VEVENT',
+      'UID:' + reg.id + '@robertjanmastenbroek.com',
+      'DTSTAMP:' + fmt(new Date()),
+      'DTSTART:' + fmt(eventDate),
+      'DTEND:' + fmt(endDate),
+      'SUMMARY:' + eventTitle,
+      'DESCRIPTION:Holy Rave Sunset Session — you + 1 friend. Pay what feels right. All the glory belongs to Jesus.',
+      'LOCATION:' + eventLocation,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="holy-rave.ics"');
+    res.send(ics);
+  } catch (err) {
+    console.error('Calendar error:', err.message);
+    res.status(500).send('Could not generate calendar file.');
+  }
+});
+
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
-app.post('/api/holy-rave/register', async (req, res) => {
+app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
   const { firstName, lastName, email, amount, eventSlug } = req.body;
 
   if (!firstName || !lastName || !email || !email.includes('@')) {
@@ -487,6 +580,28 @@ app.get('/api/holy-rave/verify', async (req, res) => {
   } catch (err) {
     console.error('Verify error:', err.message);
     res.status(500).json({ error: 'Could not verify registration.' });
+  }
+});
+
+// ─── Admin: Create a new event (protected by ADMIN_API_KEY env var) ───────────
+app.post('/api/admin/events', async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  const expectedKey = process.env.ADMIN_API_KEY;
+  if (expectedKey && apiKey !== expectedKey) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { slug, title, location, location_detail, event_date, event_time, description, ticket_limit } = req.body;
+  if (!slug || !title || !location || !event_date) {
+    return res.status(400).json({ error: 'Missing required fields: slug, title, location, event_date' });
+  }
+
+  try {
+    await db.seedEvent({ slug, title, location, location_detail, event_date, event_time, description, ticket_limit: ticket_limit || 50 });
+    res.json({ ok: true, slug });
+  } catch (err) {
+    console.error('Admin create event error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
