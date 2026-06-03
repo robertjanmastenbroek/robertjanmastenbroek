@@ -2528,6 +2528,11 @@
             pendingFirstName = firstName;
             pendingLastName = lastName;
             pendingPaymentIntentId = piId;
+            // Store in sessionStorage so it survives 3DS redirect (page reload)
+            sessionStorage.setItem('hr_regId', regId);
+            sessionStorage.setItem('hr_firstName', firstName);
+            sessionStorage.setItem('hr_lastName', lastName);
+            sessionStorage.setItem('hr_piId', piId);
 
             // Show amount
             const displayEl = document.getElementById('paymentAmountDisplay');
@@ -2646,6 +2651,16 @@
 
         // Handle return from 3D Secure redirect — check payment intent status
         async function checkPaymentIntentResult() {
+            // Restore from sessionStorage if page was reloaded
+            const storedRegId = sessionStorage.getItem('hr_regId');
+            const storedFirstName = sessionStorage.getItem('hr_firstName');
+            const storedLastName = sessionStorage.getItem('hr_lastName');
+            const storedPiId = sessionStorage.getItem('hr_piId');
+            if (storedRegId) { pendingRegId = storedRegId; sessionStorage.removeItem('hr_regId'); }
+            if (storedFirstName) { pendingFirstName = storedFirstName; sessionStorage.removeItem('hr_firstName'); }
+            if (storedLastName) { pendingLastName = storedLastName; sessionStorage.removeItem('hr_lastName'); }
+            if (storedPiId) { pendingPaymentIntentId = storedPiId; sessionStorage.removeItem('hr_piId'); }
+
             const urlParams = new URLSearchParams(window.location.search);
             const piId = urlParams.get('payment_intent');
             const piClientSecret = urlParams.get('payment_intent_client_secret');

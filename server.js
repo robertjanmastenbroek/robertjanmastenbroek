@@ -1006,7 +1006,14 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
 // Called by the frontend after stripe.confirmPayment() succeeds, so we don't rely
 // solely on the webhook (which requires STRIPE_WEBHOOK_SECRET to be configured).
 app.post('/api/holy-rave/confirm-payment', async (req, res) => {
-  const { regId, paymentIntentId } = req.body;
+  let { regId, paymentIntentId } = req.body;
+
+  // If regId looks like a Stripe PaymentIntent (pi_...), look up by it
+  if (!regId || regId.startsWith('pi_')) {
+    const found = await db.getRegistrationByStripeSession(paymentIntentId || regId);
+    if (found) regId = found.id;
+  }
+
   if (!regId) return res.status(400).json({ error: 'Registration ID required.' });
 
   try {
