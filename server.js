@@ -21,7 +21,17 @@ const PORT = process.env.PORT || 8080;
 const SITE_URL = process.env.SITE_URL || 'https://robertjanmastenbroek.com';
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
-// Lazy-initialize Stripe and Resend so the server starts even without env vars set
+// Lazy-initialize Stripe, Resend, and Twilio so the server starts even without env vars
+let twilioClient = null;
+function getTwilio() {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) return null;
+  if (!twilioClient) {
+    twilioClient = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  }
+  return twilioClient;
+}
+
+const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || ''; // e.g. '+1234567890'
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
   if (!getStripe._instance) {
@@ -76,6 +86,26 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
           await sendHolyRaveConfirmation(email, firstName, lastName);
           syncToResendAudience(email, firstName, lastName).catch(e =>
             console.error('Webhook audience sync error:', e.message));
+
+          // Send ticket SMS with event details
+          try {
+            const reg = await db.getRegistrationById(regId);
+            if (reg && reg.phone) {
+              const eventMeta = session.metadata || {};
+              const slug = eventMeta.event_slug || 'holy-rave';
+              sendTicketSMS(
+                reg.phone,
+                'Holy Rave',
+                eventMeta.event_date,
+                null,
+                eventMeta.event_location,
+                slug,
+                regId
+              ).catch(e => console.error('Webhook SMS error:', e.message));
+            }
+          } catch (e) {
+            console.error('Webhook SMS lookup error:', e.message);
+          }
         }
       } catch (err) {
         console.error('Webhook confirm error:', err.message);
@@ -647,6 +677,9 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
         console.error('Free ticket email error:', e.message));
       syncToResendAudience(email, firstName, lastName, phone).catch(e =>
         console.error('Free ticket audience sync error:', e.message));
+      // Send ticket SMS (fire-and-forget)
+      sendTicketSMS(phone, eventTitle, eventDateStr, (eventDateStr ? '' : null), eventLocationStr, eventSlug, id).catch(e =>
+        console.error('Free ticket SMS error:', e.message));
       return res.json({ id, confirmed: true });
     }
 
@@ -690,8 +723,8 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
         },
         quantity: 1,
       }],
-      metadata: eventId
-        ? { registration_id: id, event_id: String(eventId), event_date: eventDateStr, event_location: eventLocationStr }
+      metadata: eventSlug
+        ? { registration_id: id, event_id: String(eventId), event_date: eventDateStr, event_location: eventLocationStr, event_slug: eventSlug }
         : { registration_id: id, week },
       success_url: successUrl,
       cancel_url: cancelUrl,
@@ -1033,6 +1066,41 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
     console.log(`[resend] Contact synced: ${email}${phone ? ' + phone' : ''}`);
   } catch (err) {
     console.error('[resend] Audience sync error:', err.message);
+  }
+}
+
+// ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
+// Sends a ticket SMS with event location and time via Twilio.
+// Falls back to logging if Twilio isn't configured.
+async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId) {
+  if (!phone || !TWILIO_FROM_NUMBER) {
+    console.log(`[sms] Skipping SMS (no phone or from number) for ${phone}`);
+    return;
+  }
+
+  const twilio = getTwilio();
+  if (!twilio) {
+    console.log('[sms] Twilio not configured — skipping SMS send');
+    return;
+  }
+
+  const dateStr = eventDate ? new Date(eventDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '';
+  const timeStr = eventTime || '20:00 – 23:00';
+  const locStr = eventLocation || 'Tenerife South';
+  const slugPart = slug || 'holy-rave';
+  const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
+
+  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend\n\nShow this message at the door (no printed ticket needed).\n\n${link}`;
+
+  try {
+    const result = await twilio.messages.create({
+      body: message,
+      from: TWILIO_FROM_NUMBER,
+      to: phone.replace(/\s+/g, ''),
+    });
+    console.log(`[sms] Ticket SMS sent to ${phone} (sid: ${result.sid})`);
+  } catch (err) {
+    console.error('[sms] Failed to send SMS:', err.message);
   }
 }
 
