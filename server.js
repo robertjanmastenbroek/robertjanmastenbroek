@@ -946,7 +946,7 @@ app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
 
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
 app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
-  const { firstName, lastName, email, phone, amount, eventSlug } = req.body;
+  const { firstName, lastName, email, phone, amount, eventSlug, phoneVerified } = req.body;
 
   if (!firstName || !lastName || !email) {
     return res.status(400).json({ error: 'Please fill in all fields correctly.' });
@@ -1018,7 +1018,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     if (!stripe) {
       // Stripe not configured — save as pending registration
       await db.createRegistration({
-        id, firstName, lastName, email, phone, amount: amt, week, eventId,
+        id, firstName, lastName, email, phone, phoneVerified: !!phoneVerified, amount: amt, week, eventId,
       });
       return res.json({ id, confirmed: false, note: 'Payment system not available. Registration saved without payment.' });
     }
@@ -1061,7 +1061,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     console.log(`[register] PaymentIntent created: ${paymentIntent.id}`);
 
     await db.createRegistration({
-      id, firstName, lastName, email, phone, amount: amt, week, eventId,
+      id, firstName, lastName, email, phone, phoneVerified: !!phoneVerified, amount: amt, week, eventId,
       stripeSessionId: paymentIntent.id,
     });
 

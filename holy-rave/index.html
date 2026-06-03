@@ -2485,7 +2485,7 @@
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, phone, amount, eventSlug: currentSlug }),
+                    body: JSON.stringify({ firstName, lastName, email, phone, phoneVerified, amount, eventSlug: currentSlug }),
                     signal: controller.signal,
                 });
                 clearTimeout(timeout);
