@@ -1,10 +1,10 @@
 # Holy Rave — STATUS
 
-Last updated: 2026-06-03
+Last updated: 2026-06-04
 
 ## Current State
 
-The Holy Rave ticketing system is fully operational. Below is a summary of all features, known issues, and what was built today.
+The Holy Rave ticketing system is fully operational. Below is a summary of all features, known issues, and what was built.
 
 ---
 
@@ -12,64 +12,76 @@ The Holy Rave ticketing system is fully operational. Below is a summary of all f
 
 ### Event-Specific Ticketing
 - Events table with slug, title, location, date, time, ticket_limit, image_url, maps_url
-- Hub page (`/holy-rave`) shows upcoming events with live ticket meters
+- Hub page (`/holy-rave`) shows upcoming events with live ticket meters + hero image
 - Detail page (`/holy-rave/:slug`) with SVG ticket meter, countdown, registration form
 - Past events collapsible section on hub
-- Social proof ticker: "Firstname L. just reserved"
+- Social proof ticker: "First L. just reserved" with cross-fade animation
 - Velocity indicator: "X spots taken in last 24h"
-- Add-to-calendar (.ics) download
+- Add-to-calendar (.ics) download from browser
 - Share-to-friend (WhatsApp deep link)
+- Host credibility block (Airbnb pattern with photo)
 
 ### Registration & Payment
-- Multi-step form: Step 1 (name, email, phone + country code + 6-digit verification) → Step 2 (amount selection with "Most chosen" badge on €12) → Step 3 (payment processing)
+- Multi-step form: Step 1 (name, email, phone + country code + 6-digit verification) → auto-advances to Step 2 (amount selection with "Most chosen" badge on €12) → Step 3 (payment processing)
 - Cancel button on step 3 to go back and adjust amount
 - Phone verification via 6-digit SMS code (Twilio Dutch number +3197010259446)
+- Vonage fallback if Twilio not configured
 - Phone fields stay unlocked after verification (user can correct typos)
 - Stripe Payment Element (inline, no redirect) — card form mounts on page
+- Apple Pay / Google Pay via Stripe Payment Request Button
 - Statement descriptor: "HOLY RAVE 13 JUN" (shows on bank/iDEAL)
-- Fallback: redirect to Stripe if embedded checkout fails
-- 3D Secure handling via redirect: 'if_required'
-- Resend confirmation email with payment amount
-- Ticket SMS via Twilio (location, date, time, maps link, confirmation code)
-- Abandoned registration reminders (20 min delay, 5 min cron)
+- Fallback: redirect to Stripe if inline card fails
+- 3D Secure handling via redirect with sessionStorage persistence
+- Resend confirmation email with payment amount, event details, confirmation code
+- Ticket SMS via Twilio/Vonage (location, date, time, maps link, confirmation code)
+- 3-email abandoned sequence (15min friendly nudge → 2hr scarcity → 24hr last call)
 - Resume flow: pre-fill form + skip to payment from email link
+- UTM capture: source/medium/campaign stored per registration
+- SMS delivery status tracking per registration
 
 ### Admin Panel (`/admin`)
-- Login via session + signed HMAC token
+- Login via password → signed HMAC token (no session cookies)
 - Event CRUD: create, edit status (upcoming/past), delete
-- Registrations view per event with cancel option
+- Registrations view per event with cancel option, UTM source, SMS status
 - Subscribers list with copy-all buttons
-- Image upload (drag-and-drop + crop via Cropper.js)
-- Pexels image search modal
+- Image upload: drag-and-drop → Cropper.js (crop, zoom, rotate, flip, aspect ratios)
+- Pexels image search modal with grid + infinite scroll
+- "+20 Tickets" button to increase ticket limit for sold-out events
 - Sync to Resend button
 - Phone verification status (✓ green / ? grey)
-- Registration UTM source tracking (to be added)
 
 ### Homepage (`/index.html`)
 - Hero stats bar: tracks, Spotify listeners, next event date, spots left
-- Events section with live data from API
+- Events section with live data from API, next-3-events grid with images
 - Email subscribe with live subscriber count
 - "Listen on Spotify" + "Reserve Your Spot" hero buttons
-- Spotify embed with latest tracks
+- "Get Your Tickets" CTA with lock icon
 
-### OG Image / Social Sharing
+### SEO / Structured Data
+- JSON-LD MusicEvent schema on detail pages (name, date, location, offers, organizer)
+- JSON-LD ItemList schema on hub page (upcoming events)
 - Server-side OG tag injection for `/holy-rave` and `/holy-rave/:slug`
-- Uses event's uploaded image as og:image
-- Dynamic JS OG update for in-app previews
+- Event-specific OG image, title, description
+- Server-rendered event data (no API call needed on first load)
 - `og:type` and `fb:app_id` for Facebook validation
+- Frame-ancestors CSP header
 
 ### Google Analytics
-- GA4 (G-JZG345ND51) on all public pages:
-  - index.html, holy-rave/index.html, holy-rave/confirmed.html
-  - auth/login.html, auth/signup.html, auth/callback.html
-  - offering/index.html, offering/thank-you/index.html
+- GA4 (G-JZG345ND51) on all public pages
 - Conversion events: phone_verified, registration_submitted, payment_opened, payment_success
-- UTM tracking on all email links (?utm_source=email)
-- UTM tracking on all social links (WhatsApp, Instagram, Spotify)
+- UTM tracking on all email links, social links
+- Goal: track source attribution per registration
+
+### Performance
+- font-display: swap (no invisible text while fonts load)
+- Preconnect hints for Google Fonts, Stripe, QR server
+- Google Fonts loads non-blocking via media="print"
+- Lazy-load event card images
+- Dead code removed (unused scrollToForm function)
 
 ### SMS Providers
 - **Primary:** Twilio (Dutch number +3197010259446) — verified working for +34 and +31
-- **Fallback:** Vonage (alpha sender "HOLY RAVE") — if Twilio not configured
+- **Fallback:** Vonage (alpha sender "HolyRave") — if Twilio not configured
 
 ---
 
@@ -80,9 +92,9 @@ The Holy Rave ticketing system is fully operational. Below is a summary of all f
 - PostgreSQL on Supabase via `postgres.js` tagged template
 - Static HTML/CSS/JS frontend (no framework)
 - Stripe for payments
-- Twilio for SMS
+- Twilio for SMS, Vonage as fallback
 - Resend for email
-- Vonage as SMS fallback
+- Supabase Auth (login/signup infra exists, not wired into holy-rave flow)
 
 ### Key Files
 | File | Purpose |
@@ -90,50 +102,61 @@ The Holy Rave ticketing system is fully operational. Below is a summary of all f
 | `server.js` | Express server, API routes, webhooks, SMS, email, cron |
 | `lib/db.js` | PostgreSQL queries, migrations, schema |
 | `lib/schema.sql` | Full database schema |
+| `lib/supabase.js` | Supabase client (admin + public) |
 | `holy-rave/index.html` | Hub + detail page (dual mode via URL dispatch) |
 | `holy-rave/confirmed.html` | Post-Stripe redirect confirmation |
 | `admin/index.html` | Admin panel |
 | `index.html` | Homepage |
-| `auth/login.html` | Login page |
+| `auth/login.html` | Login page with Google OAuth |
 | `auth/signup.html` | Signup page |
 | `auth/callback.html` | OAuth callback |
-| `press-kit/index.html` | Press kit |
-| `story/index.html` | Artist story / biography |
+| `nixpacks.toml` | Railway build config (caching, deploy exclusions) |
 
 ### Database Tables
 - `events` — event data with image, maps, location
-- `holy_rave_registrations` — registrations with phone, payment, verification status
+- `holy_rave_registrations` — registrations with phone, payment, UTM source, SMS status, email_sequence_step
 - `subscribers` — email + phone subscribers
 - `event_images` — BYTEA image storage (survives Railway deploys)
-- `phone_verifications` — SMS verification codes
+- `phone_verifications` — SMS verification codes (5 min expiry)
 
 ---
 
 ## Known Issues & TODOs
 
-### High Priority
-- P3: UTM source attribution — store utm_source/medium/campaign in registrations table and show in admin
-- P3: Add `source` column to holy_rave_registrations
-- Browser extension sandboxing affects some users (workaround: incognito mode)
-- Email client sandboxed browsers block JS (fixed with CSP + target=_blank)
+### FIXED in this session (June 3-4)
+- ✅ Event-specific ticketing (replaced weekly auto-reset)
+- ✅ Server-rendered event pages with SEO data
+- ✅ JSON-LD structured data (MusicEvent + ItemList)
+- ✅ 3-email abandoned sequence (15min, 2hr, 24hr)
+- ✅ Waitlist form on sold-out events
+- ✅ Admin "+20 Tickets" button
+- ✅ UTM capture + source attribution per registration
+- ✅ SMS delivery status tracking
+- ✅ Apple Pay / Google Pay
+- ✅ Google Analytics on all pages
+- ✅ Conversion tracking events
+- ✅ Phone inputs unlocked after verification
+- ✅ Cancel button on step 3 loading state
+- ✅ Smart sticky mobile CTA (context-aware)
+- ✅ Auto-advance after phone verification
+- ✅ Frame-busting + CSP headers
+- ✅ Phone required validation
+- ✅ Stripe inline Payment Element (no redirect)
+- ✅ Resume flow from email link
+- ✅ Phone verification with 6-digit code
+- ✅ "Most chosen" badge on €12
+- ✅ Image upload with Cropper.js
+- ✅ Pexels image search
+- ✅ Admin registrations panel
+- ✅ Subscribers list with copy-all
+- ✅ Railway build caching + deploy exclusions
 
-### Medium Priority
-- Add Webhook endpoint in Stripe Dashboard for `payment_intent.succeeded`, `checkout.session.expired`, `charge.refunded`
-- QR code on confirmation page for future ticket scanning
-- Verification endpoint at `/verify/:code` for door scanning
-
-### Low Priority
-- Preset amounts should fill custom input (UX polish)
-- Homepage: "36 tracks" in hero stats should be dynamic
-- RLS policies on all 5 Supabase tables (currently policies exist but server bypasses RLS as superuser)
-
----
-
-## Key Decisions
-- **No SSR** — static HTML with server-side OG injection for crawlers. JS reads slug from URL and dispatches hub vs detail mode
-- **PaymentIntent** (not Checkout Session) — inline card form on our page, no redirect
-- **Payment confirmed via direct endpoint** (`/api/holy-rave/confirm-payment`) — not reliant on webhook
-- **Phone verification** — 6-digit code via Twilio, stored in phone_verifications table, 5 min expiry
-- **Reminder timing** — 20 min inactivity before first reminder, every 5 min cron
-- **Vonage kept as fallback** — Twilio primary works for both Spanish and Dutch numbers
-- **Email is receipt only** — ticket details only in SMS (to drive phone number collection)
+### Remaining
+- User accounts (Supabase Auth) — infra exists, not wired into flow
+- SEO blog content pipeline
+- /verify/:code endpoint for door scanning
+- Apple Wallet / Google Pay passes
+- Responsive email templates (MJML)
+- Accessibility audit (ARIA, keyboard nav)
+- Multi-language support (deferred)
+- Dynamic pricing tiers (early-bird)

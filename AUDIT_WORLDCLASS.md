@@ -3,6 +3,7 @@
 **Audit date:** 2026-06-03
 **Benchmark set:** DICE, Resident Advisor (RA), Eventbrite, Fever, Ticketmaster, Airbnb Experiences
 **Scoring:** 1 (needs rebuild) → 5 (world-class, top 0.01%)
+**Updated:** 2026-06-04 — Score moved from 2.1 → ~3.2 / 5 (see June 4 Update section below)
 
 ---
 
