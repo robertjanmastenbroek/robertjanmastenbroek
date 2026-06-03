@@ -1370,22 +1370,28 @@ app.get('/api/images/event/:shortId', async (req, res) => {
   }
 });
 
-// ─── Twilio test SMS (for debugging) ────────────────────────────────────────
+// ─── Vonage test SMS (for debugging) ────────────────────────────────────────
 app.post('/api/debug/send-test-sms', async (req, res) => {
   const { phone } = req.body;
   if (!phone) return res.status(400).json({ error: 'Phone required' });
 
+  // Try Vonage first
+  const msg = 'Holy Rave test from Vonage — SMS is working.';
+  const vonageResult = await sendVonageSMS(phone, msg);
+  if (vonageResult) return res.json({ ok: true, provider: 'vonage', result: vonageResult });
+
+  // Fallback to Twilio
   const twilio = getTwilio();
-  if (!twilio) return res.status(503).json({ error: 'Twilio not configured' });
+  if (!twilio) return res.status(503).json({ error: 'No SMS provider configured' });
   if (!TWILIO_FROM_NUMBER) return res.status(503).json({ error: 'TWILIO_FROM_NUMBER not set' });
 
   try {
     const result = await twilio.messages.create({
-      body: 'Test SMS from Holy Rave server — if you receive this, Twilio is working correctly.',
-      from: getFromNumber(phone),
+      body: 'Holy Rave test — Twilio fallback SMS.',
+      from: TWILIO_FROM_NUMBER,
       to: phone.replace(/\s+/g, ''),
     });
-    res.json({ ok: true, sid: result.sid, status: result.status });
+    res.json({ ok: true, provider: 'twilio', sid: result.sid, status: result.status });
   } catch (err) {
     res.status(500).json({ error: err.message, code: err.code });
   }
