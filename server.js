@@ -22,43 +22,6 @@ const PORT = process.env.PORT || 8080;
 const SITE_URL = process.env.SITE_URL || 'https://robertjanmastenbroek.com';
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
-// ─── MessageBird SMS (EU-native — alpha sender, no monthly fees, instant) ────
-// MessageBird (bird.com) routes directly to every EU carrier. Alpha sender
-// 'HolyRave' works without buying a phone number — it shows as the sender name
-// on the recipient's phone. Set MB_API_KEY in Railway to enable.
-// Pricing: ~€0.035/SMS within Europe (vs Twilio's ~$0.078 from Dutch number).
-const MB_API_KEY = process.env.MB_API_KEY || '';
-const MB_ORIGINATOR = process.env.MB_ORIGINATOR || 'HolyRave';
-
-async function sendMessageBirdSMS(to, body) {
-  if (!MB_API_KEY) {
-    console.log('[mb] MessageBird not configured — skipping SMS');
-    return null;
-  }
-  try {
-    const res = await fetch('https://rest.messagebird.com/messages', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'AccessKey ' + MB_API_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        originator: MB_ORIGINATOR,
-        recipients: [to.replace(/\s+/g, '')],
-        body: body,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.errors?.[0]?.description || 'MB error ' + res.status);
-    console.log('[mb] SMS sent to ' + to + ' (id: ' + (data.id || '') + ')');
-    return data;
-  } catch (err) {
-    console.error('[mb] SMS send error:', err.message);
-    throw err;
-  }
-}
-
 // Lazy-initialize Stripe, Resend, and Twilio so the server starts even without env vars
 let twilioClient = null;
 function getTwilio() {
@@ -523,33 +486,28 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
 
     await db.storeVerificationCode(phone, code);
 
-    // Send SMS via MessageBird (primary) or Twilio (fallback)
-    const codeMsg = `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`;
-    const mbSent = await sendMessageBirdSMS(phone, codeMsg);
-    if (!mbSent) {
-      // Fallback to Twilio
-      const twilio = getTwilio();
-      if (twilio && TWILIO_FROM_NUMBER) {
-        const sender = TWILIO_FROM_NUMBER;
-        console.log(`[verify] Twilio fallback to ${phone} from ${sender}`);
-        const sendPromise = twilio.messages.create({
-          body: codeMsg,
-          from: sender,
-          to: phone.replace(/\s+/g, ''),
-        });
-        Promise.race([
-          sendPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
-        ]).then(() => {
-          console.log(`[verify] Code sent to ${phone} via Twilio`);
-        }).catch(err => {
-          console.error(`[verify] SMS issue (code still valid): ${err.message}`);
-        });
-      } else {
-        console.log(`[verify] DEV MODE — Code for ${phone}: ${code}`);
-      }
+    // Send SMS via Twilio (fire-and-forget with timeout — code is already stored)
+    const twilio = getTwilio();
+    if (twilio && TWILIO_FROM_NUMBER) {
+      const sender = getFromNumber(phone);
+      console.log(`[verify] Sending to ${phone} from: "${sender}" (alpha=${!!TWILIO_ALPHA_SENDER})`);
+      const sendPromise = twilio.messages.create({
+        body: `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`,
+        from: sender,
+        to: phone.replace(/\s+/g, ''),
+      });
+      // Race the send against a 5s timeout so we never hang the response
+      Promise.race([
+        sendPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
+      ]).then(() => {
+        console.log(`[verify] Code sent to ${phone} from "${sender}"`);
+      }).catch(err => {
+        console.error(`[verify] SMS send issue (code still valid): ${err.message}`);
+      });
     } else {
-      console.log(`[verify] Code sent to ${phone} via MessageBird`);
+      // Fallback: log the code (dev mode)
+      console.log(`[verify] DEV MODE — Code for ${phone}: ${code}`);
     }
 
     // Respond immediately — code is stored in DB regardless of SMS delivery
@@ -1391,21 +1349,6 @@ app.post('/api/debug/send-test-sms', async (req, res) => {
   }
 });
 
-// ─── MessageBird configuration check (for debugging) ────────────────────────
-app.get('/api/debug/messagebird', (req, res) => {
-  res.json({
-    apiKeySet: !!process.env.MB_API_KEY,
-    apiKeyPrefix: process.env.MB_API_KEY ? process.env.MB_API_KEY.substring(0, 8) + '...' : null,
-    originator: process.env.MB_ORIGINATOR || 'HolyRave',
-    testBird: (() => {
-      try {
-        // Just check if fetch is available
-        return true;
-      } catch(e) { return false; }
-    })(),
-  });
-});
-
 // ─── Twilio configuration check (for debugging) ─────────────────────────────
 app.get('/api/debug/twilio', (req, res) => {
   const sid = process.env.TWILIO_ACCOUNT_SID || '';
@@ -1559,8 +1502,14 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
 // Sends a ticket SMS with event location and time via Twilio.
 // Fire-and-forget with timeout — doesn't block the caller.
 async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl, confirmationCode) {
-  if (!phone) {
-    console.log('[sms] Skipping SMS — no phone');
+  if (!phone || !TWILIO_FROM_NUMBER) {
+    console.log(`[sms] Skipping SMS (no phone or from number) for ${phone}`);
+    return;
+  }
+
+  const twilio = getTwilio();
+  if (!twilio) {
+    console.log('[sms] Twilio not configured — skipping SMS send');
     return;
   }
 
@@ -1572,42 +1521,34 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   } catch (e) {}
 
   const timeStr = eventTime || '20:00 – 23:00';
+  // Use location_detail instead of both location + detail to avoid duplication
   const locStr = locationDetail || eventLocation || 'Tenerife South';
+  const codeStr = confirmationCode ? `\n🔑 ${confirmationCode}` : '';
+  const mapStr = mapsUrl ? `\n🗺️ ${mapsUrl}` : '';
+  // Prefix slug with 'holy-rave/' for correct link
   const slugPart = slug && slug.startsWith('holy-rave/') ? slug : 'holy-rave/' + (slug || '');
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
+
+  // Keep SMS short — avoid looking like marketing/spam
   const codeMsg = confirmationCode ? ` Code: ${confirmationCode}` : '';
   const mapMsg = mapsUrl ? ` Maps: ${mapsUrl}` : '';
   const message = `Holy Rave confirmed! ${dateStr} ${timeStr}. ${locStr}.${mapMsg}${codeMsg} ${link}`;
 
-  // 1) Try MessageBird (EU-native, uses alpha sender, no monthly fees)
-  const mbResult = await sendMessageBirdSMS(phone, message);
-  if (mbResult) return; // MessageBird sent it
-
-  // 2) Fallback to Twilio (Dutch number, requires TWILIO_FROM_NUMBER)
-  if (!TWILIO_FROM_NUMBER) {
-    console.log('[sms] No Twilio from number configured — SMS not sent');
-    return;
-  }
-  const twilio = getTwilio();
-  if (!twilio) {
-    console.log('[sms] Twilio not configured — SMS not sent');
-    return;
-  }
-
-  const sender = TWILIO_FROM_NUMBER;
-  console.log('[sms] Twilio fallback to ' + phone + ' from ' + sender);
+  const sender = getFromNumber(phone);
+  console.log(`[sms] Sending ticket to ${phone} from: "${sender}"`);
   const sendPromise = twilio.messages.create({
     body: message,
     from: sender,
     to: phone.replace(/\s+/g, ''),
   });
+
   Promise.race([
     sendPromise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Twilio timeout')), 5000)),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
   ]).then(result => {
-    console.log('[sms] Twilio sent to ' + phone + ' (sid: ' + (result.sid || '') + ')');
+    console.log(`[sms] Ticket SMS sent to ${phone} from "${sender}" (sid: ${result.sid})`);
   }).catch(err => {
-    console.error('[sms] Twilio failed:', err.message);
+    console.error('[sms] Failed to send SMS:', err.message);
   });
 }
 
