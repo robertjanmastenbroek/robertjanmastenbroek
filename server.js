@@ -526,31 +526,19 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
 
     await db.storeVerificationCode(phone, code);
 
-    // Send SMS via Vonage (primary) or Twilio (fallback)
+    // Send verification code via both Vonage + Twilio for reliable delivery
     const codeMsg = `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`;
-    const vonageSent = await sendVonageSMS(phone, codeMsg);
-    if (!vonageSent) {
-      const twilio = getTwilio();
-      if (twilio && TWILIO_FROM_NUMBER) {
-        console.log('[verify] Twilio fallback to ' + phone);
-        const sendPromise = twilio.messages.create({
-          body: codeMsg,
-          from: TWILIO_FROM_NUMBER,
-          to: phone.replace(/\s+/g, ''),
-        });
-        Promise.race([
-          sendPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
-        ]).then(() => {
-          console.log('[verify] Code sent to ' + phone + ' via Twilio');
-        }).catch(err => {
-          console.error('[verify] SMS issue (code still valid): ' + err.message);
-        });
-      } else {
-        console.log('[verify] DEV MODE — Code for ' + phone + ': ' + code);
-      }
+    sendVonageSMS(phone, codeMsg).catch(e => console.error('[verify] Vonage failed:', e.message));
+    const twilio = getTwilio();
+    if (twilio && TWILIO_FROM_NUMBER) {
+      twilio.messages.create({
+        body: codeMsg,
+        from: TWILIO_FROM_NUMBER,
+        to: phone.replace(/\s+/g, ''),
+      }).then(() => console.log('[verify] Twilio sent to ' + phone))
+        .catch(e => console.error('[verify] Twilio error:', e.message));
     } else {
-      console.log('[verify] Code sent to ' + phone + ' via Vonage');
+      console.log('[verify] DEV MODE — Code for ' + phone + ': ' + code);
     }
 
     // Respond immediately — code is stored in DB regardless of SMS delivery
@@ -1557,6 +1545,24 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
   }
 }
 
+// ─── Twilio SMS helper (used as parallel send alongside Vonage) ─────────────
+function sendViaTwilio(phone, message) {
+  if (!TWILIO_FROM_NUMBER || !getTwilio()) return;
+  const sendPromise = getTwilio().messages.create({
+    body: message,
+    from: TWILIO_FROM_NUMBER,
+    to: phone.replace(/\s+/g, ''),
+  });
+  Promise.race([
+    sendPromise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Twilio timeout')), 5000)),
+  ]).then(result => {
+    console.log('[twilio] Sent to ' + phone + ' (sid: ' + (result.sid || '') + ')');
+  }).catch(err => {
+    console.error('[twilio] Failed:', err.message);
+  });
+}
+
 // ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
 // Sends a ticket SMS — tries Vonage (EU-native), falls back to Twilio.
 async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl, confirmationCode) {
@@ -1576,39 +1582,24 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   const locStr = locationDetail || eventLocation || 'Tenerife South';
   const slugPart = slug && slug.startsWith('holy-rave/') ? slug : 'holy-rave/' + (slug || '');
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
-  const codeMsg = confirmationCode ? ` Code: ${confirmationCode}` : '';
-  const mapMsg = mapsUrl ? ` Maps: ${mapsUrl}` : '';
-  const message = `Holy Rave confirmed! ${dateStr} ${timeStr}. ${locStr}.${mapMsg}${codeMsg} ${link}`;
+  const codeStr = confirmationCode ? `\n🔑 ${confirmationCode}` : '';
+  const mapStr = mapsUrl ? `\n🗺️ ${mapsUrl}` : '';
+  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${mapStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow this at the door.\n\n${link}`;
 
-  // 1) Try Vonage (EU-native, alpha sender, no monthly fee)
-  const vonageResult = await sendVonageSMS(phone, message);
-  if (vonageResult) return;
-
-  // 2) Fallback to Twilio
-  if (!TWILIO_FROM_NUMBER) {
-    console.log('[sms] No Twilio from number — SMS not sent');
-    return;
-  }
-  const twilio = getTwilio();
-  if (!twilio) {
-    console.log('[sms] Twilio not configured — SMS not sent');
-    return;
-  }
-
-  console.log('[sms] Twilio fallback to ' + phone);
-  const sendPromise = twilio.messages.create({
-    body: message,
-    from: TWILIO_FROM_NUMBER,
-    to: phone.replace(/\s+/g, ''),
-  });
-  Promise.race([
-    sendPromise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Twilio timeout')), 5000)),
-  ]).then(result => {
-    console.log('[sms] Twilio sent to ' + phone + ' (sid: ' + (result.sid || '') + ')');
+  // Try BOTH providers for maximum delivery — Vonage (alpha) + Twilio (Dutch number)
+  // Alpha senders can be blocked by some carriers, so we send both and the user
+  // gets whichever arrives first.
+  sendVonageSMS(phone, message).then(r => {
+    if (r) console.log('[sms] Vonage sent to ' + phone);
   }).catch(err => {
-    console.error('[sms] Twilio failed:', err.message);
+    console.error('[sms] Vonage failed:', err.message);
+    // If Vonage failed, try Twilio
+    sendViaTwilio(phone, message);
   });
+  // Also try Twilio in parallel if configured
+  if (TWILIO_FROM_NUMBER && getTwilio()) {
+    sendViaTwilio(phone, message);
+  }
 }
 
 // ─── Holy Rave Confirmation Email ─────────────────────────────────────────────
