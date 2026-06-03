@@ -526,19 +526,21 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
 
     await db.storeVerificationCode(phone, code);
 
-    // Send verification code via both Vonage + Twilio for reliable delivery
+    // Send verification code — Vonage first, Twilio fallback
     const codeMsg = `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`;
-    sendVonageSMS(phone, codeMsg).catch(e => console.error('[verify] Vonage failed:', e.message));
-    const twilio = getTwilio();
-    if (twilio && TWILIO_FROM_NUMBER) {
-      twilio.messages.create({
-        body: codeMsg,
-        from: TWILIO_FROM_NUMBER,
-        to: phone.replace(/\s+/g, ''),
-      }).then(() => console.log('[verify] Twilio sent to ' + phone))
-        .catch(e => console.error('[verify] Twilio error:', e.message));
-    } else {
-      console.log('[verify] DEV MODE — Code for ' + phone + ': ' + code);
+    const codeResult = await sendVonageSMS(phone, codeMsg).catch(() => null);
+    if (!codeResult) {
+      const twilio = getTwilio();
+      if (twilio && TWILIO_FROM_NUMBER) {
+        twilio.messages.create({
+          body: codeMsg,
+          from: TWILIO_FROM_NUMBER,
+          to: phone.replace(/\s+/g, ''),
+        }).then(() => console.log('[verify] Twilio sent to ' + phone))
+          .catch(e => console.error('[verify] Twilio error:', e.message));
+      } else {
+        console.log('[verify] DEV MODE — Code for ' + phone + ': ' + code);
+      }
     }
 
     // Respond immediately — code is stored in DB regardless of SMS delivery
@@ -1586,18 +1588,10 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   const mapStr = mapsUrl ? `\n🗺️ ${mapsUrl}` : '';
   const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${mapStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow this at the door.\n\n${link}`;
 
-  // Try BOTH providers for maximum delivery — Vonage (alpha) + Twilio (Dutch number)
-  // Alpha senders can be blocked by some carriers, so we send both and the user
-  // gets whichever arrives first.
-  sendVonageSMS(phone, message).then(r => {
-    if (r) console.log('[sms] Vonage sent to ' + phone);
-  }).catch(err => {
-    console.error('[sms] Vonage failed:', err.message);
-    // If Vonage failed, try Twilio
-    sendViaTwilio(phone, message);
-  });
-  // Also try Twilio in parallel if configured
-  if (TWILIO_FROM_NUMBER && getTwilio()) {
+  // Try Vonage first (alpha sender, cheaper for EU)
+  // Only fall back to Twilio if Vonage isn't configured or errors
+  const vResult = await sendVonageSMS(phone, message).catch(() => null);
+  if (!vResult && TWILIO_FROM_NUMBER && getTwilio()) {
     sendViaTwilio(phone, message);
   }
 }
