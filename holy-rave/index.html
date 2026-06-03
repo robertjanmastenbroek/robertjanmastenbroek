@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JZG345ND51"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-JZG345ND51');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Holy Rave — Sunset Sessions · Robert-Jan Mastenbroek</title>
@@ -2493,8 +2501,10 @@
                 if (!res.ok) throw new Error(data.error || 'Something went wrong.');
 
                 console.log('[register] Response:', { hasClientSecret: !!data.clientSecret, hasCheckoutUrl: !!data.checkoutUrl, id: data.id });
+                trackEvent('registration_submitted', email);
 
                 if (data.clientSecret) {
+                    trackEvent('payment_opened', 'embed');
                     // Inline Payment Element — mount card form on our page
                     await openPaymentOverlay(data.clientSecret, amount, data.id, firstName, lastName, data.paymentIntentId);
                 } else {
@@ -3107,6 +3117,7 @@
                 if (!res.ok) throw new Error(data.error);
 
                 phoneVerified = true;
+                trackEvent('phone_verified', data.phone ? data.phone.slice(-4) : '');
                 setVerifyStatus('<span class="check">\u2713</span> Phone verified', 'check');
 
                 // Lock inputs
@@ -3272,6 +3283,15 @@
                 });
             }
         });
+
+        // ──────────────────────────────────────────────────────
+        // GOOGLE ANALYTICS — conversion events
+        // ──────────────────────────────────────────────────────
+        function trackEvent(action, label) {
+            if (typeof gtag === 'function') {
+                gtag('event', action, { event_category: 'holy_rave', event_label: label || '' });
+            }
+        }
 
         // ──────────────────────────────────────────────────────
         // REVEAL ON SCROLL
