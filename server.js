@@ -1482,9 +1482,24 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
 }
 
 // ─── Holy Rave Confirmation Email ─────────────────────────────────────────────
-async function sendHolyRaveConfirmation(email, firstName, lastName) {
+async function sendHolyRaveConfirmation(email, firstName, lastName, eventDetails) {
   const name = firstName || '';
   const greeting = name ? `Hey ${name},` : 'Hey,';
+
+  // Build ticket details section from event data
+  const hasDetails = eventDetails && (eventDetails.eventDate || eventDetails.eventTime || eventDetails.eventLocation);
+  const dateLine = eventDetails?.eventDate ? `<tr><td style="padding:4px 0;color:#a0a0a0;font-size:14px;"><span style="color:#d4af37;font-weight:600;">📅</span> ${eventDetails.eventDate}</td></tr>` : '';
+  const timeLine = eventDetails?.eventTime ? `<tr><td style="padding:4px 0;color:#a0a0a0;font-size:14px;"><span style="color:#d4af37;font-weight:600;">🕐</span> ${eventDetails.eventTime}</td></tr>` : '';
+  const locLine = eventDetails?.eventLocation ? `<tr><td style="padding:4px 0;color:#a0a0a0;font-size:14px;"><span style="color:#d4af37;font-weight:600;">📍</span> ${eventDetails.eventLocation}</td></tr>` : '';
+  const detailLine = eventDetails?.locationDetail ? `<tr><td style="padding:4px 0;color:#a0a0a0;font-size:14px;"><span style="color:#d4af37;font-weight:600;">📌</span> ${eventDetails.locationDetail}</td></tr>` : '';
+  const mapLine = eventDetails?.mapsUrl ? `<tr><td style="padding:4px 0;color:#a0a0a0;font-size:14px;"><span style="color:#d4af37;font-weight:600;">🗺️</span> <a href="${eventDetails.mapsUrl}" style="color:#d4af37;text-decoration:underline;">Open in Google Maps</a></td></tr>` : '';
+  const codeLine = eventDetails?.confirmationCode ? `<tr><td style="padding:4px 0;color:#a0a0a0;font-size:14px;"><span style="color:#d4af37;font-weight:600;">🔑</span> Confirmation: <strong style="color:#ffffff;">${eventDetails.confirmationCode}</strong></td></tr>` : '';
+  const ticketSection = hasDetails ? `
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0">
+    <table style="width:100%;max-width:400px;margin:0 auto;">
+      ${dateLine}${timeLine}${locLine}${detailLine}${mapLine}${codeLine}
+    </table>
+  ` : '';
 
   const resend = getResend();
   if (!resend) { console.warn('Resend not configured, skipping confirmation email'); return; }
