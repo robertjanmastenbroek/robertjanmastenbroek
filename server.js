@@ -26,20 +26,21 @@ const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || '';
 // Vonage (nexmo.com) has direct carrier connections across Europe. Alpha sender
 // 'HolyRave' works for most EU countries. No monthly fee — just per-SMS.
 // ~€0.04/SMS within Europe. Set VONAGE_API_KEY + VONAGE_API_SECRET to enable.
-const VONAGE_API_KEY = process.env.VONAGE_API_KEY || '';
-const VONAGE_API_SECRET = process.env.VONAGE_API_SECRET || '';
-const VONAGE_FROM = process.env.VONAGE_FROM || 'HolyRave';
 
 async function sendVonageSMS(to, body) {
-  if (!VONAGE_API_KEY || !VONAGE_API_SECRET) {
+  const vonageApiKey = process.env.VONAGE_API_KEY || '';
+  const vonageApiSecret = process.env.VONAGE_API_SECRET || '';
+  const vonageFrom = process.env.VONAGE_FROM || 'HolyRave';
+
+  if (!vonageApiKey || !vonageApiSecret) {
     console.log('[vonage] Not configured — skipping');
     return null;
   }
   try {
     const params = new URLSearchParams();
-    params.append('api_key', VONAGE_API_KEY);
-    params.append('api_secret', VONAGE_API_SECRET);
-    params.append('from', VONAGE_FROM);
+    params.append('api_key', vonageApiKey);
+    params.append('api_secret', vonageApiSecret);
+    params.append('from', vonageFrom);
     params.append('to', to.replace(/\s+/g, ''));
     params.append('text', body);
     params.append('type', 'text');
