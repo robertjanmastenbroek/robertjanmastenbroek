@@ -1231,7 +1231,7 @@
             </button>
             <ul id="navMenu">
                 <li><a href="#music">Music</a></li>
-                <li><a href="#event">Events</a></li>
+                <li><a href="/holy-rave">Events</a></li>
                 <li><a href="/story">Story</a></li>
             </ul>
         </div>
@@ -1472,7 +1472,7 @@
                 <h5>Explore</h5>
                 <ul>
                     <li><a href="#music">Music</a></li>
-                    <li><a href="#event">Sunset Sessions</a></li>
+                    <li><a href="/holy-rave">Sunset Sessions</a></li>
                     <li><a href="/story">Story</a></li>
                     <li><a href="/holy-rave">Holy Rave</a></li>
                     <li><a href="/offering">Support</a></li>
@@ -1534,6 +1534,7 @@
                 if (data.ok) {
                     form.style.display = 'none';
                     success.style.display = 'block';
+                    loadSubscribers(); // Update count in-place
                 } else {
                     throw new Error(data.error || 'Failed');
                 }
