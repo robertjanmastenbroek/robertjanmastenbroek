@@ -481,21 +481,29 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
 
     await db.storeVerificationCode(phone, code);
 
-    // Send SMS via Twilio
+    // Send SMS via Twilio (fire-and-forget with timeout — code is already stored)
     const twilio = getTwilio();
     if (twilio && TWILIO_FROM_NUMBER) {
-      await twilio.messages.create({
+      const sendPromise = twilio.messages.create({
         body: `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`,
         from: getFromNumber(phone),
         to: phone.replace(/\s+/g, ''),
       });
-      console.log(`[verify] Code sent to ${phone}`);
+      // Race the send against a 5s timeout so we never hang the response
+      Promise.race([
+        sendPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
+      ]).then(() => {
+        console.log(`[verify] Code sent to ${phone}`);
+      }).catch(err => {
+        console.error(`[verify] SMS send issue (code still valid): ${err.message}`);
+      });
     } else {
       // Fallback: log the code (dev mode)
       console.log(`[verify] DEV MODE — Code for ${phone}: ${code}`);
     }
 
-    // Mask phone for response
+    // Respond immediately — code is stored in DB regardless of SMS delivery
     const cleaned = phone.replace(/\s+/g, '');
     const masked = cleaned.slice(0, -4).replace(/\d/g, '*') + cleaned.slice(-4);
 
