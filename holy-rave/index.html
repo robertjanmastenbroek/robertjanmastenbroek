@@ -1122,6 +1122,41 @@
             text-align: center;
             letter-spacing: 0.03em;
         }
+
+        /* ── Toast notifications ── */
+        .toast-container {
+            position: fixed;
+            top: 5.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            pointer-events: none;
+            max-width: 380px;
+        }
+        .toast {
+            background: var(--card-bg);
+            border: 1px solid var(--border-warm);
+            border-left: 3px solid var(--terracotta);
+            padding: 0.85rem 1.15rem;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            color: var(--text-soft);
+            pointer-events: auto;
+            animation: toastIn 0.35s var(--ease-warm) forwards;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+        }
+        .toast--success { border-left-color: var(--gold); }
+        .toast--info { border-left-color: var(--ochre); }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(24px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to   { opacity: 0; transform: translateX(24px); }
+        }
         .form-note {
             font-size: 0.7rem;
             color: var(--text-mute);
@@ -1375,6 +1410,9 @@
             </linearGradient>
         </defs>
     </svg>
+
+    <!-- ═══ TOAST CONTAINER ═══ -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- ═══ NAVIGATION ═══ -->
     <nav id="siteNav">
@@ -2126,9 +2164,11 @@
             } catch (err) {
                 clearTimeout(timeout);
                 if (err.name === 'AbortError') {
-                    error.textContent = 'Request timed out. Stripe may be having issues — please try again or use the redirect fallback below.';
+                    error.textContent = 'Request timed out. Stripe may be having issues.';
+                    showToast('Request timed out — Stripe may be having issues. Please try the redirect fallback.', 'error');
                 } else {
                     error.textContent = err.message || 'Something went wrong. Please try again.';
+                    showToast(err.message || 'Something went wrong. Please try again.', 'error');
                 }
                 goToStep(2);
                 btn.disabled = false;
@@ -2142,6 +2182,7 @@
             document.getElementById('confirmName').textContent = firstName + ' ' + lastName + ', your spot is reserved.';
             currentRegId = regId;
             fireConfetti();
+            showToast('You\u2019re in! Check your phone for the details.', 'success');
         }
 
         async function showConfirmation(id) {
@@ -2219,6 +2260,7 @@
 
                 stripeEmbedded.mount('#stripeCheckoutContainer');
 
+                showToast('Secure payment form loaded — complete your payment below', 'info');
                 stripeEmbedded.addEventListener('complete', () => {
                     handleStripeComplete();
                 });
@@ -2370,6 +2412,22 @@
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             const input = document.getElementById('firstName');
             if (input) setTimeout(() => input.focus(), 500);
+        }
+
+        // ──────────────────────────────────────────────────────
+        // TOAST NOTIFICATIONS
+        // ──────────────────────────────────────────────────────
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const el = document.createElement('div');
+            el.className = 'toast' + (type === 'success' ? ' toast--success' : type === 'info' ? ' toast--info' : '');
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.animation = 'toastOut 0.35s var(--ease-warm) forwards';
+                setTimeout(() => el.remove(), 400);
+            }, 5000);
         }
 
         // ──────────────────────────────────────────────────────
