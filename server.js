@@ -1522,7 +1522,10 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   const slugPart = slug && slug.startsWith('holy-rave/') ? slug : 'holy-rave/' + (slug || '');
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
 
-  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${mapStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow at the door.\n\n${link}`;
+  // Keep SMS short — avoid looking like marketing/spam
+  const codeMsg = confirmationCode ? ` Code: ${confirmationCode}` : '';
+  const mapMsg = mapsUrl ? ` Maps: ${mapsUrl}` : '';
+  const message = `Holy Rave confirmed! ${dateStr} ${timeStr}. ${locStr}.${mapMsg}${codeMsg} ${link}`;
 
   const sender = getFromNumber(phone);
   console.log(`[sms] Sending ticket to ${phone} from: "${sender}"`);
