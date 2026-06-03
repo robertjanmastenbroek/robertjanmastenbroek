@@ -973,8 +973,8 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
         },
         description: `${firstName} ${lastName} — ${eventTitle}`,
         // Statement descriptor shows on bank statements & iDEAL screens
-        // Max 22 chars — use event code + short date
-        statement_descriptor: `HOLY RAVE${eventDateStr ? ' ' + String(eventDateStr).slice(5, 10).replace('-', '/') : ''}`.substring(0, 22).toUpperCase(),
+        // Cards use statement_descriptor_suffix (22 chars), other methods use statement_descriptor
+        statement_descriptor_suffix: `HOLY RAVE${eventDateStr ? ' ' + String(eventDateStr).slice(5, 10).replace('-', '') : ''}`.substring(0, 22).toUpperCase(),
         automatic_payment_methods: { enabled: true },
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Stripe API timeout after 15s')), 15000)),
