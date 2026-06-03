@@ -1272,6 +1272,28 @@ app.get('/api/debug/resend', (req, res) => {
   });
 });
 
+// POST /api/debug/test-email — send a test confirmation email to verify domain
+app.post('/api/debug/test-email', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+
+  const resend = getResend();
+  if (!resend) return res.status(503).json({ error: 'Resend not configured' });
+
+  try {
+    const result = await resend.emails.send({
+      from: 'Robert-Jan <robert-jan@robertjanmastenbroek.com>',
+      reply_to: 'mastenbroekrobertjan@gmail.com',
+      to: email,
+      subject: 'Test — Holy Rave Confirmation Email',
+      html: `<p style="font-family:sans-serif;color:#333;">Test email from Holy Rave server.</p><p style="font-family:sans-serif;color:#333;">If you're seeing this, Resend can send from robert-jan@robertjanmastenbroek.com successfully.</p>`,
+    });
+    res.json({ ok: true, id: result.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Stripe configuration check (for debugging) ──────────────────────────────
 app.get('/api/debug/stripe', (req, res) => {
   const secretKey = process.env.STRIPE_SECRET_KEY || '';
