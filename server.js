@@ -7,6 +7,7 @@ const db = require('./lib/db');
 const app = express();
 const PORT = process.env.PORT || 8080;
 const SITE_URL = process.env.SITE_URL || 'https://robertjanmastenbroek.com';
+const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
 // Lazy-initialize Stripe and Resend so the server starts even without env vars set
 function getStripe() {
@@ -540,7 +541,8 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       stripeSessionId: session.id,
     });
 
-    res.json({ id, checkoutUrl: session.url });
+    // Return both clientSecret (for embedded checkout) and checkoutUrl (fallback redirect)
+    res.json({ id, clientSecret: session.client_secret, checkoutUrl: session.url });
   } catch (err) {
     console.error('Holy Rave register error:', err.message);
     const message = err.message || 'Could not complete registration. Please try again.';
@@ -688,6 +690,11 @@ app.get('/api/admin/sync-audience', async (req, res) => {
     console.error('Admin sync error:', err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+// ─── Stripe publishable key (for frontend Embedded Checkout) ─────────────────
+app.get('/api/stripe/publishable-key', (req, res) => {
+  res.json({ key: STRIPE_PUBLISHABLE_KEY });
 });
 
 // ─── Health check ─────────────────────────────────────────────────────────────

@@ -1690,6 +1690,14 @@
             </div>
         </div>
 
+        <!-- ═══ STRIPE EMBEDDED CHECKOUT OVERLAY ═══ -->
+        <div id="stripeOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(7,7,8,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:2rem 1rem;overflow-y:auto;">
+            <div style="max-width:520px;margin:3rem auto;position:relative;">
+                <button onclick="closeStripeCheckout()" style="position:absolute;top:-0.5rem;right:0;background:none;border:none;color:var(--text-mute);font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer;padding:0.5rem;z-index:10;transition:color 0.3s;" onmouseover="this.style.color='var(--ochre)'" onmouseout="this.style.color=''">Close ×</button>
+                <div id="stripeCheckoutContainer"></div>
+            </div>
+        </div>
+
         <!-- ═══ STICKY MOBILE CTA ═══ -->
         <div class="sticky-mobile-bar" id="stickyBar">
             <button class="sticky-btn" onclick="scrollToForm()">
@@ -1708,6 +1716,7 @@
         </div>
     </div>
 
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
         // ──────────────────────────────────────────────────────
         // STATE
@@ -2027,7 +2036,11 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Something went wrong.');
 
-                if (data.checkoutUrl) {
+                if (data.clientSecret) {
+                    // Embedded Stripe Checkout — mount on our page
+                    await mountStripeCheckout(data.clientSecret, data.id, firstName, lastName);
+                } else if (data.checkoutUrl) {
+                    // Fallback: redirect to Stripe
                     window.location.href = data.checkoutUrl;
                 } else {
                     currentRegId = data.id;
@@ -2062,6 +2075,104 @@
                     document.getElementById('confirmName').textContent = data.firstName + ' ' + (data.lastName || '') + ', your spot is reserved.';
                 }
             } catch (e) {}
+        }
+
+        // ──────────────────────────────────────────────────────
+        // STRIPE EMBEDDED CHECKOUT
+        // ──────────────────────────────────────────────────────
+        let stripeInstance = null;
+        let stripeEmbedded = null;
+        let pendingRegId = null;
+        let pendingFirstName = '';
+        let pendingLastName = '';
+
+        async function getStripeInstance() {
+            if (stripeInstance) return stripeInstance;
+            try {
+                const res = await fetch('/api/stripe/publishable-key');
+                if (!res.ok) throw new Error('Failed to load Stripe key');
+                const { key } = await res.json();
+                if (!key) throw new Error('Stripe not configured');
+
+                // Wait for Stripe.js to load
+                if (typeof Stripe === 'undefined') {
+                    await new Promise((resolve) => {
+                        const check = setInterval(() => {
+                            if (typeof Stripe !== 'undefined') { clearInterval(check); resolve(); }
+                        }, 100);
+                    });
+                }
+                stripeInstance = Stripe(key);
+                return stripeInstance;
+            } catch (e) {
+                console.error('Stripe init error:', e);
+                return null;
+            }
+        }
+
+        async function mountStripeCheckout(clientSecret, regId, firstName, lastName) {
+            pendingRegId = regId;
+            pendingFirstName = firstName;
+            pendingLastName = lastName;
+
+            const stripe = await getStripeInstance();
+            if (!stripe) {
+                // Fallback: redirect
+                document.getElementById('formError').textContent = 'Payment system unavailable. Please try again.';
+                goToStep(2);
+                document.getElementById('submitBtn').disabled = false;
+                return;
+            }
+
+            // Show overlay
+            const overlay = document.getElementById('stripeOverlay');
+            overlay.style.display = 'block';
+
+            try {
+                stripeEmbedded = await stripe.initEmbeddedCheckout({
+                    clientSecret: clientSecret,
+                });
+
+                stripeEmbedded.mount('#stripeCheckoutContainer');
+
+                // Listen for completion
+                stripeEmbedded.addEventListener('complete', () => {
+                    handleStripeComplete();
+                });
+            } catch (err) {
+                console.error('Embedded checkout error:', err);
+                overlay.style.display = 'none';
+                document.getElementById('formError').textContent = 'Could not load payment form. Please try again.';
+                goToStep(2);
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+
+        function handleStripeComplete() {
+            // Payment succeeded — show confirmation
+            if (stripeEmbedded) {
+                try { stripeEmbedded.destroy(); } catch (e) {}
+                stripeEmbedded = null;
+            }
+            document.getElementById('stripeOverlay').style.display = 'none';
+            document.getElementById('formCard').style.display = 'none';
+            const overlay = document.getElementById('confirmOverlay');
+            overlay.classList.add('visible');
+            document.getElementById('confirmName').textContent =
+                (pendingFirstName || '') + ' ' + (pendingLastName || '') + ', your spot is reserved.';
+            currentRegId = pendingRegId;
+            fireConfetti();
+        }
+
+        function closeStripeCheckout() {
+            if (stripeEmbedded) {
+                try { stripeEmbedded.destroy(); } catch (e) {}
+                stripeEmbedded = null;
+            }
+            document.getElementById('stripeOverlay').style.display = 'none';
+            document.getElementById('formError').textContent = 'Payment cancelled.';
+            goToStep(2);
+            document.getElementById('submitBtn').disabled = false;
         }
 
         // ──────────────────────────────────────────────────────
