@@ -2971,6 +2971,9 @@
 
                 showToast('Phone verified \u2713', 'success');
 
+                // Auto-advance to step 2
+                goToStep(2);
+
             } catch (err) {
                 // Shake all fields
                 for (let i = 0; i < 6; i++) {
