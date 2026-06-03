@@ -831,7 +831,7 @@
     // ── Session-based auth ────────────────────────────────────────────────
     async function checkAuth() {
       try {
-        const res = await fetch('/api/admin/me');
+        const res = await fetch('/api/admin/me', { credentials: 'same-origin' });
         const data = await res.json();
         if (data.authenticated) {
           document.getElementById('loginScreen').classList.add('hidden');
@@ -853,6 +853,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: pw }),
+          credentials: 'same-origin',
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Login failed');
@@ -866,7 +867,7 @@
     }
 
     async function logout() {
-      await fetch('/api/admin/logout', { method: 'POST' });
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
       document.getElementById('loginScreen').classList.remove('hidden');
       document.getElementById('dashboard').classList.remove('visible');
     }

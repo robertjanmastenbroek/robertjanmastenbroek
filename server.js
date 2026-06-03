@@ -131,10 +131,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   res.json({ received: true });
 });
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname)));
-
-// ─── Admin session middleware ────────────────────────────────────────────────
+// ─── Admin session middleware (BEFORE static — critical for cookie parity) ──
 app.use(session({
   secret: process.env.ADMIN_API_KEY || 'fallback-dev-secret-change-in-prod',
   resave: false,
@@ -147,6 +144,9 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
   },
 }));
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname)));
 
 // ─── Admin auth helper ───────────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
