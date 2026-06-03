@@ -1139,38 +1139,35 @@
         .custom-amount-row {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.35rem;
-            padding: 0.75rem 1rem;
-            background: rgba(10,10,10,0.6);
+            gap: 0.5rem;
+            padding: 0.7rem 1rem;
+            background: rgba(10,10,10,0.5);
             border: 1px solid var(--border-warm);
-            transition: border-color 0.3s var(--ease-warm), box-shadow 0.3s var(--ease-warm);
+            transition: border-color 0.25s var(--ease-warm), box-shadow 0.25s var(--ease-warm);
             cursor: text;
+            border-radius: 0;
         }
         .custom-amount-row:focus-within,
         .custom-amount-row.selected {
             border-color: var(--ochre);
-            box-shadow: 0 0 0 3px var(--ochre-dim);
+            box-shadow: 0 0 0 2px var(--ochre-dim);
         }
         .custom-amount-row .euro-sign {
-            font-size: 2.2rem;
-            font-weight: 400;
-            color: var(--gold);
-            font-family: var(--font-serif);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-mute);
             line-height: 1;
-            opacity: 0.8;
+            flex-shrink: 0;
         }
         .custom-amount-input {
-            width: auto;
-            max-width: 8rem;
+            width: 100%;
             background: transparent;
             border: none;
             outline: none;
             color: var(--text);
-            font-size: 2.2rem;
-            font-weight: 500;
-            font-family: var(--font-serif);
-            text-align: center;
+            font-size: 0.92rem;
+            font-weight: 400;
+            font-family: var(--font-sans);
             letter-spacing: 0.02em;
             caret-color: var(--ochre);
             -moz-appearance: textfield;
@@ -1180,15 +1177,7 @@
             -webkit-appearance: none;
             margin: 0;
         }
-        .custom-amount-input::placeholder { color: #3a3a3a; font-size: 1.8rem; font-weight: 300; }
-        .custom-amount-row .euro-cents {
-            font-size: 1.2rem;
-            font-weight: 400;
-            color: var(--text-mute);
-            font-family: var(--font-serif);
-            line-height: 1;
-            margin-top: 0.6rem;
-        }
+        .custom-amount-input::placeholder { color: var(--text-mute); font-size: 0.85rem; font-weight: 300; }
 
         .step-btn {
             display: block;
@@ -1896,8 +1885,7 @@
                                 <div class="custom-amount-row" id="customRow" onclick="document.getElementById('customAmount').focus()">
                                     <span class="euro-sign">€</span>
                                     <input type="number" id="customAmount" class="custom-amount-input"
-                                           placeholder="0" min="1" step="1" value="">
-                                    <span class="euro-cents">,00</span>
+                                           placeholder="Custom" min="1" step="1" value="">
                                 </div>
                             </div>
                             <p style="text-align:center;font-size:0.75rem;color:var(--text-mute);margin:0 0 1rem;letter-spacing:0.04em;">
