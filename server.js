@@ -650,10 +650,18 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       return res.json({ id, confirmed: true });
     }
 
-    // Paid ticket — create Stripe Checkout
+    // Save contact info FIRST so user data is captured even if Stripe fails
+    await db.addSubscriber(email, firstName, lastName, 'holy_rave', phone);
+    console.log(`[register] Subscriber saved: ${email}`);
+
+    // Then create Stripe Checkout session
     const stripe = getStripe();
     if (!stripe) {
-      return res.status(503).json({ error: 'Payment system not available.' });
+      // Stripe not configured — save as pending registration
+      await db.createRegistration({
+        id, firstName, lastName, email, phone, amount: amt, week, eventId,
+      });
+      return res.json({ id, confirmed: false, note: 'Payment system not available. Registration saved without payment.' });
     }
 
     const successUrl = eventSlug
@@ -662,6 +670,8 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     const cancelUrl = eventSlug
       ? `${SITE_URL}/holy-rave/${eventSlug}`
       : `${SITE_URL}/holy-rave`;
+
+    console.log(`[register] Creating Stripe session for ${email} — €${(amt / 100).toFixed(2)}`);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -687,18 +697,25 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       cancel_url: cancelUrl,
     });
 
+    console.log(`[register] Stripe session created: ${session.id}`);
+
     await db.createRegistration({
       id, firstName, lastName, email, phone, amount: amt, week, eventId,
       stripeSessionId: session.id,
     });
 
+    // Sync to Resend (fire-and-forget, happens regardless)
+    syncToResendAudience(email, firstName, lastName, phone).catch(e =>
+      console.error('[register] Resend sync error:', e.message));
+
     // Return both clientSecret (for embedded checkout) and checkoutUrl (fallback redirect)
     res.json({ id, clientSecret: session.client_secret, checkoutUrl: session.url });
   } catch (err) {
-    console.error('Holy Rave register error:', err.message);
+    console.error('[register] Holy Rave register error:', err);
+    console.error('[register] Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
     const message = err.message || 'Could not complete registration. Please try again.';
     const isStripe = err.type && err.type.startsWith('Stripe');
-    res.status(isStripe ? 402 : 500).json({ error: message });
+    res.status(isStripe ? 402 : 500).json({ error: message + (isStripe ? ' (Stripe error — check Railway logs)' : '') });
   }
 });
 
@@ -910,6 +927,22 @@ app.get('/api/images/event/:shortId', async (req, res) => {
     console.error('Image serve error:', err.message);
     res.status(500).send('Error serving image');
   }
+});
+
+// ─── Resend configuration check (for debugging) ──────────────────────────────
+app.get('/api/debug/resend', (req, res) => {
+  const apiKey = process.env.RESEND_API_KEY || '';
+  const audienceId = process.env.RESEND_AUDIENCE_ID || '';
+  res.json({
+    apiKeySet: !!apiKey,
+    apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : null,
+    audienceIdSet: !!audienceId,
+    audienceIdPrefix: audienceId ? audienceId.substring(0, 8) + '...' : null,
+    testResend: (() => {
+      const r = getResend();
+      return !!r;
+    })(),
+  });
 });
 
 // ─── Stripe configuration check (for debugging) ──────────────────────────────
