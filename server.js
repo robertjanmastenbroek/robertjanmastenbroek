@@ -837,6 +837,17 @@ app.delete('/api/admin/events/:slug', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Admin: List all subscribers with contact info ───────────────────────────
+app.get('/api/admin/subscribers', requireAdmin, async (req, res) => {
+  try {
+    const subscribers = await db.getSubscribersWithHolyRave();
+    res.json(subscribers);
+  } catch (err) {
+    console.error('Admin subscribers error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Admin: Sync all existing DB contacts to Resend audience ──────────────────
 app.get('/api/admin/sync-audience', requireAdmin, async (req, res) => {
   try {

@@ -439,6 +439,33 @@
     </div>
   </div>
 
+  <!-- Subscribers section -->
+  <div id="subscribersSection" style="margin-top:3rem;">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <h2 style="font-size:1.2rem;font-weight:500;letter-spacing:0.02em;">Subscribers <span style="color:#c8883a;" id="subscriberTotal"></span></h2>
+      <button class="btn btn-primary" onclick="loadSubscribers()">Load</button>
+      <button class="btn" onclick="copyAllEmails()" id="copyEmailsBtn" style="display:none;">Copy Emails</button>
+      <button class="btn" onclick="copyAllPhones()" id="copyPhonesBtn" style="display:none;">Copy Phones</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="subscribersTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Source</th>
+            <th>Signed Up</th>
+            <th>Events</th>
+          </tr>
+        </thead>
+        <tbody id="subscribersBody">
+          <tr><td colspan="6" style="text-align:center;color:#555;">Click "Load" to view subscribers</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
@@ -733,6 +760,84 @@
 
     // Enter to submit API key
     document.getElementById('apiKey').addEventListener('keydown', e => { if (e.key === 'Enter') loadEvents(); });
+
+    // ── Subscribers ──────────────────────────────────────────────────────
+    let subscribersData = [];
+
+    async function loadSubscribers() {
+      if (!getKey()) { msg('Enter your API key first', true); return; }
+      try {
+        const subscribers = await api('/api/admin/subscribers');
+        subscribersData = subscribers;
+        const tbody = document.getElementById('subscribersBody');
+        document.getElementById('subscriberTotal').textContent = '(' + subscribers.length + ')';
+
+        if (subscribers.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#555;">No subscribers yet.</td></tr>';
+          document.getElementById('copyEmailsBtn').style.display = 'none';
+          document.getElementById('copyPhonesBtn').style.display = 'none';
+          return;
+        }
+
+        document.getElementById('copyEmailsBtn').style.display = 'inline-flex';
+        const hasPhones = subscribers.some(s => s.phone);
+        document.getElementById('copyPhonesBtn').style.display = hasPhones ? 'inline-flex' : 'none';
+
+        tbody.innerHTML = subscribers.map(s => {
+          const name = [s.first_name, s.last_name].filter(Boolean).join(' ') || '—';
+          const email = s.email || '—';
+          const phone = s.phone || '—';
+          const source = s.source || '—';
+          const date = s.subscribed_at ? new Date(s.subscribed_at).toLocaleDateString() : '—';
+          const visits = s.holy_rave_visits || 0;
+          return `<tr>
+            <td style="white-space:nowrap;">${esc(name)}</td>
+            <td><a href="mailto:${esc(email)}" style="color:#c9c4b6;text-decoration:none;">${esc(email)}</a></td>
+            <td>${phone !== '—' ? '<a href="tel:' + esc(phone) + '" style="color:#c9c4b6;text-decoration:none;">' + esc(phone) + '</a>' : '—'}</td>
+            <td><span class="status-badge" style="background:rgba(200,136,58,0.1);color:#c8883a;">${esc(source)}</span></td>
+            <td style="white-space:nowrap;">${date}</td>
+            <td>${visits > 0 ? visits + ' visits' : '—'}</td>
+          </tr>`;
+        }).join('');
+        msg('Loaded ' + subscribers.length + ' subscribers');
+      } catch (err) {
+        msg(err.message, true);
+      }
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function copyAllEmails() {
+      const emails = subscribersData.map(s => s.email).filter(Boolean).join(', ');
+      if (!emails) return;
+      navigator.clipboard.writeText(emails).then(() => {
+        showToast('Copied ' + subscribersData.filter(s => s.email).length + ' emails');
+      }).catch(() => {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = emails; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Copied emails');
+      });
+    }
+
+    function copyAllPhones() {
+      const phones = subscribersData.map(s => s.phone).filter(Boolean).map(p => p.replace(/\s+/g, '')).join(', ');
+      if (!phones) return;
+      navigator.clipboard.writeText(phones).then(() => {
+        showToast('Copied ' + subscribersData.filter(s => s.phone).length + ' phone numbers');
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = phones; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Copied phones');
+      });
+    }
 
     // ── Session-based auth ────────────────────────────────────────────────
     async function checkAuth() {
