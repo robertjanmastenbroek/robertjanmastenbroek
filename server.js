@@ -150,7 +150,9 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
                 evLoc || eventMeta.event_location,
                 evSlug,
                 regId,
-                evDetail
+                evDetail,
+                null,
+                reg.confirmation_code || ''
               ).catch(e => console.error('Webhook SMS error:', e.message));
             }
           } catch (e) {
@@ -201,7 +203,8 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
                 evDate || pi.metadata?.event_date,
                 evTime,
                 evLoc || pi.metadata?.event_location,
-                evSlug, regId, evDetail
+                evSlug, regId, evDetail,
+                null, reg.confirmation_code || ''
               ).catch(e => console.error('PI webhook SMS error:', e.message));
             }
           }
@@ -1028,7 +1031,9 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
             ev.location,
             ev.slug || 'holy-rave',
             regId,
-            ev.location_detail || ''
+            ev.location_detail || '',
+            null,
+            reg.confirmation_code || ''
           ).catch(e => console.error('Confirm SMS error:', e.message));
         }
       } catch(e) {}
@@ -1361,7 +1366,7 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
 // ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
 // Sends a ticket SMS with event location and time via Twilio.
 // Fire-and-forget with timeout — doesn't block the caller.
-async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl) {
+async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl, confirmationCode) {
   if (!phone || !TWILIO_FROM_NUMBER) {
     console.log(`[sms] Skipping SMS (no phone or from number) for ${phone}`);
     return;
@@ -1377,10 +1382,11 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   const timeStr = eventTime || '20:00 – 23:00';
   const locStr = eventLocation || 'Tenerife South';
   const detailStr = locationDetail ? ` · ${locationDetail}` : '';
+  const codeStr = confirmationCode ? `\n🔑 ${confirmationCode}` : '';
   const slugPart = slug || 'holy-rave';
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
 
-  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${detailStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend\n\nShow this message at the door (no printed ticket needed).\n\n${link}`;
+  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${detailStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow this message at the door.\n\n${link}`;
 
   const sender = getFromNumber(phone);
   console.log(`[sms] Sending ticket to ${phone} from: "${sender}"`);
