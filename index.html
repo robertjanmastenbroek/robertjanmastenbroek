@@ -1395,6 +1395,12 @@
                 <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" class="btn btn-ghost" style="display:inline-flex;margin-top:1rem;">Join WhatsApp</a>
             </div>
         </div>
+
+        <!-- Next 3 events mini-grid (hidden if events list < 2) -->
+        <div id="nextEventsWrap" style="display:none;max-width:var(--max);margin:3rem auto 0;position:relative;z-index:2;">
+            <p style="text-align:center;font-family:var(--font-serif);font-size:1.1rem;color:var(--ochre);margin-bottom:1.5rem;letter-spacing:0.08em;">More dates coming up</p>
+            <div id="nextEventsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;"></div>
+        </div>
     </section>
 
     <!-- ═══ STORY ═══ -->
@@ -1635,6 +1641,26 @@
                 if (heroBtn) {
                     heroBtn.href = '/holy-rave/' + next.slug;
                     document.getElementById('heroCta').style.display = 'block';
+                }
+
+                // Next 3 events (skip the first one since it's the main event)
+                if (events.length > 1) {
+                    const nextEvents = events.slice(0, 3).filter(e => e.slug !== next.slug).slice(0, 2);
+                    if (nextEvents.length > 0) {
+                        const grid = document.getElementById('nextEventsGrid');
+                        grid.innerHTML = nextEvents.map(e => {
+                            const d = new Date(e.event_date + 'T12:00:00');
+                            const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                            const imgBg = e.image_url ? 'background-image:url(' + e.image_url + ');background-size:cover;background-position:center;' : '';
+                            return '<a href="/holy-rave/' + e.slug + '" style="display:block;background:var(--card-bg);border:1px solid var(--border-faint);text-decoration:none;color:inherit;overflow:hidden;transition:all 0.4s var(--ease-warm);" onmouseover="this.style.borderColor=\'var(--terracotta)\';this.style.boxShadow=\'0 12px 36px var(--terracotta-glow)\';this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.borderColor=\'\';this.style.boxShadow=\'\';this.style.transform=\'\'">' +
+                                '<div style="width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,var(--indigo-deep),var(--dark-rich));' + imgBg + ';position:relative;">' +
+                                '<div style="position:absolute;bottom:0;left:0;right:0;padding:1rem;background:linear-gradient(transparent,rgba(10,10,10,0.85));">' +
+                                '<p style="font-family:var(--font-serif);font-size:1rem;font-weight:500;color:var(--text);">Holy Rave</p>' +
+                                '<p style="font-size:0.72rem;color:var(--ochre);letter-spacing:0.06em;">' + label + ' · ' + e.remaining + ' spots left</p>' +
+                                '</div></div></a>';
+                        }).join('');
+                        document.getElementById('nextEventsWrap').style.display = 'block';
+                    }
                 }
 
                 // Hero stats

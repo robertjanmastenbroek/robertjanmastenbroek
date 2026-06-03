@@ -1596,7 +1596,7 @@
          ══════════════════════════════════════════════════ -->
     <div id="detailMode" class="detail-page">
 
-        <div class="detail-hero">
+        <div class="detail-hero" id="detailHero">
             <div class="atmosphere"></div>
             <div class="detail-hero-content reveal">
                 <a href="/holy-rave" class="back-link">← All events</a>
@@ -1676,11 +1676,11 @@
                 <div class="timeline-section">
                     <h4>The evening unfolds</h4>
                     <div class="timeline-item">
-                        <span class="time">20:00</span>
-                        <span class="desc">Doors open · Sunset · Find your spot</span>
+                        <span class="time">19:30</span>
+                        <span class="desc">Doors open · Sunset drinks · Settle in</span>
                     </div>
                     <div class="timeline-item">
-                        <span class="time">20:30</span>
+                        <span class="time">20:00</span>
                         <span class="desc">Music begins — let it carry you</span>
                     </div>
                     <div class="timeline-item">
@@ -2153,6 +2153,14 @@
             document.getElementById('detailLocation').textContent = event.location || 'Tenerife South';
             if (event.description) {
                 document.getElementById('detailDesc').textContent = event.description;
+            }
+
+            // Event image as hero background
+            const hero = document.getElementById('detailHero');
+            if (event.image_url) {
+                hero.style.backgroundImage = 'linear-gradient(180deg, rgba(15,23,48,0.7) 0%, rgba(10,10,10,0.85) 60%, var(--dark) 100%), url(' + event.image_url + ')';
+                hero.style.backgroundSize = 'cover';
+                hero.style.backgroundPosition = 'center';
             }
             const now = new Date();
             const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
