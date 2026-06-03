@@ -2305,7 +2305,7 @@
         }
 
         function renderDetail(event) {
-            const date = new Date(event.event_date + 'T12:00:00');
+            const date = event.event_date ? new Date(event.event_date + 'T12:00:00') : new Date();
 
             // Update OG meta tags for social sharing (only on detail pages)
             const ogImage = document.querySelector('meta[property="og:image"]');
