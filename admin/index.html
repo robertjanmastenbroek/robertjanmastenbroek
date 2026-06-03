@@ -237,6 +237,7 @@
     <input type="password" id="apiKey" placeholder="ADMIN_API_KEY" autocomplete="off">
     <button class="btn btn-primary" onclick="loadEvents()">Load Events</button>
     <button class="btn" onclick="showCreateForm()">+ New Event</button>
+    <button class="btn" onclick="syncResend()" id="syncBtn">Sync to Resend</button>
   </div>
 
   <div id="message" class="message"></div>
@@ -561,6 +562,24 @@
         document.getElementById('formOverlay').classList.add('visible');
         document.getElementById('formMessage').textContent = 'Edit fields then save.';
       } catch (err) { msg(err.message, true); }
+    }
+
+    // ── Sync local subscribers to Resend audience ──
+    async function syncResend() {
+      if (!getKey()) { msg('Enter your API key first', true); return; }
+      const btn = document.getElementById('syncBtn');
+      btn.textContent = 'Syncing...';
+      btn.disabled = true;
+      msg('Syncing subscribers to Resend...');
+      try {
+        const data = await api('/api/admin/sync-audience');
+        msg(`Synced ${data.synced} of ${data.total} subscribers to Resend (${data.errors} errors)`);
+        showToast(`Synced ${data.synced} contacts`);
+      } catch (err) {
+        msg(err.message, true);
+      }
+      btn.textContent = 'Sync to Resend';
+      btn.disabled = false;
     }
 
     // Enter to submit API key

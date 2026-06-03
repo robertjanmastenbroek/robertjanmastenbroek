@@ -192,7 +192,7 @@ app.get('/api/mrr', async (req, res) => {
 // if the database isn't available.
 let supporterCache = { count: 0, fetchedAt: 0 };
 const SUPPORTER_CACHE_TTL = 5 * 60 * 1000;
-const SUPPORTER_BASE_COUNT = parseInt(process.env.SUPPORTER_BASE_COUNT || '4', 10);
+const SUPPORTER_BASE_COUNT = parseInt(process.env.SUPPORTER_BASE_COUNT || '0', 10);
 
 app.get('/api/supporters-count', async (req, res) => {
   if (Date.now() - supporterCache.fetchedAt < SUPPORTER_CACHE_TTL) {
