@@ -2021,9 +2021,18 @@
 
                     <div class="sold-out-banner" id="soldOutBanner">
                         <h3>This event is full.</h3>
-                        <p>Join the WhatsApp community to get notified when the next event drops.</p>
-                        <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3?utm_source=whatsapp&utm_medium=social" target="_blank" rel="noopener"
-                           style="display:inline-block;margin-top:1rem;padding:0.75rem 1.5rem;background:var(--ochre);color:var(--dark);text-decoration:none;font-size:0.72rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;">
+                        <p>Drop your email here — we'll let you know if tickets free up or a new date is added.</p>
+                        <div style="display:flex;gap:0.5rem;margin-top:0.75rem;max-width:320px;margin-left:auto;margin-right:auto;">
+                            <input type="email" id="waitlistEmail" placeholder="your@email.com"
+                                   style="flex:1;padding:0.65rem 0.85rem;background:rgba(10,10,10,0.6);border:1px solid var(--border-warm);color:var(--text);font-family:var(--font-sans);font-size:0.82rem;outline:none;min-width:0;">
+                            <button onclick="submitWaitlist()"
+                                    style="padding:0.65rem 1.15rem;background:var(--ochre);border:none;color:var(--dark);font-size:0.68rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;white-space:nowrap;">Notify Me</button>
+                        </div>
+                        <div id="waitlistStatus" style="font-size:0.72rem;color:var(--text-mute);margin-top:0.4rem;min-height:1rem;"></div>
+                        <hr style="border:none;border-top:1px solid var(--border-faint);margin:1rem auto;max-width:200px;">
+                        <p style="font-size:0.78rem;color:var(--text-mute);">Or join the WhatsApp community for first access:</p>
+                        <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" rel="noopener"
+                           style="display:inline-block;margin-top:0.5rem;padding:0.65rem 1.25rem;background:var(--ochre);color:var(--dark);text-decoration:none;font-size:0.68rem;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;">
                             Join WhatsApp
                         </a>
                     </div>
@@ -2482,6 +2491,26 @@
             spots.classList.toggle('urgent', remaining <= 10);
             fill.classList.toggle('sold-out', remaining <= 0);
             setDetailSoldOut(remaining <= 0);
+        }
+
+        async function submitWaitlist() {
+            const email = document.getElementById('waitlistEmail').value.trim();
+            const status = document.getElementById('waitlistStatus');
+            if (!email || !email.includes('@')) { status.textContent = 'Enter a valid email.'; status.style.color = 'var(--terracotta)'; return; }
+            status.textContent = 'Adding you...'; status.style.color = 'var(--text-mute)';
+            try {
+                const res = await fetch('/api/waitlist/' + currentSlug, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
+                });
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+                status.textContent = "\u2713 You're on the list. We'll reach out when tickets free up.";
+                status.style.color = 'var(--gold)';
+                document.getElementById('waitlistEmail').disabled = true;
+            } catch (err) {
+                status.textContent = err.message; status.style.color = 'var(--terracotta)';
+            }
         }
 
         function setDetailSoldOut(soldOut) {

@@ -692,6 +692,7 @@
                 <button class="btn ${e.status === 'upcoming' ? 'btn-primary' : ''}" onclick="toggleStatus('${e.slug}','${e.status}')">
                   ${e.status === 'upcoming' ? 'Mark Past' : 'Mark Upcoming'}
                 </button>
+                <button class="btn" onclick="addTickets('${e.slug}')">+20 Tickets</button>
                 <button class="btn btn-danger" onclick="deleteEvent('${e.slug}')">Delete</button>
               </td>
             </tr>
@@ -1024,6 +1025,17 @@
         showToast('Event ' + slug + ' → ' + newStatus);
         loadEvents();
       } catch (err) { msg(err.message, true); }
+    }
+
+    async function addTickets(slug) {
+      try {
+        const data = await api('/api/admin/events/' + slug + '/add-tickets', {
+          method: 'POST',
+          body: JSON.stringify({ count: 20 }),
+        });
+        showToast('Added 20 tickets — new limit: ' + data.newLimit);
+        loadEvents();
+      } catch (err) { showToast(err.message); }
     }
 
     async function deleteEvent(slug) {

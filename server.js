@@ -1268,6 +1268,39 @@ app.get('/api/admin/pexels-search', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Waitlist: subscribe for sold-out events ─────────────────────────────────
+app.post('/api/waitlist/:slug', async (req, res) => {
+  const { email, phone } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required.' });
+
+  try {
+    const event = await db.getEventBySlug(req.params.slug);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+
+    await db.addSubscriber(email, req.body.firstName || '', req.body.lastName || '', 'waitlist_' + event.slug, phone || '');
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Waitlist error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/events/:slug/add-tickets — add more tickets to a sold-out event
+app.post('/api/admin/events/:slug/add-tickets', requireAdmin, async (req, res) => {
+  const { count } = req.body;
+  const addCount = parseInt(count, 10) || 20;
+  try {
+    const event = await db.getEventBySlug(req.params.slug);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    const newLimit = (event.ticket_limit || 50) + addCount;
+    await db.getSql()([`UPDATE events SET ticket_limit = ${newLimit} WHERE slug = ${req.params.slug}`]);
+    res.json({ ok: true, newLimit });
+  } catch (err) {
+    console.error('Add tickets error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Admin: Registrations management ─────────────────────────────────────────
 
 // GET /api/admin/events/:slug/registrations — list all registrations for an event
