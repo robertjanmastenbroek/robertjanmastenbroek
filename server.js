@@ -33,7 +33,7 @@ function getTwilio() {
 }
 
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || ''; // e.g. '+1234567890'
-const TWILIO_ALPHA_SENDER = process.env.TWILIO_ALPHA_SENDER || 'HolyRave'; // For EU recipients
+const TWILIO_ALPHA_SENDER = process.env.TWILIO_ALPHA_SENDER || ''; // Set to 'HolyRave' to enable alpha sender for EU
 
 // EU country codes that support alpha sender IDs
 const EU_COUNTRY_CODES = new Set([
@@ -63,15 +63,15 @@ const EU_ALPHA_SUPPORTED = new Set([
 
 function getFromNumber(recipientPhone) {
   if (!TWILIO_FROM_NUMBER) return '';
-  const cleaned = recipientPhone.replace(/\s+/g, '');
-  // Extract country code: +1, +34, +44, etc.
-  const match = cleaned.match(/^\+(\d{1,3})/);
-  if (!match) return TWILIO_FROM_NUMBER;
-  const countryCode = match[1];
-  // Use alpha sender for EU countries, phone number for US/CA and rest
-  if (EU_ALPHA_SUPPORTED.has(countryCode)) {
-    return TWILIO_ALPHA_SENDER;
+  // Only use alpha sender if explicitly configured and recipient is in EU
+  if (TWILIO_ALPHA_SENDER) {
+    const cleaned = recipientPhone.replace(/\s+/g, '');
+    const match = cleaned.match(/^\+(\d{1,3})/);
+    if (match && EU_ALPHA_SUPPORTED.has(match[1])) {
+      return TWILIO_ALPHA_SENDER;
+    }
   }
+  // Default: use the phone number (works for all countries)
   return TWILIO_FROM_NUMBER;
 }
 function getStripe() {
@@ -1346,7 +1346,7 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
 
 // ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
 // Sends a ticket SMS with event location and time via Twilio.
-// Falls back to logging if Twilio isn't configured.
+// Fire-and-forget with timeout — doesn't block the caller.
 async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl) {
   if (!phone || !TWILIO_FROM_NUMBER) {
     console.log(`[sms] Skipping SMS (no phone or from number) for ${phone}`);
@@ -1368,16 +1368,20 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
 
   const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${detailStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend\n\nShow this message at the door (no printed ticket needed).\n\n${link}`;
 
-  try {
-    const result = await twilio.messages.create({
-      body: message,
-      from: getFromNumber(phone),
-      to: phone.replace(/\s+/g, ''),
-    });
+  const sendPromise = twilio.messages.create({
+    body: message,
+    from: getFromNumber(phone),
+    to: phone.replace(/\s+/g, ''),
+  });
+
+  Promise.race([
+    sendPromise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
+  ]).then(result => {
     console.log(`[sms] Ticket SMS sent to ${phone} (sid: ${result.sid})`);
-  } catch (err) {
+  }).catch(err => {
     console.error('[sms] Failed to send SMS:', err.message);
-  }
+  });
 }
 
 // ─── Holy Rave Confirmation Email ─────────────────────────────────────────────
