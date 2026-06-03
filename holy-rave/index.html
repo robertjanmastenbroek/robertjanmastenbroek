@@ -2040,6 +2040,7 @@
         const slug = pathParts.length >= 2 ? pathParts[1] : null;
         const urlParams = new URLSearchParams(window.location.search);
         const confirmedId = urlParams.get('confirmed');
+        const resumeId = urlParams.get('resume');
 
         // ── Check for logged-in user ──
         function getLoggedInUser() {
@@ -2071,7 +2072,7 @@
 
         if (slug && slug !== 'confirmed') {
             currentSlug = slug;
-            showDetailMode(slug, confirmedId);
+            showDetailMode(slug, confirmedId, resumeId);
             // Prefill after detail mode loads the form
             setTimeout(prefillFromUser, 500);
         } else {
@@ -2234,7 +2235,7 @@
         // ──────────────────────────────────────────────────────
         // DETAIL MODE
         // ──────────────────────────────────────────────────────
-        async function showDetailMode(slug, confirmedId) {
+        async function showDetailMode(slug, confirmedId, resumeId) {
             document.getElementById('hubMode').style.display = 'none';
             document.getElementById('detailMode').classList.add('active');
             const canon = document.querySelector('link[rel="canonical"]');
@@ -2246,6 +2247,39 @@
             await loadEventDetail(slug);
             checkPaymentIntentResult();
             observeReveal();
+
+            // Resume flow: pre-fill form and skip to payment step
+            if (resumeId) {
+                try {
+                    const res = await fetch('/api/holy-rave/resume/' + encodeURIComponent(resumeId));
+                    if (res.ok) {
+                        const data = await res.json();
+                        document.getElementById('firstName').value = data.firstName || '';
+                        document.getElementById('lastName').value = data.lastName || '';
+                        document.getElementById('email').value = data.email || '';
+                        const phoneStr = data.phone || '';
+                        const match = phoneStr.match(/^(\+\d+)\s(.+)/);
+                        if (match) {
+                            const countrySelect = document.getElementById('phoneCountry');
+                            for (let opt of countrySelect.options) {
+                                if (opt.value === match[1]) { opt.selected = true; break; }
+                            }
+                            document.getElementById('phoneNumber').value = match[2];
+                        }
+                        phoneVerified = true;
+                        document.getElementById('verifySendBtn').disabled = true;
+                        document.getElementById('verifySendBtn').textContent = 'Verified';
+                        document.getElementById('phoneNumber').disabled = true;
+                        document.getElementById('phoneCountry').disabled = true;
+                        document.getElementById('codeInputWrap').style.display = 'none';
+                        document.getElementById('verifyStatus').innerHTML = '<span class="check">\u2713</span> Phone already verified';
+                        document.getElementById('verifyStatus').className = 'verify-status check';
+                        setTimeout(function() { goToStep(2); showToast('Welcome back! Just choose your contribution to finish.', 'info'); }, 600);
+                    }
+                } catch (e) {
+                    console.error('[resume] Error:', e);
+                }
+            }
         }
 
         async function loadEventDetail(slug) {

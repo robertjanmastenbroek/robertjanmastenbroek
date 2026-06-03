@@ -1158,6 +1158,27 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
   }
 });
 
+// GET /api/holy-rave/resume/:id — get pending registration data for resume flow
+app.get('/api/holy-rave/resume/:id', async (req, res) => {
+  try {
+    const reg = await db.getRegistrationById(req.params.id);
+    if (!reg) return res.status(404).json({ error: 'Registration not found.' });
+    if (reg.status !== 'pending') return res.status(400).json({ error: 'Registration already completed.' });
+    // Only return fields needed to pre-fill the form
+    res.json({
+      id: reg.id,
+      firstName: reg.first_name,
+      lastName: reg.last_name,
+      email: reg.email,
+      phone: reg.phone,
+      eventId: reg.event_id,
+    });
+  } catch (err) {
+    console.error('Resume error:', err.message);
+    res.status(500).json({ error: 'Could not load registration.' });
+  }
+});
+
 // GET /api/holy-rave/verify — check registration status
 app.get('/api/holy-rave/verify', async (req, res) => {
   const { id } = req.query;
@@ -1692,7 +1713,7 @@ async function sendAbandonedReminders() {
           reply_to: 'mastenbroekrobertjan@gmail.com',
           to: reg.email,
           subject: 'Still thinking about Holy Rave?',
-          html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · ${eventDate}</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You left a spot <span style="color:#d4af37">open</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">Hey ${reg.first_name || 'there'},</p><p style="margin:0 0 20px;color:#ffffff">You started reserving a spot for Holy Rave but didn't finish. No pressure — just a friendly nudge.</p><p style="margin:0 0 20px;color:#a0a0a0">Every ticket is €1 minimum — just enough to know you're real. If you want to contribute more to keep the music playing, you're welcome to. Either way, the spot is yours + one friend.</p><p style="margin:0 0 20px;color:#a0a0a0">There are only 50 tickets and they're going fast. Your spot won't wait forever.</p><table cellpadding="0" cellspacing="0" style="margin:32px auto"><tr><td align="center" bgcolor="#d4af37" style="border-radius:0;padding:14px 32px"><a href="${SITE_URL}/holy-rave/${reg.slug || ''}" style="color:#0a0a0a;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-decoration:none;display:inline-block">Complete Your Reservation →</a></td></tr></table><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
+          html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · ${eventDate}</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You left a spot <span style="color:#d4af37">open</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">Hey ${reg.first_name || 'there'},</p><p style="margin:0 0 20px;color:#ffffff">You started reserving a spot for Holy Rave but didn't finish. No pressure — just a friendly nudge.</p><p style="margin:0 0 20px;color:#a0a0a0">Every ticket is €1 minimum — just enough to know you're real. If you want to contribute more to keep the music playing, you're welcome to. Either way, the spot is yours + one friend.</p><p style="margin:0 0 20px;color:#a0a0a0">There are only 50 tickets and they're going fast. Your spot won't wait forever.</p><table cellpadding="0" cellspacing="0" style="margin:32px auto"><tr><td align="center" bgcolor="#d4af37" style="border-radius:0;padding:14px 32px"><a href="${SITE_URL}/holy-rave/${reg.slug || ''}?resume=${reg.id}" style="color:#0a0a0a;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-decoration:none;display:inline-block">Complete Your Reservation →</a></td></tr></table><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
         });
         await db.markReminderSent(reg.id);
         console.log('[reminder] Sent to ' + reg.email + ' for ' + (reg.event_title || 'Holy Rave'));
