@@ -959,19 +959,25 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
 
     console.log(`[register] Creating PaymentIntent for ${email} — €${(amt / 100).toFixed(2)}`);
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amt,
-      currency: 'eur',
-      metadata: {
-        registration_id: id,
-        event_id: eventId ? String(eventId) : '',
-        event_date: eventDateStr || '',
-        event_location: eventLocationStr || '',
-        event_slug: eventSlug || '',
-      },
-      description: `${firstName} ${lastName} — ${eventTitle}`,
-      // No automatic payment methods to avoid redirect — we handle card manually
-      automatic_payment_methods: { enabled: true },
+    // Timeout the Stripe call after 15 seconds to prevent hanging
+    const paymentIntent = await Promise.race([
+      stripe.paymentIntents.create({
+        amount: amt,
+        currency: 'eur',
+        metadata: {
+          registration_id: id,
+          event_id: eventId ? String(eventId) : '',
+          event_date: eventDateStr || '',
+          event_location: eventLocationStr || '',
+          event_slug: eventSlug || '',
+        },
+        description: `${firstName} ${lastName} — ${eventTitle}`,
+        automatic_payment_methods: { enabled: true },
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Stripe API timeout after 15s')), 15000)),
+    ]).catch(err => {
+      console.error('[register] Stripe PaymentIntent error:', err.message);
+      throw err;
     });
 
     console.log(`[register] PaymentIntent created: ${paymentIntent.id}`);
