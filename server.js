@@ -134,12 +134,12 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
             const reg = await db.getRegistrationById(regId);
             if (reg && reg.phone) {
               const eventMeta = session.metadata || {};
-              let evTitle = 'Holy Rave', evDate = '', evTime = '', evLoc = '', evSlug = 'holy-rave', evDetail = '';
+              let evTitle = 'Holy Rave', evDate = '', evTime = '', evLoc = '', evSlug = 'holy-rave', evDetail = '', evMaps = '';
               if (reg.event_id) {
                 try {
                   const sql = db.getSql();
-                  const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, slug FROM events WHERE id = ${reg.event_id}`;
-                  if (ev) { evTitle = ev.title; evDate = ev.event_date; evTime = ev.event_time; evLoc = ev.location; evSlug = ev.slug; evDetail = ev.location_detail; }
+                  const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, maps_url, slug FROM events WHERE id = ${reg.event_id}`;
+                  if (ev) { evTitle = ev.title; evDate = ev.event_date; evTime = ev.event_time; evLoc = ev.location; evSlug = ev.slug; evDetail = ev.location_detail; evMaps = ev.maps_url; }
                 } catch(e) {}
               }
               sendTicketSMS(
@@ -151,7 +151,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
                 evSlug,
                 regId,
                 evDetail,
-                null,
+                evMaps || null,
                 reg.confirmation_code || ''
               ).catch(e => console.error('Webhook SMS error:', e.message));
             }
@@ -190,12 +190,12 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
                 console.error('PI webhook audience sync error:', e.message));
             }
             if (reg.phone) {
-              let evTitle = 'Holy Rave', evDate = '', evTime = '', evLoc = '', evSlug = 'holy-rave', evDetail = '';
+              let evTitle = 'Holy Rave', evDate = '', evTime = '', evLoc = '', evSlug = 'holy-rave', evDetail = '', evMaps = '';
               if (reg.event_id) {
                 try {
                   const sql = db.getSql();
-                  const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, slug FROM events WHERE id = ${reg.event_id}`;
-                  if (ev) { evTitle = ev.title; evDate = ev.event_date; evTime = ev.event_time; evLoc = ev.location; evSlug = ev.slug; evDetail = ev.location_detail; }
+                  const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, maps_url, slug FROM events WHERE id = ${reg.event_id}`;
+                  if (ev) { evTitle = ev.title; evDate = ev.event_date; evTime = ev.event_time; evLoc = ev.location; evSlug = ev.slug; evDetail = ev.location_detail; evMaps = ev.maps_url; }
                 } catch(e) {}
               }
               sendTicketSMS(
@@ -204,7 +204,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
                 evTime,
                 evLoc || pi.metadata?.event_location,
                 evSlug, regId, evDetail,
-                null, reg.confirmation_code || ''
+                evMaps || null, reg.confirmation_code || ''
               ).catch(e => console.error('PI webhook SMS error:', e.message));
             }
           }
@@ -1024,33 +1024,35 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
     const confirmed = await db.confirmRegistration(regId, null);
     if (!confirmed) return res.status(409).json({ error: 'Could not confirm — event may be full.' });
 
-    // Fire-and-forget: send email + SMS + sync
-    if (reg.email) {
-      sendHolyRaveConfirmation(reg.email, reg.first_name, reg.last_name).catch(e =>
-        console.error('Confirm email error:', e.message));
-      syncToResendAudience(reg.email, reg.first_name, reg.last_name, reg.phone).catch(e =>
-        console.error('Confirm sync error:', e.message));
-    }
-    if (reg.phone && reg.event_id) {
-      try {
-        const sql = db.getSql();
-        const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, slug FROM events WHERE id = ${reg.event_id}`;
-        if (ev) {
-          sendTicketSMS(
-            reg.phone,
-            ev.title || 'Holy Rave',
-            ev.event_date,
-            ev.event_time,
-            ev.location,
-            ev.slug || 'holy-rave',
-            regId,
-            ev.location_detail || '',
-            null,
-            reg.confirmation_code || ''
-          ).catch(e => console.error('Confirm SMS error:', e.message));
-        }
-      } catch(e) {}
-    }
+    // Fire-and-forget: send email + SMS + sync (don't await — return immediately)
+    setImmediate(async () => {
+      if (reg.email) {
+        sendHolyRaveConfirmation(reg.email, reg.first_name, reg.last_name).catch(e =>
+          console.error('Confirm email error:', e.message));
+        syncToResendAudience(reg.email, reg.first_name, reg.last_name, reg.phone).catch(e =>
+          console.error('Confirm sync error:', e.message));
+      }
+      if (reg.phone && reg.event_id) {
+        try {
+          const sql = db.getSql();
+          const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, maps_url, slug FROM events WHERE id = ${reg.event_id}`;
+          if (ev) {
+            sendTicketSMS(
+              reg.phone,
+              ev.title || 'Holy Rave',
+              ev.event_date,
+              ev.event_time,
+              ev.location,
+              ev.slug || 'holy-rave',
+              regId,
+              ev.location_detail || '',
+              ev.maps_url || null,
+              reg.confirmation_code || ''
+            ).catch(e => console.error('Confirm SMS error:', e.message));
+          }
+        } catch(e) {}
+      }
+    });
 
     res.json({ ok: true });
   } catch (err) {
@@ -1154,13 +1156,13 @@ app.get('/api/admin/events', requireAdmin, async (req, res) => {
 
 // POST /api/admin/events — create a new event
 app.post('/api/admin/events', requireAdmin, async (req, res) => {
-  const { slug, title, location, location_detail, event_date, event_time, description, ticket_limit, image_url } = req.body;
+  const { slug, title, location, location_detail, event_date, event_time, description, ticket_limit, image_url, maps_url } = req.body;
   if (!slug || !title || !location || !event_date) {
     return res.status(400).json({ error: 'Missing required fields: slug, title, location, event_date' });
   }
 
   try {
-    await db.seedEvent({ slug, title, location, location_detail, event_date, event_time, description, ticket_limit: ticket_limit || 50, image_url: image_url || null });
+    await db.seedEvent({ slug, title, location, location_detail, event_date, event_time, description, ticket_limit: ticket_limit || 50, image_url: image_url || null, maps_url: maps_url || null });
     res.json({ ok: true, slug });
   } catch (err) {
     console.error('Admin create event error:', err.message);
@@ -1413,15 +1415,23 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
     return;
   }
 
-  const dateStr = eventDate ? new Date(eventDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '';
+  // Format date robustly — handles Date objects from DB and string formats
+  let dateStr = 'TBA';
+  try {
+    const d = eventDate ? (typeof eventDate === 'string' && !eventDate.includes('Invalid') ? new Date(eventDate + 'T12:00:00') : new Date(eventDate)) : null;
+    if (d && !isNaN(d.getTime())) dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  } catch (e) {}
+
   const timeStr = eventTime || '20:00 – 23:00';
-  const locStr = eventLocation || 'Tenerife South';
-  const detailStr = locationDetail ? ` · ${locationDetail}` : '';
+  // Use location_detail instead of both location + detail to avoid duplication
+  const locStr = locationDetail || eventLocation || 'Tenerife South';
   const codeStr = confirmationCode ? `\n🔑 ${confirmationCode}` : '';
-  const slugPart = slug || 'holy-rave';
+  const mapStr = mapsUrl ? `\n🗺️ ${mapsUrl}` : '';
+  // Prefix slug with 'holy-rave/' for correct link
+  const slugPart = slug && slug.startsWith('holy-rave/') ? slug : 'holy-rave/' + (slug || '');
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
 
-  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${detailStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow this message at the door.\n\n${link}`;
+  const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${mapStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow this message at the door.\n\n${link}`;
 
   const sender = getFromNumber(phone);
   console.log(`[sms] Sending ticket to ${phone} from: "${sender}"`);

@@ -507,6 +507,10 @@
         <textarea id="fDescription" placeholder="An evening of melodic Afrohouse..."></textarea>
       </div>
       <div class="field-group">
+        <label>Maps URL</label>
+        <input type="text" id="fMapsUrl" placeholder="https://maps.google.com/?q=...">
+      </div>
+      <div class="field-group">
         <label>Event Image</label>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
           <input type="text" id="fImageUrl" placeholder="Paste URL or upload below" style="flex:1;">
@@ -689,7 +693,7 @@
       editingSlug = null;
       document.getElementById('formTitle').innerHTML = '<em>New</em> Event';
       document.getElementById('formSubmitBtn').textContent = 'Create Event';
-      ['fSlug','fDate','fTitle','fLocation','fTime','fLimit','fLocationDetail','fDescription','fImageUrl'].forEach(id => document.getElementById(id).value = '');
+      ['fSlug','fDate','fTitle','fLocation','fTime','fLimit','fLocationDetail','fDescription','fImageUrl','fMapsUrl'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('fLimit').value = '50';
       document.getElementById('fTime').value = '20:00 – 23:00';
       clearImagePreview();
@@ -982,6 +986,7 @@
           location_detail: document.getElementById('fLocationDetail').value.trim(),
           description: document.getElementById('fDescription').value.trim(),
           image_url: document.getElementById('fImageUrl').value.trim() || null,
+          maps_url: document.getElementById('fMapsUrl').value.trim() || null,
         };
         if (!body.slug || !body.title || !body.location || !body.event_date) {
           throw new Error('Slug, title, location, and date are required');
@@ -1032,6 +1037,7 @@
         document.getElementById('fLocationDetail').value = e.location_detail || '';
         document.getElementById('fDescription').value = e.description || '';
         document.getElementById('fImageUrl').value = e.image_url || '';
+        document.getElementById('fMapsUrl').value = e.maps_url || '';
         if (e.image_url) updateImagePreview(e.image_url);
         else clearImagePreview();
         document.getElementById('formOverlay').classList.add('visible');

@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS events (
   title VARCHAR(255) NOT NULL,                 -- 'Holy Rave — June 13th 2026'
   location VARCHAR(255) NOT NULL,              -- 'Tenerife South'
   location_detail TEXT,                         -- 'Coordinates emailed 24h before'
+  maps_url TEXT DEFAULT '',                      -- Google Maps link for SMS
   event_date DATE NOT NULL,                     -- The actual date
   event_time VARCHAR(100) DEFAULT 'Sunset',     -- '19:00 – 23:00'
   description TEXT,                             -- Short sell copy
