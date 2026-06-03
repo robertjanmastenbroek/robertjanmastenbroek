@@ -583,14 +583,40 @@ app.get('/api/holy-rave/verify', async (req, res) => {
   }
 });
 
-// ─── Admin: Create a new event (protected by ADMIN_API_KEY env var) ───────────
-app.post('/api/admin/events', async (req, res) => {
+// GET /api/holy-rave/events/past — past events
+app.get('/api/holy-rave/events/past', async (req, res) => {
+  try {
+    const events = await db.getPastEvents(20);
+    res.json(events);
+  } catch (err) {
+    console.error('Past events error:', err.message);
+    res.json([]);
+  }
+});
+
+// ─── Admin: Create/update/delete events (protected by ADMIN_API_KEY) ─────────
+function requireAdmin(req, res, next) {
   const apiKey = req.headers['x-api-key'];
   const expectedKey = process.env.ADMIN_API_KEY;
   if (expectedKey && apiKey !== expectedKey) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  next();
+}
 
+// GET /api/admin/events — list all events (for admin panel)
+app.get('/api/admin/events', requireAdmin, async (req, res) => {
+  try {
+    const events = await db.getAllEvents();
+    res.json(events);
+  } catch (err) {
+    console.error('Admin events error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/events — create a new event
+app.post('/api/admin/events', requireAdmin, async (req, res) => {
   const { slug, title, location, location_detail, event_date, event_time, description, ticket_limit } = req.body;
   if (!slug || !title || !location || !event_date) {
     return res.status(400).json({ error: 'Missing required fields: slug, title, location, event_date' });
@@ -601,6 +627,32 @@ app.post('/api/admin/events', async (req, res) => {
     res.json({ ok: true, slug });
   } catch (err) {
     console.error('Admin create event error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/admin/events/:slug — update event status (upcoming/past/cancelled)
+app.put('/api/admin/events/:slug', requireAdmin, async (req, res) => {
+  const { status } = req.body;
+  if (!['upcoming', 'past', 'cancelled'].includes(status)) {
+    return res.status(400).json({ error: 'Status must be: upcoming, past, or cancelled' });
+  }
+  try {
+    await db.updateEventStatus(req.params.slug, status);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Admin update error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/events/:slug — delete an event
+app.delete('/api/admin/events/:slug', requireAdmin, async (req, res) => {
+  try {
+    await db.deleteEvent(req.params.slug);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Admin delete error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

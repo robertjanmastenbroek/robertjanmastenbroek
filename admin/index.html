@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Holy Rave Events</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #f5f1e8;
+      padding: 2rem;
+      font-weight: 300;
+      line-height: 1.6;
+    }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; letter-spacing: 0.02em; }
+    h1 span { color: #c8883a; }
+    .api-key-bar {
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .api-key-bar input {
+      padding: 0.6rem 0.85rem;
+      background: #121216;
+      border: 1px solid rgba(200,136,58,0.18);
+      color: #f5f1e8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      width: 280px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .api-key-bar input:focus { border-color: #c8883a; }
+    .api-key-bar input::placeholder { color: #555; }
+    .btn {
+      padding: 0.6rem 1.25rem;
+      border: 1px solid rgba(200,136,58,0.25);
+      background: transparent;
+      color: #c8883a;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: rgba(200,136,58,0.12); border-color: #c8883a; }
+    .btn-primary {
+      background: #d4af37;
+      color: #0a0a0a;
+      border-color: #d4af37;
+    }
+    .btn-primary:hover { background: #b8532a; border-color: #b8532a; color: #fff; }
+    .btn-danger {
+      border-color: rgba(184,83,42,0.4);
+      color: #b8532a;
+    }
+    .btn-danger:hover { background: rgba(184,83,42,0.15); border-color: #b8532a; }
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .status-badge.upcoming { background: rgba(212,175,55,0.15); color: #d4af37; }
+    .status-badge.past { background: rgba(122,114,102,0.2); color: #7a7266; }
+    .status-badge.cancelled { background: rgba(184,83,42,0.15); color: #b8532a; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.7rem 1rem; text-align: left; border-bottom: 1px solid rgba(212,175,55,0.08); font-size: 0.85rem; }
+    th { color: #7a7266; font-weight: 600; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    td { color: #c9c4b6; }
+    td.actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    td .btn { padding: 0.35rem 0.75rem; font-size: 0.65rem; }
+    .form-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .form-overlay.visible { display: flex; }
+    .form-panel {
+      background: #121216;
+      border: 1px solid rgba(200,136,58,0.18);
+      padding: 2rem;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .form-panel h2 { font-size: 1.2rem; font-weight: 500; margin-bottom: 1.25rem; color: #f5f1e8; }
+    .form-panel h2 em { color: #c8883a; font-style: italic; }
+    .field-group { margin-bottom: 0.85rem; }
+    .field-group label { display: block; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: #7a7266; margin-bottom: 0.3rem; font-weight: 500; }
+    .field-group input, .field-group select, .field-group textarea {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      background: #0a0a0a;
+      border: 1px solid rgba(200,136,58,0.12);
+      color: #f5f1e8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field-group input:focus, .field-group select:focus, .field-group textarea:focus { border-color: #c8883a; }
+    .field-group textarea { min-height: 70px; resize: vertical; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .form-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+    .message { font-size: 0.78rem; color: #c8883a; min-height: 1.2rem; margin-top: 0.5rem; }
+    .error { color: #b8532a; }
+    .loading { opacity: 0.5; pointer-events: none; }
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: #121216; border: 1px solid rgba(200,136,58,0.25);
+      padding: 0.85rem 1.25rem;
+      font-size: 0.82rem; color: #c9c4b6;
+      z-index: 200;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 720px) {
+      body { padding: 1rem; }
+      table { font-size: 0.75rem; }
+      th, td { padding: 0.5rem 0.6rem; }
+      .field-row { grid-template-columns: 1fr; }
+      .api-key-bar input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Holy Rave <span>Admin</span></h1>
+
+  <div class="api-key-bar">
+    <input type="password" id="apiKey" placeholder="ADMIN_API_KEY" autocomplete="off">
+    <button class="btn btn-primary" onclick="loadEvents()">Load Events</button>
+    <button class="btn" onclick="showCreateForm()">+ New Event</button>
+  </div>
+
+  <div id="message" class="message"></div>
+
+  <div style="overflow-x:auto;">
+    <table id="eventsTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Title</th>
+          <th>Location</th>
+          <th>Slug</th>
+          <th>Tickets</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="eventsBody">
+        <tr><td colspan="7" style="text-align:center;color:#555;">Enter your API key and click Load Events</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Create/Edit Form Overlay -->
+  <div class="form-overlay" id="formOverlay">
+    <div class="form-panel">
+      <h2 id="formTitle"><em>New</em> Event</h2>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Slug</label>
+          <input type="text" id="fSlug" placeholder="june-27-2026">
+        </div>
+        <div class="field-group">
+          <label>Date</label>
+          <input type="date" id="fDate">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Title</label>
+          <input type="text" id="fTitle" placeholder="Holy Rave — June 27th 2026">
+        </div>
+        <div class="field-group">
+          <label>Location</label>
+          <input type="text" id="fLocation" placeholder="Tenerife South">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Time</label>
+          <input type="text" id="fTime" placeholder="Sunset (~19:00)">
+        </div>
+        <div class="field-group">
+          <label>Ticket Limit</label>
+          <input type="number" id="fLimit" value="50" min="1">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Location Detail</label>
+        <input type="text" id="fLocationDetail" placeholder="Open-air venue — exact address on your ticket">
+      </div>
+      <div class="field-group">
+        <label>Description</label>
+        <textarea id="fDescription" placeholder="An evening of melodic Afrohouse..."></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="formSubmitBtn" onclick="saveEvent()">Create Event</button>
+        <button class="btn" onclick="closeForm()">Cancel</button>
+      </div>
+      <div id="formMessage" class="message"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let editingSlug = null;
+
+    function getKey() { return document.getElementById('apiKey').value.trim(); }
+
+    async function api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      const key = getKey();
+      if (key) headers['x-api-key'] = key;
+      const res = await fetch(path, { ...options, headers: { ...headers, ...options.headers } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.display = 'block';
+      setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function msg(text, isError) {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.className = 'message' + (isError ? ' error' : '');
+    }
+
+    async function loadEvents() {
+      if (!getKey()) { msg('Enter your API key first', true); return; }
+      document.getElementById('eventsTable').classList.add('loading');
+      msg('Loading...');
+      try {
+        const events = await api('/api/admin/events');
+        const tbody = document.getElementById('eventsBody');
+        if (events.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#555;">No events found. Create one!</td></tr>';
+        } else {
+          tbody.innerHTML = events.map(e => `
+            <tr>
+              <td style="white-space:nowrap;">${e.event_date || '—'}</td>
+              <td>${e.title || '—'}</td>
+              <td>${e.location || '—'}</td>
+              <td style="font-size:0.78rem;color:#7a7266;">${e.slug}</td>
+              <td>${e.tickets_sold || 0}/${e.ticket_limit || 50}</td>
+              <td><span class="status-badge ${e.status}">${e.status}</span></td>
+              <td class="actions">
+                <button class="btn" onclick="editEvent('${e.slug}')">Edit</button>
+                <button class="btn ${e.status === 'upcoming' ? 'btn-primary' : ''}" onclick="toggleStatus('${e.slug}','${e.status}')">
+                  ${e.status === 'upcoming' ? 'Mark Past' : 'Mark Upcoming'}
+                </button>
+                <button class="btn btn-danger" onclick="deleteEvent('${e.slug}')">Delete</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+        msg('Loaded ' + events.length + ' events');
+      } catch (err) {
+        msg(err.message, true);
+      }
+      document.getElementById('eventsTable').classList.remove('loading');
+    }
+
+    function showCreateForm() {
+      editingSlug = null;
+      document.getElementById('formTitle').innerHTML = '<em>New</em> Event';
+      document.getElementById('formSubmitBtn').textContent = 'Create Event';
+      ['fSlug','fDate','fTitle','fLocation','fTime','fLimit','fLocationDetail','fDescription'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('fLimit').value = '50';
+      document.getElementById('fTime').value = 'Sunset (~19:00)';
+      document.getElementById('formOverlay').classList.add('visible');
+      document.getElementById('formMessage').textContent = '';
+    }
+
+    function closeForm() { document.getElementById('formOverlay').classList.remove('visible'); }
+
+    async function saveEvent() {
+      const btn = document.getElementById('formSubmitBtn');
+      btn.textContent = 'Saving...'; btn.disabled = true;
+      try {
+        const body = {
+          slug: document.getElementById('fSlug').value.trim(),
+          title: document.getElementById('fTitle').value.trim(),
+          location: document.getElementById('fLocation').value.trim(),
+          event_date: document.getElementById('fDate').value,
+          event_time: document.getElementById('fTime').value.trim(),
+          ticket_limit: parseInt(document.getElementById('fLimit').value, 10) || 50,
+          location_detail: document.getElementById('fLocationDetail').value.trim(),
+          description: document.getElementById('fDescription').value.trim(),
+        };
+        if (!body.slug || !body.title || !body.location || !body.event_date) {
+          throw new Error('Slug, title, location, and date are required');
+        }
+        await api('/api/admin/events', { method: 'POST', body: JSON.stringify(body) });
+        showToast('Event created: ' + body.title);
+        closeForm();
+        loadEvents();
+      } catch (err) {
+        document.getElementById('formMessage').textContent = err.message;
+        document.getElementById('formMessage').className = 'message error';
+      }
+      btn.textContent = 'Create Event'; btn.disabled = false;
+    }
+
+    async function toggleStatus(slug, current) {
+      const newStatus = current === 'upcoming' ? 'past' : 'upcoming';
+      try {
+        await api('/api/admin/events/' + slug, { method: 'PUT', body: JSON.stringify({ status: newStatus }) });
+        showToast('Event ' + slug + ' → ' + newStatus);
+        loadEvents();
+      } catch (err) { msg(err.message, true); }
+    }
+
+    async function deleteEvent(slug) {
+      if (!confirm('Delete ' + slug + '? This cannot be undone.')) return;
+      try {
+        await api('/api/admin/events/' + slug, { method: 'DELETE' });
+        showToast('Deleted: ' + slug);
+        loadEvents();
+      } catch (err) { msg(err.message, true); }
+    }
+
+    async function editEvent(slug) {
+      // For simplicity, open the create form with fields pre-filled from the table (re-fetch)
+      try {
+        const events = await api('/api/admin/events');
+        const e = events.find(x => x.slug === slug);
+        if (!e) throw new Error('Not found');
+        document.getElementById('formTitle').innerHTML = 'Edit <em>Event</em>';
+        document.getElementById('formSubmitBtn').textContent = 'Update Event';
+        document.getElementById('fSlug').value = e.slug;
+        document.getElementById('fDate').value = e.event_date || '';
+        document.getElementById('fTitle').value = e.title || '';
+        document.getElementById('fLocation').value = e.location || '';
+        document.getElementById('fTime').value = e.event_time || 'Sunset (~19:00)';
+        document.getElementById('fLimit').value = e.ticket_limit || 50;
+        document.getElementById('fLocationDetail').value = e.location_detail || '';
+        document.getElementById('fDescription').value = e.description || '';
+        document.getElementById('formOverlay').classList.add('visible');
+        document.getElementById('formMessage').textContent = 'Edit title/date/slug then save.';
+      } catch (err) { msg(err.message, true); }
+    }
+
+    // Enter to submit API key
+    document.getElementById('apiKey').addEventListener('keydown', e => { if (e.key === 'Enter') loadEvents(); });
+  </script>
+</body>
+</html>
