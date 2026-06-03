@@ -484,9 +484,11 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
     // Send SMS via Twilio (fire-and-forget with timeout — code is already stored)
     const twilio = getTwilio();
     if (twilio && TWILIO_FROM_NUMBER) {
+      const sender = getFromNumber(phone);
+      console.log(`[verify] Sending to ${phone} from: "${sender}" (alpha=${!!TWILIO_ALPHA_SENDER})`);
       const sendPromise = twilio.messages.create({
         body: `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`,
-        from: getFromNumber(phone),
+        from: sender,
         to: phone.replace(/\s+/g, ''),
       });
       // Race the send against a 5s timeout so we never hang the response
@@ -494,7 +496,7 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
         sendPromise,
         new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
       ]).then(() => {
-        console.log(`[verify] Code sent to ${phone}`);
+        console.log(`[verify] Code sent to ${phone} from "${sender}"`);
       }).catch(err => {
         console.error(`[verify] SMS send issue (code still valid): ${err.message}`);
       });
@@ -1368,9 +1370,11 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
 
   const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${detailStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend\n\nShow this message at the door (no printed ticket needed).\n\n${link}`;
 
+  const sender = getFromNumber(phone);
+  console.log(`[sms] Sending ticket to ${phone} from: "${sender}"`);
   const sendPromise = twilio.messages.create({
     body: message,
-    from: getFromNumber(phone),
+    from: sender,
     to: phone.replace(/\s+/g, ''),
   });
 
@@ -1378,7 +1382,7 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
     sendPromise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
   ]).then(result => {
-    console.log(`[sms] Ticket SMS sent to ${phone} (sid: ${result.sid})`);
+    console.log(`[sms] Ticket SMS sent to ${phone} from "${sender}" (sid: ${result.sid})`);
   }).catch(err => {
     console.error('[sms] Failed to send SMS:', err.message);
   });
