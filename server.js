@@ -22,39 +22,17 @@ const PORT = process.env.PORT || 8080;
 const SITE_URL = process.env.SITE_URL || 'https://robertjanmastenbroek.com';
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
-// Lazy-initialize Stripe, Resend, and MessageBird so the server starts even without env vars
-const MB_ORIGINATOR = process.env.MB_ORIGINATOR || 'HolyRave'; // Sender name (alpha) or phone number
-
-async function sendMessageBirdSMS(to, body) {
-  const apiKey = process.env.MB_API_KEY;
-  if (!apiKey) {
-    console.log('[mb] MessageBird not configured — skipping SMS send');
-    return null;
+// Lazy-initialize Stripe, Resend, and Twilio so the server starts even without env vars
+let twilioClient = null;
+function getTwilio() {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) return null;
+  if (!twilioClient) {
+    twilioClient = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   }
-
-  try {
-    const res = await fetch('https://rest.messagebird.com/messages', {
-      method: 'POST',
-      headers: {
-        'Authorization': `AccessKey ${apiKey}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        originator: MB_ORIGINATOR,
-        recipients: [to.replace(/\s+/g, '')],
-        body: body,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.errors?.[0]?.description || `MessageBird error ${res.status}`);
-    console.log(`[mb] SMS sent to ${to} (id: ${data.id})`);
-    return data;
-  } catch (err) {
-    console.error('[mb] SMS send error:', err.message);
-    throw err;
-  }
+  return twilioClient;
 }
+
+const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || ''; // e.g. '+1234567890'
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
   if (!getStripe._instance) {
@@ -462,9 +440,14 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
 
     await db.storeVerificationCode(phone, code);
 
-    // Send SMS via MessageBird
-    const mbResult = await sendMessageBirdSMS(phone, `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`);
-    if (mbResult) {
+    // Send SMS via Twilio
+    const twilio = getTwilio();
+    if (twilio && TWILIO_FROM_NUMBER) {
+      await twilio.messages.create({
+        body: `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`,
+        from: TWILIO_FROM_NUMBER,
+        to: phone.replace(/\s+/g, ''),
+      });
       console.log(`[verify] Code sent to ${phone}`);
     } else {
       // Fallback: log the code (dev mode)
@@ -1335,11 +1318,17 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
 }
 
 // ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
-// Sends a ticket SMS with event location and time via MessageBird.
-// Falls back to logging if MessageBird isn't configured.
+// Sends a ticket SMS with event location and time via Twilio.
+// Falls back to logging if Twilio isn't configured.
 async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl) {
-  if (!phone) {
-    console.log(`[sms] Skipping SMS — no phone for ${phone}`);
+  if (!phone || !TWILIO_FROM_NUMBER) {
+    console.log(`[sms] Skipping SMS (no phone or from number) for ${phone}`);
+    return;
+  }
+
+  const twilio = getTwilio();
+  if (!twilio) {
+    console.log('[sms] Twilio not configured — skipping SMS send');
     return;
   }
 
@@ -1352,7 +1341,16 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
 
   const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${detailStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend\n\nShow this message at the door (no printed ticket needed).\n\n${link}`;
 
-  await sendMessageBirdSMS(phone, message);
+  try {
+    const result = await twilio.messages.create({
+      body: message,
+      from: TWILIO_FROM_NUMBER,
+      to: phone.replace(/\s+/g, ''),
+    });
+    console.log(`[sms] Ticket SMS sent to ${phone} (sid: ${result.sid})`);
+  } catch (err) {
+    console.error('[sms] Failed to send SMS:', err.message);
+  }
 }
 
 // ─── Holy Rave Confirmation Email ─────────────────────────────────────────────
