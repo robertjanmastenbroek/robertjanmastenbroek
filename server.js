@@ -85,7 +85,7 @@ app.use(express.static(path.join(__dirname)));
 // ─── Rate Limiting — prevent bot hoarding on 50-person events ──────────────
 const registerLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 5,                    // 5 registrations per IP per window
+  max: 20,                   // 20 registrations per IP per window (generous for testing)
   message: { error: 'Too many requests. Join the WhatsApp community to be notified of future events.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -477,6 +477,17 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
 
     const id = 'hr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
 
+    // Build event description for Stripe
+    let eventDateStr = '';
+    let eventLocationStr = '';
+    if (eventSlug) {
+      const ev = await db.getEventBySlug(eventSlug);
+      if (ev) {
+        eventDateStr = ev.event_date || '';
+        eventLocationStr = ev.location || '';
+      }
+    }
+
     // Free ticket — confirm immediately
     if (amt === 0) {
       await db.createRegistration({ id, firstName, lastName, email, amount: 0, week, eventId });
@@ -510,15 +521,15 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
         price_data: {
           currency: 'eur',
           product_data: {
-            name: eventTitle + ' — Ticket',
-            description: `${firstName} ${lastName} — pay what feels right`,
+            name: eventTitle + (eventDateStr ? ' — ' + eventDateStr : ''),
+            description: (eventLocationStr ? eventLocationStr + ' · ' : '') + `${firstName} ${lastName} · Pay what feels right · You + 1 friend`,
           },
           unit_amount: amt,
         },
         quantity: 1,
       }],
       metadata: eventId
-        ? { registration_id: id, event_id: String(eventId) }
+        ? { registration_id: id, event_id: String(eventId), event_date: eventDateStr, event_location: eventLocationStr }
         : { registration_id: id, week },
       success_url: successUrl,
       cancel_url: cancelUrl,

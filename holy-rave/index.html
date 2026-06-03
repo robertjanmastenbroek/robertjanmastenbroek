@@ -1542,26 +1542,22 @@
 
                 <!-- Timeline -->
                 <div class="timeline-section">
-                    <h4>An evening at Holy Rave</h4>
+                    <h4>The evening unfolds</h4>
                     <div class="timeline-item">
-                        <span class="time">19:00</span>
-                        <span class="desc">Arrive · Sunset drinks · Settle in</span>
+                        <span class="time">20:00</span>
+                        <span class="desc">Doors open · Sunset · Find your spot</span>
                     </div>
                     <div class="timeline-item">
-                        <span class="time">19:30</span>
-                        <span class="desc">First set · Melodic Afrohouse · Warm-up</span>
+                        <span class="time">20:30</span>
+                        <span class="desc">Music begins — let it carry you</span>
                     </div>
                     <div class="timeline-item">
-                        <span class="time">20:15</span>
-                        <span class="desc">Golden hour · Handpan interlude</span>
+                        <span class="time">—</span>
+                        <span class="desc">Melodic Afrohouse · Ambient drift · Peak energy</span>
                     </div>
                     <div class="timeline-item">
-                        <span class="time">20:45</span>
-                        <span class="desc">Tribal psytrance · Peak energy</span>
-                    </div>
-                    <div class="timeline-item">
-                        <span class="time">21:30</span>
-                        <span class="desc">Cool-down · Connection · Goodnight</span>
+                        <span class="time">23:00</span>
+                        <span class="desc">Close · Take the feeling with you</span>
                     </div>
                 </div>
             </div>
@@ -1813,10 +1809,14 @@
             else if (diffDays === 1) dateLabel = 'Tomorrow';
             else if (diffDays <= 7) dateLabel = `${diffDays} days away`;
             else dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            const cardImage = e.image_url
+                ? `<img src="${e.image_url}" alt="${e.title || 'Holy Rave'}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg, var(--indigo-deep) 0%, var(--dark-rich) 50%, var(--card-bg) 100%)';this.remove()">`
+                : '';
+
             if (isPast) {
                 return `
                     <div class="event-card reveal" style="cursor:default;opacity:0.6;">
-                        <div class="event-card-image">
+                        <div class="event-card-image">${cardImage}
                             <div class="date-badge">
                                 <span class="day">${day}</span>
                                 <span class="month">${month}</span>
@@ -1842,7 +1842,7 @@
 
             return `
                 <a href="/holy-rave/${e.slug}" class="event-card reveal">
-                    <div class="event-card-image">
+                    <div class="event-card-image">${cardImage}
                         <div class="date-badge">
                             <span class="day">${day}</span>
                             <span class="month">${month}</span>
