@@ -1136,19 +1136,59 @@
             border-color: var(--ochre);
             box-shadow: 0 0 0 3px var(--ochre-dim);
         }
-        .custom-amount-row.selected { border-color: var(--ochre); }
+        .custom-amount-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.75rem 1rem;
+            background: rgba(10,10,10,0.6);
+            border: 1px solid var(--border-warm);
+            transition: border-color 0.3s var(--ease-warm), box-shadow 0.3s var(--ease-warm);
+            cursor: text;
+        }
+        .custom-amount-row:focus-within,
+        .custom-amount-row.selected {
+            border-color: var(--ochre);
+            box-shadow: 0 0 0 3px var(--ochre-dim);
+        }
+        .custom-amount-row .euro-sign {
+            font-size: 2.2rem;
+            font-weight: 400;
+            color: var(--gold);
+            font-family: var(--font-serif);
+            line-height: 1;
+            opacity: 0.8;
+        }
         .custom-amount-input {
-            flex: 1;
-            padding: 0.8rem 1rem 0.8rem 0.25rem;
+            width: auto;
+            max-width: 8rem;
             background: transparent;
             border: none;
             outline: none;
             color: var(--text);
-            font-size: 1rem;
-            font-weight: 400;
-            font-family: var(--font-sans);
+            font-size: 2.2rem;
+            font-weight: 500;
+            font-family: var(--font-serif);
+            text-align: center;
+            letter-spacing: 0.02em;
+            caret-color: var(--ochre);
+            -moz-appearance: textfield;
         }
-        .custom-amount-input::placeholder { color: var(--text-mute); }
+        .custom-amount-input::-webkit-outer-spin-button,
+        .custom-amount-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .custom-amount-input::placeholder { color: #3a3a3a; font-size: 1.8rem; font-weight: 300; }
+        .custom-amount-row .euro-cents {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: var(--text-mute);
+            font-family: var(--font-serif);
+            line-height: 1;
+            margin-top: 0.6rem;
+        }
 
         .step-btn {
             display: block;
@@ -1854,9 +1894,11 @@
                                     <button type="button" class="amount-btn" data-amount="2000">€20</button>
                                     <button type="button" class="amount-btn" data-amount="5000">€50</button>
                                 </div>
-                                <div class="custom-amount-row" id="customRow">
+                                <div class="custom-amount-row" id="customRow" onclick="document.getElementById('customAmount').focus()">
+                                    <span class="euro-sign">€</span>
                                     <input type="number" id="customAmount" class="custom-amount-input"
-                                           placeholder="€ Custom amount" min="1" step="1">
+                                           placeholder="0" min="1" step="1" value="">
+                                    <span class="euro-cents">,00</span>
                                 </div>
                             </div>
                             <p style="text-align:center;font-size:0.75rem;color:var(--text-mute);margin:0 0 1rem;letter-spacing:0.04em;">
@@ -1864,10 +1906,16 @@
                             </p>
                             <button type="button" class="step-btn-back" onclick="goToStep(1)" style="margin-bottom:0.5rem;">← Back to details</button>
                             <button type="submit" class="step-btn" id="submitBtn">
-                                Reserve My Spot
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex-shrink:0;">
+                                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                                    <line x1="7" y1="11" x2="7" y2="7" stroke-width="1.8"/>
+                                    <path d="M12 15.5v.01" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M9 7c0-1.66 1.34-3 3-3s3 1.34 3 3v4H9V7z" stroke-width="1.5"/>
+                                </svg>
+                                Secure My Spot
                             </button>
                             <p style="text-align:center;font-size:0.72rem;color:var(--text-mute);margin-top:0.5rem;letter-spacing:0.03em;" id="amountSummary">
-                                You'll pay <strong id="amountDisplay">€12</strong> · Secure via Stripe
+                                <span id="tierMessage">€1 verification · just to know you're real</span>
                             </p>
                             <p class="form-error" id="formError"></p>
                         </div>
@@ -2949,26 +2997,17 @@
         // AMOUNT DISPLAY — update step 2 text
         // ──────────────────────────────────────────────────────
         function updateAmountDisplay(cents) {
-            const el = document.getElementById('amountDisplay');
-            if (!el) return;
-            const euro = (cents / 100).toFixed(2);
-            el.textContent = '\u20ac' + (cents / 100).toFixed(0);
-
-            // Update CTA button text dynamically
-            const btn = document.getElementById('submitBtn');
-            if (btn) btn.textContent = 'Pay \u20ac' + (cents / 100).toFixed(2);
-
-            // Update summary under CTA
-            const summary = document.getElementById('amountSummary');
+            // Update tier message below CTA — no amounts, just the vibe
+            const msg = document.getElementById('tierMessage');
+            if (!msg) return;
             if (cents <= 100) {
-                // €1 = verification fee
-                summary.innerHTML = '<strong>\u20ac1 verification</strong> &middot; just to know you\u2019re real';
-            } else if (cents <= 1200) {
-                // €2-12: supportive
-                summary.innerHTML = 'You\u2019ll pay <strong>\u20ac' + (cents / 100).toFixed(0) + '</strong> &middot; helps keep the music playing';
+                msg.textContent = 'Just to know you\u2019re real';
+            } else if (cents <= 500) {
+                msg.textContent = 'Helps keep the music playing';
+            } else if (cents <= 2000) {
+                msg.textContent = 'Helps keep the music playing';
             } else {
-                // €13+: generous
-                summary.innerHTML = 'You\u2019ll pay <strong>\u20ac' + (cents / 100).toFixed(0) + '</strong> &middot; Secure via Stripe <span style="color:var(--ochre);">\u2661</span>';
+                msg.textContent = 'You\u2019re a part of this now';
             }
         }
 
