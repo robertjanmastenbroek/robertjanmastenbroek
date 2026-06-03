@@ -40,6 +40,7 @@
     }
     .api-key-bar input:focus { border-color: #c8883a; }
     .api-key-bar input::placeholder { color: #555; }
+    .toolbar { margin-bottom: 2rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .btn {
       padding: 0.6rem 1.25rem;
       border: 1px solid rgba(200,136,58,0.25);
@@ -329,8 +330,7 @@
 
     <h1>Holy Rave <span>Admin</span></h1>
 
-    <div class="api-key-bar">
-    <input type="password" id="apiKey" placeholder="ADMIN_API_KEY" autocomplete="off">
+    <div class="toolbar">
     <button class="btn btn-primary" onclick="loadEvents()">Load Events</button>
     <button class="btn" onclick="showCreateForm()">+ New Event</button>
     <button class="btn" onclick="syncResend()" id="syncBtn">Sync to Resend</button>
@@ -352,7 +352,7 @@
         </tr>
       </thead>
       <tbody id="eventsBody">
-        <tr><td colspan="7" style="text-align:center;color:#555;">Enter your API key and click Load Events</td></tr>
+        <tr><td colspan="7" style="text-align:center;color:#555;">Sign in to load events</td></tr>
       </tbody>
     </table>
   </div>
@@ -472,13 +472,9 @@
   <script>
     let editingSlug = null;
 
-    function getKey() { return document.getElementById('apiKey').value.trim(); }
-
     async function api(path, options = {}) {
       const headers = { 'Content-Type': 'application/json' };
-      const key = getKey();
-      if (key) headers['x-api-key'] = key;
-      const res = await fetch(path, { ...options, headers: { ...headers, ...options.headers } });
+      const res = await fetch(path, { ...options, headers: { ...headers, ...options.headers }, credentials: 'same-origin' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Request failed');
       return data;
@@ -497,7 +493,6 @@
     }
 
     async function loadEvents() {
-      if (!getKey()) { msg('Enter your API key first', true); return; }
       document.getElementById('eventsTable').classList.add('loading');
       msg('Loading...');
       try {
@@ -564,10 +559,9 @@
       formData.append('image', file);
 
       try {
-        const key = getKey();
         const res = await fetch('/api/admin/event-images/upload', {
           method: 'POST',
-          headers: key ? { 'x-api-key': key } : {},
+          credentials: 'same-origin',
           body: formData,
         });
         const data = await res.json();
@@ -742,7 +736,6 @@
 
     // ── Sync local subscribers to Resend audience ──
     async function syncResend() {
-      if (!getKey()) { msg('Enter your API key first', true); return; }
       const btn = document.getElementById('syncBtn');
       btn.textContent = 'Syncing...';
       btn.disabled = true;
@@ -758,14 +751,10 @@
       btn.disabled = false;
     }
 
-    // Enter to submit API key
-    document.getElementById('apiKey').addEventListener('keydown', e => { if (e.key === 'Enter') loadEvents(); });
-
     // ── Subscribers ──────────────────────────────────────────────────────
     let subscribersData = [];
 
     async function loadSubscribers() {
-      if (!getKey()) { msg('Enter your API key first', true); return; }
       try {
         const subscribers = await api('/api/admin/subscribers');
         subscribersData = subscribers;
