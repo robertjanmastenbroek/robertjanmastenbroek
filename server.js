@@ -959,6 +959,12 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
 
     console.log(`[register] Creating PaymentIntent for ${email} — €${(amt / 100).toFixed(2)}`);
 
+    // Statement descriptor shows on bank statements
+    // Cards: ACCOUNT_PREFIX*HOLY RAVE 0613 (via suffix, no special chars)
+    // iDEAL: HOLY RAVE 0613 (via descriptor, allows .-*)
+    const dateCode = String(eventDateStr || '').slice(5, 10).replace('-', '') || 'EVENT';
+    const stmtDesc = `HOLY RAVE ${dateCode}`.substring(0, 22).toUpperCase();
+
     // Timeout the Stripe call after 15 seconds to prevent hanging
     const paymentIntent = await Promise.race([
       stripe.paymentIntents.create({
@@ -972,9 +978,8 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
           event_slug: eventSlug || '',
         },
         description: `${firstName} ${lastName} — ${eventTitle}`,
-        // Statement descriptor shows on bank statements & iDEAL screens
-        // Cards use statement_descriptor_suffix (22 chars), other methods use statement_descriptor
-        statement_descriptor_suffix: `HOLY RAVE${eventDateStr ? ' ' + String(eventDateStr).slice(5, 10).replace('-', '') : ''}`.substring(0, 22).toUpperCase(),
+        statement_descriptor: stmtDesc,
+        statement_descriptor_suffix: stmtDesc,
         automatic_payment_methods: { enabled: true },
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Stripe API timeout after 15s')), 15000)),
