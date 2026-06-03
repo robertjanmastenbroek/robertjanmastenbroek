@@ -1733,6 +1733,9 @@
                     <h2>You're <em>in.</em></h2>
                     <p id="confirmName">Your spot is reserved.</p>
                     <p style="font-size:0.92rem;line-height:1.7;">You + one friend. Your ticket with the location and time is on its way to your phone via SMS. Check your inbox.</p>
+                    <div id="qrContainer" style="margin:1.25rem auto;width:128px;height:128px;background:var(--card-bg);border:1px solid var(--border-faint);display:flex;align-items:center;justify-content:center;">
+                        <div style="font-size:0.65rem;color:var(--text-mute);text-align:center;line-height:1.5;" id="qrLabel">Loading QR...</div>
+                    </div>
                     <div class="divider">
                         <span class="line"></span>
                         <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
@@ -2424,6 +2427,7 @@
             document.getElementById('confirmName').textContent = firstName + ' ' + lastName + ', your spot is reserved.';
             currentRegId = regId;
             fireConfetti();
+            generateQR(window.location.origin + '/verify/' + regId);
             showToast('You\u2019re in! Check your phone for the details.', 'success');
         }
 
@@ -2433,6 +2437,7 @@
             overlay.classList.add('visible');
             currentRegId = id;
             fireConfetti();
+            generateQR(window.location.origin + '/verify/' + id);
             try {
                 const res = await fetch('/api/holy-rave/verify?id=' + encodeURIComponent(id));
                 if (res.ok) {
@@ -2715,6 +2720,32 @@
             } catch (e) {
                 console.error('[stripe] Payment intent retrieval error:', e);
             }
+        }
+
+        // ──────────────────────────────────────────────────────
+        // QR CODE — generate from confirmation code
+        // ──────────────────────────────────────────────────────
+        function generateQR(code) {
+            const container = document.getElementById('qrContainer');
+            const label = document.getElementById('qrLabel');
+            if (!code || !container) return;
+            label.textContent = '';
+
+            // Try QRServer API (free, no CDN dependency)
+            const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=' + encodeURIComponent(code);
+            const img = document.createElement('img');
+            img.src = qrUrl;
+            img.alt = 'QR Code';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.display = 'block';
+            img.onload = function() {
+                container.innerHTML = '';
+                container.appendChild(img);
+            };
+            img.onerror = function() {
+                label.textContent = 'Could not load QR';
+            };
         }
 
         // ──────────────────────────────────────────────────────
