@@ -308,10 +308,10 @@ app.get('/holy-rave/:slug', async (req, res) => {
       const ogTitle = 'Holy Rave \u2014 ' + dateStr + ' \u00b7 ' + (event.location || 'Tenerife');
       const ogDesc = '50 tickets \u00b7 Pay what feels right \u00b7 You + 1 friend \u00b7 ' + (event.event_time || 'Sunset') + ' at ' + (event.location || 'Tenerife South') + '.';
 
-      // Build JSON-LD with real event data
-      const ldJson = {
-        '@context': 'https://schema.org',
-        '@type': 'MusicEvent',
+      // Build JSON-LD with real event data (MusicEvent + BreadcrumbList)
+      const ldJson = { '@context': 'https://schema.org', '@graph': [
+        {
+          '@type': 'MusicEvent',
         name: event.title || 'Holy Rave',
         description: event.description || 'An intimate sunset session.',
         startDate: date.toISOString(),
@@ -328,7 +328,15 @@ app.get('/holy-rave/:slug', async (req, res) => {
           availability: (event.remaining || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
           url: SITE_URL + '/holy-rave/' + slug,
         },
-      };
+      },
+      {
+        '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Holy Rave', item: SITE_URL + '/holy-rave' },
+            { '@type': 'ListItem', position: 2, name: ogTitle.replace(/^Holy Rave — /, ''), item: SITE_URL + '/holy-rave/' + slug },
+          ],
+        },
+      ] };
 
       const fs = require('fs');
       fs.readFile(path.join(__dirname, 'holy-rave', 'index.html'), 'utf8', (err, data) => {
@@ -338,6 +346,7 @@ app.get('/holy-rave/:slug', async (req, res) => {
           .replace(/<meta property="og:description" content="[^"]*"/, '<meta property="og:description" content="' + ogDesc + '"')
           .replace(/<meta property="og:image" content="[^"]*"/, '<meta property="og:image" content="' + imageUrl + '"')
           .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + imageUrl + '"')
+          .replace(/<meta name="robots" content="[^"]*"/, '<meta name="robots" content="index,follow"')
           .replace('name="twitter:card" content="summary_large_image"', 'name="twitter:card" content="summary_large_image"\n    <meta property="og:type" content="website">\n    <meta property="fb:app_id" content="61573212765627">')
           // Inject event data as JSON in ldJsonDetail script
           .replace(/("ldJsonDetail">\s*)\{[^}]*\}/, '$1' + JSON.stringify(ldJson))
