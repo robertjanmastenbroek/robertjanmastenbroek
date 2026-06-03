@@ -46,6 +46,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // ─── Payment succeeded ─────────────────────────────────────────────────
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const email = session.customer_details?.email;
@@ -74,6 +75,44 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       await sendThankYouEmail(email, name);
       syncToResendAudience(email, firstName, lastName).catch(e =>
         console.error('Offering audience sync error:', e.message));
+    }
+  }
+
+  // ─── Payment session expired (user didn't complete) ─────────────────────
+  if (event.type === 'checkout.session.expired') {
+    const session = event.data.object;
+    const sessionId = session.id;
+    try {
+      await db.expireRegistrationBySessionId(sessionId);
+    } catch (err) {
+      console.error('Webhook expire error:', err.message);
+    }
+  }
+
+  // ─── Charge refunded ────────────────────────────────────────────────────
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object;
+    // Look up the session that created this charge to find the registration
+    try {
+      if (charge.payment_intent) {
+        // Search for registration by checking sessions in Stripe or by metadata
+        const stripe = getStripe();
+        if (stripe) {
+          const sessions = await stripe.checkout.sessions.list({
+            payment_intent: charge.payment_intent,
+            limit: 1,
+          });
+          const session = sessions.data[0];
+          if (session) {
+            const regId = session.client_reference_id || session.metadata?.registration_id;
+            if (regId && regId.startsWith('hr_')) {
+              await db.refundRegistration(regId);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Webhook refund error:', err.message);
     }
   }
 
