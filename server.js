@@ -836,7 +836,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
   const phoneErr = validatePhone(phone);
   if (phoneErr) return res.status(400).json({ error: phoneErr });
 
-  const amt = Math.max(0, parseInt(amount, 10) || 0);
+  const amt = Math.max(100, parseInt(amount, 10) || 100); // Minimum €1 (100 cents)
 
   try {
     let eventId = null;
@@ -885,28 +885,6 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
         eventDateStr = ev.event_date || '';
         eventLocationStr = ev.location || '';
       }
-    }
-
-    // Free ticket — confirm immediately
-    if (amt === 0) {
-      await db.createRegistration({ id, firstName, lastName, email, phone, amount: 0, week, eventId });
-      sendHolyRaveConfirmation(email, firstName, lastName).catch(e =>
-        console.error('Free ticket email error:', e.message));
-      syncToResendAudience(email, firstName, lastName, phone).catch(e =>
-        console.error('Free ticket audience sync error:', e.message));
-      // Send ticket SMS (fire-and-forget)
-      // For free tickets, fetch location_detail from DB
-      let freeDetail = '';
-      if (eventId) {
-        try {
-          const sql = db.getSql();
-          const [ev] = await sql`SELECT location_detail FROM events WHERE id = ${eventId}`;
-          freeDetail = ev?.location_detail || '';
-        } catch(e) {}
-      }
-      sendTicketSMS(phone, eventTitle, eventDateStr, null, eventLocationStr, eventSlug, id, freeDetail).catch(e =>
-        console.error('Free ticket SMS error:', e.message));
-      return res.json({ id, confirmed: true });
     }
 
     // Save contact info FIRST so user data is captured even if Stripe fails

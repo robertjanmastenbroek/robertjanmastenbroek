@@ -1108,11 +1108,7 @@
             font-weight: 600;
             transform: scale(1.02);
         }
-        .amount-btn.free-btn.selected {
-            background: rgba(184, 83, 42, 0.15);
-            border-color: var(--terracotta);
-            color: var(--terracotta);
-        }
+
         /* "Most chosen" badge */
         .amount-btn.recommended::after {
             content: 'Most chosen';
@@ -1825,12 +1821,12 @@
                         <!-- STEP 2: Amount -->
                         <div class="form-step" data-step="2">
                             <div class="amount-section">
-                                <label class="amount-label">Pay What Feels Right <em>— nobody turned away</em></label>
+                                <label class="amount-label">Choose Your Contribution <em>— €1 minimum</em></label>
                                 <div class="amount-options" id="amountOptions">
-                                    <button type="button" class="amount-btn free-btn" data-amount="0">Free</button>
-                                    <button type="button" class="amount-btn" data-amount="700">€7</button>
+                                    <button type="button" class="amount-btn" data-amount="100">€1</button>
                                     <button type="button" class="amount-btn selected recommended" data-amount="1200">€12</button>
                                     <button type="button" class="amount-btn" data-amount="2000">€20</button>
+                                    <button type="button" class="amount-btn" data-amount="5000">€50</button>
                                 </div>
                                 <div class="custom-amount-row" id="customRow">
                                     <span class="custom-amount-prefix">€</span>
@@ -2299,7 +2295,7 @@
                     document.getElementById('customAmount').focus();
                     return;
                 }
-                amount = Math.max(0, val) * 100;
+                amount = Math.max(100, val) * 100; // Minimum €1
             }
 
             const btn = document.getElementById('submitBtn');
@@ -2962,7 +2958,7 @@
                     if (val && val > 0) {
                         amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
                         document.getElementById('customRow').classList.add('selected');
-                        selectedAmount = val * 100;
+                        selectedAmount = Math.max(1, val) * 100; // Minimum €1
                         updateAmountDisplay(selectedAmount);
                     }
                 });
