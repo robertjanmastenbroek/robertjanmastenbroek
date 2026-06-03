@@ -1038,17 +1038,30 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
 
     // Fire-and-forget: send email + SMS + sync (don't await — return immediately)
     setImmediate(async () => {
+      // Build event details for both email and SMS
+      let ev = null;
+      if (reg.event_id) {
+        try {
+          const sql = db.getSql();
+          [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, maps_url, slug FROM events WHERE id = ${reg.event_id}`;
+        } catch(e) {}
+      }
+      const eventDetails = ev ? {
+        eventDate: ev.event_date ? new Date(ev.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '',
+        eventTime: ev.event_time || '20:00 – 23:00',
+        eventLocation: ev.location || '',
+        locationDetail: ev.location_detail || '',
+        mapsUrl: ev.maps_url || '',
+        confirmationCode: reg.confirmation_code || '',
+      } : null;
+
       if (reg.email) {
-        sendHolyRaveConfirmation(reg.email, reg.first_name, reg.last_name).catch(e =>
+        sendHolyRaveConfirmation(reg.email, reg.first_name, reg.last_name, eventDetails).catch(e =>
           console.error('Confirm email error:', e.message));
         syncToResendAudience(reg.email, reg.first_name, reg.last_name, reg.phone).catch(e =>
           console.error('Confirm sync error:', e.message));
       }
-      if (reg.phone && reg.event_id) {
-        try {
-          const sql = db.getSql();
-          const [ev] = await sql`SELECT title, event_date, event_time, location, location_detail, maps_url, slug FROM events WHERE id = ${reg.event_id}`;
-          if (ev) {
+      if (reg.phone && ev) {
             sendTicketSMS(
               reg.phone,
               ev.title || 'Holy Rave',
@@ -1061,8 +1074,6 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
               ev.maps_url || null,
               reg.confirmation_code || ''
             ).catch(e => console.error('Confirm SMS error:', e.message));
-          }
-        } catch(e) {}
       }
     });
 
@@ -1539,7 +1550,7 @@ async function sendHolyRaveConfirmation(email, firstName, lastName, eventDetails
         reply_to: 'mastenbroekrobertjan@gmail.com',
       to: email,
       subject: "You're in — Holy Rave",
-      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · Sunset Sessions</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You're <span style="color:#d4af37">in.</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">${greeting}</p><p style="margin:0 0 20px;color:#ffffff">Your spot is confirmed — you + one friend.</p><p style="margin:0 0 20px;color:#a0a0a0">The location and time are on your ticket. Check your confirmation for the exact meeting point.</p><p style="margin:0 0 20px;color:#a0a0a0">Come to dance, stay to connect. Whether it's your first time or your tenth — you belong here.</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0 0 8px">Stay connected:</p><a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">WhatsApp Community →</a>&nbsp;&nbsp;&nbsp;<a href="https://www.instagram.com/robertjanmastenbroek/" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">Instagram →</a><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
+      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · Sunset Sessions</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">Payment <span style="color:#d4af37">Confirmed</span></h1><p style="margin:0 0 4px;color:#7a7266;font-size:13px;letter-spacing:1px;text-transform:uppercase">Receipt</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">${greeting}</p><p style="margin:0 0 20px;color:#ffffff">Your payment went through. Your spot is confirmed — you + one friend.</p>${ticketSection}<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">Your ticket with the exact location and time is being sent to your phone via SMS. It arrives within 2–5 minutes depending on your carrier. If it doesn't arrive, check your WhatsApp for a message from us or show this email at the door.</p><p style="margin:0 0 20px;color:#ffffff">🔑 Your confirmation code: <strong>${eventDetails?.confirmationCode || '—'}</strong></p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0 0 8px">Stay connected:</p><a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">WhatsApp Community →</a>&nbsp;&nbsp;&nbsp;<a href="https://www.instagram.com/robertjanmastenbroek/" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">Instagram →</a><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
     });
     console.log(`Holy Rave confirmation sent to ${email}`);
   } catch (err) {
