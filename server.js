@@ -960,9 +960,13 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     console.log(`[register] Creating PaymentIntent for ${email} — €${(amt / 100).toFixed(2)}`);
 
     // Statement descriptor shows on bank statements
-    // Cards: ACCOUNT_PREFIX*HOLY RAVE 0613 (via suffix, no special chars)
-    // iDEAL: HOLY RAVE 0613 (via descriptor, allows .-*)
-    const dateCode = String(eventDateStr || '').slice(5, 10).replace('-', '') || 'EVENT';
+    // Cards: ACCOUNT_PREFIX*HOLY RAVE 13 JUN (via suffix, 22 chars)
+    // iDEAL: HOLY RAVE 13 JUN (via descriptor, 22 chars)
+    const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const day = String(eventDateStr || '').slice(8, 10);
+    const monthNum = String(eventDateStr || '').slice(5, 7);
+    const monthCode = MONTHS[parseInt(monthNum, 10) - 1] || '';
+    const dateCode = (day && monthCode) ? `${day} ${monthCode}` : 'EVENT';
     const stmtDesc = `HOLY RAVE ${dateCode}`.substring(0, 22).toUpperCase();
 
     // Timeout the Stripe call after 15 seconds to prevent hanging
