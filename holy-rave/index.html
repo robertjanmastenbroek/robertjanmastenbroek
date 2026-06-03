@@ -35,7 +35,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://js.stripe.com">
+    <link rel="preconnect" href="https://api.qrserver.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 
     <style>
         /* ─────────────────────────────────────────────
@@ -2260,6 +2262,7 @@
             const date = new Date(e.event_date + 'T12:00:00');
             const day = date.getDate();
             const month = date.toLocaleDateString('en-US', { month: 'short' });
+            const imgUrl = e.image_url ? (e.image_url.startsWith('http') ? e.image_url : window.location.origin + e.image_url) : null;
             const pct = e.ticket_limit > 0 ? (e.tickets_sold / e.ticket_limit) * 100 : 0;
             const isUrgent = e.remaining <= 10;
             const isSoldOut = e.remaining <= 0;
