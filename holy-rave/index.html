@@ -2621,19 +2621,19 @@
             fireConfetti();
             showToast('Payment successful! \u2713', 'success');
 
-            // Immediately refresh ticket count
-            if (currentSlug) {
-                fetch('/api/holy-rave/events/' + currentSlug).then(r => r.json()).then(event => {
-                    currentEvent = event;
-                    updateDetailMeter(event);
-                }).catch(e => console.error('[refresh] Meter update error:', e));
-            }
-
             // Confirm the registration in the database (bypasses webhook dependency)
             fetch('/api/holy-rave/confirm-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ regId: pendingRegId, paymentIntentId: pendingPaymentIntentId }),
+            }).then(() => {
+                // Refresh ticket count AFTER confirm so the number is accurate
+                if (currentSlug) {
+                    fetch('/api/holy-rave/events/' + currentSlug).then(r => r.json()).then(event => {
+                        currentEvent = event;
+                        updateDetailMeter(event);
+                    }).catch(e => console.error('[refresh] Meter error:', e));
+                }
             }).catch(e => console.error('[confirm] Direct confirm error:', e));
         }
 
@@ -2684,6 +2684,14 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ regId: pendingRegId || piId, paymentIntentId: piId }),
+                    }).then(() => {
+                        // Refresh ticket count immediately after confirm
+                        if (currentSlug) {
+                            fetch('/api/holy-rave/events/' + currentSlug).then(r => r.json()).then(event => {
+                                currentEvent = event;
+                                updateDetailMeter(event);
+                            }).catch(e => console.error('[3ds] Meter refresh error:', e));
+                        }
                     }).catch(e => console.error('[3ds] confirm error:', e));
 
                     // Clean URL
