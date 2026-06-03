@@ -325,6 +325,14 @@
             <p>You + one friend — the location drops in your inbox 24 hours before the session.</p>
 
             <div class="detail-card" id="detailCard">
+                <div class="detail-row" id="eventNameRow" style="display:none;">
+                    <span class="label">Event</span>
+                    <span class="value" id="detailEvent">—</span>
+                </div>
+                <div class="detail-row" id="eventDateRow" style="display:none;">
+                    <span class="label">Date</span>
+                    <span class="value" id="detailEventDate">—</span>
+                </div>
                 <div class="detail-row">
                     <span class="label">Name</span>
                     <span class="value" id="detailName">—</span>
@@ -442,6 +450,18 @@
             document.getElementById('confirmName').textContent = name + ', your spot is reserved.';
             document.getElementById('detailName').textContent = name;
             document.getElementById('detailEmail').textContent = data.email || '—';
+
+            // Show event info if available
+            if (data.eventName) {
+                document.getElementById('eventNameRow').style.display = 'flex';
+                document.getElementById('detailEvent').textContent = data.eventName;
+            }
+            if (data.eventDate) {
+                document.getElementById('eventDateRow').style.display = 'flex';
+                const d = new Date(data.eventDate + 'T12:00:00');
+                document.getElementById('detailEventDate').textContent =
+                    d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            }
 
             if (showPending || data.status === 'pending') {
                 document.getElementById('pendingNotice').classList.add('visible');

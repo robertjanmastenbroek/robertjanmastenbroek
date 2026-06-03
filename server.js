@@ -285,12 +285,39 @@ app.post('/api/subscribe', async (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── Holy Rave Weekly Tickets ────────────────────────────────────────────────
-const TICKETS_MAX = 50; // reservation slots (each admits 2 people)
+// ─── Holy Rave Events (event-specific, replaces weekly auto-reset) ──────────
+
+// GET /api/holy-rave/events — list upcoming events with ticket counts
+app.get('/api/holy-rave/events', async (req, res) => {
+  try {
+    const events = await db.getUpcomingEvents();
+    res.json(events);
+  } catch (err) {
+    console.error('Events error:', err.message);
+    res.json([]);
+  }
+});
+
+// GET /api/holy-rave/events/:slug — single event with ticket stats
+app.get('/api/holy-rave/events/:slug', async (req, res) => {
+  try {
+    const event = await db.getEventBySlug(req.params.slug);
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found.' });
+    }
+    res.json(event);
+  } catch (err) {
+    console.error('Event error:', err.message);
+    res.status(500).json({ error: 'Could not load event.' });
+  }
+});
+
+// GET /api/holy-rave/tickets — legacy: remaining spots for the current week
+const TICKETS_MAX = 50;
 
 function getWeekMonday() {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun, 1=Mon, ...
+  const day = now.getDay();
   const diff = day === 0 ? 6 : day - 1;
   const monday = new Date(now);
   monday.setHours(0, 0, 0, 0);
@@ -298,7 +325,6 @@ function getWeekMonday() {
   return monday.toISOString().split('T')[0];
 }
 
-// GET /api/holy-rave/tickets — remaining spots for the current week
 app.get('/api/holy-rave/tickets', async (req, res) => {
   try {
     const week = getWeekMonday();
@@ -312,32 +338,55 @@ app.get('/api/holy-rave/tickets', async (req, res) => {
 
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
 app.post('/api/holy-rave/register', async (req, res) => {
-  const { firstName, lastName, email, amount } = req.body;
+  const { firstName, lastName, email, amount, eventSlug } = req.body;
 
   if (!firstName || !lastName || !email || !email.includes('@')) {
     return res.status(400).json({ error: 'Please fill in all fields correctly.' });
   }
 
   const amt = Math.max(0, parseInt(amount, 10) || 0);
-  const week = getWeekMonday();
 
   try {
-    // Check availability
-    const stats = await db.getWeekStats(week);
-    if (stats.remaining <= 0) {
-      return res.status(400).json({ error: 'All tickets are taken this week. Check back soon.' });
-    }
+    let eventId = null;
+    let week = null;
+    let eventTitle = 'Holy Rave';
 
-    // Check duplicate email
-    if (await db.isDuplicateEmail(week, email)) {
-      return res.status(400).json({ error: 'This email already has a spot this week.' });
+    // If eventSlug provided, use event-based registration
+    if (eventSlug) {
+      const event = await db.getEventBySlug(eventSlug);
+      if (!event) {
+        return res.status(400).json({ error: 'Event not found.' });
+      }
+      if (event.status !== 'upcoming') {
+        return res.status(400).json({ error: 'This event has passed.' });
+      }
+      if (event.remaining <= 0) {
+        return res.status(400).json({ error: 'All tickets are taken for this event.' });
+      }
+      eventId = event.id;
+      eventTitle = event.title;
+
+      // Check duplicate email for this event
+      if (await db.isDuplicateEmailForEvent(eventId, email)) {
+        return res.status(400).json({ error: 'This email already has a spot for this event.' });
+      }
+    } else {
+      // Fall back to weekly registration (legacy)
+      week = getWeekMonday();
+      const stats = await db.getWeekStats(week);
+      if (stats.remaining <= 0) {
+        return res.status(400).json({ error: 'All tickets are taken this week.' });
+      }
+      if (await db.isDuplicateEmail(week, email)) {
+        return res.status(400).json({ error: 'This email already has a spot this week.' });
+      }
     }
 
     const id = 'hr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
 
     // Free ticket — confirm immediately
     if (amt === 0) {
-      await db.createRegistration({ id, firstName, lastName, email, amount: 0, week });
+      await db.createRegistration({ id, firstName, lastName, email, amount: 0, week, eventId });
       sendHolyRaveConfirmation(email, firstName, lastName).catch(e =>
         console.error('Free ticket email error:', e.message));
       syncToResendAudience(email, firstName, lastName).catch(e =>
@@ -351,6 +400,13 @@ app.post('/api/holy-rave/register', async (req, res) => {
       return res.status(503).json({ error: 'Payment system not available.' });
     }
 
+    const successUrl = eventSlug
+      ? `${SITE_URL}/holy-rave/${eventSlug}?confirmed=${id}`
+      : `${SITE_URL}/holy-rave/confirmed?id=${id}`;
+    const cancelUrl = eventSlug
+      ? `${SITE_URL}/holy-rave/${eventSlug}`
+      : `${SITE_URL}/holy-rave`;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -361,30 +417,28 @@ app.post('/api/holy-rave/register', async (req, res) => {
         price_data: {
           currency: 'eur',
           product_data: {
-            name: 'Holy Rave — Weekly Ticket',
+            name: eventTitle + ' — Ticket',
             description: `${firstName} ${lastName} — pay what feels right`,
           },
           unit_amount: amt,
         },
         quantity: 1,
       }],
-      metadata: {
-        registration_id: id,
-        week,
-      },
-      success_url: `${SITE_URL}/holy-rave/confirmed?id=${id}`,
-      cancel_url: `${SITE_URL}/holy-rave`,
+      metadata: eventId
+        ? { registration_id: id, event_id: String(eventId) }
+        : { registration_id: id, week },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     });
 
     await db.createRegistration({
-      id, firstName, lastName, email, amount: amt, week,
+      id, firstName, lastName, email, amount: amt, week, eventId,
       stripeSessionId: session.id,
     });
 
     res.json({ id, checkoutUrl: session.url });
   } catch (err) {
     console.error('Holy Rave register error:', err.message);
-    // Pass through Stripe and DB errors so the user sees what's wrong
     const message = err.message || 'Could not complete registration. Please try again.';
     const isStripe = err.type && err.type.startsWith('Stripe');
     res.status(isStripe ? 402 : 500).json({ error: message });
@@ -401,6 +455,24 @@ app.get('/api/holy-rave/verify', async (req, res) => {
     if (!reg) {
       return res.status(404).json({ error: 'Registration not found.' });
     }
+
+    let eventName = null;
+    let eventDate = null;
+    let eventLocation = null;
+    if (reg.event_id) {
+      try {
+        const sql = db.getSql();
+        const [ev] = await sql`
+          SELECT title, event_date, location FROM events WHERE id = ${reg.event_id}
+        `;
+        if (ev) {
+          eventName = ev.title;
+          eventDate = ev.event_date;
+          eventLocation = ev.location;
+        }
+      } catch (e) {}
+    }
+
     res.json({
       id: reg.id,
       firstName: reg.first_name,
@@ -408,6 +480,9 @@ app.get('/api/holy-rave/verify', async (req, res) => {
       email: reg.email,
       status: reg.status,
       amount: reg.amount_cents,
+      eventName,
+      eventDate,
+      eventLocation,
     });
   } catch (err) {
     console.error('Verify error:', err.message);
@@ -439,6 +514,23 @@ app.get('/api/admin/sync-audience', async (req, res) => {
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.send('OK'));
+
+// ─── Holy Rave event pages — serve holy-rave/index.html for /holy-rave/:slug ──
+app.get('/holy-rave/:slug', (req, res) => {
+  const slug = req.params.slug;
+
+  // confirmation page is a separate file
+  if (slug === 'confirmed') {
+    return res.sendFile(path.join(__dirname, 'holy-rave', 'confirmed.html'), (err) => {
+      if (err) res.sendFile(path.join(__dirname, 'index.html'));
+    });
+  }
+
+  // Everything else serves the holy-rave index.html; JS reads the slug from URL
+  res.sendFile(path.join(__dirname, 'holy-rave', 'index.html'), (err) => {
+    if (err) res.sendFile(path.join(__dirname, 'index.html'));
+  });
+});
 
 // ─── SPA-style routing — serve index.html for any unmatched routes ────────────
 app.get('*', (req, res) => {
@@ -536,5 +628,35 @@ app.listen(PORT, async () => {
     await db.ensureSchema();
   } catch (err) {
     console.warn('[db] Schema migration skipped — DATABASE_URL not set?', err.message);
+  }
+
+  // Auto-seed first event if none exist
+  try {
+    const events = await db.getUpcomingEvents();
+    if (events.length === 0) {
+      await db.seedEvent({
+        slug: 'june-13-2026',
+        title: 'Holy Rave — June 13th 2026',
+        location: 'Tenerife South',
+        location_detail: 'Coordinates emailed 24h before',
+        event_date: '2026-06-13',
+        event_time: 'Sunset (~19:00)',
+        description: 'An evening of melodic Afrohouse and organic electronic music as the sun drops into the Atlantic. No dress code. No faith test. Just you, the music, and whoever you brought.',
+        ticket_limit: 50,
+      });
+      await db.seedEvent({
+        slug: 'june-20-2026',
+        title: 'Holy Rave — June 20th 2026',
+        location: 'Tenerife South',
+        location_detail: 'Coordinates emailed 24h before',
+        event_date: '2026-06-20',
+        event_time: 'Sunset (~19:00)',
+        description: 'Another intimate sunset session. Melodic Afrohouse and organic electronic as the sun drops. 50 people. Pay what feels right.',
+        ticket_limit: 50,
+      });
+      console.log('[seed] Events seeded');
+    }
+  } catch (err) {
+    console.warn('[seed] Skipped — database not available?', err.message);
   }
 });

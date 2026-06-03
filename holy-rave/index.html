@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Holy Rave — Sunset Sessions · Robert-Jan Mastenbroek</title>
-    <meta name="description" content="Weekly sunset sessions in Tenerife. Melodic Afrohouse · Organic House. Pay what feels right — every ticket includes a free guest pass.">
-    <meta property="og:title" content="Holy Rave — Reserve Your Spot">
-    <meta property="og:description" content="Weekly event in Tenerife. Pay what feels right. 50 tickets — each admits you + 1 friend.">
+    <meta name="description" content="Intimate sunset sessions in Tenerife. 50 people. Melodic Afrohouse · Organic House. Pay what feels right — bring a friend for free.">
+    <meta property="og:title" content="Holy Rave — Sunset Sessions">
+    <meta property="og:description" content="Intimate gatherings. 50 people. Pay what feels right. Every ticket includes a +1.">
     <meta property="og:image" content="https://robertjanmastenbroek.com/images/og-image.png">
     <meta property="og:url" content="https://robertjanmastenbroek.com/holy-rave">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://robertjanmastenbroek.com/images/og-image.png">
     <meta name="theme-color" content="#0a0a0a">
     <link rel="canonical" href="https://robertjanmastenbroek.com/holy-rave">
-    <!-- Favicons -->
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">
@@ -25,8 +24,8 @@
 
     <style>
         /* ─────────────────────────────────────────────
-           HOLY RAVE — Weekly Ticket Registration
-           Design system: Desert Hour v3
+           HOLY RAVE — Event Hub + Detail
+           Design system: Desert Hour v4
            ───────────────────────────────────────────── */
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -72,7 +71,6 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Grain overlay */
         body::before {
             content: '';
             position: fixed;
@@ -86,7 +84,11 @@
 
         ::selection { background: var(--terracotta); color: var(--text); }
 
-        /* ── Sigil ── */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: var(--border-warm); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--ochre); }
+
         .sigil { display: inline-block; width: 24px; height: 24px; color: currentColor; flex-shrink: 0; }
         .sigil--xs { width: 12px; height: 12px; }
         .sigil--sm { width: 18px; height: 18px; }
@@ -106,6 +108,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 2rem;
+            transition: background 0.4s var(--ease-warm);
         }
         nav .logo {
             display: inline-flex;
@@ -169,38 +172,107 @@
         }
 
         /* ─────────────────────────────────────────────
-           PAGE LAYOUT — two-column on desktop
+           SHARED — Divider, Buttons, Reveal
            ───────────────────────────────────────────── */
-        .page {
-            min-height: 100vh;
+        .divider {
             display: flex;
-            flex-direction: column;
-            padding-top: 5rem;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            max-width: 200px;
+            margin: 1.5rem auto;
+            color: var(--ochre);
+        }
+        .divider .line {
+            height: 1px;
+            flex: 1;
+            background: linear-gradient(90deg, transparent, var(--ochre-soft) 50%, transparent);
         }
 
-        .main-grid {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-            padding: 3rem 2rem 6rem;
-            gap: 4rem;
+        .btn {
+            display: inline-flex;
             align-items: center;
+            gap: 0.75rem;
+            padding: 1.05rem 2.25rem;
+            font-family: var(--font-sans);
+            font-size: 0.76rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.45s var(--ease-warm);
             position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--gold);
+            color: var(--dark);
+            border-color: var(--gold);
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+            transform: translateX(-110%);
+            transition: transform 0.75s var(--ease-warm);
+        }
+        .btn-primary:hover::after { transform: translateX(110%); }
+        .btn-primary:hover {
+            background: var(--terracotta);
+            border-color: var(--terracotta);
+            color: var(--text);
+            box-shadow: 0 12px 36px var(--terracotta-glow);
+            transform: translateY(-1px);
+        }
+        .btn-ghost {
+            background: transparent;
+            color: var(--ochre);
+            border-color: var(--ochre-dim);
+        }
+        .btn-ghost:hover {
+            border-color: var(--ochre);
+            color: var(--text);
+            background: var(--ochre-dim);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.9s var(--ease-slow), transform 0.9s var(--ease-slow);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         /* ─────────────────────────────────────────────
-           LEFT COLUMN — Circle Meter + Event Info
+           MODE: HUB — Event hub / card grid
            ───────────────────────────────────────────── */
-        .meter-col {
+        .hub-hero {
+            position: relative;
+            min-height: 80vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: center;
             text-align: center;
+            padding: 9rem 2rem 5rem;
+            background: linear-gradient(180deg, var(--indigo-deep) 0%, var(--dark-rich) 50%, var(--dark) 100%);
+            overflow: hidden;
+        }
+        .hub-hero .atmosphere { z-index: 0; }
+        .hub-hero-content {
             position: relative;
             z-index: 2;
+            max-width: 680px;
         }
 
         .eyebrow {
@@ -212,7 +284,7 @@
             font-size: 1rem;
             letter-spacing: 0.2em;
             color: var(--terracotta);
-            margin-bottom: 2rem;
+            margin-bottom: 1.75rem;
             font-weight: 400;
         }
         .eyebrow .pin {
@@ -227,12 +299,363 @@
             50%      { opacity: 1;     transform: scale(1.25); }
         }
 
-        /* ── Circle Meter ── */
+        .hub-hero h1 {
+            font-family: var(--font-serif);
+            font-weight: 400;
+            font-size: clamp(3.5rem, 8vw, 6rem);
+            line-height: 0.98;
+            letter-spacing: -0.015em;
+            margin-bottom: 1.5rem;
+        }
+        .hub-hero h1 em {
+            font-style: italic;
+            font-weight: 300;
+            color: var(--ochre);
+        }
+        .hub-hero .lede {
+            font-size: 1.1rem;
+            line-height: 1.75;
+            color: var(--text-soft);
+            max-width: 540px;
+            margin: 0 auto 2rem;
+            font-weight: 300;
+        }
+        .hub-hero .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            margin-top: 2.5rem;
+            flex-wrap: wrap;
+        }
+        .hero-stat {
+            text-align: center;
+        }
+        .hero-stat .num {
+            font-family: var(--font-serif);
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .hero-stat .label {
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--text-mute);
+            margin-top: 0.4rem;
+        }
+
+        /* ── Event cards section ── */
+        .events-section {
+            padding: 5rem 2rem 7rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .events-section .section-head {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+        .events-section .section-head h2 {
+            font-family: var(--font-serif);
+            font-weight: 400;
+            font-size: clamp(2rem, 4.5vw, 3rem);
+            letter-spacing: -0.005em;
+        }
+        .events-section .section-head h2 em {
+            font-style: italic;
+            color: var(--ochre);
+            font-weight: 300;
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .event-card {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid var(--border-faint);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.5s var(--ease-warm);
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+        }
+        .event-card:hover {
+            border-color: var(--terracotta);
+            box-shadow: 0 24px 60px var(--terracotta-glow), 0 0 0 1px var(--terracotta-soft);
+            transform: translateY(-4px);
+        }
+
+        .event-card-image {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: linear-gradient(135deg, var(--indigo-deep) 0%, var(--dark-rich) 50%, var(--card-bg) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .event-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.8s var(--ease-slow);
+        }
+        .event-card:hover .event-card-image img {
+            transform: scale(1.04);
+        }
+        .event-card-image::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 40%, rgba(10,10,10,0.75) 100%);
+        }
+        .event-card .date-badge {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 2;
+            background: rgba(10,10,10,0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--ochre-soft);
+            padding: 0.4rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.2;
+            font-family: var(--font-serif);
+        }
+        .date-badge .day {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+        .date-badge .month {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+        }
+
+        .event-card-body {
+            padding: 1.5rem 1.75rem 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+        }
+        .event-card-title {
+            font-family: var(--font-serif);
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .event-card-title em {
+            font-style: italic;
+            color: var(--ochre);
+        }
+        .event-card-location {
+            font-size: 0.82rem;
+            color: var(--text-soft);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: 300;
+        }
+        .event-card-location svg {
+            width: 13px; height: 13px;
+            color: var(--ochre);
+            flex-shrink: 0;
+        }
+        .event-card-tickets {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-faint);
+        }
+        .event-card-tickets .meter-mini {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.78rem;
+            color: var(--text-mute);
+            letter-spacing: 0.04em;
+        }
+        .meter-mini .bar {
+            width: 80px;
+            height: 3px;
+            background: var(--gold-dim);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .meter-mini .bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--terracotta));
+            border-radius: 2px;
+            transition: width 0.8s var(--ease-warm);
+        }
+        .meter-mini .bar .fill.urgent {
+            background: var(--terracotta);
+        }
+        .meter-mini .count {
+            color: var(--text-soft);
+            font-weight: 500;
+        }
+        .meter-mini .count.urgent {
+            color: var(--terracotta);
+            animation: pulse-urgent 2s var(--ease-warm) infinite;
+        }
+        @keyframes pulse-urgent {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.5; }
+        }
+        .event-card .card-arrow {
+            color: var(--ochre);
+            font-size: 1.1rem;
+            transition: transform 0.35s var(--ease-warm);
+        }
+        .event-card:hover .card-arrow {
+            transform: translateX(4px);
+        }
+
+        .no-events {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-mute);
+        }
+        .no-events h3 {
+            font-family: var(--font-serif);
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 0.75rem;
+        }
+        .no-events p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* ─────────────────────────────────────────────
+           MODE: DETAIL — Event detail + registration
+           ───────────────────────────────────────────── */
+        .detail-page {
+            display: none;
+            min-height: 100vh;
+            padding-top: 5rem;
+        }
+        .detail-page.active { display: flex; flex-direction: column; }
+
+        .detail-hero {
+            position: relative;
+            padding: 4rem 2rem 3rem;
+            background: linear-gradient(180deg, var(--indigo-deep) 0%, var(--dark-rich) 60%, var(--dark) 100%);
+            overflow: hidden;
+            text-align: center;
+        }
+        .detail-hero .atmosphere { z-index: 0; }
+        .detail-hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+        .detail-hero .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--text-mute);
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s var(--ease-warm);
+        }
+        .detail-hero .back-link:hover { color: var(--ochre); }
+
+        .detail-hero h1 {
+            font-family: var(--font-serif);
+            font-weight: 400;
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            letter-spacing: -0.005em;
+            line-height: 1.08;
+            margin-bottom: 0.75rem;
+        }
+        .detail-hero h1 em {
+            font-style: italic;
+            color: var(--ochre);
+            font-weight: 300;
+        }
+        .detail-hero .meta-row {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1.25rem;
+            font-size: 0.85rem;
+            color: var(--text-soft);
+        }
+        .detail-hero .meta-row span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-weight: 300;
+        }
+        .detail-hero .meta-row svg {
+            width: 14px; height: 14px;
+            color: var(--ochre);
+        }
+
+        .detail-hero .countdown {
+            margin-top: 1.5rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--ochre);
+            font-weight: 500;
+        }
+        .detail-hero .countdown strong {
+            font-family: var(--font-serif);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.04em;
+            text-transform: none;
+        }
+
+        .detail-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 3rem 2rem 6rem;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        /* ── Detail: Left — Meter + Info ── */
+        .meter-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: sticky;
+            top: 7rem;
+        }
         .meter-wrap {
             position: relative;
-            width: min(320px, 70vw);
-            height: min(320px, 70vw);
-            margin-bottom: 2.5rem;
+            width: min(280px, 60vw);
+            height: min(280px, 60vw);
+            margin-bottom: 2rem;
         }
         .meter-svg {
             width: 100%;
@@ -251,9 +674,7 @@
             stroke-linecap: round;
             transition: stroke-dashoffset 1.2s var(--ease-slow);
         }
-        .meter-fill.sold-out {
-            stroke: var(--terracotta);
-        }
+        .meter-fill.sold-out { stroke: var(--terracotta); }
         .meter-center {
             position: absolute;
             inset: 0;
@@ -261,60 +682,41 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transform: none;
         }
         .meter-spots-left {
             font-family: var(--font-serif);
-            font-size: clamp(3rem, 8vw, 4.5rem);
+            font-size: clamp(2.5rem, 7vw, 4rem);
             font-weight: 500;
             color: var(--gold);
             line-height: 1;
-            letter-spacing: 0.01em;
             transition: color 0.5s var(--ease-warm);
         }
         .meter-spots-left.urgent {
             color: var(--terracotta);
             animation: pulse-urgent 2s var(--ease-warm) infinite;
         }
-        @keyframes pulse-urgent {
-            0%, 100% { opacity: 1; }
-            50%      { opacity: 0.5; }
-        }
         .meter-label {
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             letter-spacing: 0.3em;
             text-transform: uppercase;
             color: var(--text-mute);
-            margin-top: 0.5rem;
+            margin-top: 0.4rem;
             font-weight: 500;
         }
         .meter-of {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             letter-spacing: 0.15em;
             color: var(--text-mute);
-            margin-top: 0.3rem;
+            margin-top: 0.2rem;
         }
 
-        /* ── Event details under meter ── */
-        .meter-event-details {
-            margin-top: 0.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-        }
-        .meter-event-detail {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            font-size: 0.82rem;
+        .detail-description {
+            max-width: 400px;
+            margin: 1rem auto 1.5rem;
+            font-size: 0.9rem;
+            line-height: 1.7;
             color: var(--text-soft);
-            letter-spacing: 0.03em;
             font-weight: 300;
-        }
-        .meter-event-detail .icon {
-            width: 14px; height: 14px;
-            color: var(--ochre);
-            flex-shrink: 0;
         }
 
         .plus-one-badge {
@@ -323,33 +725,27 @@
             gap: 0.5rem;
             background: var(--terracotta-glow);
             border: 1px solid rgba(184, 83, 42, 0.35);
-            padding: 0.65rem 1.5rem;
-            margin-top: 1.5rem;
-            font-size: 0.72rem;
+            padding: 0.6rem 1.25rem;
+            font-size: 0.7rem;
             font-weight: 600;
             letter-spacing: 0.14em;
             text-transform: uppercase;
             color: var(--ochre);
         }
-        .plus-one-badge .count {
+        .plus-one-badge .num {
             font-family: var(--font-serif);
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: var(--text);
             line-height: 1;
         }
 
-        /* ─────────────────────────────────────────────
-           RIGHT COLUMN — Registration Form
-           ───────────────────────────────────────────── */
-        .form-col {
-            position: relative;
-            z-index: 2;
-        }
+        /* ── Detail: Right — Form ── */
+        .form-col { position: relative; z-index: 2; }
         .form-card {
             background: var(--card-bg);
             border: 1px solid var(--border-faint);
-            padding: 3rem 2.5rem;
+            padding: 2.5rem 2.25rem;
             position: relative;
             overflow: hidden;
         }
@@ -360,47 +756,44 @@
             height: 2px;
             background: linear-gradient(90deg, transparent, var(--ochre-soft), transparent);
         }
-        .form-card h1 {
+        .form-card h2 {
             font-family: var(--font-serif);
             font-weight: 400;
-            font-size: clamp(2rem, 4vw, 2.75rem);
+            font-size: clamp(1.6rem, 3.5vw, 2.2rem);
             letter-spacing: -0.005em;
             line-height: 1.1;
             margin-bottom: 0.5rem;
         }
-        .form-card h1 em {
+        .form-card h2 em {
             font-style: italic;
             font-weight: 300;
             color: var(--ochre);
         }
         .form-card .form-sub {
             color: var(--text-soft);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             line-height: 1.7;
-            margin-bottom: 2.25rem;
+            margin-bottom: 2rem;
             font-weight: 300;
         }
 
-        /* ── Form fields ── */
-        .field-group {
-            margin-bottom: 1.25rem;
-        }
+        .field-group { margin-bottom: 1.15rem; }
         .field-label {
             display: block;
             font-size: 0.7rem;
             letter-spacing: 0.24em;
             text-transform: uppercase;
             color: var(--text-mute);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.45rem;
             font-weight: 500;
         }
         .field-input {
             width: 100%;
-            padding: 1rem 1.25rem;
+            padding: 0.95rem 1.15rem;
             background: rgba(10, 10, 10, 0.6);
             border: 1px solid var(--border-warm);
             color: var(--text);
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             font-family: var(--font-sans);
             font-weight: 300;
             letter-spacing: 0.02em;
@@ -418,17 +811,14 @@
             gap: 1rem;
         }
 
-        /* ── Amount selector ── */
-        .amount-section {
-            margin: 2rem 0 1.5rem;
-        }
+        .amount-section { margin: 1.75rem 0 1.25rem; }
         .amount-label {
             display: block;
             font-size: 0.7rem;
             letter-spacing: 0.24em;
             text-transform: uppercase;
             color: var(--text-mute);
-            margin-bottom: 0.85rem;
+            margin-bottom: 0.75rem;
             font-weight: 500;
         }
         .amount-label em {
@@ -446,21 +836,18 @@
             margin-bottom: 0.75rem;
         }
         .amount-btn {
-            padding: 0.8rem 0.5rem;
+            padding: 0.75rem 0.5rem;
             background: transparent;
             border: 1px solid var(--border-warm);
             color: var(--text-soft);
             font-family: var(--font-sans);
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s var(--ease-warm);
             letter-spacing: 0.03em;
         }
-        .amount-btn:hover {
-            border-color: var(--ochre);
-            color: var(--text);
-        }
+        .amount-btn:hover { border-color: var(--ochre); color: var(--text); }
         .amount-btn.selected {
             background: var(--ochre-dim);
             border-color: var(--ochre);
@@ -484,11 +871,9 @@
             border-color: var(--ochre);
             box-shadow: 0 0 0 3px var(--ochre-dim);
         }
-        .custom-amount-row.selected {
-            border-color: var(--ochre);
-        }
+        .custom-amount-row.selected { border-color: var(--ochre); }
         .custom-amount-prefix {
-            padding: 0.85rem 0.75rem 0.85rem 1.1rem;
+            padding: 0.8rem 0.75rem 0.8rem 1rem;
             color: var(--gold);
             font-size: 1rem;
             font-weight: 600;
@@ -496,7 +881,7 @@
         }
         .custom-amount-input {
             flex: 1;
-            padding: 0.85rem 1rem 0.85rem 0.25rem;
+            padding: 0.8rem 1rem 0.8rem 0.25rem;
             background: transparent;
             border: none;
             outline: none;
@@ -507,17 +892,16 @@
         }
         .custom-amount-input::placeholder { color: var(--text-mute); }
 
-        /* ── Submit ── */
         .submit-btn {
             display: block;
             width: 100%;
-            padding: 1.15rem 2rem;
-            margin-top: 1.75rem;
+            padding: 1.1rem 2rem;
+            margin-top: 1.5rem;
             background: var(--gold);
             color: var(--dark);
             border: 1px solid var(--gold);
             font-family: var(--font-sans);
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 700;
             letter-spacing: 0.28em;
             text-transform: uppercase;
@@ -542,14 +926,7 @@
             box-shadow: 0 12px 36px var(--terracotta-glow);
             transform: translateY(-1px);
         }
-        .submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .submit-btn.loading {
-            cursor: wait;
-        }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .form-error {
             font-size: 0.75rem;
@@ -559,12 +936,11 @@
             text-align: center;
             letter-spacing: 0.03em;
         }
-
         .form-note {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: var(--text-mute);
             text-align: center;
-            margin-top: 1.5rem;
+            margin-top: 1.25rem;
             letter-spacing: 0.06em;
             line-height: 1.7;
         }
@@ -574,16 +950,8 @@
             border-bottom: 1px solid var(--border-warm);
             transition: all 0.3s var(--ease-warm);
         }
-        .form-note a:hover {
-            color: var(--ochre);
-            border-color: var(--ochre);
-        }
+        .form-note a:hover { color: var(--ochre); border-color: var(--ochre); }
 
-        /* Sold out overlay */
-        .form-card.sold-out-overlay {
-            opacity: 0.5;
-            pointer-events: none;
-        }
         .sold-out-banner {
             display: none;
             text-align: center;
@@ -607,32 +975,51 @@
             font-weight: 300;
         }
 
-        /* ── Divider ── */
-        .divider {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1.25rem;
-            max-width: 200px;
-            margin: 1.5rem auto;
-            color: var(--ochre);
+        /* ── Confirmation overlay ── */
+        .confirmation-overlay {
+            display: none;
+            text-align: center;
+            padding: 3rem 2rem;
         }
-        .divider .line {
-            height: 1px;
-            flex: 1;
-            background: linear-gradient(90deg, transparent, var(--ochre-soft) 50%, transparent);
+        .confirmation-overlay.visible { display: block; }
+        .confirmation-overlay .sigil-mark {
+            color: var(--ochre);
+            opacity: 0.55;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .confirmation-overlay h2 {
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+        }
+        .confirmation-overlay h2 em {
+            font-style: italic;
+            color: var(--ochre);
+            font-weight: 300;
+        }
+        .confirmation-overlay p {
+            color: var(--text-soft);
+            font-size: 1rem;
+            line-height: 1.7;
+            max-width: 400px;
+            margin: 0 auto 1rem;
         }
 
-        /* ── Footer strip ── */
+        /* ─────────────────────────────────────────────
+           FOOTER
+           ───────────────────────────────────────────── */
         .footer-strip {
             padding: 2.5rem 2rem;
             text-align: center;
             border-top: 1px solid var(--border-faint);
             position: relative;
             z-index: 2;
+            background: var(--bg-deep);
         }
         .footer-strip p {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: #444;
             letter-spacing: 0.06em;
         }
@@ -645,38 +1032,54 @@
         /* ─────────────────────────────────────────────
            RESPONSIVE
            ───────────────────────────────────────────── */
-        @media (max-width: 860px) {
-            .main-grid {
+        @media (max-width: 900px) {
+            .detail-grid {
                 grid-template-columns: 1fr;
-                gap: 3rem;
-                padding: 2rem 1.5rem 5rem;
+                gap: 2.5rem;
+                padding: 2rem 1.5rem 4rem;
+            }
+            .meter-col {
+                position: static;
+                order: -1;
             }
             .meter-wrap {
-                width: min(240px, 55vw);
-                height: min(240px, 55vw);
+                width: min(220px, 50vw);
+                height: min(220px, 50vw);
             }
-            .form-card { padding: 2rem 1.5rem; }
-            .amount-options { grid-template-columns: repeat(2, 1fr); }
+            .events-grid {
+                grid-template-columns: 1fr;
+            }
         }
-        @media (max-width: 480px) {
+        @media (max-width: 720px) {
             nav { padding: 1rem 1.25rem; }
             nav .logo span { display: none; }
+            .hub-hero { padding: 7rem 1.5rem 4rem; }
+            .hub-hero .hero-stats { gap: 1.5rem; }
+            .events-section { padding: 3rem 1.25rem 5rem; }
+            .event-card-body { padding: 1.25rem 1.25rem 1.5rem; }
             .field-row { grid-template-columns: 1fr; }
             .amount-options { grid-template-columns: repeat(2, 1fr); }
+            .form-card { padding: 2rem 1.25rem; }
+            .detail-hero { padding: 3rem 1.5rem 2rem; }
+            .detail-hero .meta-row { gap: 1rem; font-size: 0.8rem; }
         }
-
+        @media (max-width: 480px) {
+            .events-grid { grid-template-columns: 1fr; }
+            .amount-options { grid-template-columns: repeat(2, 1fr); }
+        }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- Sigil definition -->
+    <!-- ═══ SHARED SVG DEFINITIONS ═══ -->
     <svg width="0" height="0" aria-hidden="true" style="position:absolute;">
         <defs>
             <symbol id="sigil" viewBox="0 0 100 100">
@@ -692,12 +1095,6 @@
                 <circle cx="96" cy="50" r="1.2" fill="currentColor"/>
                 <circle cx="50" cy="50" r="1.8" fill="currentColor"/>
             </symbol>
-        </defs>
-    </svg>
-
-    <!-- Meter gradient -->
-    <svg width="0" height="0" aria-hidden="true" style="position:absolute;">
-        <defs>
             <linearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%"   stop-color="#d4af37"/>
                 <stop offset="50%"  stop-color="#c8883a"/>
@@ -706,8 +1103,8 @@
         </defs>
     </svg>
 
-    <!-- Nav -->
-    <nav>
+    <!-- ═══ NAVIGATION ═══ -->
+    <nav id="siteNav">
         <a href="/" class="logo">
             <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
             <span>Robert-Jan <em>Mastenbroek</em></span>
@@ -715,73 +1112,152 @@
         <a href="/" class="back">← Back to site</a>
     </nav>
 
-    <!-- Page -->
-    <div class="page">
-        <div class="main-grid">
+    <!-- ══════════════════════════════════════════════════
+         MODE: HUB — Event listing
+         ══════════════════════════════════════════════════ -->
+    <div id="hubMode" class="hub-mode">
+
+        <section class="hub-hero">
             <div class="atmosphere"></div>
-
-            <!-- LEFT: Circle Meter -->
-            <div class="meter-col">
+            <div class="hub-hero-content reveal">
                 <p class="eyebrow"><span class="pin"></span>Holy Rave — Sunset Sessions</p>
+                <h1>Intimate <em>Sessions</em></h1>
+                <p class="lede">50 people. One dancefloor. Melodic Afrohouse from sunset into the night. Pay what feels right — bring a friend for free.</p>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="num" id="hubEventCount">—</div>
+                        <div class="label">Upcoming Events</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="num">50</div>
+                        <div class="label">Per Session</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="num">+1</div>
+                        <div class="label">Bring a Friend</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-                <div class="meter-wrap" id="meterWrap">
+        <section class="events-section" id="eventsSection">
+            <header class="section-head reveal">
+                <h2>Choose Your <em>Night</em></h2>
+                <div class="divider">
+                    <span class="line"></span>
+                    <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
+                    <span class="line"></span>
+                </div>
+            </header>
+
+            <div class="events-grid" id="eventsGrid">
+                <!-- Populated by JS -->
+            </div>
+
+            <div class="no-events" id="noEvents" style="display:none;">
+                <svg class="sigil sigil--md" style="color:var(--ochre);opacity:0.4;margin-bottom:1rem;"><use href="#sigil"/></svg>
+                <h3>No upcoming events yet</h3>
+                <p>New sessions are being scheduled. Join the WhatsApp community to hear first.</p>
+                <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank"
+                   class="btn btn-ghost" style="margin-top:1.5rem;display:inline-flex;">
+                    Join WhatsApp
+                </a>
+            </div>
+        </section>
+
+        <!-- Hub footer -->
+        <div class="footer-strip">
+            <p>
+                <a href="/">robertjanmastenbroek.com</a> &nbsp;·&nbsp;
+                <a href="https://www.instagram.com/robertjanmastenbroek/" target="_blank">Instagram</a> &nbsp;·&nbsp;
+                <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank">WhatsApp Community</a>
+            </p>
+            <p style="margin-top:0.4rem;">All the glory belongs to Jesus.</p>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         MODE: DETAIL — Event detail + registration
+         ══════════════════════════════════════════════════ -->
+    <div id="detailMode" class="detail-page">
+
+        <div class="detail-hero">
+            <div class="atmosphere"></div>
+            <div class="detail-hero-content reveal">
+                <a href="/holy-rave" class="back-link">← All events</a>
+                <p class="eyebrow" id="detailEyebrow"><span class="pin"></span>Holy Rave</p>
+                <h1 id="detailTitle"><em>Loading</em></h1>
+                <div class="meta-row" id="detailMeta">
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span id="detailTime">Sunset</span>
+                    </span>
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span id="detailLocation">Tenerife</span>
+                    </span>
+                </div>
+                <div class="countdown" id="countdownWrap" style="display:none;">
+                    <span id="countdownLabel">— days away</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <!-- LEFT: Meter + Info -->
+            <div class="meter-col reveal">
+                <div class="meter-wrap" id="detailMeterWrap">
                     <svg class="meter-svg" viewBox="0 0 200 200">
                         <circle class="meter-track" cx="100" cy="100" r="88"/>
-                        <circle class="meter-fill" id="meterFill" cx="100" cy="100" r="88"
+                        <circle class="meter-fill" id="detailMeterFill" cx="100" cy="100" r="88"
                                 stroke-dasharray="552.92" stroke-dashoffset="552.92"/>
                     </svg>
                     <div class="meter-center">
-                        <span class="meter-spots-left" id="spotsLeft">50</span>
+                        <span class="meter-spots-left" id="detailSpotsLeft">—</span>
                         <span class="meter-label">tickets left</span>
-                        <span class="meter-of">of 50</span>
+                        <span class="meter-of" id="detailOf">of 50</span>
                     </div>
                 </div>
 
-                <div class="meter-event-details">
-                    <div class="meter-event-detail">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        Weekly Session — Friday, Saturday, or Sunday
-                    </div>
-                    <div class="meter-event-detail">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                        Melodic Afrohouse · Organic House · Sunset Sessions
-                    </div>
-                    <div class="meter-event-detail">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-                        </svg>
-                        Tenerife Open-Air — Coordinates emailed 24h before
-                    </div>
-                </div>
+                <p class="detail-description" id="detailDesc">
+                    An evening of melodic Afrohouse and organic electronic music as the sun drops into the Atlantic.
+                    No dress code. No faith test. Just you, the music, and whoever you brought.
+                </p>
 
                 <div class="plus-one-badge">
-                    <span class="count">+1</span>
+                    <span class="num">+1</span>
                     Your name goes on the list. <strong>Bring one friend free</strong> — no extra ticket needed.
                 </div>
             </div>
 
-            <!-- RIGHT: Registration Form -->
-            <div class="form-col">
-                <div class="form-card" id="formCard">
-                    <h1>Reserve <em>Your Spot</em></h1>
-                    <p class="form-sub">A weekly sunset session featuring premium electronic music, exceptional vibes, and an authentic community. Come to dance, stay to connect. Location changes weekly between 3 exclusive sunset spots in Tenerife.</p>
+            <!-- RIGHT: Form -->
+            <div class="form-col reveal">
 
-                    <!-- 3-Step Flow -->
-                    <div style="margin: 1.5rem 0 2rem; padding: 1.25rem; background: rgba(200,136,58,0.06); border: 1px solid var(--border-warm); font-size: 0.82rem; line-height: 1.8; color: var(--text-soft);">
-                        <p style="margin-bottom: 0.75rem;"><strong style="color: var(--ochre);">① Reserve Your Spot</strong><br>Secure your ticket below. Every ticket automatically includes an extra guest pass for one friend.</p>
-                        <p style="margin-bottom: 0.75rem;"><strong style="color: var(--ochre);">② Get the Coordinates</strong><br>The specific sunset location and chosen weekend date (Friday, Saturday, or Sunday) are emailed directly to ticket holders 24 hours before the session.</p>
-                        <p><strong style="color: var(--ochre);">③ Show Up &amp; Vibe</strong><br>Join us to watch the sunset, listen to the set, and connect. Whether you come to dance or just sit back and watch, you belong here.</p>
-                    </div>
-
+                <!-- Confirmation state (shown after successful registration) -->
+                <div class="confirmation-overlay" id="confirmOverlay">
+                    <svg class="sigil sigil--md sigil-mark"><use href="#sigil"/></svg>
+                    <h2>You're <em>in.</em></h2>
+                    <p id="confirmName">Your spot is reserved.</p>
+                    <p>You + one friend — the location drops in your inbox 24 hours before the session.</p>
                     <div class="divider">
                         <span class="line"></span>
                         <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
                         <span class="line"></span>
                     </div>
+                    <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" rel="noopener"
+                       class="btn btn-ghost" style="display:inline-flex;margin-top:0.5rem;">
+                        Join WhatsApp Community
+                    </a>
+                </div>
+
+                <!-- Registration form -->
+                <div class="form-card" id="formCard">
+                    <h2>Reserve <em>Your Spot</em></h2>
+                    <p class="form-sub" id="formSub">Secure your ticket below. Location shared 24h before.</p>
 
                     <form id="registerForm" onsubmit="handleRegister(event)">
                         <div class="field-row">
@@ -803,7 +1279,6 @@
                                    placeholder="you@email.com" required autocomplete="email">
                         </div>
 
-                        <!-- Amount selector -->
                         <div class="amount-section">
                             <label class="amount-label">Pay What Feels Right <em>— nobody turned away</em></label>
                             <div class="amount-options" id="amountOptions">
@@ -819,10 +1294,6 @@
                             </div>
                         </div>
 
-                        <p style="text-align:center; font-size:0.75rem; color:var(--text-mute); margin-top:0.75rem; letter-spacing:0.04em;">
-                            Your name goes on the list. Bring one friend with you for free — no extra ticket needed.
-                        </p>
-
                         <button type="submit" class="submit-btn" id="submitBtn">
                             Reserve My Spot
                         </button>
@@ -830,14 +1301,12 @@
                     </form>
 
                     <p class="form-note">
-                        Each reservation = <strong>2 tickets</strong> (you + 1 friend).<br>
-                        Location shared by email 24h before the event.
+                        Each reservation = <strong>2 tickets</strong> (you + 1 friend).
                     </p>
 
-                    <!-- Sold out banner (hidden by default) -->
                     <div class="sold-out-banner" id="soldOutBanner">
-                        <h3>This week is full.</h3>
-                        <p>This week is full. Join the WhatsApp community to get notified when new tickets drop.</p>
+                        <h3>This event is full.</h3>
+                        <p>Join the WhatsApp community to get notified when the next event drops.</p>
                         <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" rel="noopener"
                            style="display:inline-block;margin-top:1rem;padding:0.75rem 1.5rem;background:var(--ochre);color:var(--dark);text-decoration:none;font-size:0.72rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;">
                             Join WhatsApp
@@ -847,7 +1316,7 @@
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Detail footer -->
         <div class="footer-strip">
             <p>
                 <a href="/">robertjanmastenbroek.com</a> &nbsp;·&nbsp;
@@ -859,154 +1328,342 @@
     </div>
 
     <script>
-        // ── State ──
-        const TOTAL_TICKETS = 50;
+        // ──────────────────────────────────────────────────────
+        // STATE
+        // ──────────────────────────────────────────────────────
         const CIRCUMFERENCE = 2 * Math.PI * 88; // ~552.92
-        let selectedAmount = 1200; // default €12
-        let ticketsRemaining = TOTAL_TICKETS;
-        let isSoldOut = false;
+        let selectedAmount = 1200;
+        let currentEvent = null;
+        let currentSlug = null;
 
-        // ── DOM refs ──
-        const meterFill = document.getElementById('meterFill');
-        const spotsLeft = document.getElementById('spotsLeft');
-        const formCard = document.getElementById('formCard');
-        const submitBtn = document.getElementById('submitBtn');
-        const formError = document.getElementById('formError');
-        const soldOutBanner = document.getElementById('soldOutBanner');
-        const amountOptions = document.getElementById('amountOptions');
-        const customRow = document.getElementById('customRow');
-        const customAmount = document.getElementById('customAmount');
-        const registerForm = document.getElementById('registerForm');
+        // ──────────────────────────────────────────────────────
+        // MODE DISPATCH — determine hub vs detail from URL
+        // ──────────────────────────────────────────────────────
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        // /holy-rave → hub, /holy-rave/something → detail
+        const slug = pathParts.length >= 2 ? pathParts[1] : null;
 
-        // ── Load ticket count ──
-        async function loadTicketCount() {
+        // Check for ?confirmed= param (returning from Stripe)
+        const urlParams = new URLSearchParams(window.location.search);
+        const confirmedId = urlParams.get('confirmed');
+
+        if (slug && slug !== 'confirmed') {
+            currentSlug = slug;
+            showDetailMode(slug, confirmedId);
+        } else {
+            showHubMode();
+        }
+
+        // ──────────────────────────────────────────────────────
+        // HUB MODE
+        // ──────────────────────────────────────────────────────
+        async function showHubMode() {
+            document.getElementById('hubMode').style.display = 'block';
+            document.getElementById('detailMode').classList.remove('active');
+
+            // Set canonical to hub
+            const canon = document.querySelector('link[rel="canonical"]');
+            if (canon) canon.href = 'https://robertjanmastenbroek.com/holy-rave';
+
+            await loadEvents();
+
+            // Reveal observer
+            observeReveal();
+        }
+
+        async function loadEvents() {
+            const grid = document.getElementById('eventsGrid');
+            const noEvents = document.getElementById('noEvents');
+            const countEl = document.getElementById('hubEventCount');
+
             try {
-                const res = await fetch('/api/holy-rave/tickets');
-                if (!res.ok) return;
-                const data = await res.json();
-                ticketsRemaining = data.remaining;
-                updateMeter();
-            } catch (e) {
-                // Keep default (50 remaining)
+                const res = await fetch('/api/holy-rave/events');
+                if (!res.ok) throw new Error('Failed to load');
+                const events = await res.json();
+
+                const upcoming = events.filter(e => e.status === 'upcoming');
+                countEl.textContent = upcoming.length;
+
+                if (upcoming.length === 0) {
+                    grid.innerHTML = '';
+                    noEvents.style.display = 'block';
+                    return;
+                }
+
+                noEvents.style.display = 'none';
+                grid.innerHTML = upcoming.map(e => buildEventCard(e)).join('');
+            } catch (err) {
+                grid.innerHTML = '';
+                noEvents.style.display = 'block';
+                countEl.textContent = '0';
             }
         }
 
-        function updateMeter() {
-            const sold = TOTAL_TICKETS - ticketsRemaining;
-            const pct = sold / TOTAL_TICKETS;
+        function buildEventCard(e) {
+            const date = new Date(e.event_date + 'T12:00:00');
+            const day = date.getDate();
+            const month = date.toLocaleDateString('en-US', { month: 'short' });
+            const pct = e.ticket_limit > 0 ? (e.tickets_sold / e.ticket_limit) * 100 : 0;
+            const isUrgent = e.remaining <= 10;
+            const isSoldOut = e.remaining <= 0;
+
+            // Relative date label
+            const now = new Date();
+            const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
+            let dateLabel = '';
+            if (diffDays <= 0) dateLabel = 'Today';
+            else if (diffDays === 1) dateLabel = 'Tomorrow';
+            else if (diffDays <= 7) dateLabel = `${diffDays} days away`;
+            else dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+            return `
+                <a href="/holy-rave/${e.slug}" class="event-card reveal">
+                    <div class="event-card-image">
+                        <div class="date-badge">
+                            <span class="day">${day}</span>
+                            <span class="month">${month}</span>
+                        </div>
+                    </div>
+                    <div class="event-card-body">
+                        <div class="event-card-title">Holy Rave <em>·</em> ${dateLabel}</div>
+                        <div class="event-card-location">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            ${e.location || 'Tenerife'}
+                        </div>
+                        <div class="event-card-tickets">
+                            <div class="meter-mini">
+                                <span class="bar"><span class="fill ${isUrgent ? 'urgent' : ''}" style="width:${Math.min(pct, 100)}%"></span></span>
+                                <span class="count ${isUrgent ? 'urgent' : ''}">${isSoldOut ? 'Full' : e.remaining + ' left'}</span>
+                            </div>
+                            <span class="card-arrow">→</span>
+                        </div>
+                    </div>
+                </a>
+            `;
+        }
+
+        // ──────────────────────────────────────────────────────
+        // DETAIL MODE
+        // ──────────────────────────────────────────────────────
+        async function showDetailMode(slug, confirmedId) {
+            document.getElementById('hubMode').style.display = 'none';
+            document.getElementById('detailMode').classList.add('active');
+
+            // Set canonical to event page
+            const canon = document.querySelector('link[rel="canonical"]');
+            if (canon) canon.href = `https://robertjanmastenbroek.com/holy-rave/${slug}`;
+
+            if (confirmedId) {
+                // Coming back from Stripe — show confirmation
+                showConfirmation(confirmedId);
+            }
+
+            await loadEventDetail(slug);
+            observeReveal();
+        }
+
+        async function loadEventDetail(slug) {
+            try {
+                const res = await fetch('/api/holy-rave/events/' + slug);
+                if (!res.ok) throw new Error('Not found');
+
+                const event = await res.json();
+                currentEvent = event;
+                renderDetail(event);
+            } catch (err) {
+                document.getElementById('detailTitle').innerHTML = 'Event <em>not found</em>';
+                document.getElementById('formCard').style.display = 'none';
+            }
+        }
+
+        function renderDetail(event) {
+            const date = new Date(event.event_date + 'T12:00:00');
+
+            // Title
+            document.getElementById('detailTitle').innerHTML =
+                `<em>${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</em> · ${event.location || 'Tenerife'}`;
+
+            // Eyebrow
+            document.getElementById('detailEyebrow').innerHTML = '<span class="pin"></span>Holy Rave';
+
+            // Meta
+            document.getElementById('detailTime').textContent = event.event_time || 'Sunset';
+            document.getElementById('detailLocation').textContent = event.location || 'Tenerife South';
+
+            // Description
+            if (event.description) {
+                document.getElementById('detailDesc').textContent = event.description;
+            }
+
+            // Countdown
+            const now = new Date();
+            const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
+            const countdownEl = document.getElementById('countdownWrap');
+            if (diffDays > 0 && diffDays <= 30) {
+                countdownEl.style.display = 'block';
+                const label = diffDays === 1 ? 'Tomorrow' : diffDays + ' days away';
+                document.getElementById('countdownLabel').innerHTML = `<strong>${label}</strong>`;
+            } else if (diffDays <= 0) {
+                countdownEl.style.display = 'block';
+                document.getElementById('countdownLabel').innerHTML = '<strong>Today</strong>';
+            }
+
+            // Meter
+            updateDetailMeter(event);
+
+            // "of X" text
+            document.getElementById('detailOf').textContent = 'of ' + event.ticket_limit;
+        }
+
+        function updateDetailMeter(event) {
+            const sold = event.tickets_sold || 0;
+            const total = event.ticket_limit || 50;
+            const remaining = event.remaining;
+            const pct = sold / total;
             const offset = CIRCUMFERENCE * (1 - pct);
 
-            // Animate meter
-            meterFill.style.strokeDashoffset = offset;
+            const fill = document.getElementById('detailMeterFill');
+            const spots = document.getElementById('detailSpotsLeft');
 
-            // Update text
-            spotsLeft.textContent = ticketsRemaining;
+            fill.style.strokeDashoffset = offset;
+            spots.textContent = remaining;
 
-            // Urgency states
-            if (ticketsRemaining <= 0) {
-                spotsLeft.classList.add('urgent');
-                spotsLeft.textContent = '0';
-                meterFill.classList.add('sold-out');
-                setSoldOut(true);
-            } else if (ticketsRemaining <= 10) {
-                spotsLeft.classList.add('urgent');
-                meterFill.classList.remove('sold-out');
-                setSoldOut(false);
+            if (remaining <= 0) {
+                spots.classList.add('urgent');
+                spots.textContent = '0';
+                fill.classList.add('sold-out');
+                setDetailSoldOut(true);
+            } else if (remaining <= 10) {
+                spots.classList.add('urgent');
+                fill.classList.remove('sold-out');
+                setDetailSoldOut(false);
             } else {
-                spotsLeft.classList.remove('urgent');
-                meterFill.classList.remove('sold-out');
-                setSoldOut(false);
+                spots.classList.remove('urgent');
+                fill.classList.remove('sold-out');
+                setDetailSoldOut(false);
             }
         }
 
-        function setSoldOut(soldOut) {
-            isSoldOut = soldOut;
+        function setDetailSoldOut(soldOut) {
+            const form = document.getElementById('formCard');
+            const banner = document.getElementById('soldOutBanner');
+            const btn = document.getElementById('submitBtn');
+
             if (soldOut) {
-                formCard.classList.add('sold-out-overlay');
-                soldOutBanner.classList.add('visible');
-                submitBtn.disabled = true;
+                form.style.opacity = '0.5';
+                form.style.pointerEvents = 'none';
+                banner.classList.add('visible');
+                btn.disabled = true;
             } else {
-                formCard.classList.remove('sold-out-overlay');
-                soldOutBanner.classList.remove('visible');
-                submitBtn.disabled = false;
+                form.style.opacity = '';
+                form.style.pointerEvents = '';
+                banner.classList.remove('visible');
+                btn.disabled = false;
             }
         }
 
-        // ── Amount selector ──
-        amountOptions.addEventListener('click', (e) => {
-            const btn = e.target.closest('.amount-btn');
-            if (!btn) return;
+        // ── Confirmation (from Stripe return) ──
+        async function showConfirmation(id) {
+            const overlay = document.getElementById('confirmOverlay');
+            const form = document.getElementById('formCard');
 
-            // Deselect all
-            amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-            customRow.classList.remove('selected');
-            customAmount.value = '';
+            form.style.display = 'none';
+            overlay.classList.add('visible');
 
-            // Select clicked
-            btn.classList.add('selected');
-            selectedAmount = parseInt(btn.dataset.amount, 10) || 0;
-        });
+            try {
+                const res = await fetch('/api/holy-rave/verify?id=' + encodeURIComponent(id));
+                if (res.ok) {
+                    const data = await res.json();
+                    const name = data.firstName + ' ' + data.lastName;
+                    document.getElementById('confirmName').textContent = name + ', your spot is reserved.';
+                }
+            } catch (e) {}
+        }
 
-        customAmount.addEventListener('focus', () => {
-            amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-            customRow.classList.add('selected');
-        });
+        // ──────────────────────────────────────────────────────
+        // FORM: Amount selector
+        // ──────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            const amountOptions = document.getElementById('amountOptions');
+            if (amountOptions) {
+                amountOptions.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.amount-btn');
+                    if (!btn) return;
+                    amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+                    document.getElementById('customRow').classList.remove('selected');
+                    document.getElementById('customAmount').value = '';
+                    btn.classList.add('selected');
+                    selectedAmount = parseInt(btn.dataset.amount, 10) || 0;
+                });
+            }
 
-        customAmount.addEventListener('input', () => {
-            const val = parseInt(customAmount.value, 10);
-            if (val && val > 0) {
-                amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-                customRow.classList.add('selected');
-                selectedAmount = val * 100; // Convert to cents
+            const customAmount = document.getElementById('customAmount');
+            if (customAmount) {
+                customAmount.addEventListener('focus', () => {
+                    amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+                    document.getElementById('customRow').classList.add('selected');
+                });
+                customAmount.addEventListener('input', () => {
+                    const val = parseInt(customAmount.value, 10);
+                    if (val && val > 0) {
+                        amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+                        document.getElementById('customRow').classList.add('selected');
+                        selectedAmount = val * 100;
+                    }
+                });
             }
         });
 
-        // ── Form submission ──
+        // ──────────────────────────────────────────────────────
+        // FORM: Submission
+        // ──────────────────────────────────────────────────────
         async function handleRegister(e) {
             e.preventDefault();
-            formError.textContent = '';
-
-            if (isSoldOut) {
-                formError.textContent = 'All tickets are taken this week. Check back soon.';
-                return;
-            }
+            const error = document.getElementById('formError');
+            error.textContent = '';
 
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const email = document.getElementById('email').value.trim();
 
             if (!firstName || !lastName || !email) {
-                formError.textContent = 'Please fill in all fields.';
+                error.textContent = 'Please fill in all fields.';
                 return;
             }
-
             if (!email.includes('@') || !email.includes('.')) {
-                formError.textContent = 'Please enter a valid email address.';
+                error.textContent = 'Please enter a valid email address.';
                 return;
             }
 
-            // Determine amount
             let amount = selectedAmount;
+            const customRow = document.getElementById('customRow');
             if (customRow.classList.contains('selected')) {
-                const val = parseInt(customAmount.value, 10);
+                const val = parseInt(document.getElementById('customAmount').value, 10);
                 if (isNaN(val)) {
-                    // Custom field is selected but empty — require input or a preset selection
-                    formError.textContent = 'Please enter a custom amount or select a preset.';
-                    customAmount.focus();
+                    error.textContent = 'Please enter a custom amount or select a preset.';
+                    document.getElementById('customAmount').focus();
                     return;
                 }
-                amount = Math.max(0, val) * 100; // euros to cents (0 → free, positive → paid)
+                amount = Math.max(0, val) * 100;
             }
 
-            submitBtn.textContent = 'Reserving…';
-            submitBtn.classList.add('loading');
-            submitBtn.disabled = true;
+            const btn = document.getElementById('submitBtn');
+            btn.textContent = 'Reserving…';
+            btn.disabled = true;
 
             try {
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, amount }),
+                    body: JSON.stringify({
+                        firstName,
+                        lastName,
+                        email,
+                        amount,
+                        eventSlug: currentSlug,
+                    }),
                 });
                 const data = await res.json();
 
@@ -1018,22 +1675,55 @@
                     // Paid ticket — redirect to Stripe
                     window.location.href = data.checkoutUrl;
                 } else {
-                    // Free ticket — redirect to confirmation
-                    window.location.href = '/holy-rave/confirmed?id=' + data.id;
+                    // Free ticket — show confirmation inline
+                    const form = document.getElementById('formCard');
+                    const overlay = document.getElementById('confirmOverlay');
+                    form.style.display = 'none';
+                    overlay.classList.add('visible');
+                    document.getElementById('confirmName').textContent = firstName + ' ' + lastName + ', your spot is reserved.';
                 }
             } catch (err) {
-                formError.textContent = err.message;
-                submitBtn.textContent = 'Reserve My Spot';
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
+                error.textContent = err.message;
+                btn.textContent = 'Reserve My Spot';
+                btn.disabled = false;
             }
         }
 
-        // ── Init ──
-        loadTicketCount();
+        // ──────────────────────────────────────────────────────
+        // REVEAL ON SCROLL
+        // ──────────────────────────────────────────────────────
+        function observeReveal() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 
-        // Refresh count every 30 seconds
-        setInterval(loadTicketCount, 30000);
+            document.querySelectorAll('.reveal').forEach(el => {
+                if (!el.classList.contains('visible')) {
+                    observer.observe(el);
+                }
+            });
+        }
+
+        // ──────────────────────────────────────────────────────
+        // POLL: Refresh ticket count every 30s on detail view
+        // ──────────────────────────────────────────────────────
+        if (currentSlug) {
+            setInterval(async () => {
+                try {
+                    const res = await fetch('/api/holy-rave/events/' + currentSlug);
+                    if (res.ok) {
+                        const event = await res.json();
+                        currentEvent = event;
+                        updateDetailMeter(event);
+                    }
+                } catch (e) {}
+            }, 30000);
+        }
     </script>
 </body>
 </html>

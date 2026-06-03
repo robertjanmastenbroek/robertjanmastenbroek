@@ -33,9 +33,35 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
+-- Events table (replaces weekly auto-reset)
+CREATE TABLE IF NOT EXISTS events (
+  id SERIAL PRIMARY KEY,
+  slug VARCHAR(100) UNIQUE NOT NULL,          -- URL slug: 'june-13-2026'
+  title VARCHAR(255) NOT NULL,                 -- 'Holy Rave — June 13th 2026'
+  location VARCHAR(255) NOT NULL,              -- 'Tenerife South'
+  location_detail TEXT,                         -- 'Coordinates emailed 24h before'
+  event_date DATE NOT NULL,                     -- The actual date
+  event_time VARCHAR(100) DEFAULT 'Sunset',     -- '19:00 – 23:00'
+  description TEXT,                             -- Short sell copy
+  ticket_limit INTEGER DEFAULT 50,
+  image_url VARCHAR(500),                       -- Hero photo path
+  status VARCHAR(20) DEFAULT 'upcoming',        -- 'upcoming' | 'past' | 'cancelled'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Migration: add event_id to holy_rave_registrations
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS event_id INTEGER REFERENCES events(id);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_subscribers_email ON subscribers(email);
 CREATE INDEX IF NOT EXISTS idx_registrations_email ON holy_rave_registrations(email);
 CREATE INDEX IF NOT EXISTS idx_registrations_week ON holy_rave_registrations(week);
+CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON holy_rave_registrations(event_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_status ON holy_rave_registrations(status);
 CREATE INDEX IF NOT EXISTS idx_registrations_week_status ON holy_rave_registrations(week, status);
+CREATE INDEX IF NOT EXISTS idx_registrations_event_status ON holy_rave_registrations(event_id, status);
+CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
+CREATE INDEX IF NOT EXISTS idx_events_status ON events(status, event_date);
