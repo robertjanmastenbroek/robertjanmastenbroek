@@ -980,9 +980,14 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       eventId = event.id;
       eventTitle = event.title;
 
-      // Check duplicate email for this event
-      if (await db.isDuplicateEmailForEvent(eventId, email)) {
-        return res.status(400).json({ error: 'This email already has a spot for this event.' });
+      // Check duplicate email for this event — only block if already CONFIRMED
+      const existingReg = await db.isDuplicateEmailForEvent(eventId, email);
+      if (existingReg === 'confirmed') {
+        return res.status(400).json({ error: 'This email already has a confirmed spot for this event.' });
+      }
+      if (existingReg) {
+        // Pending registration exists — allow them to continue by using the resume flow
+        console.log('[register] Existing pending registration for ' + email + ' — allowing resume');
       }
     } else {
       // Fall back to weekly registration (legacy)
