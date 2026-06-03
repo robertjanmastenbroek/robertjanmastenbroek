@@ -2068,8 +2068,8 @@
                 console.log('[register] Response:', { hasClientSecret: !!data.clientSecret, hasCheckoutUrl: !!data.checkoutUrl, id: data.id });
 
                 if (data.clientSecret) {
-                    // Embedded Stripe Checkout — mount on our page
-                    await mountStripeCheckout(data.clientSecret, data.id, firstName, lastName);
+                    // Embedded Stripe Checkout — mount on our page. Pass checkoutUrl as fallback.
+                    await mountStripeCheckout(data.clientSecret, data.checkoutUrl, data.id, firstName, lastName);
                 } else if (data.checkoutUrl) {
                     // Fallback: redirect to Stripe
                     window.location.href = data.checkoutUrl;
@@ -2141,29 +2141,16 @@
             }
         }
 
-        async function mountStripeCheckout(clientSecret, regId, firstName, lastName) {
+        async function mountStripeCheckout(clientSecret, checkoutUrl, regId, firstName, lastName) {
             pendingRegId = regId;
             pendingFirstName = firstName;
             pendingLastName = lastName;
 
             const stripe = await getStripeInstance();
             if (!stripe) {
-                // No publishable key — fall back to redirect
-                console.warn('[stripe] No publishable key — falling back to redirect');
-                const data = await fetch('/api/holy-rave/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        firstName: pendingFirstName,
-                        lastName: pendingLastName,
-                        email: document.getElementById('email').value.trim(),
-                        phone: (document.getElementById('phoneCountry')?.value || '+34') + ' ' + (document.getElementById('phoneNumber')?.value.trim() || ''),
-                        amount: selectedAmount,
-                        eventSlug: currentSlug,
-                    }),
-                });
-                const d = await data.json();
-                if (d.checkoutUrl) { window.location.href = d.checkoutUrl; return; }
+                // No publishable key — redirect using already-created session URL
+                console.warn('[stripe] No publishable key — redirecting to Stripe');
+                if (checkoutUrl) { window.location.href = checkoutUrl; return; }
                 document.getElementById('formError').textContent = 'Payment system unavailable. Please try again.';
                 goToStep(2);
                 document.getElementById('submitBtn').disabled = false;
@@ -2187,23 +2174,8 @@
             } catch (err) {
                 console.error('[stripe] Embedded checkout mount error:', err);
                 overlay.style.display = 'none';
-                // Fallback to redirect
-                try {
-                    const data = await fetch('/api/holy-rave/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            firstName: pendingFirstName,
-                            lastName: pendingLastName,
-                            email: document.getElementById('email').value.trim(),
-                            phone: (document.getElementById('phoneCountry')?.value || '+34') + ' ' + (document.getElementById('phoneNumber')?.value.trim() || ''),
-                            amount: selectedAmount,
-                            eventSlug: currentSlug,
-                        }),
-                    });
-                    const d = await data.json();
-                    if (d.checkoutUrl) { window.location.href = d.checkoutUrl; return; }
-                } catch (e) {}
+                // Fallback to redirect using the already-created session URL
+                if (checkoutUrl) { window.location.href = checkoutUrl; return; }
                 document.getElementById('formError').textContent = 'Could not load payment. Please try again.';
                 goToStep(2);
                 document.getElementById('submitBtn').disabled = false;
