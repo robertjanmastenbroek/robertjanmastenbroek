@@ -1870,18 +1870,39 @@
             </div>
         </div>
 
-        <!-- ═══ STRIPE EMBEDDED CHECKOUT OVERLAY ═══ -->
-        <div id="stripeOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(7,7,8,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:2rem 1rem;overflow-y:auto;">
-            <div style="max-width:520px;margin:3rem auto;position:relative;">
-                <button onclick="closeStripeCheckout()" style="position:absolute;top:-0.5rem;right:0;background:none;border:none;color:var(--text-mute);font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer;padding:0.5rem;z-index:10;transition:color 0.3s;" onmouseover="this.style.color='var(--ochre)'" onmouseout="this.style.color=''">Close ×</button>
-                <div id="stripeCheckoutContainer"></div>
-                <div id="stripeFallback" style="display:none;text-align:center;margin-top:1.5rem;padding:2rem;border:1px solid var(--border-warm);background:rgba(10,10,10,0.3);">
-                    <p style="color:var(--text-soft);font-size:0.85rem;margin-bottom:1rem;line-height:1.6;">
-                        The payment form couldn't load directly. You can still complete your booking via Stripe's secure checkout page.
+        <!-- ═══ STRIPE PAYMENT ELEMENT OVERLAY ═══ -->
+        <div id="paymentOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(7,7,8,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:2rem 1rem;overflow-y:auto;">
+            <div style="max-width:440px;margin:3rem auto;position:relative;">
+                <button onclick="closePaymentOverlay()" style="position:absolute;top:-0.5rem;right:0;background:none;border:none;color:var(--text-mute);font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer;padding:0.5rem;z-index:10;transition:color 0.3s;" onmouseover="this.style.color='var(--ochre)'" onmouseout="this.style.color=''">Close ×</button>
+
+                <div style="background:var(--card-bg);border:1px solid var(--border-faint);padding:2.5rem 2rem;position:relative;">
+                    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ochre-soft),transparent);"></div>
+
+                    <p style="font-family:var(--font-serif);font-size:1.3rem;font-weight:400;margin-bottom:0.25rem;letter-spacing:-0.005em;">
+                        Complete <em style="color:var(--ochre);font-style:italic;">Payment</em>
                     </p>
-                    <a id="stripeRedirectBtn" href="#" target="_blank" class="btn btn-primary" style="display:inline-flex;">
-                        Pay with Card →
-                    </a>
+                    <p style="font-size:0.82rem;color:var(--text-soft);margin-bottom:1.5rem;font-weight:300;">
+                        Secure payment via Stripe
+                    </p>
+
+                    <div style="text-align:center;margin-bottom:1.5rem;padding:1rem;background:rgba(10,10,10,0.4);border:1px solid var(--border-faint);">
+                        <span style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-mute);display:block;margin-bottom:0.25rem;">Your Contribution</span>
+                        <span id="paymentAmountDisplay" style="font-family:var(--font-serif);font-size:2.2rem;font-weight:500;color:var(--gold);"></span>
+                    </div>
+
+                    <div id="paymentElementContainer" style="min-height:180px;">
+                        <!-- Payment Element mounts here -->
+                    </div>
+
+                    <div id="paymentError" style="font-size:0.75rem;color:var(--terracotta);min-height:1.2rem;margin-top:0.75rem;text-align:center;"></div>
+
+                    <button id="payButton" class="step-btn" style="margin-top:1.25rem;" onclick="handlePaymentSubmit()">
+                        Pay Now
+                    </button>
+
+                    <p style="font-size:0.68rem;color:var(--text-mute);text-align:center;margin-top:0.75rem;letter-spacing:0.04em;">
+                        🔒 Payments secured by Stripe
+                    </p>
                 </div>
             </div>
         </div>
@@ -2078,6 +2099,7 @@
                 showConfirmation(confirmedId);
             }
             await loadEventDetail(slug);
+            checkPaymentIntentResult();
             observeReveal();
         }
 
@@ -2272,11 +2294,8 @@
                 console.log('[register] Response:', { hasClientSecret: !!data.clientSecret, hasCheckoutUrl: !!data.checkoutUrl, id: data.id });
 
                 if (data.clientSecret) {
-                    // Embedded Stripe Checkout — mount on our page. Pass checkoutUrl as fallback.
-                    await mountStripeCheckout(data.clientSecret, data.checkoutUrl, data.id, firstName, lastName);
-                } else if (data.checkoutUrl) {
-                    // Fallback: redirect to Stripe
-                    window.location.href = data.checkoutUrl;
+                    // Inline Payment Element — mount card form on our page
+                    await openPaymentOverlay(data.clientSecret, amount, data.id, firstName, lastName, data.paymentIntentId);
                 } else {
                     currentRegId = data.id;
                     showInlineConfirmation(firstName, lastName, data.id);
@@ -2321,15 +2340,62 @@
         }
 
         // ──────────────────────────────────────────────────────
-        // STRIPE EMBEDDED CHECKOUT
+        // STRIPE PAYMENT ELEMENT (inline card form)
         // ──────────────────────────────────────────────────────
         let stripeInstance = null;
-        let stripeEmbedded = null;
+        let paymentElements = null;
+        let paymentElement = null;
         let pendingRegId = null;
         let pendingFirstName = '';
         let pendingLastName = '';
+        let pendingPaymentIntentId = '';
 
-        async function getStripeInstance() {
+        // Default Stripe appearance — matches our dark/warm theme
+        const STRIPE_APPEARANCE = {
+            theme: 'night',
+            variables: {
+                colorPrimary: '#c8883a',
+                colorBackground: '#121216',
+                colorText: '#f5f1e8',
+                colorDanger: '#b8532a',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                borderRadius: '0px',
+                spacingUnit: '4px',
+                colorTextSecondary: '#7a7266',
+                colorIcon: '#c8883a',
+                colorBorder: 'rgba(200,136,58,0.18)',
+                colorBorderHover: 'rgba(200,136,58,0.35)',
+                colorFocus: 'rgba(200,136,58,0.35)',
+                colorBackgroundContainer: '#0a0a0a',
+                colorBackgroundPaymentForm: '#121216',
+                tabRadius: '0px',
+                tabColorSelected: '#c8883a',
+                tabColorText: '#c9c4b6',
+                tabColorTextSelected: '#f5f1e8',
+            },
+            rules: {
+                '.Input': {
+                    border: '1px solid rgba(200,136,58,0.18)',
+                    backgroundColor: 'rgba(10,10,10,0.6)',
+                },
+                '.Input:focus': {
+                    border: '1px solid #c8883a',
+                    boxShadow: '0 0 0 3px rgba(200,136,58,0.18)',
+                },
+                '.Label': {
+                    fontWeight: '500',
+                    fontSize: '0.7rem',
+                    letterSpacing: '0.24em',
+                    textTransform: 'uppercase',
+                    color: '#7a7266',
+                },
+                '.Tab--selected': {
+                    backgroundColor: 'rgba(200,136,58,0.12)',
+                },
+            },
+        };
+
+        async function initStripe() {
             if (stripeInstance) return stripeInstance;
             try {
                 const res = await fetch('/api/stripe/publishable-key');
@@ -2337,7 +2403,6 @@
                 const { key } = await res.json();
                 if (!key) throw new Error('Stripe not configured');
 
-                // Wait for Stripe.js to load
                 if (typeof Stripe === 'undefined') {
                     await new Promise((resolve) => {
                         const check = setInterval(() => {
@@ -2348,69 +2413,95 @@
                 stripeInstance = Stripe(key);
                 return stripeInstance;
             } catch (e) {
-                console.error('Stripe init error:', e);
+                console.error('[stripe] Init error:', e);
                 return null;
             }
         }
 
-        async function mountStripeCheckout(clientSecret, checkoutUrl, regId, firstName, lastName) {
+        async function openPaymentOverlay(clientSecret, amountCents, regId, firstName, lastName, piId) {
             pendingRegId = regId;
             pendingFirstName = firstName;
             pendingLastName = lastName;
+            pendingPaymentIntentId = piId;
 
-            const stripe = await getStripeInstance();
+            // Show amount
+            const displayEl = document.getElementById('paymentAmountDisplay');
+            if (amountCents === 0) {
+                displayEl.textContent = 'Free';
+            } else {
+                displayEl.textContent = '\u20ac' + (amountCents / 100).toFixed(2);
+                document.getElementById('payButton').textContent = 'Pay \u20ac' + (amountCents / 100).toFixed(2);
+            }
+
+            const overlay = document.getElementById('paymentOverlay');
+            overlay.style.display = 'block';
+
+            const stripe = await initStripe();
             if (!stripe) {
-                // No publishable key — redirect using already-created session URL
-                console.warn('[stripe] No publishable key — redirecting to Stripe');
-                if (checkoutUrl) { window.location.href = checkoutUrl; return; }
-                document.getElementById('formError').textContent = 'Payment system unavailable. Please try again.';
-                goToStep(2);
-                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('paymentError').textContent = 'Payment system unavailable.';
                 return;
             }
 
-            // Show overlay
-            const overlay = document.getElementById('stripeOverlay');
-            overlay.style.display = 'block';
+            try {
+                paymentElements = stripe.elements({ clientSecret, appearance: STRIPE_APPEARANCE });
+                paymentElement = paymentElements.create('payment', {
+                    layout: { type: 'tabs', spacedAccordionItems: false },
+                });
+                paymentElement.mount('#paymentElementContainer');
+                showToast('Enter your card details to complete payment', 'info');
+            } catch (err) {
+                console.error('[stripe] Payment Element mount error:', err);
+                document.getElementById('paymentError').textContent = 'Could not load payment form.';
+            }
+        }
+
+        async function handlePaymentSubmit() {
+            const btn = document.getElementById('payButton');
+            const errorEl = document.getElementById('paymentError');
+            errorEl.textContent = '';
+            btn.textContent = 'Processing...';
+            btn.disabled = true;
+
+            if (!stripeInstance || !paymentElements || !paymentElement) {
+                errorEl.textContent = 'Payment form not ready. Please try again.';
+                btn.textContent = 'Pay Now';
+                btn.disabled = false;
+                return;
+            }
 
             try {
-                stripeEmbedded = await stripe.initEmbeddedCheckout({
-                    clientSecret: clientSecret,
+                const { error, paymentIntent } = await stripeInstance.confirmPayment({
+                    elements: paymentElements,
+                    confirmParams: {
+                        return_url: window.location.origin + '/holy-rave/' + (currentSlug || '') + '?payment_intent=' + pendingPaymentIntentId,
+                    },
+                    redirect: 'if_required',
                 });
 
-                stripeEmbedded.mount('#stripeCheckoutContainer');
-
-                showToast('Secure payment form loaded — complete your payment below', 'info');
-                stripeEmbedded.addEventListener('complete', () => {
-                    handleStripeComplete();
-                });
-            } catch (err) {
-                console.error('[stripe] Embedded checkout mount error:', err);
-                // Show fallback button instead of immediately redirecting
-                if (checkoutUrl) {
-                    document.getElementById('stripeRedirectBtn').href = checkoutUrl;
-                    document.getElementById('stripeFallback').style.display = 'block';
-                    return;
+                if (error) {
+                    throw new Error(error.message || 'Payment failed.');
                 }
-                overlay.style.display = 'none';
-                document.getElementById('formError').textContent = 'Could not load payment. Please try again.';
-                goToStep(2);
-                document.getElementById('submitBtn').disabled = false;
+
+                if (paymentIntent && paymentIntent.status === 'succeeded') {
+                    handlePaymentSuccess();
+                } else if (paymentIntent && paymentIntent.status === 'requires_action') {
+                    // 3D Secure handling — Stripe handles the redirect automatically
+                    // The page will reload with payment_intent param
+                } else {
+                    errorEl.textContent = 'Payment status: ' + (paymentIntent?.status || 'unknown') + '. Please wait.';
+                    btn.textContent = 'Pay Now';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                console.error('[stripe] Payment error:', err);
+                errorEl.textContent = err.message;
+                btn.textContent = 'Pay Now';
+                btn.disabled = false;
             }
         }
 
-        function showStripeFallback(checkoutUrl) {
-            document.getElementById('stripeRedirectBtn').href = checkoutUrl;
-            document.getElementById('stripeFallback').style.display = 'block';
-        }
-
-        function handleStripeComplete() {
-            // Payment succeeded — show confirmation
-            if (stripeEmbedded) {
-                try { stripeEmbedded.destroy(); } catch (e) {}
-                stripeEmbedded = null;
-            }
-            document.getElementById('stripeOverlay').style.display = 'none';
+        function handlePaymentSuccess() {
+            document.getElementById('paymentOverlay').style.display = 'none';
             document.getElementById('formCard').style.display = 'none';
             const overlay = document.getElementById('confirmOverlay');
             overlay.classList.add('visible');
@@ -2418,17 +2509,50 @@
                 (pendingFirstName || '') + ' ' + (pendingLastName || '') + ', your spot is reserved.';
             currentRegId = pendingRegId;
             fireConfetti();
+            showToast('Payment successful! \u2713', 'success');
         }
 
-        function closeStripeCheckout() {
-            if (stripeEmbedded) {
-                try { stripeEmbedded.destroy(); } catch (e) {}
-                stripeEmbedded = null;
+        function closePaymentOverlay() {
+            if (paymentElement) {
+                try { paymentElement.destroy(); } catch (e) {}
+                paymentElement = null;
+                paymentElements = null;
             }
-            document.getElementById('stripeOverlay').style.display = 'none';
+            document.getElementById('paymentOverlay').style.display = 'none';
             document.getElementById('formError').textContent = 'Payment cancelled.';
             goToStep(2);
             document.getElementById('submitBtn').disabled = false;
+        }
+
+        // Handle return from 3D Secure redirect — check payment intent status
+        async function checkPaymentIntentResult() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const piId = urlParams.get('payment_intent');
+            const piClientSecret = urlParams.get('payment_intent_client_secret');
+            if (!piId || !piClientSecret) return;
+
+            const stripe = await initStripe();
+            if (!stripe) return;
+
+            try {
+                const { paymentIntent } = await stripe.retrievePaymentIntent(piClientSecret);
+                if (paymentIntent.status === 'succeeded') {
+                    // Confirm registration via webhook or direct call
+                    // The webhook will handle it, but show confirmation immediately
+                    const regId = pendingRegId || 'hr_' + Date.now().toString(36);
+                    document.getElementById('formCard').style.display = 'none';
+                    document.getElementById('confirmOverlay').classList.add('visible');
+                    document.getElementById('confirmName').textContent = 'Your payment is confirmed!';
+                    fireConfetti();
+                    showToast('Payment successful! \u2713', 'success');
+
+                    // Clean URL
+                    const cleanUrl = window.location.pathname;
+                    window.history.replaceState({}, '', cleanUrl);
+                }
+            } catch (e) {
+                console.error('[stripe] Payment intent retrieval error:', e);
+            }
         }
 
         // ──────────────────────────────────────────────────────

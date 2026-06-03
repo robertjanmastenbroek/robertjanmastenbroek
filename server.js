@@ -120,6 +120,36 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     }
   }
 
+  // ─── PaymentIntent succeeded (inline card payment) ─────────────────────
+  if (event.type === 'payment_intent.succeeded') {
+    const pi = event.data.object;
+    const regId = pi.metadata?.registration_id;
+    if (regId && regId.startsWith('hr_')) {
+      try {
+        const confirmed = await db.confirmRegistration(regId, null);
+        if (confirmed) {
+          const reg = await db.getRegistrationById(regId);
+          if (reg) {
+            const firstName = reg.first_name || '';
+            const lastName = reg.last_name || '';
+            if (reg.email) {
+              await sendHolyRaveConfirmation(reg.email, firstName, lastName);
+              syncToResendAudience(reg.email, firstName, lastName).catch(e =>
+                console.error('PI webhook audience sync error:', e.message));
+            }
+            if (reg.phone) {
+              const slug = pi.metadata?.event_slug || 'holy-rave';
+              sendTicketSMS(reg.phone, 'Holy Rave', pi.metadata?.event_date, null, pi.metadata?.event_location, slug, regId)
+                .catch(e => console.error('PI webhook SMS error:', e.message));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('PI webhook confirm error:', err.message);
+      }
+    }
+  }
+
   // ─── Payment session expired (user didn't complete) ─────────────────────
   if (event.type === 'checkout.session.expired') {
     const session = event.data.object;
@@ -755,7 +785,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     await db.addSubscriber(email, firstName, lastName, 'holy_rave', phone);
     console.log(`[register] Subscriber saved: ${email}`);
 
-    // Then create Stripe Checkout session
+    // Then create Stripe PaymentIntent for inline payment
     const stripe = getStripe();
     if (!stripe) {
       // Stripe not configured — save as pending registration
@@ -765,52 +795,36 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       return res.json({ id, confirmed: false, note: 'Payment system not available. Registration saved without payment.' });
     }
 
-    const successUrl = eventSlug
-      ? `${SITE_URL}/holy-rave/${eventSlug}?confirmed=${id}`
-      : `${SITE_URL}/holy-rave/confirmed?id=${id}`;
-    const cancelUrl = eventSlug
-      ? `${SITE_URL}/holy-rave/${eventSlug}`
-      : `${SITE_URL}/holy-rave`;
+    console.log(`[register] Creating PaymentIntent for ${email} — €${(amt / 100).toFixed(2)}`);
 
-    console.log(`[register] Creating Stripe session for ${email} — €${(amt / 100).toFixed(2)}`);
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amt,
       currency: 'eur',
-      client_reference_id: id,
-      customer_email: email,
-      line_items: [{
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: eventTitle + (eventDateStr ? ' — ' + eventDateStr : ''),
-            description: (eventLocationStr ? eventLocationStr + ' · ' : '') + `${firstName} ${lastName} · Pay what feels right · You + 1 friend`,
-          },
-          unit_amount: amt,
-        },
-        quantity: 1,
-      }],
-      metadata: eventSlug
-        ? { registration_id: id, event_id: String(eventId), event_date: eventDateStr, event_location: eventLocationStr, event_slug: eventSlug }
-        : { registration_id: id, week },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      metadata: {
+        registration_id: id,
+        event_id: eventId ? String(eventId) : '',
+        event_date: eventDateStr || '',
+        event_location: eventLocationStr || '',
+        event_slug: eventSlug || '',
+      },
+      description: `${firstName} ${lastName} — ${eventTitle}`,
+      // No automatic payment methods to avoid redirect — we handle card manually
+      automatic_payment_methods: { enabled: true },
     });
 
-    console.log(`[register] Stripe session created: ${session.id}`);
+    console.log(`[register] PaymentIntent created: ${paymentIntent.id}`);
 
     await db.createRegistration({
       id, firstName, lastName, email, phone, amount: amt, week, eventId,
-      stripeSessionId: session.id,
+      stripeSessionId: paymentIntent.id,
     });
 
     // Sync to Resend (fire-and-forget, happens regardless)
     syncToResendAudience(email, firstName, lastName, phone).catch(e =>
       console.error('[register] Resend sync error:', e.message));
 
-    // Return both clientSecret (for embedded checkout) and checkoutUrl (fallback redirect)
-    res.json({ id, clientSecret: session.client_secret, checkoutUrl: session.url });
+    // Return clientSecret for inline Payment Element — no redirect needed
+    res.json({ id, clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
   } catch (err) {
     console.error('[register] Holy Rave register error:', err);
     console.error('[register] Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
