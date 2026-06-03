@@ -2618,6 +2618,14 @@
             fireConfetti();
             showToast('Payment successful! \u2713', 'success');
 
+            // Immediately refresh ticket count
+            if (currentSlug) {
+                fetch('/api/holy-rave/events/' + currentSlug).then(r => r.json()).then(event => {
+                    currentEvent = event;
+                    updateDetailMeter(event);
+                }).catch(e => console.error('[refresh] Meter update error:', e));
+            }
+
             // Confirm the registration in the database (bypasses webhook dependency)
             fetch('/api/holy-rave/confirm-payment', {
                 method: 'POST',
@@ -3106,8 +3114,9 @@
         }
 
         // ──────────────────────────────────────────────────────
-        // POLL: Refresh ticket count every 30s
+        // POLL: Refresh ticket count every 30s across all modes
         // ──────────────────────────────────────────────────────
+        // Detail mode — updates the SVG meter
         if (currentSlug) {
             setInterval(async () => {
                 try {
@@ -3118,6 +3127,13 @@
                         updateDetailMeter(event);
                     }
                 } catch (e) {}
+            }, 30000);
+        }
+
+        // Hub mode — updates the event card grid
+        if (!currentSlug) {
+            setInterval(() => {
+                loadEvents();
             }, 30000);
         }
 

@@ -1699,6 +1699,9 @@
         loadNextEvent();
         loadListeners();
         loadSubscribers();
+        // Refresh event + subscriber data every 30s
+        setInterval(() => { loadNextEvent(); }, 30000);
+        setInterval(() => { loadSubscribers(); }, 60000);
     </script>
 </body>
 </html>
