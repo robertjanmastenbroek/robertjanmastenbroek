@@ -442,8 +442,8 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
 
     res.json({ ok: true, masked });
   } catch (err) {
-    console.error('[verify] Send error:', err.message);
-    res.status(500).json({ error: 'Failed to send verification code. Try again.' });
+    console.error('[verify] Send error:', err);
+    res.status(500).json({ error: 'Failed to send verification code. ' + (err.message || err) });
   }
 });
 
