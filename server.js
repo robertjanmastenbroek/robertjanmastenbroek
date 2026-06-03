@@ -62,58 +62,6 @@ async function sendVonageSMS(to, body) {
   }
 }
 
-// Lazy-initialize Stripe, Resend, and Twilio so the server starts even without env vars
-let twilioClient = null;
-function getTwilio() {
-  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) return null;
-  if (!twilioClient) {
-    twilioClient = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-  }
-  return twilioClient;
-}
-
-const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || ''; // e.g. '+1234567890'
-const TWILIO_ALPHA_SENDER = process.env.TWILIO_ALPHA_SENDER || ''; // Set to 'HolyRave' to enable alpha sender for EU
-
-// EU country codes that support alpha sender IDs
-const EU_COUNTRY_CODES = new Set([
-  '31','32','33','34','36','39','40','41','43','44','45','46','47','48',
-  '49','212','213','220','221','222','223','224','225','226','227','228',
-  '229','230','231','232','233','234','235','236','237','238','239','240',
-  '241','242','243','244','245','246','247','248','249','250','251','252',
-  '253','254','255','256','257','258','260','261','262','263','264','265',
-  '266','267','268','269','290','291','297','298','299','350','351','352',
-  '353','354','355','356','357','358','359','370','371','372','373','374',
-  '375','376','377','378','379','380','381','382','383','385','386','387',
-  '389','420','421','423','500','501','502','503','504','505','506','507',
-  '508','509','590','591','592','593','594','595','596','597','598','599',
-  '670','672','673','674','675','676','677','678','679','680','681','682',
-  '683','685','686','687','688','689','690','691','692','800','808','850',
-  '852','853','855','856','870','880','881','882','883','886','960','961',
-  '962','963','964','965','966','967','968','970','971','972','973','974',
-  '975','976','977','992','993','994','995','996','998',
-]);
-// Focused set for EU countries that definitely support alpha sender
-const EU_ALPHA_SUPPORTED = new Set([
-  '31','32','33','34','36','39','40','41','43','44','45','46','47','48',
-  '49','350','351','352','353','354','355','356','357','358','359','370',
-  '371','372','373','374','375','376','377','378','379','380','381','382',
-  '383','385','386','387','389','420','421','423',
-]);
-
-function getFromNumber(recipientPhone) {
-  if (!TWILIO_FROM_NUMBER) return '';
-  // Only use alpha sender if explicitly configured and recipient is in EU
-  if (TWILIO_ALPHA_SENDER) {
-    const cleaned = recipientPhone.replace(/\s+/g, '');
-    const match = cleaned.match(/^\+(\d{1,3})/);
-    if (match && EU_ALPHA_SUPPORTED.has(match[1])) {
-      return TWILIO_ALPHA_SENDER;
-    }
-  }
-  // Default: use the phone number (works for all countries)
-  return TWILIO_FROM_NUMBER;
-}
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
   if (!getStripe._instance) {
@@ -526,21 +474,11 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
 
     await db.storeVerificationCode(phone, code);
 
-    // Send verification code — Vonage first, Twilio fallback
+    // Send verification code via Vonage only
     const codeMsg = `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`;
     const codeResult = await sendVonageSMS(phone, codeMsg).catch(() => null);
     if (!codeResult) {
-      const twilio = getTwilio();
-      if (twilio && TWILIO_FROM_NUMBER) {
-        twilio.messages.create({
-          body: codeMsg,
-          from: TWILIO_FROM_NUMBER,
-          to: phone.replace(/\s+/g, ''),
-        }).then(() => console.log('[verify] Twilio sent to ' + phone))
-          .catch(e => console.error('[verify] Twilio error:', e.message));
-      } else {
-        console.log('[verify] DEV MODE — Code for ' + phone + ': ' + code);
-      }
+      console.log('[verify] DEV MODE — Code for ' + phone + ': ' + code);
     }
 
     // Respond immediately — code is stored in DB regardless of SMS delivery
@@ -1366,25 +1304,12 @@ app.post('/api/debug/send-test-sms', async (req, res) => {
   const { phone } = req.body;
   if (!phone) return res.status(400).json({ error: 'Phone required' });
 
-  // Try Vonage first
-  const msg = 'Holy Rave test from Vonage — SMS is working.';
-  const vonageResult = await sendVonageSMS(phone, msg);
-  if (vonageResult) return res.json({ ok: true, provider: 'vonage', result: vonageResult });
-
-  // Fallback to Twilio
-  const twilio = getTwilio();
-  if (!twilio) return res.status(503).json({ error: 'No SMS provider configured' });
-  if (!TWILIO_FROM_NUMBER) return res.status(503).json({ error: 'TWILIO_FROM_NUMBER not set' });
-
   try {
-    const result = await twilio.messages.create({
-      body: 'Holy Rave test — Twilio fallback SMS.',
-      from: TWILIO_FROM_NUMBER,
-      to: phone.replace(/\s+/g, ''),
-    });
-    res.json({ ok: true, provider: 'twilio', sid: result.sid, status: result.status });
+    const result = await sendVonageSMS(phone, 'Holy Rave test from Vonage — SMS is working.');
+    if (!result) return res.status(503).json({ error: 'Vonage not configured' });
+    res.json({ ok: true, provider: 'vonage', result });
   } catch (err) {
-    res.status(500).json({ error: err.message, code: err.code });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -1398,25 +1323,7 @@ app.get('/api/debug/vonage', (req, res) => {
   });
 });
 
-// ─── Twilio configuration check (for debugging) ─────────────────────────────
-app.get('/api/debug/twilio', (req, res) => {
-  const sid = process.env.TWILIO_ACCOUNT_SID || '';
-  const token = process.env.TWILIO_AUTH_TOKEN || '';
-  const fromNumber = process.env.TWILIO_FROM_NUMBER || '';
-  res.json({
-    sidSet: !!sid,
-    sidPrefix: sid ? sid.substring(0, 6) + '...' : null,
-    tokenSet: !!token,
-    fromNumberSet: !!fromNumber,
-    fromNumber: fromNumber || null,
-    testTwilio: (() => {
-      try {
-        const t = getTwilio();
-        return !!t;
-      } catch (e) { return false; }
-    })(),
-  });
-});
+
 
 // ─── Resend configuration check (for debugging) ──────────────────────────────
 app.get('/api/debug/resend', (req, res) => {
@@ -1547,24 +1454,6 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
   }
 }
 
-// ─── Twilio SMS helper (used as parallel send alongside Vonage) ─────────────
-function sendViaTwilio(phone, message) {
-  if (!TWILIO_FROM_NUMBER || !getTwilio()) return;
-  const sendPromise = getTwilio().messages.create({
-    body: message,
-    from: TWILIO_FROM_NUMBER,
-    to: phone.replace(/\s+/g, ''),
-  });
-  Promise.race([
-    sendPromise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Twilio timeout')), 5000)),
-  ]).then(result => {
-    console.log('[twilio] Sent to ' + phone + ' (sid: ' + (result.sid || '') + ')');
-  }).catch(err => {
-    console.error('[twilio] Failed:', err.message);
-  });
-}
-
 // ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
 // Sends a ticket SMS — tries Vonage (EU-native), falls back to Twilio.
 async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl, confirmationCode) {
@@ -1588,12 +1477,8 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   const mapStr = mapsUrl ? `\n🗺️ ${mapsUrl}` : '';
   const message = `You're in for Holy Rave! ✨\n\n📍 ${locStr}${mapStr}\n📅 ${dateStr}\n🕐 ${timeStr}\n👥 You + 1 friend${codeStr}\n\nShow this at the door.\n\n${link}`;
 
-  // Try Vonage first (alpha sender, cheaper for EU)
-  // Only fall back to Twilio if Vonage isn't configured or errors
-  const vResult = await sendVonageSMS(phone, message).catch(() => null);
-  if (!vResult && TWILIO_FROM_NUMBER && getTwilio()) {
-    sendViaTwilio(phone, message);
-  }
+  // Send via Vonage only
+  await sendVonageSMS(phone, message).catch(e => console.error('[sms] Vonage failed:', e.message));
 }
 
 // ─── Holy Rave Confirmation Email ─────────────────────────────────────────────
