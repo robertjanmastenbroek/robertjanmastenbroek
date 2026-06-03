@@ -432,7 +432,7 @@ app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
 
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
 app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
-  const { firstName, lastName, email, amount, eventSlug } = req.body;
+  const { firstName, lastName, email, phone, amount, eventSlug } = req.body;
 
   if (!firstName || !lastName || !email || !email.includes('@')) {
     return res.status(400).json({ error: 'Please fill in all fields correctly.' });
@@ -491,10 +491,10 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
 
     // Free ticket — confirm immediately
     if (amt === 0) {
-      await db.createRegistration({ id, firstName, lastName, email, amount: 0, week, eventId });
+      await db.createRegistration({ id, firstName, lastName, email, phone, amount: 0, week, eventId });
       sendHolyRaveConfirmation(email, firstName, lastName).catch(e =>
         console.error('Free ticket email error:', e.message));
-      syncToResendAudience(email, firstName, lastName).catch(e =>
+      syncToResendAudience(email, firstName, lastName, phone).catch(e =>
         console.error('Free ticket audience sync error:', e.message));
       return res.json({ id, confirmed: true });
     }
@@ -537,7 +537,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     });
 
     await db.createRegistration({
-      id, firstName, lastName, email, amount: amt, week, eventId,
+      id, firstName, lastName, email, phone, amount: amt, week, eventId,
       stripeSessionId: session.id,
     });
 
@@ -738,25 +738,28 @@ app.get('*', (req, res) => {
 // ─── Resend Audience Sync ─────────────────────────────────────────────────────
 // Adds contacts to a Resend audience for broadcast/automation emails.
 // Requires RESEND_AUDIENCE_ID in Railway variables.
-async function syncToResendAudience(email, firstName, lastName) {
+async function syncToResendAudience(email, firstName, lastName, phone) {
   const audienceId = process.env.RESEND_AUDIENCE_ID;
   if (!audienceId) return; // silently skip if not configured
 
   try {
+    const body = {
+      email,
+      first_name: firstName || '',
+      last_name: lastName || '',
+      unsubscribed: false,
+    };
+    if (phone) body.phone_number = phone;
+
     await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        email,
-        first_name: firstName || '',
-        last_name: lastName || '',
-        unsubscribed: false,
-      }),
+      body: JSON.stringify(body),
     });
-    console.log(`[resend] Contact synced: ${email}`);
+    console.log(`[resend] Contact synced: ${email}${phone ? ' + phone' : ''}`);
   } catch (err) {
     console.error('[resend] Audience sync error:', err.message);
   }

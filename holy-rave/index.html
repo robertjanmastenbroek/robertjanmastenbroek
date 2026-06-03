@@ -1571,7 +1571,7 @@
                     <svg class="sigil sigil--md sigil-mark"><use href="#sigil"/></svg>
                     <h2>You're <em>in.</em></h2>
                     <p id="confirmName">Your spot is reserved.</p>
-                    <p>You + one friend — the exact meeting point is on your confirmation and coming by email.</p>
+                    <p>You + one friend — your ticket and location details will arrive via WhatsApp within 24 hours.</p>
                     <div class="divider">
                         <span class="line"></span>
                         <svg class="sigil sigil--sm"><use href="#sigil"/></svg>
@@ -1617,11 +1617,12 @@
                     </div>
 
                     <p class="form-sub" id="formSub">
-                        <span id="stepLabel">Step 1 of 3 — Your details</span>
+                        <span id="stepLabel">Step 1 of 3 — Your details</span><br>
+                        <span style="font-size:0.78rem;color:var(--text-mute);">Your ticket and location will be sent to your phone via WhatsApp</span>
                     </p>
 
                     <form id="registerForm">
-                        <!-- STEP 1: Name + Email -->
+                        <!-- STEP 1: Name + Email + Phone -->
                         <div class="form-step active" data-step="1">
                             <div class="field-row">
                                 <div class="field-group">
@@ -1639,6 +1640,31 @@
                                 <label class="field-label" for="email">Email</label>
                                 <input type="email" id="email" class="field-input"
                                        placeholder="you@email.com" required autocomplete="email">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="phone">Phone <span style="color:var(--text-mute);font-weight:300;text-transform:none;letter-spacing:0.02em;">— your ticket arrives here</span></label>
+                                <div style="display:flex;gap:0.5rem;align-items:stretch;">
+                                    <select id="phoneCountry" class="field-input" style="width:auto;min-width:4.5rem;padding:0.95rem 0.5rem;appearance:auto;-webkit-appearance:auto;">
+                                        <option value="+34" selected>🇪🇸 +34</option>
+                                        <option value="+31">🇳🇱 +31</option>
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="+44">🇬🇧 +44</option>
+                                        <option value="+49">🇩🇪 +49</option>
+                                        <option value="+33">🇫🇷 +33</option>
+                                        <option value="+39">🇮🇹 +39</option>
+                                        <option value="+351">🇵🇹 +351</option>
+                                        <option value="+46">🇸🇪 +46</option>
+                                        <option value="+47">🇳🇴 +47</option>
+                                        <option value="+45">🇩🇰 +45</option>
+                                        <option value="+48">🇵🇱 +48</option>
+                                        <option value="+43">🇦🇹 +43</option>
+                                        <option value="+41">🇨🇭 +41</option>
+                                        <option value="+32">🇧🇪 +32</option>
+                                    </select>
+                                    <input type="tel" id="phoneNumber" class="field-input" style="flex:1;"
+                                           placeholder="612 345 678" autocomplete="tel-national">
+                                </div>
+                                <p style="font-size:0.68rem;color:var(--text-mute);margin-top:0.3rem;letter-spacing:0.04em;">Your ticket and location details will be sent here via WhatsApp</p>
                             </div>
                             <button type="button" class="step-btn" style="margin-top:1.25rem;" onclick="goToStep(2)">
                                 Check Availability →
@@ -2010,6 +2036,9 @@
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const email = document.getElementById('email').value.trim();
+            const phoneCountry = document.getElementById('phoneCountry')?.value || '+34';
+            const phoneNumber = document.getElementById('phoneNumber')?.value.trim() || '';
+            const phone = phoneNumber ? phoneCountry + ' ' + phoneNumber : '';
 
             let amount = selectedAmount;
             const customRow = document.getElementById('customRow');
@@ -2031,7 +2060,7 @@
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, amount, eventSlug: currentSlug }),
+                    body: JSON.stringify({ firstName, lastName, email, phone, amount, eventSlug: currentSlug }),
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Something went wrong.');

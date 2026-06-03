@@ -1,23 +1,25 @@
 -- Schema for robertjanmastenbroek.com
 -- Run once: psql $DATABASE_URL -f lib/schema.sql
 
--- Subscribers (email capture + Holy Rave attendees)
+-- Subscribers (email + phone capture for Holy Rave attendees)
 CREATE TABLE IF NOT EXISTS subscribers (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   first_name VARCHAR(255),
   last_name VARCHAR(255),
+  phone VARCHAR(30),
   source VARCHAR(50) DEFAULT 'email_form',  -- 'email_form' | 'holy_rave'
   subscribed_at TIMESTAMPTZ DEFAULT NOW(),
   unsubscribed_at TIMESTAMPTZ
 );
 
--- Holy Rave weekly registrations
+-- Holy Rave event registrations
 CREATE TABLE IF NOT EXISTS holy_rave_registrations (
   id VARCHAR(50) PRIMARY KEY,               -- hr_xxx format
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
   email VARCHAR(255) NOT NULL,
+  phone VARCHAR(30),
   amount_cents INTEGER DEFAULT 0,
   quantity INTEGER DEFAULT 1,                -- number of 2-ticket reservations (default 1 = you + 1 friend)
   status VARCHAR(20) DEFAULT 'pending',      -- 'pending' | 'confirmed' | 'expired'
@@ -52,6 +54,16 @@ CREATE TABLE IF NOT EXISTS events (
 -- Migration: add event_id to holy_rave_registrations
 DO $$ BEGIN
   ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS event_id INTEGER REFERENCES events(id);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+-- Migration: add phone column to existing tables
+DO $$ BEGIN
+  ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS phone VARCHAR(30);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS phone VARCHAR(30);
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
