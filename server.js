@@ -33,6 +33,47 @@ function getTwilio() {
 }
 
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || ''; // e.g. '+1234567890'
+const TWILIO_ALPHA_SENDER = process.env.TWILIO_ALPHA_SENDER || 'HolyRave'; // For EU recipients
+
+// EU country codes that support alpha sender IDs
+const EU_COUNTRY_CODES = new Set([
+  '31','32','33','34','36','39','40','41','43','44','45','46','47','48',
+  '49','212','213','220','221','222','223','224','225','226','227','228',
+  '229','230','231','232','233','234','235','236','237','238','239','240',
+  '241','242','243','244','245','246','247','248','249','250','251','252',
+  '253','254','255','256','257','258','260','261','262','263','264','265',
+  '266','267','268','269','290','291','297','298','299','350','351','352',
+  '353','354','355','356','357','358','359','370','371','372','373','374',
+  '375','376','377','378','379','380','381','382','383','385','386','387',
+  '389','420','421','423','500','501','502','503','504','505','506','507',
+  '508','509','590','591','592','593','594','595','596','597','598','599',
+  '670','672','673','674','675','676','677','678','679','680','681','682',
+  '683','685','686','687','688','689','690','691','692','800','808','850',
+  '852','853','855','856','870','880','881','882','883','886','960','961',
+  '962','963','964','965','966','967','968','970','971','972','973','974',
+  '975','976','977','992','993','994','995','996','998',
+]);
+// Focused set for EU countries that definitely support alpha sender
+const EU_ALPHA_SUPPORTED = new Set([
+  '31','32','33','34','36','39','40','41','43','44','45','46','47','48',
+  '49','350','351','352','353','354','355','356','357','358','359','370',
+  '371','372','373','374','375','376','377','378','379','380','381','382',
+  '383','385','386','387','389','420','421','423',
+]);
+
+function getFromNumber(recipientPhone) {
+  if (!TWILIO_FROM_NUMBER) return '';
+  const cleaned = recipientPhone.replace(/\s+/g, '');
+  // Extract country code: +1, +34, +44, etc.
+  const match = cleaned.match(/^\+(\d{1,3})/);
+  if (!match) return TWILIO_FROM_NUMBER;
+  const countryCode = match[1];
+  // Use alpha sender for EU countries, phone number for US/CA and rest
+  if (EU_ALPHA_SUPPORTED.has(countryCode)) {
+    return TWILIO_ALPHA_SENDER;
+  }
+  return TWILIO_FROM_NUMBER;
+}
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
   if (!getStripe._instance) {
@@ -445,7 +486,7 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
     if (twilio && TWILIO_FROM_NUMBER) {
       await twilio.messages.create({
         body: `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`,
-        from: TWILIO_FROM_NUMBER,
+        from: getFromNumber(phone),
         to: phone.replace(/\s+/g, ''),
       });
       console.log(`[verify] Code sent to ${phone}`);
@@ -1322,7 +1363,7 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   try {
     const result = await twilio.messages.create({
       body: message,
-      from: TWILIO_FROM_NUMBER,
+      from: getFromNumber(phone),
       to: phone.replace(/\s+/g, ''),
     });
     console.log(`[sms] Ticket SMS sent to ${phone} (sid: ${result.sid})`);
