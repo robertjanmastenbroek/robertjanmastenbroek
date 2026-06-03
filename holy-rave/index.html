@@ -2096,12 +2096,18 @@
             goToStep(3); // Show loading state
             btn.disabled = true;
 
+            // Timeout after 30 seconds so the user isn't stuck on the spinner
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 30000);
+
             try {
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ firstName, lastName, email, phone, amount, eventSlug: currentSlug }),
+                    signal: controller.signal,
                 });
+                clearTimeout(timeout);
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Something went wrong.');
 
@@ -2118,7 +2124,12 @@
                     showInlineConfirmation(firstName, lastName, data.id);
                 }
             } catch (err) {
-                error.textContent = err.message;
+                clearTimeout(timeout);
+                if (err.name === 'AbortError') {
+                    error.textContent = 'Request timed out. Stripe may be having issues — please try again or use the redirect fallback below.';
+                } else {
+                    error.textContent = err.message || 'Something went wrong. Please try again.';
+                }
                 goToStep(2);
                 btn.disabled = false;
             }
