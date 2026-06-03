@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const db = require('./lib/db');
+const supabase = require('./lib/supabase');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -210,9 +211,23 @@ app.use(express.static(path.join(__dirname)));
 
 // ─── Admin auth helper ───────────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
-  // Session-based auth
+  // Session-based auth (legacy, for existing admin sessions)
   if (req.session && req.session.isAdmin) {
     return next();
+  }
+  // Supabase Auth token (Authorization: Bearer <token>)
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
+    // Async but Express doesn't pass errors — wrap it
+    supabase.getUserFromToken(token).then(user => {
+      if (user) {
+        req.adminUser = user;
+        return next();
+      }
+      return res.status(401).json({ error: 'Unauthorized. Please log in.' });
+    }).catch(() => res.status(401).json({ error: 'Unauthorized.' }));
+    return;
   }
   // Fallback: API key header (for programmatic use)
   const apiKey = req.headers['x-api-key'];
@@ -247,6 +262,90 @@ app.post('/api/admin/logout', (req, res) => {
 
 app.get('/api/admin/me', (req, res) => {
   res.json({ authenticated: !!(req.session && req.session.isAdmin) });
+});
+
+// ─── Supabase Auth Endpoints (user accounts) ─────────────────────────────────
+
+// POST /api/auth/signup — create account with email + password
+app.post('/api/auth/signup', async (req, res) => {
+  const { email, password, firstName, lastName, phone } = req.body;
+  if (!email || !password || password.length < 6) {
+    return res.status(400).json({ error: 'Email and password (min 6 chars) required.' });
+  }
+
+  const client = supabase.getPublicClient();
+  if (!client) return res.status(503).json({ error: 'Auth system not configured.' });
+
+  const { data, error } = await client.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { first_name: firstName || '', last_name: lastName || '', phone: phone || '' },
+    },
+  });
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ ok: true, userId: data.user?.id });
+});
+
+// POST /api/auth/login — sign in with email + password
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required.' });
+
+  const client = supabase.getPublicClient();
+  if (!client) return res.status(503).json({ error: 'Auth system not configured.' });
+
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error) return res.status(401).json({ error: error.message });
+
+  // Return session token for client-side storage
+  res.json({
+    ok: true,
+    accessToken: data.session?.access_token,
+    refreshToken: data.session?.refresh_token,
+    user: {
+      id: data.user?.id,
+      email: data.user?.email,
+      firstName: data.user?.user_metadata?.first_name || '',
+      lastName: data.user?.user_metadata?.last_name || '',
+      phone: data.user?.user_metadata?.phone || '',
+    },
+  });
+});
+
+// POST /api/auth/logout — invalidate session
+app.post('/api/auth/logout', async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (token) {
+    const client = supabase.getPublicClient();
+    if (client) await client.auth.admin.signOut(token);
+  }
+  res.json({ ok: true });
+});
+
+// GET /api/auth/me — get current user from access token
+app.get('/api/auth/me', async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (!token) return res.json({ authenticated: false });
+
+  const user = await supabase.getUserFromToken(token);
+  if (!user) return res.json({ authenticated: false });
+
+  res.json({
+    authenticated: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      firstName: user.user_metadata?.first_name || '',
+      lastName: user.user_metadata?.last_name || '',
+      phone: user.user_metadata?.phone || '',
+    },
+  });
 });
 
 // ─── Input Validation Helpers ────────────────────────────────────────────────

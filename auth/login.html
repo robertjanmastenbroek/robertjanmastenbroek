@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Holy Rave</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#0a0a0a; color:#f5f1e8;
+      font-family:'Inter',-apple-system,sans-serif;
+      font-weight:300; min-height:100vh;
+      display:flex; align-items:center; justify-content:center;
+      padding:2rem;
+    }
+    .card {
+      background:#121216; border:1px solid rgba(200,136,58,0.18);
+      padding:3rem 2.5rem; width:100%; max-width:400px;
+      position:relative;
+    }
+    .card::before {
+      content:''; position:absolute; top:0; left:0; right:0;
+      height:2px; background:linear-gradient(90deg,transparent,#c8883a,transparent);
+    }
+    .card h1 {
+      font-family:'Cormorant Garamond',Georgia,serif;
+      font-weight:400; font-size:1.8rem; margin-bottom:0.3rem;
+    }
+    .card h1 em { color:#c8883a; font-style:italic; }
+    .card .sub { color:#7a7266; font-size:0.85rem; margin-bottom:2rem; }
+    .field { margin-bottom:1rem; }
+    .field label {
+      display:block; font-size:0.7rem; letter-spacing:0.18em;
+      text-transform:uppercase; color:#7a7266; margin-bottom:0.3rem;
+    }
+    .field input {
+      width:100%; padding:0.8rem 1rem;
+      background:rgba(10,10,10,0.6); border:1px solid rgba(200,136,58,0.15);
+      color:#f5f1e8; font-family:'Inter',sans-serif; font-size:0.9rem;
+      outline:none; transition:border-color 0.2s;
+    }
+    .field input:focus { border-color:#c8883a; }
+    .btn {
+      width:100%; padding:0.9rem; margin-top:1rem;
+      background:#d4af37; border:none; color:#0a0a0a;
+      font-family:'Inter',sans-serif; font-size:0.76rem;
+      font-weight:700; letter-spacing:0.24em; text-transform:uppercase;
+      cursor:pointer; transition:background 0.3s;
+    }
+    .btn:hover { background:#b8532a; color:#fff; }
+    .btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .error { color:#b8532a; font-size:0.78rem; min-height:1.2rem; margin-top:0.5rem; text-align:center; }
+    .foot { text-align:center; margin-top:1.5rem; font-size:0.82rem; color:#7a7266; }
+    .foot a { color:#c8883a; text-decoration:none; }
+    .foot a:hover { color:#d4af37; }
+    .toast {
+      position:fixed; bottom:2rem; right:2rem;
+      background:#121216; border:1px solid rgba(200,136,58,0.25);
+      padding:0.85rem 1.25rem; font-size:0.82rem; color:#c9c4b6;
+      z-index:200; display:none;
+      animation:fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Sign <em>In</em></h1>
+    <p class="sub">Sign in to your Holy Rave account</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()">
+    </div>
+    <div class="error" id="error"></div>
+    <button class="btn" id="loginBtn" onclick="login()">Sign In</button>
+    <p class="foot">No account? <a href="/auth/signup">Create one</a></p>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    async function login() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const error = document.getElementById('error');
+      const btn = document.getElementById('loginBtn');
+      if (!email || !password) { error.textContent = 'Fill in all fields.'; return; }
+      btn.textContent = 'Signing in...'; btn.disabled = true; error.textContent = '';
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        localStorage.setItem('hr_access_token', data.accessToken);
+        localStorage.setItem('hr_refresh_token', data.refreshToken);
+        localStorage.setItem('hr_user', JSON.stringify(data.user));
+        // Redirect back or to homepage
+        const dest = new URLSearchParams(window.location.search).get('redirect') || '/';
+        window.location.href = dest;
+      } catch (err) {
+        error.textContent = err.message;
+        btn.textContent = 'Sign In'; btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

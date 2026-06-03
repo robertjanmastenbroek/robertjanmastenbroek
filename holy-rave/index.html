@@ -1945,9 +1945,39 @@
         const urlParams = new URLSearchParams(window.location.search);
         const confirmedId = urlParams.get('confirmed');
 
+        // ── Check for logged-in user ──
+        function getLoggedInUser() {
+            try {
+                const raw = localStorage.getItem('hr_user');
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) { return null; }
+        }
+
+        function prefillFromUser() {
+            const user = getLoggedInUser();
+            if (!user) return;
+            const first = document.getElementById('firstName');
+            const last = document.getElementById('lastName');
+            const email = document.getElementById('email');
+            if (first && user.firstName) first.value = user.firstName;
+            if (last && user.lastName) last.value = user.lastName;
+            if (email && user.email) email.value = user.email;
+            if (user.phone) {
+                const parts = user.phone.split(' ');
+                if (parts.length >= 2) {
+                    const countrySelect = document.getElementById('phoneCountry');
+                    const numberInput = document.getElementById('phoneNumber');
+                    if (countrySelect) { countrySelect.value = parts[0]; }
+                    if (numberInput) { numberInput.value = parts.slice(1).join(' '); }
+                }
+            }
+        }
+
         if (slug && slug !== 'confirmed') {
             currentSlug = slug;
             showDetailMode(slug, confirmedId);
+            // Prefill after detail mode loads the form
+            setTimeout(prefillFromUser, 500);
         } else {
             showHubMode();
         }
