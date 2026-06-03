@@ -305,12 +305,19 @@
       </div>
       <div class="field-group">
         <label>Event Image</label>
-        <div style="display:flex;gap:0.5rem;">
-          <input type="text" id="fImageUrl" placeholder="https://images.pexels.com/... or paste URL" style="flex:1;">
-          <button class="btn" type="button" onclick="openPexels()">Browse</button>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <input type="text" id="fImageUrl" placeholder="Paste URL or upload below" style="flex:1;">
+          <button class="btn" type="button" onclick="openPexels()">Pexels</button>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.4rem;align-items:center;flex-wrap:wrap;">
+          <label style="padding:0.5rem 1rem;border:1px dashed rgba(200,136,58,0.3);color:#c8883a;font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;flex:1;text-align:center;" id="uploadLabel" onmouseover="this.style.borderColor='#c8883a'" onmouseout="this.style.borderColor='rgba(200,136,58,0.3)'">
+            📁 Upload Image
+            <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="uploadImage(this)">
+          </label>
+          <div id="uploadStatus" style="font-size:0.72rem;color:#7a7266;min-width:80px;text-align:center;"></div>
         </div>
         <div class="image-preview" id="imagePreview">
-          <span class="placeholder">No image selected · Click "Browse" to search Pexels or paste a URL</span>
+          <span class="placeholder">Drag an image or click "Upload Image"</span>
         </div>
       </div>
       <div class="form-actions">
@@ -413,9 +420,48 @@
       document.getElementById('formMessage').textContent = '';
     }
 
+    // ── Image upload (file → DB BYTEA) ───────────────────────────────────
+    async function uploadImage(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        document.getElementById('uploadStatus').textContent = 'Images only';
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        document.getElementById('uploadStatus').textContent = 'Max 10MB';
+        return;
+      }
+
+      const status = document.getElementById('uploadStatus');
+      status.textContent = 'Uploading...';
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const key = getKey();
+        const res = await fetch('/api/admin/event-images/upload', {
+          method: 'POST',
+          headers: key ? { 'x-api-key': key } : {},
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+        document.getElementById('fImageUrl').value = data.url;
+        updateImagePreview(data.url);
+        status.textContent = '✅ Uploaded';
+        setTimeout(() => status.textContent = '', 3000);
+      } catch (err) {
+        status.textContent = '❌ ' + err.message;
+      }
+    }
+
     function clearImagePreview() {
       const preview = document.getElementById('imagePreview');
-      preview.innerHTML = '<span class="placeholder">No image selected · Click "Browse" to search Pexels or paste a URL</span>';
+      preview.innerHTML = '<span class="placeholder">No image selected · Click "Upload Image" or paste a URL</span>';
     }
 
     function updateImagePreview(url) {

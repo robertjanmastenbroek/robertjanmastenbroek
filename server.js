@@ -1,8 +1,19 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const db = require('./lib/db');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files allowed'));
+  },
+});
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -752,6 +763,46 @@ app.get('/api/admin/sync-audience', async (req, res) => {
   } catch (err) {
     console.error('Admin sync error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Event image upload (admin, protected) ───────────────────────────────────
+app.post('/api/admin/event-images/upload', requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+
+    const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+    const shortId = crypto.randomBytes(6).toString('base64url');
+    const id = 'evimg_' + shortId;
+
+    await db.insertEventImage({
+      id,
+      filename: req.file.originalname,
+      mimeType: req.file.mimetype,
+      imageData: req.file.buffer,
+    });
+
+    const url = `/api/images/event/${shortId}${ext}`;
+    res.json({ ok: true, id, url, filename: req.file.originalname });
+  } catch (err) {
+    console.error('Image upload error:', err.message);
+    res.status(500).json({ error: 'Upload failed: ' + err.message });
+  }
+});
+
+// ─── Serve uploaded event images ───────────────────────────────────────────
+app.get('/api/images/event/:shortId', async (req, res) => {
+  try {
+    const id = 'evimg_' + req.params.shortId;
+    const img = await db.getEventImage(id);
+    if (!img) return res.status(404).send('Image not found');
+
+    res.setHeader('Content-Type', img.mime_type);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(img.image_data);
+  } catch (err) {
+    console.error('Image serve error:', err.message);
+    res.status(500).send('Error serving image');
   }
 });
 

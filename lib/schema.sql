@@ -57,6 +57,15 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
+-- Event images (stored as BYTEA for Railway persistence)
+CREATE TABLE IF NOT EXISTS event_images (
+  id VARCHAR(50) PRIMARY KEY,                -- short unique id
+  filename VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(50) NOT NULL DEFAULT 'image/jpeg',
+  image_data BYTEA NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Migration: add phone column to existing tables
 DO $$ BEGIN
   ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS phone VARCHAR(30);
