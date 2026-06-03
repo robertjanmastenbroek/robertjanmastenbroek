@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS holy_rave_registrations (
   amount_cents INTEGER DEFAULT 0,
   quantity INTEGER DEFAULT 1,                -- number of 2-ticket reservations (default 1 = you + 1 friend)
   status VARCHAR(20) DEFAULT 'pending',      -- 'pending' | 'confirmed' | 'expired'
-  week VARCHAR(10) NOT NULL,                 -- YYYY-MM-DD (Monday)
+  week VARCHAR(10),                         -- YYYY-MM-DD (Monday) — NULL for event-based registrations
   stripe_session_id VARCHAR(255),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   confirmed_at TIMESTAMPTZ
@@ -79,6 +79,12 @@ END $$;
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_subscribers_email ON subscribers(email);
 CREATE INDEX IF NOT EXISTS idx_registrations_email ON holy_rave_registrations(email);
+-- Migration: allow week to be NULL for event-based registrations
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ALTER COLUMN week DROP NOT NULL;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_registrations_week ON holy_rave_registrations(week);
 CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON holy_rave_registrations(event_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_status ON holy_rave_registrations(status);

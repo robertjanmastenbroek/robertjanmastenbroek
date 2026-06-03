@@ -221,7 +221,7 @@ function validateEmail(email) {
 }
 
 function validatePhone(phone) {
-  if (!phone) return null; // phone is optional
+  if (!phone) return 'Phone number is required — your ticket will be sent via WhatsApp.';
   const cleaned = phone.replace(/\s/g, '');
   if (!PHONE_REGEX.test(cleaned)) return 'Please enter a valid phone number with country code (e.g. +34 612 345 678).';
   return null;

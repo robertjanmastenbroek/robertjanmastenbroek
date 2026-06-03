@@ -2074,15 +2074,17 @@
                     document.getElementById('formError').textContent = 'Please use a permanent email address, not a temporary one.';
                     return;
                 }
-                // Validate phone
+                // Validate phone (required — your ticket arrives via WhatsApp)
                 const phoneCountry = document.getElementById('phoneCountry')?.value || '+34';
                 const phoneNumber = document.getElementById('phoneNumber')?.value.trim() || '';
-                if (phoneNumber) {
-                    const fullPhone = phoneCountry + ' ' + phoneNumber;
-                    if (!/^\+\d{1,4}\s?\d{4,15}$/.test(fullPhone.replace(/\s+/g, ' '))) {
-                        document.getElementById('formError').textContent = 'Please enter a valid phone number (e.g. ' + phoneCountry + ' 612 345 678).';
-                        return;
-                    }
+                if (!phoneNumber) {
+                    document.getElementById('formError').textContent = 'Phone number is required — your ticket will be sent via WhatsApp.';
+                    return;
+                }
+                const fullPhone = phoneCountry + ' ' + phoneNumber;
+                if (!/^\+\d{1,4}\s?\d{4,15}$/.test(fullPhone.replace(/\s+/g, ' '))) {
+                    document.getElementById('formError').textContent = 'Please enter a valid phone number (e.g. ' + phoneCountry + ' 612 345 678).';
+                    return;
                 }
             }
             document.getElementById('formError').textContent = '';
