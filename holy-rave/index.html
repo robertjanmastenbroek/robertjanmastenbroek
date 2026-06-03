@@ -1179,6 +1179,14 @@
         }
         .custom-amount-input::placeholder { color: var(--text-mute); font-size: 0.85rem; font-weight: 300; }
 
+        .custom-amount-row .euro-cents {
+            color: var(--text-mute);
+            font-size: 0.85rem;
+            line-height: 1;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
         .step-btn {
             display: block;
             width: 100%;
@@ -1885,7 +1893,8 @@
                                 <div class="custom-amount-row" id="customRow" onclick="document.getElementById('customAmount').focus()">
                                     <span class="euro-sign">€</span>
                                     <input type="number" id="customAmount" class="custom-amount-input"
-                                           placeholder="Custom" min="1" step="1" value="">
+                                           placeholder="0" min="1" step="1" value="">
+                                    <span class="euro-cents">,00</span>
                                 </div>
                             </div>
                             <p style="text-align:center;font-size:0.75rem;color:var(--text-mute);margin:0 0 1rem;letter-spacing:0.04em;">
@@ -2558,7 +2567,7 @@
                     layout: { type: 'tabs', spacedAccordionItems: false },
                 });
                 paymentElement.mount('#paymentElementContainer');
-                showToast('Enter your card details to complete payment', 'info');
+                showToast('Complete your payment', 'info');
             } catch (err) {
                 console.error('[stripe] Payment Element mount error:', err);
                 document.getElementById('paymentError').textContent = 'Could not load payment form.';
