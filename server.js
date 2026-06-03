@@ -909,7 +909,8 @@ app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
       `;
       if (ev) {
         eventTitle = ev.title;
-        eventDate = new Date(ev.event_date + 'T' + (ev.event_time === 'Sunset' ? '19:00:00' : '18:00:00'));
+        const dateStr = typeof ev.event_date === 'string' ? ev.event_date : ev.event_date.toISOString().split('T')[0];
+        eventDate = new Date(dateStr + 'T' + (ev.event_time === 'Sunset' ? '19:00:00' : '18:00:00'));
         eventLocation = ev.location;
       }
     }
@@ -1706,7 +1707,9 @@ async function sendAbandonedReminders() {
 
     for (const reg of pending) {
       const eventDate = reg.event_date
-        ? new Date(reg.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+        ? (typeof reg.event_date === 'string'
+          ? new Date(reg.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+          : new Date(reg.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }))
         : 'soon';
 
       const resendClient = getResend();
