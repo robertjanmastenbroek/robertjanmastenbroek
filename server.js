@@ -22,6 +22,45 @@ const PORT = process.env.PORT || 8080;
 const SITE_URL = process.env.SITE_URL || 'https://robertjanmastenbroek.com';
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
+// ─── Vonage SMS (EU-native, pay-as-you-go, no monthly fee) ────────────────────
+// Vonage (nexmo.com) has direct carrier connections across Europe. Alpha sender
+// 'HolyRave' works for most EU countries. No monthly fee — just per-SMS.
+// ~€0.04/SMS within Europe. Set VONAGE_API_KEY + VONAGE_API_SECRET to enable.
+const VONAGE_API_KEY = process.env.VONAGE_API_KEY || '';
+const VONAGE_API_SECRET = process.env.VONAGE_API_SECRET || '';
+const VONAGE_FROM = process.env.VONAGE_FROM || 'HolyRave';
+
+async function sendVonageSMS(to, body) {
+  if (!VONAGE_API_KEY || !VONAGE_API_SECRET) {
+    console.log('[vonage] Not configured — skipping');
+    return null;
+  }
+  try {
+    const params = new URLSearchParams();
+    params.append('api_key', VONAGE_API_KEY);
+    params.append('api_secret', VONAGE_API_SECRET);
+    params.append('from', VONAGE_FROM);
+    params.append('to', to.replace(/\s+/g, ''));
+    params.append('text', body);
+    params.append('type', 'text');
+
+    const res = await fetch('https://rest.nexmo.com/sms/json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+    });
+    const data = await res.json();
+    if (data.messages?.[0]?.status !== '0') {
+      throw new Error(data.messages?.[0]?.['error-text'] || 'Vonage error ' + (data.messages?.[0]?.status || 'unknown'));
+    }
+    console.log('[vonage] SMS sent to ' + to + ' (msg-id: ' + (data.messages[0]['message-id'] || '') + ')');
+    return data;
+  } catch (err) {
+    console.error('[vonage] Send error:', err.message);
+    throw err;
+  }
+}
+
 // Lazy-initialize Stripe, Resend, and Twilio so the server starts even without env vars
 let twilioClient = null;
 function getTwilio() {
@@ -486,28 +525,31 @@ app.post('/api/verify/phone/send', verifyLimiter, async (req, res) => {
 
     await db.storeVerificationCode(phone, code);
 
-    // Send SMS via Twilio (fire-and-forget with timeout — code is already stored)
-    const twilio = getTwilio();
-    if (twilio && TWILIO_FROM_NUMBER) {
-      const sender = getFromNumber(phone);
-      console.log(`[verify] Sending to ${phone} from: "${sender}" (alpha=${!!TWILIO_ALPHA_SENDER})`);
-      const sendPromise = twilio.messages.create({
-        body: `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`,
-        from: sender,
-        to: phone.replace(/\s+/g, ''),
-      });
-      // Race the send against a 5s timeout so we never hang the response
-      Promise.race([
-        sendPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
-      ]).then(() => {
-        console.log(`[verify] Code sent to ${phone} from "${sender}"`);
-      }).catch(err => {
-        console.error(`[verify] SMS send issue (code still valid): ${err.message}`);
-      });
+    // Send SMS via Vonage (primary) or Twilio (fallback)
+    const codeMsg = `Your Holy Rave verification code: ${code}. Valid for 5 minutes.`;
+    const vonageSent = await sendVonageSMS(phone, codeMsg);
+    if (!vonageSent) {
+      const twilio = getTwilio();
+      if (twilio && TWILIO_FROM_NUMBER) {
+        console.log('[verify] Twilio fallback to ' + phone);
+        const sendPromise = twilio.messages.create({
+          body: codeMsg,
+          from: TWILIO_FROM_NUMBER,
+          to: phone.replace(/\s+/g, ''),
+        });
+        Promise.race([
+          sendPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
+        ]).then(() => {
+          console.log('[verify] Code sent to ' + phone + ' via Twilio');
+        }).catch(err => {
+          console.error('[verify] SMS issue (code still valid): ' + err.message);
+        });
+      } else {
+        console.log('[verify] DEV MODE — Code for ' + phone + ': ' + code);
+      }
     } else {
-      // Fallback: log the code (dev mode)
-      console.log(`[verify] DEV MODE — Code for ${phone}: ${code}`);
+      console.log('[verify] Code sent to ' + phone + ' via Vonage');
     }
 
     // Respond immediately — code is stored in DB regardless of SMS delivery
@@ -1349,6 +1391,16 @@ app.post('/api/debug/send-test-sms', async (req, res) => {
   }
 });
 
+// ─── Vonage configuration check (for debugging) ─────────────────────────────
+app.get('/api/debug/vonage', (req, res) => {
+  res.json({
+    apiKeySet: !!process.env.VONAGE_API_KEY,
+    apiKeyPrefix: process.env.VONAGE_API_KEY ? process.env.VONAGE_API_KEY.substring(0, 4) + '...' : null,
+    apiSecretSet: !!process.env.VONAGE_API_SECRET,
+    from: process.env.VONAGE_FROM || 'HolyRave',
+  });
+});
+
 // ─── Twilio configuration check (for debugging) ─────────────────────────────
 app.get('/api/debug/twilio', (req, res) => {
   const sid = process.env.TWILIO_ACCOUNT_SID || '';
@@ -1499,21 +1551,14 @@ async function syncToResendAudience(email, firstName, lastName, phone) {
 }
 
 // ─── Holy Rave Ticket SMS ────────────────────────────────────────────────────
-// Sends a ticket SMS with event location and time via Twilio.
-// Fire-and-forget with timeout — doesn't block the caller.
+// Sends a ticket SMS — tries Vonage (EU-native), falls back to Twilio.
 async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocation, slug, regId, locationDetail, mapsUrl, confirmationCode) {
-  if (!phone || !TWILIO_FROM_NUMBER) {
-    console.log(`[sms] Skipping SMS (no phone or from number) for ${phone}`);
+  if (!phone) {
+    console.log('[sms] Skipping SMS — no phone');
     return;
   }
 
-  const twilio = getTwilio();
-  if (!twilio) {
-    console.log('[sms] Twilio not configured — skipping SMS send');
-    return;
-  }
-
-  // Format date robustly — handles Date objects from DB and string formats
+  // Format date
   let dateStr = 'TBA';
   try {
     const d = eventDate ? (typeof eventDate === 'string' && !eventDate.includes('Invalid') ? new Date(eventDate + 'T12:00:00') : new Date(eventDate)) : null;
@@ -1521,34 +1566,41 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
   } catch (e) {}
 
   const timeStr = eventTime || '20:00 – 23:00';
-  // Use location_detail instead of both location + detail to avoid duplication
   const locStr = locationDetail || eventLocation || 'Tenerife South';
-  const codeStr = confirmationCode ? `\n🔑 ${confirmationCode}` : '';
-  const mapStr = mapsUrl ? `\n🗺️ ${mapsUrl}` : '';
-  // Prefix slug with 'holy-rave/' for correct link
   const slugPart = slug && slug.startsWith('holy-rave/') ? slug : 'holy-rave/' + (slug || '');
   const link = `${SITE_URL}/${slugPart}${regId ? '?confirmed=' + regId : ''}`;
-
-  // Keep SMS short — avoid looking like marketing/spam
   const codeMsg = confirmationCode ? ` Code: ${confirmationCode}` : '';
   const mapMsg = mapsUrl ? ` Maps: ${mapsUrl}` : '';
   const message = `Holy Rave confirmed! ${dateStr} ${timeStr}. ${locStr}.${mapMsg}${codeMsg} ${link}`;
 
-  const sender = getFromNumber(phone);
-  console.log(`[sms] Sending ticket to ${phone} from: "${sender}"`);
+  // 1) Try Vonage (EU-native, alpha sender, no monthly fee)
+  const vonageResult = await sendVonageSMS(phone, message);
+  if (vonageResult) return;
+
+  // 2) Fallback to Twilio
+  if (!TWILIO_FROM_NUMBER) {
+    console.log('[sms] No Twilio from number — SMS not sent');
+    return;
+  }
+  const twilio = getTwilio();
+  if (!twilio) {
+    console.log('[sms] Twilio not configured — SMS not sent');
+    return;
+  }
+
+  console.log('[sms] Twilio fallback to ' + phone);
   const sendPromise = twilio.messages.create({
     body: message,
-    from: sender,
+    from: TWILIO_FROM_NUMBER,
     to: phone.replace(/\s+/g, ''),
   });
-
   Promise.race([
     sendPromise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 5000)),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Twilio timeout')), 5000)),
   ]).then(result => {
-    console.log(`[sms] Ticket SMS sent to ${phone} from "${sender}" (sid: ${result.sid})`);
+    console.log('[sms] Twilio sent to ' + phone + ' (sid: ' + (result.sid || '') + ')');
   }).catch(err => {
-    console.error('[sms] Failed to send SMS:', err.message);
+    console.error('[sms] Twilio failed:', err.message);
   });
 }
 
