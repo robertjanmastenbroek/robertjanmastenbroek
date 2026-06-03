@@ -1,4 +1,5 @@
 const express = require('express');
+const session = require('express-session');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const path = require('path');
@@ -132,6 +133,61 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// ─── Admin session middleware ────────────────────────────────────────────────
+app.use(session({
+  secret: process.env.ADMIN_API_KEY || 'fallback-dev-secret-change-in-prod',
+  resave: false,
+  saveUninitialized: false,
+  name: 'hr_admin_sid',
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
+}));
+
+// ─── Admin auth helper ───────────────────────────────────────────────────────
+function requireAdmin(req, res, next) {
+  // Session-based auth
+  if (req.session && req.session.isAdmin) {
+    return next();
+  }
+  // Fallback: API key header (for programmatic use)
+  const apiKey = req.headers['x-api-key'];
+  const expectedKey = process.env.ADMIN_API_KEY;
+  if (expectedKey && apiKey === expectedKey) {
+    req.session.isAdmin = true; // promote to session auth
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized. Please log in at /admin' });
+}
+
+// ─── Admin login/logout ──────────────────────────────────────────────────────
+app.post('/api/admin/login', express.json(), (req, res) => {
+  const { password } = req.body;
+  const expectedKey = process.env.ADMIN_API_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'Admin panel not configured. Set ADMIN_API_KEY in Railway.' });
+  }
+
+  if (password === expectedKey || password === process.env.ADMIN_PASSWORD) {
+    req.session.isAdmin = true;
+    return res.json({ ok: true });
+  }
+
+  return res.status(401).json({ error: 'Incorrect password.' });
+});
+
+app.post('/api/admin/logout', (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.get('/api/admin/me', (req, res) => {
+  res.json({ authenticated: !!(req.session && req.session.isAdmin) });
+});
 
 // ─── Input Validation Helpers ────────────────────────────────────────────────
 
@@ -726,15 +782,7 @@ app.get('/api/admin/pexels-search', requireAdmin, async (req, res) => {
   }
 });
 
-// ─── Admin: Create/update/delete events (protected by ADMIN_API_KEY) ─────────
-function requireAdmin(req, res, next) {
-  const apiKey = req.headers['x-api-key'];
-  const expectedKey = process.env.ADMIN_API_KEY;
-  if (expectedKey && apiKey !== expectedKey) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-}
+// ─── Admin: Create/update/delete events ──────────────────────────────────────
 
 // GET /api/admin/events — list all events (for admin panel)
 app.get('/api/admin/events', requireAdmin, async (req, res) => {
@@ -790,7 +838,7 @@ app.delete('/api/admin/events/:slug', requireAdmin, async (req, res) => {
 });
 
 // ─── Admin: Sync all existing DB contacts to Resend audience ──────────────────
-app.get('/api/admin/sync-audience', async (req, res) => {
+app.get('/api/admin/sync-audience', requireAdmin, async (req, res) => {
   try {
     const contacts = await db.getSubscribersWithHolyRave();
     let synced = 0;

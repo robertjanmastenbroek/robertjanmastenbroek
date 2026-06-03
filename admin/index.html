@@ -208,6 +208,74 @@
     }
     .pexels-close:hover { color: #c8883a; }
 
+    /* ── Login screen ── */
+    .login-screen {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a0a;
+    }
+    .login-screen.hidden { display: none; }
+    .login-panel {
+      text-align: center;
+      max-width: 340px;
+      width: 100%;
+    }
+    .login-panel .logo-sigil {
+      width: 40px; height: 40px;
+      color: #c8883a; opacity: 0.5;
+      margin-bottom: 1.5rem;
+    }
+    .login-panel h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .login-panel h1 span { color: #c8883a; }
+    .login-panel p { color: #555; font-size: 0.82rem; margin-bottom: 2rem; }
+    .login-panel input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: #121216;
+      border: 1px solid rgba(200,136,58,0.15);
+      color: #f5f1e8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      text-align: center;
+      letter-spacing: 0.15em;
+      transition: border-color 0.2s;
+      margin-bottom: 0.75rem;
+    }
+    .login-panel input:focus { border-color: #c8883a; }
+    .login-panel input::placeholder { color: #444; letter-spacing: 0.08em; }
+    .login-panel .login-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: #d4af37;
+      border: none;
+      color: #0a0a0a;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .login-panel .login-btn:hover { background: #c8883a; }
+    .login-error { color: #b8532a; font-size: 0.78rem; min-height: 1.5rem; margin-top: 0.5rem; }
+    .dashboard { display: none; }
+    .dashboard.visible { display: block; }
+    .logout-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .logout-bar span { color: #555; font-size: 0.72rem; }
+    .logout-bar .btn { font-size: 0.65rem; padding: 0.4rem 0.85rem; }
+
     .message { font-size: 0.78rem; color: #c8883a; min-height: 1.2rem; margin-top: 0.5rem; }
     .error { color: #b8532a; }
     .loading { opacity: 0.5; pointer-events: none; }
@@ -231,9 +299,37 @@
   </style>
 </head>
 <body>
-  <h1>Holy Rave <span>Admin</span></h1>
+  <!-- ══════════════════════════════════════════════════
+       LOGIN SCREEN
+       ══════════════════════════════════════════════════ -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-panel">
+      <svg class="logo-sigil" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.35"/>
+        <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.55"/>
+        <path d="M50 8 L58 42 L92 50 L58 58 L50 92 L42 58 L8 50 L42 42 Z" fill="none" stroke="currentColor" stroke-width="0.7"/>
+        <circle cx="50" cy="50" r="1.8" fill="currentColor"/>
+      </svg>
+      <h1>Holy Rave <span>Admin</span></h1>
+      <p>Enter your password to manage events</p>
+      <input type="password" id="loginPassword" placeholder="ADMIN_API_KEY" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()">
+      <button class="login-btn" id="loginBtn" onclick="login()">Sign In</button>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
 
-  <div class="api-key-bar">
+  <!-- ══════════════════════════════════════════════════
+       DASHBOARD
+       ══════════════════════════════════════════════════ -->
+  <div class="dashboard" id="dashboard">
+    <div class="logout-bar">
+      <span id="loginStatus">Signed in</span>
+      <button class="btn" onclick="logout()">Sign Out</button>
+    </div>
+
+    <h1>Holy Rave <span>Admin</span></h1>
+
+    <div class="api-key-bar">
     <input type="password" id="apiKey" placeholder="ADMIN_API_KEY" autocomplete="off">
     <button class="btn btn-primary" onclick="loadEvents()">Load Events</button>
     <button class="btn" onclick="showCreateForm()">+ New Event</button>
@@ -637,6 +733,52 @@
 
     // Enter to submit API key
     document.getElementById('apiKey').addEventListener('keydown', e => { if (e.key === 'Enter') loadEvents(); });
+
+    // ── Session-based auth ────────────────────────────────────────────────
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/admin/me');
+        const data = await res.json();
+        if (data.authenticated) {
+          document.getElementById('loginScreen').classList.add('hidden');
+          document.getElementById('dashboard').classList.add('visible');
+          loadEvents();
+        }
+      } catch (e) {}
+    }
+
+    async function login() {
+      const pw = document.getElementById('loginPassword').value.trim();
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('loginError');
+      if (!pw) { err.textContent = 'Enter your password'; return; }
+      btn.textContent = 'Signing in...'; btn.disabled = true;
+      err.textContent = '';
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('dashboard').classList.add('visible');
+        loadEvents();
+      } catch (e) {
+        err.textContent = e.message;
+      }
+      btn.textContent = 'Sign In'; btn.disabled = false;
+    }
+
+    async function logout() {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('dashboard').classList.remove('visible');
+    }
+
+    // Check auth on page load
+    checkAuth();
   </script>
 </body>
 </html>
