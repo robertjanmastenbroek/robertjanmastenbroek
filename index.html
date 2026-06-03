@@ -497,6 +497,42 @@
             50%      { transform: scale(1.05) rotate(8deg); opacity: 0.75; }
         }
 
+        /* ── Hero stats bar ── */
+        .hero-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        .hero-stat {
+            text-align: center;
+            min-width: 80px;
+        }
+        .hero-stat .num {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .hero-stat .num.live {
+            color: var(--terracotta);
+            animation: pulse-urgent 2s var(--ease-warm) infinite;
+        }
+        .hero-stat .label {
+            font-size: 0.62rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text-mute);
+            margin-top: 0.3rem;
+            font-weight: 500;
+        }
+        .hero-stat-divider {
+            width: 1px;
+            background: var(--border-faint);
+            align-self: stretch;
+        }
+
         .platforms-pivot {
             margin: 1.25rem 0 0;
             font-family: var(--font-serif);
@@ -1227,6 +1263,27 @@
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     Join WhatsApp Community
                 </a>
+                <div class="hero-stats" id="heroStats">
+                    <div class="hero-stat">
+                        <div class="num" id="statTracks">36</div>
+                        <div class="label">Tracks</div>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <div class="num" id="statListeners">—</div>
+                        <div class="label">Spotify Monthly</div>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <div class="num" id="statNextDate">—</div>
+                        <div class="label">Next Event</div>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <div class="num live" id="statSpotsLeft">—</div>
+                        <div class="label">Spots Left</div>
+                    </div>
+                </div>
                 <p class="platforms-pivot">Also on Apple Music, Amazon Music, SoundCloud — <a href="/links">every platform &rarr;</a></p>
             </div>
             <div class="hero-portrait reveal">
@@ -1287,32 +1344,50 @@
         </div>
     </section>
 
-    <!-- ═══ EVENTS — Sunset Sessions / Holy Rave ═══ -->
+    <!-- ═══ EVENTS — Holy Rave Sunset Sessions ═══ -->
     <section id="event">
         <header class="section-head reveal">
-            <p class="section-eyebrow" style="color: var(--ochre);">Weekly · Fri, Sat, or Sun</p>
-            <h2>Sunset <em>Sessions</em></h2>
-            <p class="section-sub">Live melodic Afrohouse in Tenerife. Pay what feels right.</p>
+            <p class="section-eyebrow" style="color: var(--ochre);">Next Session</p>
+            <h2 id="eventTitle">Sunset <em>Sessions</em></h2>
+            <p class="section-sub" id="eventSub">Live melodic Afrohouse in Tenerife. Pay what feels right. <span id="eventDateDetail"></span></p>
             <div class="divider">
                 <span class="line"></span>
                 <svg class="sigil sigil--sm" style="color: var(--ochre)"><use href="#sigil"/></svg>
                 <span class="line"></span>
             </div>
         </header>
-        <div class="event-card reveal">
-            <span class="event-badge"><span class="pin"></span>Weekly · Pay What Feels Right</span>
-            <h3>Sunset <em>Sessions</em></h3>
-            <div class="event-details">
-                <span>◈ Location revealed to community every Friday</span>
-                <span>◈ Melodic Afrohouse · Organic House · Sunset Sessions</span>
-                <span>◈ Come as you are — safe, high-energy space</span>
+        <div class="event-card reveal" id="eventCard">
+            <div id="eventLoading" style="color:var(--text-mute);font-size:0.9rem;padding:2rem 0;">Loading next event...</div>
+            <div id="eventContent" style="display:none;">
+                <span class="event-badge"><span class="pin"></span><span id="eventBadgeText">Pay What Feels Right · You + 1 Friend</span></span>
+                <h3 id="eventName">Sunset <em>Sessions</em></h3>
+                <div class="event-details" id="eventDetails">
+                    <span id="eventLocation">◈ Scallywags, Puerto Colón · Tenerife South</span>
+                    <span id="eventTime">◈ 20:00 – 23:00</span>
+                    <span>◈ Melodic Afrohouse · Organic House · Sunset Sessions</span>
+                    <span>◈ Come as you are — no dress code, no faith test</span>
+                </div>
+                <div class="spots-indicator" id="spotsIndicator">
+                    <span class="count" id="spotsCount">—</span> spots left of <span id="spotsTotal">50</span>
+                </div>
+                <div style="margin:1.5rem 0 0.5rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+                    <a href="/holy-rave" class="btn btn-primary" id="reserveBtn">
+                        Reserve Your Spot
+                    </a>
+                </div>
+                <p style="font-size:0.75rem;color:var(--text-mute);letter-spacing:0.06em;margin-top:1rem;">
+                    Each reservation admits you + 1 friend. Pay what feels right — nobody turned away.
+                </p>
             </div>
-            <div class="spots-indicator" id="spotsIndicator">
-                <span class="count" id="spotsCount">—</span> tickets left of 50
+            <div id="eventNoUpcoming" style="display:none;padding:2rem 0;">
+                <p style="color:var(--text-mute);font-size:0.95rem;line-height:1.7;">No upcoming events scheduled. Join the WhatsApp community to hear first.</p>
+                <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" class="btn btn-ghost" style="display:inline-flex;margin-top:1rem;">Join WhatsApp</a>
             </div>
-            <a href="/holy-rave" class="btn btn-primary">
-                Reserve Your Spot
-            </a>
+            <div id="eventSoldOut" style="display:none;padding:2rem 0;">
+                <p style="color:var(--terracotta);font-size:1rem;font-family:var(--font-serif);font-style:italic;">This event is full.</p>
+                <p style="color:var(--text-mute);font-size:0.9rem;margin-top:0.5rem;">Join the waitlist on WhatsApp for the next one.</p>
+                <a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3" target="_blank" class="btn btn-ghost" style="display:inline-flex;margin-top:1rem;">Join WhatsApp</a>
+            </div>
         </div>
     </section>
 
@@ -1353,7 +1428,10 @@
         <div class="email-inner reveal">
             <p class="section-eyebrow">Stay Close</p>
             <h2>New track.<br><em>Every Friday.</em></h2>
-            <p class="sub">Be the first to hear it — straight to your inbox.</p>
+            <p class="sub">Be the first to hear every new track — and be notified when new events drop.</p>
+            <p style="font-size:0.8rem;color:var(--text-mute);margin-bottom:1.5rem;letter-spacing:0.04em;">
+                <strong id="subscriberCount" style="color:var(--ochre);">—</strong> people already subscribed
+            </p>
             <form class="email-form" id="email-form" onsubmit="handleSubscribe(event)">
                 <input type="email" id="subscribe-email" placeholder="your@email.com" required autocomplete="email">
                 <button type="submit" id="subscribe-btn">Notify Me</button>
@@ -1485,20 +1563,98 @@
         window.addEventListener('scroll', onScroll, { passive: true });
         onScroll();
 
-        // Live spots counter
-        async function loadSpots() {
+        // ── Live data: next event + hero stats + subscriber count ──
+        async function loadNextEvent() {
+            const loading = document.getElementById('eventLoading');
+            const content = document.getElementById('eventContent');
+            const noUpcoming = document.getElementById('eventNoUpcoming');
+            const soldOut = document.getElementById('eventSoldOut');
+
             try {
-                const res = await fetch('/api/holy-rave/tickets');
+                const res = await fetch('/api/holy-rave/events');
+                if (!res.ok) throw new Error('Failed');
+                const events = await res.json();
+                const next = events.find(e => e.status === 'upcoming');
+
+                if (!next) {
+                    loading.style.display = 'none';
+                    noUpcoming.style.display = 'block';
+                    return;
+                }
+
+                loading.style.display = 'none';
+                content.style.display = 'block';
+
+                const date = new Date(next.event_date + 'T12:00:00');
+                const day = date.toLocaleDateString('en-US', { weekday: 'long' });
+                const monthDay = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+                // Title
+                document.getElementById('eventTitle').innerHTML = `${monthDay} <em>· ${next.location ? next.location.split(',')[0] : 'Tenerife'}</em>`;
+
+                // Badge
+                document.getElementById('eventBadgeText').textContent = `Pay What Feels Right · ${day}`;
+
+                // Name
+                document.getElementById('eventName').innerHTML = `Sunset <em>Sessions</em>`;
+
+                // Location + time
+                document.getElementById('eventLocation').textContent = '◈ ' + (next.location || 'Tenerife');
+                document.getElementById('eventTime').textContent = '◈ ' + (next.event_time || '20:00 – 23:00');
+
+                // Date detail in subtitle
+                document.getElementById('eventDateDetail').textContent = monthDay + ' · ' + (next.event_time || '20:00') + ' · ' + (next.location || 'Tenerife');
+
+                // Spots
+                const total = next.ticket_limit || 50;
+                const remaining = next.remaining;
+                document.getElementById('spotsCount').textContent = remaining;
+                document.getElementById('spotsTotal').textContent = total;
+                const spotsEl = document.getElementById('spotsCount');
+                if (remaining <= 10 && remaining > 0) spotsEl.classList.add('urgent');
+                else spotsEl.classList.remove('urgent');
+
+                if (remaining <= 0) {
+                    content.style.display = 'none';
+                    soldOut.style.display = 'block';
+                }
+
+                // Hero stats
+                document.getElementById('statNextDate').textContent = monthDay.split(' ')[0] || '—';
+                document.getElementById('statSpotsLeft').textContent = remaining > 0 ? remaining : 'Full';
+                if (remaining <= 0) document.getElementById('statSpotsLeft').classList.remove('live');
+                if (remaining > 0 && remaining <= 10) document.getElementById('statSpotsLeft').classList.add('live');
+            } catch (e) {
+                loading.textContent = 'Could not load event data.';
+            }
+        }
+
+        // Spotify listeners
+        async function loadListeners() {
+            try {
+                const res = await fetch('/api/spotify-followers');
                 if (!res.ok) return;
                 const data = await res.json();
-                const count = document.getElementById('spotsCount');
-                if (count) {
-                    count.textContent = data.remaining;
-                    if (data.remaining <= 10) count.classList.add('urgent');
+                const count = data.count;
+                if (count > 0) {
+                    document.getElementById('statListeners').textContent = count >= 1000 ? Math.round(count / 1000) + 'K' : count;
                 }
             } catch (e) {}
         }
-        loadSpots();
+
+        // Subscriber count
+        async function loadSubscribers() {
+            try {
+                const res = await fetch('/api/supporters-count');
+                if (!res.ok) return;
+                const data = await res.json();
+                document.getElementById('subscriberCount').textContent = data.count || '—';
+            } catch (e) {}
+        }
+
+        loadNextEvent();
+        loadListeners();
+        loadSubscribers();
     </script>
 </body>
 </html>

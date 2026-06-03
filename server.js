@@ -825,21 +825,21 @@ app.listen(PORT, async () => {
       await db.seedEvent({
         slug: 'june-13-2026',
         title: 'Holy Rave — June 13th 2026',
-        location: 'Tenerife South',
-        location_detail: 'Open-air venue in Tenerife South — exact address on your ticket',
+        location: 'Scallywags, Puerto Colón, Tenerife South',
+        location_detail: 'Scallywags bar, Puerto Colón marina — sunset views over the Atlantic',
         event_date: '2026-06-13',
-        event_time: 'Sunset (~19:00)',
+        event_time: '20:00 – 23:00',
         description: 'An evening of melodic Afrohouse and organic electronic music as the sun drops into the Atlantic. No dress code. No faith test. Just you, the music, and whoever you brought.',
         ticket_limit: 50,
       });
       await db.seedEvent({
         slug: 'june-20-2026',
         title: 'Holy Rave — June 20th 2026',
-        location: 'Tenerife South',
-        location_detail: 'Open-air venue in Tenerife South — exact address on your ticket',
+        location: 'Scallywags, Puerto Colón, Tenerife South',
+        location_detail: 'Scallywags bar, Puerto Colón marina — sunset views over the Atlantic',
         event_date: '2026-06-20',
-        event_time: 'Sunset (~19:00)',
-        description: 'Another intimate sunset session. Melodic Afrohouse and organic electronic as the sun drops. 50 people. Pay what feels right.',
+        event_time: '20:00 – 23:00',
+        description: 'Another intimate sunset session. Melodic Afrohouse and organic electronic as the sun drops over Puerto Colón. 50 people. Pay what feels right.',
         ticket_limit: 50,
       });
       console.log('[seed] Events seeded');
