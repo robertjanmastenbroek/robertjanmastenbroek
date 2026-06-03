@@ -1,24 +1,40 @@
-# Explicitly pin the Railway build to Node.js 20.
+# Railway build config for robertjanmastenbroek.com
 #
-# Why this exists:
-#   The repo is a mixed Node (server.js + package.json at root) + Python
-#   (content_engine/, outreach_agent/) project. Nixpacks' auto-detection has
-#   picked Node so far, but as the Python surface grew (535 .py files, +3k
-#   lines in the last push) the detection started selecting the wrong
-#   provider and the build failed (deployment 4395123843, SHA eedbc8e).
-#   This file removes the ambiguity.
+# This is a mixed Node + Python repo. Nixpacks auto-detection can get
+# confused (500+ Python files in content_engine/ + outreach_agent/).
+# This file explicitly pins to Node.js.
+#
+# Build optimizations (2026-06-03):
+# - Cache enabled: npm dependencies survive between deploys
+# - npm ci with --no-audit: faster install, no security audit (not needed
+#   in production, only slows the build)
+# - Deploy filter: exclude Python-heavy dirs from the build context
+#   (content_engine/, outreach_agent/, ruflo/, continuous-claude/)
+
+[cache]
+key = "npm-cache-{{ .NIXPACKS_COMMIT_SHA }}"
+paths = ["node_modules"]
 
 [phases.setup]
 nixPkgs = ["nodejs_20", "npm-10_x"]
 
 [phases.install]
-# package.json has no devDependencies, so a plain `npm ci` is production-only
-# and reproducible from package-lock.json.
-cmds = ["npm ci"]
+cmds = ["npm ci --no-audit --no-fund"]
 
 [phases.build]
-# Nothing to build — server.js runs directly from source.
 cmds = ["echo 'no build step — Node server runs from source'"]
+
+[deploy]
+# Exclude Python-heavy directories and log/workspace files from deploy
+# context — they slow down the build but aren't needed at runtime.
+exclude = [
+  "content_engine/",
+  "outreach_agent/",
+  "ruflo/",
+  "continuous-claude/",
+  "logs/",
+  "**/node_modules/**",
+]
 
 [start]
 cmd = "node server.js"
