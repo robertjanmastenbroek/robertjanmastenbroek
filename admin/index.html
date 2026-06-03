@@ -211,40 +211,110 @@
     .pexels-close:hover { color: #c8883a; }
 
     /* Cropper.js overrides for dark theme */
-    .cropper-container-wrap { max-height: 40vh; overflow: hidden; }
-    .cropper-container { max-height: 40vh; }
+    .cropper-container-wrap { max-height: 45vh; overflow: hidden; }
+    .cropper-container { max-height: 45vh; }
     .cropper-view-box { outline: 1px solid #c8883a; outline-color: rgba(200,136,58,0.6); }
     .cropper-line { background-color: #c8883a; }
     .cropper-point { background-color: #c8883a; }
+    .cropper-modal { background: rgba(0,0,0,0.6); }
 
-    /* ── Image Cropper modal ── */
+    /* ── Image Cropper modal (world-class) ── */
     .cropper-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(8px);
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(10px);
       z-index: 200;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
+      padding: 1.5rem;
     }
     .cropper-overlay.visible { display: flex; }
     .cropper-panel {
       background: #121216;
       border: 1px solid rgba(200,136,58,0.18);
-      padding: 1.5rem;
       width: 100%;
-      max-width: 700px;
-      max-height: 95vh;
-      overflow-y: auto;
+      max-width: 780px;
+      max-height: 96vh;
+      display: flex;
+      flex-direction: column;
     }
-    .cropper-panel h3 { font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; color: #f5f1e8; }
-    .cropper-panel h3 em { color: #c8883a; font-style: italic; }
-    .cropper-panel .cropper-hint { font-size: 0.72rem; color: #7a7266; margin-bottom: 1rem; }
-    .cropper-panel .cropper-actions { display: flex; gap: 0.75rem; margin-top: 1rem; align-items: center; flex-wrap: wrap; }
-    .cropper-panel .cropper-actions .btn { font-size: 0.72rem; }
-    #cropZoomDisplay { font-size: 0.72rem; color: #7a7266; margin-left: auto; }
+    .cropper-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(200,136,58,0.08);
+    }
+    .cropper-header h3 { font-size: 0.95rem; font-weight: 500; color: #f5f1e8; }
+    .cropper-header h3 em { color: #c8883a; font-style: italic; }
+    .cropper-header h3 span { color: #7a7266; font-weight: 300; font-size: 0.8rem; margin-left: 0.5rem; }
+    .cropper-header-close {
+      background: none; border: none; color: #7a7266; cursor: pointer; font-size: 1.1rem; padding: 0.25rem;
+      transition: color 0.2s;
+    }
+    .cropper-header-close:hover { color: #b8532a; }
+
+    .cropper-body { flex: 1; min-height: 0; position: relative; background: #0a0a0a; }
+    .cropper-container-wrap {
+      max-height: 50vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a0a;
+    }
+    .cropper-container-wrap img { max-width: 100%; display: block; }
+
+    .cropper-toolbar {
+      padding: 0.75rem 1.5rem;
+      border-top: 1px solid rgba(200,136,58,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .cropper-toolbar .btn { font-size: 0.65rem; padding: 0.45rem 0.85rem; letter-spacing: 0.06em; }
+    .cropper-toolbar .btn.active {
+      background: var(--ochre-dim) !important;
+      border-color: var(--ochre) !important;
+      color: var(--ochre) !important;
+    }
+    .cropper-toolbar .toolbar-label {
+      font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: #555; margin-right: 0.25rem;
+    }
+    .cropper-toolbar .toolbar-sep {
+      width: 1px; height: 24px; background: rgba(200,136,58,0.1); margin: 0 0.25rem;
+    }
+
+    /* Zoom slider */
+    .zoom-slider-wrap {
+      display: flex; align-items: center; gap: 0.5rem; margin-left: auto;
+    }
+    .zoom-slider-wrap input[type="range"] {
+      width: 80px; height: 3px; -webkit-appearance: none; appearance: none;
+      background: rgba(200,136,58,0.2); border-radius: 2px; outline: none;
+      cursor: pointer;
+    }
+    .zoom-slider-wrap input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #c8883a; border: none; cursor: pointer;
+    }
+    .zoom-slider-wrap input[type="range"]::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #c8883a; border: none; cursor: pointer;
+    }
+    #cropZoomDisplay { font-size: 0.7rem; color: #7a7266; min-width: 35px; text-align: right; }
+
+    .cropper-footer {
+      display: flex; justify-content: flex-end; gap: 0.75rem; align-items: center;
+      padding: 0.75rem 1.5rem;
+      border-top: 1px solid rgba(200,136,58,0.08);
+    }
+    .cropper-footer .btn { font-size: 0.72rem; }
+    .cropper-footer .filename {
+      margin-right: auto; font-size: 0.72rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;
+    }
 
     /* ── Login screen ── */
     .login-screen {
@@ -476,20 +546,51 @@
     </div>
   </div>
 
-  <!-- Image Cropper Modal -->
+  <!-- Image Cropper Modal (world-class) -->
   <div class="cropper-overlay" id="cropperOverlay">
     <div class="cropper-panel">
-      <h3>Crop <em>Image</em></h3>
-      <p class="cropper-hint">Drag to reposition · Scroll to zoom · Resize the crop box</p>
-      <div class="cropper-container-wrap">
-        <img id="cropImage" src="" alt="Crop preview" style="max-width:100%;">
+      <div class="cropper-header">
+        <h3>Crop <em>Image</em> <span>— drag to reposition · scroll to zoom</span></h3>
+        <button class="cropper-header-close" onclick="cancelCrop()" title="Cancel (Esc)">✕</button>
       </div>
-      <div class="cropper-actions">
-        <button class="btn btn-primary" id="cropApplyBtn" onclick="applyCrop()">Apply Crop &amp; Upload</button>
+
+      <div class="cropper-body" id="cropperBody">
+        <div class="cropper-container-wrap">
+          <img id="cropImage" src="" alt="Crop preview">
+        </div>
+      </div>
+
+      <!-- Aspect ratio + transform toolbar -->
+      <div class="cropper-toolbar">
+        <span class="toolbar-label">Aspect</span>
+        <button class="btn active" data-ratio="1.7778" id="ratio169" onclick="setRatio(16/9)">16:9</button>
+        <button class="btn" data-ratio="1.5" id="ratio43" onclick="setRatio(4/3)">4:3</button>
+        <button class="btn" data-ratio="1" id="ratio11" onclick="setRatio(1)">1:1</button>
+        <button class="btn" data-ratio="NaN" id="ratioFree" onclick="setRatio(NaN)">Free</button>
+
+        <span class="toolbar-sep"></span>
+
+        <span class="toolbar-label">Transform</span>
+        <button class="btn" onclick="rotateCrop(-90)" title="Rotate left">↺</button>
+        <button class="btn" onclick="rotateCrop(90)" title="Rotate right">↻</button>
+        <button class="btn" onclick="flipCropH()" title="Flip horizontal">⇔</button>
+        <button class="btn" onclick="flipCropV()" title="Flip vertical">⇕</button>
+
+        <span class="toolbar-sep"></span>
+        <button class="btn" onclick="resetCrop()" title="Reset to original">↺ Reset</button>
+
+        <span class="zoom-slider-wrap">
+          <span style="font-size:0.65rem;color:#555;">−</span>
+          <input type="range" id="zoomSlider" min="0.01" max="3" step="0.01" value="1" oninput="zoomCrop(this.value)">
+          <span style="font-size:0.65rem;color:#555;">+</span>
+          <span id="cropZoomDisplay">100%</span>
+        </span>
+      </div>
+
+      <div class="cropper-footer">
+        <span class="filename" id="cropFilename"></span>
         <button class="btn" onclick="cancelCrop()">Cancel</button>
-        <button class="btn" onclick="rotateCrop(-90)">Rotate ↺</button>
-        <button class="btn" onclick="rotateCrop(90)">Rotate ↻</button>
-        <span id="cropZoomDisplay">100%</span>
+        <button class="btn btn-primary" id="cropApplyBtn" onclick="applyCrop()">Apply &amp; Upload</button>
       </div>
     </div>
   </div>
@@ -603,31 +704,34 @@
     // ── Image upload with crop (file → cropper → DB BYTEA) ──────────────
     function uploadImage(input) {
       const file = input.files[0];
-      if (!file) return;
+      if (!file) { input.value = ''; return; }
 
       if (!file.type.startsWith('image/')) {
         document.getElementById('uploadStatus').textContent = 'Images only';
+        input.value = '';
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
         document.getElementById('uploadStatus').textContent = 'Max 10MB';
+        input.value = '';
         return;
       }
 
       cropFile = file;
+      document.getElementById('cropFilename').textContent = file.name;
+      document.getElementById('uploadStatus').textContent = '';
 
-      // Load image into cropper
       const reader = new FileReader();
       reader.onload = function(e) {
         const img = document.getElementById('cropImage');
         img.src = e.target.result;
         document.getElementById('cropperOverlay').classList.add('visible');
+        document.body.style.overflow = 'hidden';
 
-        // Initialize cropper after image loads
         img.onload = function() {
           if (cropper) cropper.destroy();
           cropper = new Cropper(img, {
-            aspectRatio: NaN, // free crop
+            aspectRatio: 16 / 9,
             viewMode: 1,
             autoCropArea: 0.9,
             background: false,
@@ -637,17 +741,23 @@
             cropBoxResizable: true,
             toggleDragModeOnDblclick: true,
           });
+          // Set initial zoom slider value
+          document.getElementById('zoomSlider').value = 1;
           updateCropZoomDisplay();
         };
       };
       reader.readAsDataURL(file);
+      input.value = '';
     }
 
     function applyCrop() {
-      if (!cropper) return;
+      if (!cropper) { showToast('No image loaded'); return; }
 
       const status = document.getElementById('uploadStatus');
+      const btn = document.getElementById('cropApplyBtn');
       status.textContent = 'Cropping...';
+      btn.textContent = 'Cropping...';
+      btn.disabled = true;
 
       const canvas = cropper.getCroppedCanvas({
         maxWidth: 1920,
@@ -659,10 +769,11 @@
       canvas.toBlob(async function(blob) {
         if (!blob) {
           status.textContent = '❌ Crop failed';
+          btn.textContent = 'Apply & Upload';
+          btn.disabled = false;
           return;
         }
 
-        // Create a new file from the cropped blob
         const croppedFile = new File([blob], cropFile.name, {
           type: cropFile.type,
           lastModified: Date.now(),
@@ -687,12 +798,15 @@
           document.getElementById('fImageUrl').value = data.url;
           updateImagePreview(data.url);
           status.textContent = '✅ Uploaded';
+          showToast('Image uploaded');
           setTimeout(() => status.textContent = '', 3000);
         } catch (err) {
           status.textContent = '❌ ' + err.message;
         }
 
         cancelCrop();
+        btn.textContent = 'Apply & Upload';
+        btn.disabled = false;
       }, cropFile.type, 0.92);
     }
 
@@ -700,22 +814,72 @@
       if (cropper) { cropper.destroy(); cropper = null; }
       cropFile = null;
       document.getElementById('cropperOverlay').classList.remove('visible');
+      document.body.style.overflow = '';
     }
 
+    // ── Aspect ratio ──
+    function setRatio(ratio) {
+      if (!cropper) return;
+      cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
+      document.querySelectorAll('.cropper-toolbar .btn[data-ratio]').forEach(b => {
+        b.classList.toggle('active', Math.abs(parseFloat(b.dataset.ratio) - (isNaN(ratio) ? NaN : ratio)) < 0.001 || (isNaN(ratio) && isNaN(parseFloat(b.dataset.ratio))));
+      });
+    }
+
+    // ── Rotate ──
     function rotateCrop(degrees) {
-      if (cropper) {
-        cropper.rotate(degrees);
-        updateCropZoomDisplay();
-      }
+      if (cropper) { cropper.rotate(degrees); updateCropZoomDisplay(); }
+    }
+
+    // ── Flip ──
+    let flippedH = false, flippedV = false;
+    function flipCropH() {
+      if (!cropper) return;
+      flippedH = !flippedH;
+      cropper.scaleX(flippedH ? -1 : 1);
+    }
+    function flipCropV() {
+      if (!cropper) return;
+      flippedV = !flippedV;
+      cropper.scaleY(flippedV ? -1 : 1);
+    }
+
+    // ── Reset ──
+    function resetCrop() {
+      if (!cropper) return;
+      cropper.reset();
+      flippedH = false; flippedV = false;
+      document.getElementById('zoomSlider').value = 1;
+      updateCropZoomDisplay();
+      // Also reset aspect ratio highlight to 16:9
+      document.querySelectorAll('.cropper-toolbar .btn[data-ratio]').forEach(b => {
+        b.classList.toggle('active', b.dataset.ratio === '1.7778');
+      });
+    }
+
+    // ── Zoom slider ──
+    function zoomCrop(value) {
+      if (!cropper) return;
+      cropper.zoomTo(parseFloat(value));
+      updateCropZoomDisplay();
     }
 
     function updateCropZoomDisplay() {
-      if (cropper) {
-        const data = cropper.getData();
-        const el = document.getElementById('cropZoomDisplay');
-        el.textContent = Math.round(data.scaleX > 0 ? (data.width / data.originalWidth) * 100 : 100) + '%';
-      }
+      if (!cropper) return;
+      const data = cropper.getData({ rounded: true });
+      const zoom = cropper.getZoom();
+      document.getElementById('cropZoomDisplay').textContent = Math.round(zoom * 100) + '%';
+      // Sync slider
+      const slider = document.getElementById('zoomSlider');
+      if (slider && Math.abs(slider.value - zoom) > 0.02) slider.value = zoom;
     }
+
+    // ── Keyboard shortcuts ──
+    document.addEventListener('keydown', function(e) {
+      if (!document.getElementById('cropperOverlay').classList.contains('visible')) return;
+      if (e.key === 'Escape') { cancelCrop(); e.preventDefault(); }
+      if (e.key === 'Enter') { applyCrop(); e.preventDefault(); }
+    });
 
     function clearImagePreview() {
       const preview = document.getElementById('imagePreview');
