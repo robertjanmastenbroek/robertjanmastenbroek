@@ -273,7 +273,8 @@ app.get('/holy-rave', async (req, res) => {
     if (err) return res.sendFile(path.join(__dirname, 'index.html'));
     const injected = data
       .replace(/<meta property="og:image" content="[^"]*"/, '<meta property="og:image" content="' + ogImage + '"')
-      .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + ogImage + '"');
+      .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + ogImage + '"')
+      .replace('name="twitter:card" content="summary_large_image"', 'name="twitter:card" content="summary_large_image"\n    <meta property="og:type" content="website">\n    <meta property="fb:app_id" content="61573212765627">');
     res.send(injected);
   });
 });
@@ -302,7 +303,8 @@ app.get('/holy-rave/:slug', async (req, res) => {
           .replace(/<meta property="og:title" content="[^"]*"/, '<meta property="og:title" content="' + ogTitle + '"')
           .replace(/<meta property="og:description" content="[^"]*"/, '<meta property="og:description" content="' + ogDesc + '"')
           .replace(/<meta property="og:image" content="[^"]*"/, '<meta property="og:image" content="' + imageUrl + '"')
-          .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + imageUrl + '"');
+          .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + imageUrl + '"')
+          .replace('name="twitter:card" content="summary_large_image"', 'name="twitter:card" content="summary_large_image"\n    <meta property="og:type" content="website">\n    <meta property="fb:app_id" content="61573212765627">');
         res.send(injected);
       });
       return;
