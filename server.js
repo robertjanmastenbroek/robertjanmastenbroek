@@ -133,6 +133,44 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
+// ─── Input Validation Helpers ────────────────────────────────────────────────
+
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com', 'guerrillamail.com', 'guerrillamail.net', 'guerrillamail.org',
+  'guerrillamail.biz', '10minutemail.com', '10minutemail.net', '10minutemail.org',
+  'throwaway.email', 'tempmail.com', 'tempmail.net', 'tempmail.org',
+  'yopmail.com', 'yopmail.fr', 'yopmail.net', 'yopmail.org',
+  'sharklasers.com', 'grr.la', 'spam4.me', 'mailmetrash.com',
+  'trashmail.com', 'trashmail.net', 'trashmail.org', 'trashmail.ws',
+  'mailexpire.com', 'mailcatch.com', 'dispostable.com', 'maildrop.cc',
+  'getairmail.com', 'emailtemporanea.net', 'fakemailgenerator.com',
+  'spambox.us', 'spamgourmet.com', 'maileater.com', 'emailondeck.com',
+  'mailnator.com', 'mintemail.com', 'spamthisplease.com', 'e4ward.com',
+  'mytrashmail.com', 'mailnull.com', 'sneakemail.com', 'incognitomail.com',
+  'thankyou2010.com', 'trash2009.com', 'mt2009.com', 'trashymail.com',
+  'tyldd.com', 'rppkn.com', 'awsoo.com', 'zippymail.info',
+  'pookmail.com', 'dontreg.com', 'hidemail.net', 'hidemail.org',
+  'hidemail.us', 'poofy.org', 'wh4f.org', 'jetable.org',
+  'nospam.ze.tc', 'nomail.xl.cx', 'remove.spam.me.nu', 'nobulk.ml',
+]);
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_REGEX = /^\+\d{1,4}\s?\d{4,15}$/;
+
+function validateEmail(email) {
+  if (!email || !EMAIL_REGEX.test(email)) return 'Please enter a valid email address.';
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (domain && DISPOSABLE_DOMAINS.has(domain)) return 'Please use a permanent email address (not a disposable/temporary one).';
+  return null;
+}
+
+function validatePhone(phone) {
+  if (!phone) return null; // phone is optional
+  const cleaned = phone.replace(/\s/g, '');
+  if (!PHONE_REGEX.test(cleaned)) return 'Please enter a valid phone number with country code (e.g. +34 612 345 678).';
+  return null;
+}
+
 // ─── Rate Limiting — prevent bot hoarding on 50-person events ──────────────
 const registerLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
@@ -308,7 +346,8 @@ app.get('/api/spotify-followers', async (req, res) => {
 // ─── Email Subscribe ──────────────────────────────────────────────────────────
 app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
-  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Invalid email' });
+  const emailErr = validateEmail(email);
+  if (emailErr) return res.status(400).json({ error: emailErr });
 
   // Save to database
   try {
@@ -484,9 +523,15 @@ app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
 app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
   const { firstName, lastName, email, phone, amount, eventSlug } = req.body;
 
-  if (!firstName || !lastName || !email || !email.includes('@')) {
+  if (!firstName || !lastName || !email) {
     return res.status(400).json({ error: 'Please fill in all fields correctly.' });
   }
+
+  const emailErr = validateEmail(email);
+  if (emailErr) return res.status(400).json({ error: emailErr });
+
+  const phoneErr = validatePhone(phone);
+  if (phoneErr) return res.status(400).json({ error: phoneErr });
 
   const amt = Math.max(0, parseInt(amount, 10) || 0);
 
@@ -793,7 +838,9 @@ app.post('/api/admin/event-images/upload', requireAdmin, upload.single('image'),
 // ─── Serve uploaded event images ───────────────────────────────────────────
 app.get('/api/images/event/:shortId', async (req, res) => {
   try {
-    const id = 'evimg_' + req.params.shortId;
+    // Strip any file extension that might be in the URL
+    const base = req.params.shortId.replace(/\.[^.]+$/, '');
+    const id = 'evimg_' + base;
     const img = await db.getEventImage(id);
     if (!img) return res.status(404).send('Image not found');
 

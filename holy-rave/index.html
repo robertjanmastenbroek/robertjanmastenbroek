@@ -2003,6 +2003,19 @@
         // ──────────────────────────────────────────────────────
         // MULTI-STEP FORM
         // ──────────────────────────────────────────────────────
+        // Client-side disposable email domains
+        const DISPOSABLE_DOMAINS = new Set([
+            'mailinator.com','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+            '10minutemail.com','10minutemail.net','throwaway.email','tempmail.com',
+            'yopmail.com','yopmail.fr','yopmail.net','sharklasers.com','grr.la',
+            'trashmail.com','trashmail.net','trashmail.org','maildrop.cc','dispostable.com',
+            'getairmail.com','spambox.us','spamgourmet.com','emailondeck.com',
+            'mailnator.com','mintemail.com','mytrashmail.com','mailnull.com',
+            'jetable.org','nospam.ze.tc','poofy.org','wh4f.org',
+        ]);
+
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
         function goToStep(target) {
             if (target === 2) {
                 // Validate step 1
@@ -2013,9 +2026,25 @@
                     document.getElementById('formError').textContent = 'Please fill in all fields.';
                     return;
                 }
-                if (!email.includes('@') || !email.includes('.')) {
-                    document.getElementById('formError').textContent = 'Please enter a valid email address.';
+                if (!EMAIL_REGEX.test(email)) {
+                    document.getElementById('formError').textContent = 'Please enter a valid email address (e.g. name@domain.com).';
                     return;
+                }
+                // Check disposable domains
+                const domain = email.split('@')[1]?.toLowerCase();
+                if (domain && DISPOSABLE_DOMAINS.has(domain)) {
+                    document.getElementById('formError').textContent = 'Please use a permanent email address, not a temporary one.';
+                    return;
+                }
+                // Validate phone
+                const phoneCountry = document.getElementById('phoneCountry')?.value || '+34';
+                const phoneNumber = document.getElementById('phoneNumber')?.value.trim() || '';
+                if (phoneNumber) {
+                    const fullPhone = phoneCountry + ' ' + phoneNumber;
+                    if (!/^\+\d{1,4}\s?\d{4,15}$/.test(fullPhone.replace(/\s+/g, ' '))) {
+                        document.getElementById('formError').textContent = 'Please enter a valid phone number (e.g. ' + phoneCountry + ' 612 345 678).';
+                        return;
+                    }
                 }
             }
             document.getElementById('formError').textContent = '';

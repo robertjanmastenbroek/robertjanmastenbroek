@@ -467,7 +467,14 @@
     function updateImagePreview(url) {
       const preview = document.getElementById('imagePreview');
       if (url) {
-        preview.innerHTML = `<img src="${url}" alt="Event image" onerror="this.outerHTML='<span class=\\'placeholder\\'>Failed to load image</span>'">`;
+        preview.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = 'Event image';
+        img.onerror = function() {
+          preview.innerHTML = '<span class="placeholder">Failed to load image</span>';
+        };
+        preview.appendChild(img);
       } else {
         clearImagePreview();
       }
