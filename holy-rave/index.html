@@ -1550,6 +1550,56 @@
             }
         }
     </style>
+
+    <!-- JSON-LD Structured Data — Hub page (event list, updated by JS) -->
+    <script type="application/ld+json" id="ldJsonHub">
+    {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "Holy Rave — Sunset Sessions",
+        "description": "Intimate sunset sessions in Tenerife. 50 people. Melodic Afrohouse. Pay what feels right.",
+        "url": "https://robertjanmastenbroek.com/holy-rave",
+        "numberOfItems": 0,
+        "itemListOrder": "https://schema.org/ItemListOrderAscending"
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data — Detail page (updated dynamically by JS) -->
+    <script type="application/ld+json" id="ldJsonDetail">
+    {
+        "@context": "https://schema.org",
+        "@type": "MusicEvent",
+        "name": "Holy Rave",
+        "description": "An intimate sunset session with melodic Afrohouse and organic electronic music.",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "organizer": {
+            "@type": "Person",
+            "name": "Robert-Jan Mastenbroek",
+            "url": "https://robertjanmastenbroek.com"
+        },
+        "performer": {
+            "@type": "Person",
+            "name": "Robert-Jan Mastenbroek"
+        },
+        "location": {
+            "@type": "Place",
+            "name": "Tenerife",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Tenerife",
+                "addressCountry": "ES"
+            }
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "1.00",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/LimitedAvailability",
+            "validFrom": "2026-06-01"
+        }
+    }
+    </script>
 </head>
 <body>
 
@@ -2134,6 +2184,7 @@
                 }
                 noEvents.style.display = 'none';
                 grid.innerHTML = upcoming.map(e => buildEventCard(e)).join('');
+                updateStructuredData(upcoming, true);
 
                 // Set hero background to the next event's image
                 const first = upcoming[0];
@@ -2365,6 +2416,58 @@
             }
             updateDetailMeter(event);
             document.getElementById('detailOf').textContent = 'of ' + event.ticket_limit;
+            updateStructuredData(event);
+        }
+
+        // ──────────────────────────────────────────────────────
+        // STRUCTURED DATA (JSON-LD) — update for Google rich results
+        // ──────────────────────────────────────────────────────
+        function updateStructuredData(event, isList) {
+            try {
+                if (isList && event) {
+                    // Hub page: update ItemList with event count
+                    const el = document.getElementById('ldJsonHub');
+                    if (!el) return;
+                    const data = JSON.parse(el.textContent);
+                    data.numberOfItems = Array.isArray(event) ? event.length : 1;
+                    if (Array.isArray(event)) {
+                        data.itemListElement = event.slice(0, 5).map((e, i) => ({
+                            '@type': 'ListItem',
+                            position: i + 1,
+                            url: 'https://robertjanmastenbroek.com/holy-rave/' + e.slug,
+                            name: e.title || 'Holy Rave',
+                        }));
+                    }
+                    el.textContent = JSON.stringify(data, null, 2);
+                } else if (event) {
+                    // Detail page: update MusicEvent with event data
+                    const el = document.getElementById('ldJsonDetail');
+                    if (!el) return;
+                    const date = event.event_date ? new Date(event.event_date + 'T12:00:00') : null;
+                    const data = JSON.parse(el.textContent);
+                    data.name = event.title || 'Holy Rave';
+                    data.description = event.description || 'An intimate sunset session.';
+                    data.startDate = date ? date.toISOString() : undefined;
+                    data.endDate = date ? new Date(date.getTime() + 3 * 60 * 60 * 1000).toISOString() : undefined;
+                    if (event.location) {
+                        data.location = {
+                            '@type': 'Place',
+                            name: event.location,
+                            address: { '@type': 'PostalAddress', addressLocality: event.location, addressCountry: 'ES' },
+                        };
+                    }
+                    data.offers = {
+                        '@type': 'Offer',
+                        price: '1.00',
+                        priceCurrency: 'EUR',
+                        availability: event.remaining > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+                        url: 'https://robertjanmastenbroek.com/holy-rave/' + (event.slug || ''),
+                    };
+                    el.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (e) {
+                console.error('[schema] Error updating structured data:', e);
+            }
         }
 
         function updateDetailMeter(event) {
