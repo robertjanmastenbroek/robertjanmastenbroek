@@ -192,76 +192,70 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   res.json({ received: true });
 });
 
-// ─── Admin session middleware (BEFORE static — critical for cookie parity) ──
-app.use(session({
-  secret: process.env.ADMIN_API_KEY || 'fallback-dev-secret-change-in-prod',
-  resave: false,
-  saveUninitialized: false,
-  name: 'hr_admin_sid',
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  },
-}));
-
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// ─── Admin auth helper ───────────────────────────────────────────────────────
+// ─── Admin auth — signed token (avoids session cookie issues) ────────────────
+function signAdminToken() {
+  const secret = process.env.ADMIN_API_KEY || 'fallback-dev-secret';
+  const payload = JSON.stringify({ role: 'admin', t: Date.now() });
+  const b64 = Buffer.from(payload).toString('base64url');
+  const sig = crypto.createHmac('sha256', secret).update(b64).digest('base64url');
+  return b64 + '.' + sig;
+}
+
+function verifyAdminToken(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 2) return false;
+    const secret = process.env.ADMIN_API_KEY || 'fallback-dev-secret';
+    const sig = crypto.createHmac('sha256', secret).update(parts[0]).digest('base64url');
+    if (sig !== parts[1]) return false;
+    return JSON.parse(Buffer.from(parts[0], 'base64url').toString()).role === 'admin';
+  } catch (e) { return false; }
+}
+
 function requireAdmin(req, res, next) {
-  // Session-based auth (legacy, for existing admin sessions)
-  if (req.session && req.session.isAdmin) {
-    return next();
-  }
-  // Supabase Auth token (Authorization: Bearer <token>)
-  const authHeader = req.headers['authorization'];
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.slice(7);
-    // Async but Express doesn't pass errors — wrap it
-    supabase.getUserFromToken(token).then(user => {
-      if (user) {
-        req.adminUser = user;
-        return next();
-      }
-      return res.status(401).json({ error: 'Unauthorized. Please log in.' });
+  // 1) Signed admin token (x-admin-token header) — primary method
+  const token = req.headers['x-admin-token'];
+  if (token && verifyAdminToken(token)) return next();
+  // 2) Legacy session-based (still checked for compatibility)
+  if (req.session && req.session.isAdmin) return next();
+  // 3) Supabase Auth (Authorization: Bearer)
+  const auth = req.headers['authorization'];
+  if (auth && auth.startsWith('Bearer ')) {
+    supabase.getUserFromToken(auth.slice(7)).then(user => {
+      if (user) { req.adminUser = user; return next(); }
+      return res.status(401).json({ error: 'Unauthorized. Please log in at /admin.' });
     }).catch(() => res.status(401).json({ error: 'Unauthorized.' }));
     return;
   }
-  // Fallback: API key header (for programmatic use)
-  const apiKey = req.headers['x-api-key'];
-  const expectedKey = process.env.ADMIN_API_KEY;
-  if (expectedKey && apiKey === expectedKey) {
-    req.session.isAdmin = true; // promote to session auth
-    return next();
-  }
-  return res.status(401).json({ error: 'Unauthorized. Please log in at /admin' });
+  // 4) API key header (programmatic use)
+  if (req.headers['x-api-key'] === process.env.ADMIN_API_KEY) return next();
+  return res.status(401).json({ error: 'Unauthorized. Please log in at /admin.' });
 }
 
-// ─── Admin login/logout ──────────────────────────────────────────────────────
+// ─── Admin login (token-based, no session cookie dependency) ─────────────────
 app.post('/api/admin/login', express.json(), (req, res) => {
   const { password } = req.body;
-  const expectedKey = process.env.ADMIN_API_KEY;
-
-  if (!expectedKey) {
-    return res.status(503).json({ error: 'Admin panel not configured. Set ADMIN_API_KEY in Railway.' });
+  const key = process.env.ADMIN_API_KEY;
+  if (!key) return res.status(503).json({ error: 'Admin panel not configured.' });
+  if (password === key || password === process.env.ADMIN_PASSWORD) {
+    return res.json({ ok: true, token: signAdminToken() });
   }
-
-  if (password === expectedKey || password === process.env.ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
-    return res.json({ ok: true });
-  }
-
   return res.status(401).json({ error: 'Incorrect password.' });
 });
 
 app.post('/api/admin/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  if (req.session) try { req.session.destroy(() => {}); } catch(e) {}
+  res.json({ ok: true });
 });
 
 app.get('/api/admin/me', (req, res) => {
-  res.json({ authenticated: !!(req.session && req.session.isAdmin) });
+  const token = req.headers['x-admin-token'];
+  if (token && verifyAdminToken(token)) return res.json({ authenticated: true });
+  if (req.session && req.session.isAdmin) return res.json({ authenticated: true });
+  res.json({ authenticated: false });
 });
 
 // ─── Supabase Auth config (expose URL + publishable key to frontend) ─────────

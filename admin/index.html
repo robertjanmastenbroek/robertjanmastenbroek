@@ -472,9 +472,12 @@
   <script>
     let editingSlug = null;
 
+    let adminToken = localStorage.getItem('hr_admin_token') || '';
+
     async function api(path, options = {}) {
       const headers = { 'Content-Type': 'application/json' };
-      const res = await fetch(path, { ...options, headers: { ...headers, ...options.headers }, credentials: 'same-origin' });
+      if (adminToken) headers['x-admin-token'] = adminToken;
+      const res = await fetch(path, { ...options, headers: { ...headers, ...options.headers } });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Request failed');
       return data;
@@ -831,7 +834,9 @@
     // ── Session-based auth ────────────────────────────────────────────────
     async function checkAuth() {
       try {
-        const res = await fetch('/api/admin/me', { credentials: 'same-origin' });
+        const headers = {};
+        if (adminToken) headers['x-admin-token'] = adminToken;
+        const res = await fetch('/api/admin/me', { headers });
         const data = await res.json();
         if (data.authenticated) {
           document.getElementById('loginScreen').classList.add('hidden');
@@ -853,10 +858,11 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: pw }),
-          credentials: 'same-origin',
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Login failed');
+        adminToken = data.token;
+        localStorage.setItem('hr_admin_token', data.token);
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('dashboard').classList.add('visible');
         loadEvents();
@@ -867,7 +873,9 @@
     }
 
     async function logout() {
-      await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
+      await fetch('/api/admin/logout', { method: 'POST' });
+      adminToken = '';
+      localStorage.removeItem('hr_admin_token');
       document.getElementById('loginScreen').classList.remove('hidden');
       document.getElementById('dashboard').classList.remove('visible');
     }
