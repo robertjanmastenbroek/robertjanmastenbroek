@@ -59,12 +59,18 @@ The Holy Rave ticketing system is fully operational. Below is a summary of all f
 
 ### SEO / Structured Data
 - JSON-LD MusicEvent schema on detail pages (name, date, location, offers, organizer)
+- JSON-LD BreadcrumbList schema on detail pages (Holy Rave > event date)
 - JSON-LD ItemList schema on hub page (upcoming events)
 - Server-side OG tag injection for `/holy-rave` and `/holy-rave/:slug`
 - Event-specific OG image, title, description
 - Server-rendered event data (no API call needed on first load)
 - `og:type` and `fb:app_id` for Facebook validation
+- `<meta name="robots" content="index,follow">` on all pages
+- Dynamic `/sitemap.xml` with all event URLs from DB
+- `robots.txt` with AI crawler directives (GPTBot, OAI-SearchBot, PerplexityBot, ClaudeBot, Applebot, Google-Extended)
+- Visible breadcrumb nav (`Holy Rave / Jun 13 · Tenerife`) above event hero
 - Frame-ancestors CSP header
+- Google Search Console submitted
 
 ### Google Analytics
 - GA4 (G-JZG345ND51) on all public pages
@@ -150,6 +156,12 @@ The Holy Rave ticketing system is fully operational. Below is a summary of all f
 - ✅ Admin registrations panel
 - ✅ Subscribers list with copy-all
 - ✅ Railway build caching + deploy exclusions
+- ✅ BreadcrumbList schema on event pages
+- ✅ Dynamic sitemap with event URLs
+- ✅ robots.txt AI crawler directives
+- ✅ Meta robots index,follow on all pages
+- ✅ Google Search Console submitted
+- ✅ Google Business Profile setup
 
 ### Remaining
 - User accounts (Supabase Auth) — infra exists, not wired into flow
