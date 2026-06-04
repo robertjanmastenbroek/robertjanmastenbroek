@@ -1160,6 +1160,31 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
     if (!reg) return res.status(404).json({ error: 'Registration not found.' });
     if (reg.status === 'confirmed') return res.json({ ok: true, already: true });
 
+    // ─── Verify payment with Stripe before confirming ──────────────────
+    // Critical: never trust the client — always verify PaymentIntent status server-side.
+    if (reg.stripe_session_id) {
+      const stripeCheck = getStripe();
+      if (!stripeCheck) {
+        return res.status(503).json({ error: 'Payment system unavailable. Cannot verify payment.' });
+      }
+      try {
+        const pi = await stripeCheck.paymentIntents.retrieve(reg.stripe_session_id);
+        if (pi.status !== 'succeeded') {
+          console.error(`[confirm-payment] Payment not succeeded for ${regId}: status=${pi.status}`);
+          return res.status(402).json({
+            error: `Payment not completed (status: ${pi.status}). Please complete payment first.`,
+          });
+        }
+        console.log(`[confirm-payment] Stripe verified: ${reg.stripe_session_id} status=succeeded`);
+      } catch (stripeErr) {
+        console.error(`[confirm-payment] Stripe verification error:`, stripeErr.message);
+        return res.status(502).json({ error: 'Could not verify payment status with Stripe.' });
+      }
+    } else {
+      // No stripe_session_id — registration has no associated payment
+      return res.status(400).json({ error: 'No payment found for this registration.' });
+    }
+
     const confirmed = await db.confirmRegistration(regId, null);
     if (!confirmed) return res.status(409).json({ error: 'Could not confirm — event may be full.' });
 
