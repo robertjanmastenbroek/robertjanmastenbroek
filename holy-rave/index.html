@@ -2225,7 +2225,8 @@
                 hero.classList.add('has-image');
             }
 
-            // Overlay event image on top (if available — takes visual precedence)
+            // Only overlay event image if no persistent hub background is set
+            if (window.__HUB_BACKGROUND__ && window.__HUB_BACKGROUND__ !== '') return;
             if (!event || !event.image_url) return;
             const fullUrl = event.image_url.startsWith('http') ? event.image_url : window.location.origin + event.image_url;
             const img = new Image();
