@@ -2321,7 +2321,7 @@
                             </div>
                         </div>
                         <div class="event-card-body">
-                            <div class="event-card-title">Holy Rave <em>·</em> ${dateLabel}</div>
+                            <div class="event-card-title">${e.title || 'Holy Rave'} <em>·</em> ${dateLabel}</div>
                             <div class="event-card-location">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
@@ -2347,7 +2347,7 @@
                         </div>
                     </div>
                     <div class="event-card-body">
-                        <div class="event-card-title">Holy Rave <em>·</em> ${dateLabel}</div>
+                        <div class="event-card-title">${e.title || 'Holy Rave'} <em>·</em> ${dateLabel}</div>
                         <div class="event-card-location">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
@@ -2450,7 +2450,7 @@
                 : window.location.origin + '/images/og-image.png';
             if (ogImage) ogImage.content = fullImageUrl;
             if (twImage) twImage.content = fullImageUrl;
-            if (ogTitle) ogTitle.content = 'Holy Rave — ' + date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' · ' + (event.location || 'Tenerife');
+            if (ogTitle) ogTitle.content = (event.title || 'Holy Rave') + ' · ' + date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' · ' + (event.location || 'Tenerife');
             if (ogDesc) ogDesc.content = '50 tickets. Pay what feels right. You + 1 friend. ' + (event.event_time || 'Sunset') + ' at ' + (event.location || 'Tenerife South') + '.';
 
             // Set pricing model and update amount section visibility
@@ -2469,7 +2469,7 @@
             }
 
             document.getElementById('detailTitle').innerHTML =
-                `<em>${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</em> · ${event.location || 'Tenerife'}`;
+                `${event.title || 'Holy Rave'} <em>·</em> ${event.location || 'Tenerife'}`;
             document.getElementById('detailEyebrow').innerHTML = '<span class="pin"></span>Holy Rave';
             document.getElementById('detailTime').textContent = event.event_time || 'Sunset';
             document.getElementById('detailLocation').textContent = event.location || 'Tenerife South';
@@ -3264,7 +3264,7 @@
                 'DTSTAMP:' + fmt(new Date()),
                 'DTSTART:' + fmt(startDate),
                 'DTEND:' + fmt(endDate),
-                'SUMMARY:Holy Rave — Sunset Session',
+                'SUMMARY:' + (currentEvent.title || 'Holy Rave'),
                 'DESCRIPTION:Melodic Afrohouse \\n Organic House \\n Sunset session in Tenerife. You + 1 friend.\\n\\nAll the glory belongs to Jesus.',
                 'LOCATION:' + loc,
                 'END:VEVENT',
