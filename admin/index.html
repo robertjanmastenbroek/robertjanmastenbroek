@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/2.0.0-beta.2/cropper.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -744,10 +744,8 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         const img = document.getElementById('cropImage');
-        img.src = e.target.result;
-        document.getElementById('cropperOverlay').classList.add('visible');
-        document.body.style.overflow = 'hidden';
 
+        // Set onload BEFORE src to handle synchronous data-URI loads
         img.onload = function() {
           if (cropper) cropper.destroy();
           cropper = new Cropper(img, {
@@ -765,6 +763,10 @@
           document.getElementById('zoomSlider').value = 1;
           updateCropZoomDisplay();
         };
+
+        img.src = e.target.result;
+        document.getElementById('cropperOverlay').classList.add('visible');
+        document.body.style.overflow = 'hidden';
       };
       reader.readAsDataURL(file);
       input.value = '';
@@ -1271,6 +1273,6 @@
     // Check auth on page load
     checkAuth();
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/2.0.0-beta.2/cropper.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 </body>
 </html>
