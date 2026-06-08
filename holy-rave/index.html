@@ -290,16 +290,22 @@
             transition: background-image 1.2s var(--ease-slow);
         }
         .hub-hero.has-image {
-            background: linear-gradient(180deg, rgba(15,23,48,0.7) 0%, rgba(10,10,10,0.85) 60%, rgba(10,10,10,0.95) 100%);
+            background: linear-gradient(180deg, rgba(15,23,48,0.2) 0%, rgba(10,10,10,0.25) 40%, rgba(10,10,10,0.55) 100%);
             background-size: cover;
             background-position: center top;
-            background-blend-mode: overlay;
         }
         .hub-hero .atmosphere { z-index: 0; }
         .hub-hero-content {
             position: relative;
             z-index: 2;
             max-width: 680px;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+        }
+        .hub-hero-content h1 {
+            text-shadow: 0 2px 24px rgba(0,0,0,0.6);
+        }
+        .hub-hero-content .eyebrow {
+            text-shadow: 0 1px 8px rgba(0,0,0,0.4);
         }
 
         .eyebrow {
@@ -2219,7 +2225,7 @@
                 const hubUrl = window.__HUB_BACKGROUND__.startsWith('http')
                     ? window.__HUB_BACKGROUND__
                     : window.location.origin + window.__HUB_BACKGROUND__;
-                hero.style.backgroundImage = 'linear-gradient(180deg, rgba(15,23,48,0.7) 0%, rgba(10,10,10,0.85) 60%, rgba(10,10,10,0.95) 100%), url(' + hubUrl + ')';
+                hero.style.backgroundImage = 'linear-gradient(180deg, rgba(15,23,48,0.2) 0%, rgba(10,10,10,0.25) 40%, rgba(10,10,10,0.55) 100%), url(' + hubUrl + ')';
                 hero.style.backgroundSize = 'cover';
                 hero.style.backgroundPosition = 'center top';
                 hero.classList.add('has-image');
@@ -2230,7 +2236,7 @@
             if (!event || !event.image_url) return;
             const fullUrl = event.image_url.startsWith('http') ? event.image_url : window.location.origin + event.image_url;
             const img = new Image();
-            img.onload = function() { hero.style.backgroundImage = 'linear-gradient(180deg, rgba(15,23,48,0.7) 0%, rgba(10,10,10,0.85) 60%, rgba(10,10,10,0.95) 100%), url(' + fullUrl + ')'; hero.classList.add('has-image'); };
+            img.onload = function() { hero.style.backgroundImage = 'linear-gradient(180deg, rgba(15,23,48,0.2) 0%, rgba(10,10,10,0.25) 40%, rgba(10,10,10,0.55) 100%), url(' + fullUrl + ')'; hero.classList.add('has-image'); };
             img.src = fullUrl;
             const ogImage = document.querySelector('meta[property="og:image"]');
             const twImage = document.querySelector('meta[name="twitter:image"]');
