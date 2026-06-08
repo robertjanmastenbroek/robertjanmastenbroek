@@ -599,6 +599,36 @@
     </div>
   </div>
 
+  <!-- Holy Rave Hub Background Settings -->
+  <div style="margin-top:3rem;border-top:1px solid rgba(200,136,58,0.1);padding-top:2rem;">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <h2 style="font-size:1.2rem;font-weight:500;letter-spacing:0.02em;">Holy Rave Hub <span style="color:#c8883a;">Background</span></h2>
+      <button class="btn btn-primary" onclick="loadHubSettings()">Load</button>
+    </div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+      <div style="flex:1;min-width:240px;">
+        <div class="image-preview" id="hubBgPreview" style="width:100%;max-width:400px;aspect-ratio:16/9;">
+          <span class="placeholder">No hub background set</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <input type="text" id="hubBgUrl" placeholder="Image URL or upload below" style="width:100%;padding:0.65rem 0.85rem;background:#0a0a0a;border:1px solid rgba(200,136,58,0.12);color:#f5f1e8;font-family:'Inter',sans-serif;font-size:0.85rem;margin-bottom:0.5rem;outline:none;">
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+          <label style="padding:0.5rem 1rem;border:1px dashed rgba(200,136,58,0.3);color:#c8883a;font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;text-align:center;">
+            📁 Upload
+            <input type="file" accept="image/*" style="display:none;" onchange="uploadHubBgImage(this)">
+          </label>
+          <button class="btn" onclick="openPexelsForHub()">Pexels</button>
+        </div>
+        <div id="hubBgStatus" style="font-size:0.72rem;color:#7a7266;min-height:1.2rem;"></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <button class="btn btn-primary" id="hubBgSaveBtn" onclick="saveHubBackground()">Save Background</button>
+          <button class="btn btn-danger" onclick="removeHubBackground()">Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Subscribers section -->
   <div id="subscribersSection" style="margin-top:3rem;">
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
@@ -1109,6 +1139,199 @@
       }
       btn.textContent = 'Sync to Resend';
       btn.disabled = false;
+    }
+
+    // ── Holy Rave Hub Background ──────────────────────────────────────────
+    let hubBgJustUploaded = null;
+
+    async function loadHubSettings() {
+      try {
+        const data = await api('/api/admin/holy-rave/settings');
+        const url = data.hub_background_url || '';
+        document.getElementById('hubBgUrl').value = url;
+        updateHubBgPreview(url);
+        document.getElementById('hubBgStatus').textContent = url ? 'Loaded' : 'No background set';
+      } catch (err) {
+        document.getElementById('hubBgStatus').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    function updateHubBgPreview(url) {
+      const preview = document.getElementById('hubBgPreview');
+      if (url && url.trim()) {
+        preview.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = url.startsWith('http') ? url : window.location.origin + url;
+        img.alt = 'Hub background';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+        img.onerror = function() { preview.innerHTML = '<span class="placeholder">Failed to load image</span>'; };
+        preview.appendChild(img);
+      } else {
+        preview.innerHTML = '<span class="placeholder">No hub background set</span>';
+      }
+    }
+
+    function uploadHubBgImage(input) {
+      // Reuse the existing upload-to-crop flow by temporarily setting
+      // cropFile context and letting the user crop via the cropper overlay.
+      // After crop + upload, the returned URL goes into hubBgUrl.
+      const file = input.files[0];
+      if (!file) { input.value = ''; return; }
+      if (!file.type.startsWith('image/')) { document.getElementById('hubBgStatus').textContent = 'Images only'; input.value = ''; return; }
+      if (file.size > 10 * 1024 * 1024) { document.getElementById('hubBgStatus').textContent = 'Max 10MB'; input.value = ''; return; }
+
+      hubBgJustUploaded = file.name;
+      cropFile = file;
+      document.getElementById('cropFilename').textContent = file.name;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById('cropImage');
+        img.onload = function() {
+          if (cropper) cropper.destroy();
+          cropper = new Cropper(img, {
+            aspectRatio: 16 / 9,
+            viewMode: 1,
+            autoCropArea: 0.9,
+            background: false,
+            zoomOnTouch: true,
+            zoomOnWheel: true,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: true,
+          });
+          document.getElementById('zoomSlider').value = 1;
+          updateCropZoomDisplay();
+        };
+        img.src = e.target.result;
+        document.getElementById('cropperOverlay').classList.add('visible');
+        document.body.style.overflow = 'hidden';
+      };
+      reader.readAsDataURL(file);
+      input.value = '';
+
+      // Override the crop apply callback to store result in hubBgUrl
+      window._hubBgCropCallback = true;
+    }
+
+    function openPexelsForHub() {
+      document.getElementById('pexelsOverlay').classList.add('visible');
+      searchPexels();
+      // Override Pexels select to store in hubBgUrl
+      window._pexelsForHub = true;
+    }
+
+    // Patch selectPexelsImage to support both regular event and hub background
+    const _origSelectPexels = window.selectPexelsImage || function(){};
+    window.selectPexelsImage = function(url, photographer, pexelsUrl) {
+      if (window._pexelsForHub) {
+        document.getElementById('hubBgUrl').value = url;
+        updateHubBgPreview(url);
+        window._pexelsForHub = false;
+        closePexels();
+      } else {
+        document.getElementById('fImageUrl').value = url;
+        updateImagePreview(url);
+        closePexels();
+      }
+    };
+
+    // Patch applyCrop to handle hub background upload
+    const _origApplyCrop = window.applyCrop || function(){};
+    window.applyCrop = function() {
+      if (!cropper) { showToast('No image loaded'); return; }
+
+      const status = window._hubBgCropCallback
+        ? document.getElementById('hubBgStatus')
+        : document.getElementById('uploadStatus');
+      const btn = document.getElementById('cropApplyBtn');
+      status.textContent = 'Cropping...';
+      btn.textContent = 'Cropping...';
+      btn.disabled = true;
+
+      const canvas = cropper.getCroppedCanvas({ maxWidth: 1920, maxHeight: 1080, fillColor: '#0a0a0a', imageSmoothingQuality: 'high' });
+
+      canvas.toBlob(async function(blob) {
+        if (!blob) {
+          status.textContent = '❌ Crop failed';
+          btn.textContent = 'Apply & Upload';
+          btn.disabled = false;
+          return;
+        }
+
+        const cf = cropFile || new File([blob], 'hub-bg.jpg', { type: 'image/jpeg' });
+        const croppedFile = new File([blob], cf.name, { type: cf.type, lastModified: Date.now() });
+        status.textContent = 'Uploading...';
+
+        const formData = new FormData();
+        formData.append('image', croppedFile);
+
+        try {
+          const headers = {};
+          if (adminToken) headers['x-admin-token'] = adminToken;
+          const res = await fetch('/api/admin/event-images/upload', { method: 'POST', headers, body: formData });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+          if (window._hubBgCropCallback) {
+            // Store in hub background field
+            document.getElementById('hubBgUrl').value = data.url;
+            updateHubBgPreview(data.url);
+            status.textContent = '✅ Uploaded';
+            showToast('Hub background uploaded');
+            window._hubBgCropCallback = false;
+          } else {
+            // Original event image flow
+            document.getElementById('fImageUrl').value = data.url;
+            updateImagePreview(data.url);
+            status.textContent = '✅ Uploaded';
+            showToast('Image uploaded');
+            setTimeout(() => status.textContent = '', 3000);
+          }
+        } catch (err) {
+          status.textContent = '❌ ' + err.message;
+        }
+
+        cancelCrop();
+        btn.textContent = 'Apply & Upload';
+        btn.disabled = false;
+      }, (cropFile || { type: 'image/jpeg' }).type, 0.92);
+    };
+
+    async function saveHubBackground() {
+      const btn = document.getElementById('hubBgSaveBtn');
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+      try {
+        const url = document.getElementById('hubBgUrl').value.trim() || null;
+        await api('/api/admin/holy-rave/settings', {
+          method: 'PUT',
+          body: JSON.stringify({ hub_background_url: url }),
+        });
+        document.getElementById('hubBgStatus').textContent = '✅ Saved';
+        showToast('Hub background saved');
+        updateHubBgPreview(url);
+      } catch (err) {
+        document.getElementById('hubBgStatus').textContent = '❌ ' + err.message;
+      }
+      btn.textContent = 'Save Background';
+      btn.disabled = false;
+    }
+
+    async function removeHubBackground() {
+      if (!confirm('Remove the hub background image?')) return;
+      try {
+        await api('/api/admin/holy-rave/settings', {
+          method: 'PUT',
+          body: JSON.stringify({ hub_background_url: null }),
+        });
+        document.getElementById('hubBgUrl').value = '';
+        updateHubBgPreview('');
+        document.getElementById('hubBgStatus').textContent = '✅ Removed';
+        showToast('Hub background removed');
+      } catch (err) {
+        document.getElementById('hubBgStatus').textContent = '❌ ' + err.message;
+      }
     }
 
     // ── Subscribers ──────────────────────────────────────────────────────

@@ -116,3 +116,10 @@ CREATE INDEX IF NOT EXISTS idx_registrations_week_status ON holy_rave_registrati
 CREATE INDEX IF NOT EXISTS idx_registrations_event_status ON holy_rave_registrations(event_id, status);
 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
 CREATE INDEX IF NOT EXISTS idx_events_status ON events(status, event_date);
+
+-- Site settings (key-value store for global config — hub background, etc.)
+CREATE TABLE IF NOT EXISTS site_settings (
+  key VARCHAR(100) PRIMARY KEY,
+  value TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);

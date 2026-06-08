@@ -259,10 +259,11 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 app.use(express.json());
 
 // Holy Rave hub must be handled BEFORE express.static or static wins
-// ─── Server-rendered /holy-rave hub — inject OG image from next event ──────
+// ─── Server-rendered /holy-rave hub — inject OG image + hub bg from next event ──
 app.get('/holy-rave', async (req, res) => {
   let ogImage = SITE_URL + '/images/og-image.png';
   let eventsJson = '[]';
+  let hubBackground = '';
   try {
     const events = await db.getUpcomingEvents(5);
     const next = events?.[0];
@@ -273,15 +274,18 @@ app.get('/holy-rave', async (req, res) => {
       ...e,
       event_date: e.event_date instanceof Date ? e.event_date.toISOString().split('T')[0] : e.event_date,
     })));
+    hubBackground = (await db.getHubBackground()) || '';
   } catch (e) {}
   const fs = require('fs');
   fs.readFile(path.join(__dirname, 'holy-rave', 'index.html'), 'utf8', (err, data) => {
     if (err) return res.sendFile(path.join(__dirname, 'index.html'));
+    const hubBgScript = '<script>window.__HUB_BACKGROUND__ = ' + JSON.stringify(hubBackground) + ';</script>';
     const injected = data
       .replace(/<meta property="og:image" content="[^"]*"/, '<meta property="og:image" content="' + ogImage + '"')
       .replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + ogImage + '"')
       .replace('const slug = pathParts.length', 'const __INITIAL_EVENTS__ = ' + eventsJson + ';\n        const slug = pathParts.length')
-      .replace('name="twitter:card" content="summary_large_image"', 'name="twitter:card" content="summary_large_image"\n    <meta property="og:type" content="website">\n    <meta property="fb:app_id" content="61573212765627">');
+      .replace('name="twitter:card" content="summary_large_image"', 'name="twitter:card" content="summary_large_image"\n    <meta property="og:type" content="website">\n    <meta property="fb:app_id" content="61573212765627">')
+      .replace('</head>', hubBgScript + '</head>');
     res.send(injected);
   });
 });
@@ -1341,6 +1345,30 @@ app.get('/api/admin/pexels-search', requireAdmin, async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error('Pexels search error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Holy Rave Hub Settings (hub background image) ─────────────────────────
+// GET /api/admin/holy-rave/settings — get hub settings
+app.get('/api/admin/holy-rave/settings', requireAdmin, async (req, res) => {
+  try {
+    const hubBg = await db.getHubBackground();
+    res.json({ hub_background_url: hubBg || '' });
+  } catch (err) {
+    console.error('Hub settings error:', err.message);
+    res.json({ hub_background_url: '' });
+  }
+});
+
+// PUT /api/admin/holy-rave/settings — update hub settings
+app.put('/api/admin/holy-rave/settings', requireAdmin, async (req, res) => {
+  const { hub_background_url } = req.body;
+  try {
+    await db.setHubBackground(hub_background_url || null);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Hub settings update error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
