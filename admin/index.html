@@ -842,9 +842,29 @@
     // ── Aspect ratio ──
     function setRatio(ratio) {
       if (!cropper) return;
-      cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
+      const r = isNaN(ratio) ? NaN : ratio;
+      cropper.setAspectRatio(r);
+
+      // Force immediate crop box resize to match new aspect ratio
+      if (!isNaN(r)) {
+        const boxData = cropper.getCropBoxData();
+        const centerY = boxData.top + boxData.height / 2;
+        const newHeight = boxData.width / r;
+        cropper.setCropBoxData({
+          width: boxData.width,
+          height: newHeight,
+          left: boxData.left,
+          top: centerY - newHeight / 2,
+        });
+      }
+
+      // Update active state on buttons
       document.querySelectorAll('.cropper-toolbar .btn[data-ratio]').forEach(b => {
-        b.classList.toggle('active', Math.abs(parseFloat(b.dataset.ratio) - (isNaN(ratio) ? NaN : ratio)) < 0.001 || (isNaN(ratio) && isNaN(parseFloat(b.dataset.ratio))));
+        const btnRatio = parseFloat(b.dataset.ratio);
+        b.classList.toggle('active',
+          (!isNaN(r) && !isNaN(btnRatio) && Math.abs(btnRatio - r) < 0.001) ||
+          (isNaN(r) && isNaN(btnRatio))
+        );
       });
     }
 
