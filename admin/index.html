@@ -498,6 +498,19 @@
           <input type="number" id="fLimit" value="50" min="1">
         </div>
       </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Pricing Model</label>
+          <select id="fPricingModel" onchange="togglePricingModel()">
+            <option value="pay_what_you_want">Pay What You Want</option>
+            <option value="fixed">Fixed Price</option>
+          </select>
+        </div>
+        <div class="field-group" id="fixedPriceGroup" style="display:none;">
+          <label>Ticket Price (€)</label>
+          <input type="number" id="fTicketPrice" placeholder="10" min="0.50" step="0.50" value="10">
+        </div>
+      </div>
       <div class="field-group">
         <label>Location Detail</label>
         <input type="text" id="fLocationDetail" placeholder="Open-air venue — exact address on your ticket">
@@ -735,13 +748,21 @@
       document.getElementById('eventsTable').classList.remove('loading');
     }
 
+    function togglePricingModel() {
+      const pm = document.getElementById('fPricingModel').value;
+      document.getElementById('fixedPriceGroup').style.display = pm === 'fixed' ? '' : 'none';
+    }
+
     function showCreateForm() {
       editingSlug = null;
       document.getElementById('formTitle').innerHTML = '<em>New</em> Event';
       document.getElementById('formSubmitBtn').textContent = 'Create Event';
-      ['fSlug','fDate','fTitle','fLocation','fTime','fLimit','fLocationDetail','fDescription','fImageUrl','fMapsUrl'].forEach(id => document.getElementById(id).value = '');
+      ['fSlug','fDate','fTitle','fLocation','fTime','fLimit','fLocationDetail','fDescription','fImageUrl','fMapsUrl','fTicketPrice'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('fLimit').value = '50';
       document.getElementById('fTime').value = '20:00 – 23:00';
+      document.getElementById('fPricingModel').value = 'pay_what_you_want';
+      document.getElementById('fTicketPrice').value = '10';
+      document.getElementById('fixedPriceGroup').style.display = 'none';
       clearImagePreview();
       document.getElementById('formOverlay').classList.add('visible');
       document.getElementById('formMessage').textContent = '';
@@ -1044,6 +1065,9 @@
       const btn = document.getElementById('formSubmitBtn');
       btn.textContent = 'Saving...'; btn.disabled = true;
       try {
+        const pricingModel = document.getElementById('fPricingModel').value;
+        const ticketPriceEuros = parseFloat(document.getElementById('fTicketPrice').value) || 0;
+        const ticketPriceCents = pricingModel === 'fixed' ? Math.round(ticketPriceEuros * 100) : null;
         const body = {
           slug: document.getElementById('fSlug').value.trim(),
           title: document.getElementById('fTitle').value.trim(),
@@ -1055,6 +1079,8 @@
           description: document.getElementById('fDescription').value.trim(),
           image_url: document.getElementById('fImageUrl').value.trim() || null,
           maps_url: document.getElementById('fMapsUrl').value.trim() || null,
+          pricing_model: pricingModel,
+          ticket_price_cents: ticketPriceCents,
         };
         if (!body.slug || !body.title || !body.location || !body.event_date) {
           throw new Error('Slug, title, location, and date are required');
@@ -1117,6 +1143,10 @@
         document.getElementById('fDescription').value = e.description || '';
         document.getElementById('fImageUrl').value = e.image_url || '';
         document.getElementById('fMapsUrl').value = e.maps_url || '';
+        document.getElementById('fPricingModel').value = e.pricing_model || 'pay_what_you_want';
+        const ticketEuros = e.ticket_price_cents ? (e.ticket_price_cents / 100).toFixed(2) : '10';
+        document.getElementById('fTicketPrice').value = ticketEuros;
+        togglePricingModel();
         if (e.image_url) updateImagePreview(e.image_url);
         else clearImagePreview();
         document.getElementById('formOverlay').classList.add('visible');

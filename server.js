@@ -310,7 +310,11 @@ app.get('/holy-rave/:slug', async (req, res) => {
         ? (event.image_url.startsWith('http') ? event.image_url : SITE_URL + event.image_url)
         : SITE_URL + '/images/og-image.png';
       const ogTitle = 'Holy Rave \u2014 ' + dateStr + ' \u00b7 ' + (event.location || 'Tenerife');
-      const ogDesc = '50 tickets \u00b7 Pay what feels right \u00b7 You + 1 friend \u00b7 ' + (event.event_time || 'Sunset') + ' at ' + (event.location || 'Tenerife South') + '.';
+      const isFixed = event.pricing_model === 'fixed';
+      const priceLabel = isFixed && event.ticket_price_cents
+        ? '€' + (event.ticket_price_cents / 100).toFixed(2) + ' ticket'
+        : 'Pay what feels right';
+      const ogDesc = '50 tickets \u00b7 ' + priceLabel + ' \u00b7 You + 1 friend \u00b7 ' + (event.event_time || 'Sunset') + ' at ' + (event.location || 'Tenerife South') + '.';
 
       // Build JSON-LD with real event data (MusicEvent + BreadcrumbList)
       const ldJson = { '@context': 'https://schema.org', '@graph': [
@@ -361,6 +365,8 @@ app.get('/holy-rave/:slug', async (req, res) => {
             location: event.location, ticket_limit: event.ticket_limit,
             tickets_sold: event.tickets_sold, remaining: event.remaining,
             image_url: event.image_url,
+            pricing_model: event.pricing_model,
+            ticket_price_cents: event.ticket_price_cents,
           }) + ';\n        const slug = pathParts.length');
         res.send(injected);
       });
@@ -860,7 +866,11 @@ app.get('/holy-rave/og/:slug', async (req, res) => {
       ? (event.image_url.startsWith('http') ? event.image_url : SITE_URL + event.image_url)
       : SITE_URL + '/images/og-image.png';
     const title = `Holy Rave — ${dateStr} · ${event.location || 'Tenerife'}`;
-    const desc = `50 tickets · Pay what feels right · You + 1 friend · ${event.event_time || 'Sunset'} at ${event.location || 'Tenerife South'}`;
+    const isFixed = event.pricing_model === 'fixed';
+    const priceLabel = isFixed && event.ticket_price_cents
+      ? '€' + (event.ticket_price_cents / 100).toFixed(2) + ' ticket'
+      : 'Pay what feels right';
+    const desc = `50 tickets · ${priceLabel} · You + 1 friend · ${event.event_time || 'Sunset'} at ${event.location || 'Tenerife South'}`;
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><meta property="og:title" content="${title}"><meta property="og:description" content="${desc}"><meta property="og:image" content="${imageUrl}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:type" content="website"><meta property="og:url" content="${SITE_URL}/holy-rave/${event.slug}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${imageUrl}"><meta http-equiv="refresh" content="0;url=${SITE_URL}/holy-rave/${event.slug}"></head><body></body></html>`);
   } catch (err) {
     res.redirect('/holy-rave');
@@ -987,7 +997,7 @@ app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
       'DTSTART:' + fmt(eventDate),
       'DTEND:' + fmt(endDate),
       'SUMMARY:' + eventTitle,
-      'DESCRIPTION:Holy Rave Sunset Session — you + 1 friend. Pay what feels right. All the glory belongs to Jesus.',
+      'DESCRIPTION:Holy Rave Sunset Session — you + 1 friend. All the glory belongs to Jesus.',
       'LOCATION:' + eventLocation,
       'END:VEVENT',
       'END:VCALENDAR',
@@ -1016,12 +1026,13 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
   const phoneErr = validatePhone(phone);
   if (phoneErr) return res.status(400).json({ error: phoneErr });
 
-  const amt = Math.max(100, parseInt(amount, 10) || 100); // Minimum €1 (100 cents)
+  let amt = Math.max(100, parseInt(amount, 10) || 100); // Minimum €1 (100 cents)
 
   try {
     let eventId = null;
     let week = null;
     let eventTitle = 'Holy Rave';
+    let pricingModel = 'pay_what_you_want';
 
     // If eventSlug provided, use event-based registration
     if (eventSlug) {
@@ -1037,6 +1048,12 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       }
       eventId = event.id;
       eventTitle = event.title;
+      pricingModel = event.pricing_model || 'pay_what_you_want';
+
+      // Fixed price: override user's amount with the event's price
+      if (pricingModel === 'fixed') {
+        amt = event.ticket_price_cents || 100;
+      }
 
       // Check duplicate email for this event — only block if already CONFIRMED
       const existingReg = await db.isDuplicateEmailForEvent(eventId, email);
@@ -1448,13 +1465,16 @@ app.get('/api/admin/events', requireAdmin, async (req, res) => {
 
 // POST /api/admin/events — create a new event
 app.post('/api/admin/events', requireAdmin, async (req, res) => {
-  const { slug, title, location, location_detail, event_date, event_time, description, ticket_limit, image_url, maps_url } = req.body;
+  const { slug, title, location, location_detail, event_date, event_time, description, ticket_limit, image_url, maps_url, pricing_model, ticket_price_cents } = req.body;
   if (!slug || !title || !location || !event_date) {
     return res.status(400).json({ error: 'Missing required fields: slug, title, location, event_date' });
   }
+  if (pricing_model === 'fixed' && (!ticket_price_cents || ticket_price_cents < 50)) {
+    return res.status(400).json({ error: 'Fixed-price events require a ticket price of at least €0.50' });
+  }
 
   try {
-    await db.seedEvent({ slug, title, location, location_detail, event_date, event_time, description, ticket_limit: ticket_limit || 50, image_url: image_url || null, maps_url: maps_url || null });
+    await db.seedEvent({ slug, title, location, location_detail, event_date, event_time, description, ticket_limit: ticket_limit || 50, image_url: image_url || null, maps_url: maps_url || null, pricing_model, ticket_price_cents });
     res.json({ ok: true, slug });
   } catch (err) {
     console.error('Admin create event error:', err.message);
@@ -1856,30 +1876,34 @@ async function sendThankYouEmail(email, name) {
 // Runs every 5 minutes. Sends a reminder email to anyone who started
 // registration but didn't complete payment, after 20 minutes of inactivity.
 // ─── Abandoned email templates ──────────────────────────────────────────────
-function buildAbandonedEmail(step, firstName, eventDate, eventSlug, regId) {
+function buildAbandonedEmail(step, firstName, eventDate, eventSlug, regId, pricingModel, ticketPriceCents) {
   const name = firstName || 'there';
   const link = `${SITE_URL}/holy-rave/${eventSlug || ''}?resume=${regId}&utm_source=email&utm_medium=abandoned`;
+  const isFixed = pricingModel === 'fixed' && ticketPriceCents;
+  const priceStr = isFixed
+    ? '€' + (ticketPriceCents / 100).toFixed(2) + ' ticket'
+    : 'Pay what feels right (€1 minimum)';
 
   const emails = {
     0: { // 15 minutes — friendly nudge
-      subject: 'Still thinking about Holy Rave?',
+      subject: isFixed ? 'Your Holy Rave spot is waiting' : 'Still thinking about Holy Rave?',
       body: `<p style="margin:0 0 20px;color:#a0a0a0">Hey ${name},</p>
 <p style="margin:0 0 20px;color:#ffffff">You started reserving a spot for Holy Rave but didn't finish. No pressure — just a friendly nudge.</p>
-<p style="margin:0 0 20px;color:#a0a0a0">Every ticket is €1 minimum — just enough to know you're real. If you want to contribute more to keep the music playing, you're welcome to. Either way, the spot is yours + one friend.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">${priceStr}. The spot is yours + one friend.</p>
 <p style="margin:0 0 20px;color:#a0a0a0">There are only 50 spots and they're going fast.</p>`,
     },
     1: { // 2 hours — scarcity
       subject: 'Your Holy Rave spot is still open',
       body: `<p style="margin:0 0 20px;color:#a0a0a0">Hey ${name},</p>
 <p style="margin:0 0 20px;color:#ffffff">Your spot is still there, but there are only 50 tickets and they're going fast.</p>
-<p style="margin:0 0 20px;color:#a0a0a0">Every ticket is €1 minimum — just enough to know you're real. Your name goes on the list and you bring a friend for free.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">${priceStr}. Your name goes on the list and you bring a friend for free.</p>
 <p style="margin:0 0 20px;color:#a0a0a0">If the vibe feels right, we'd love to have you. If not — no hard feelings.</p>`,
     },
     2: { // 24 hours — last call
       subject: 'Last chance — Holy Rave spot closing soon',
       body: `<p style="margin:0 0 20px;color:#a0a0a0">Hey ${name},</p>
 <p style="margin:0 0 20px;color:#ffffff">This is your last reminder — your pending spot will be released soon.</p>
-<p style="margin:0 0 20px;color:#a0a0a0">If you still want to come, now's the time. €1 minimum, you + one friend, a sunset session you won't forget.</p>
+<p style="margin:0 0 20px;color:#a0a0a0">If you still want to come, now's the time. ${priceStr}, you + one friend, a sunset session you won't forget.</p>
 <p style="margin:0 0 20px;color:#a0a0a0">If not — catch you at the next one.</p>`,
     },
   };
@@ -1906,7 +1930,7 @@ async function sendAbandonedReminders() {
         : 'soon';
 
       const step = reg.email_sequence_step || 0;
-      const { subject, html } = buildAbandonedEmail(step, reg.first_name, eventDate, reg.slug, reg.id);
+      const { subject, html } = buildAbandonedEmail(step, reg.first_name, eventDate, reg.slug, reg.id, reg.pricing_model, reg.ticket_price_cents);
 
       try {
         await resendClient.emails.send({

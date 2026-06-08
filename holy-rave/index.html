@@ -1985,8 +1985,8 @@
 
                         <!-- STEP 2: Amount -->
                         <div class="form-step" data-step="2">
-                            <div class="amount-section">
-                                <label class="amount-label">Choose Your Contribution <em>— €1 minimum</em></label>
+                            <div class="amount-section" id="amountSectionPWYW">
+                                <label class="amount-label" id="amountLabel">Choose Your Contribution <em>— €1 minimum</em></label>
                                 <div class="amount-options" id="amountOptions">
                                     <button type="button" class="amount-btn" data-amount="100">€1</button>
                                     <button type="button" class="amount-btn" data-amount="1200">€12</button>
@@ -1998,6 +1998,13 @@
                                     <input type="number" id="customAmount" class="custom-amount-input"
                                            placeholder="0" min="1" step="1" value="">
                                     <span class="euro-cents">,00</span>
+                                </div>
+                            </div>
+                            <div class="amount-section" id="amountSectionFixed" style="display:none;">
+                                <label class="amount-label">Ticket Price</label>
+                                <div style="text-align:center;padding:1.5rem;background:var(--bg-deep);border:1px solid var(--gold-dim);margin-bottom:0.75rem;">
+                                    <span style="font-family:var(--font-serif);font-size:2.5rem;color:var(--gold);font-weight:500;" id="fixedPriceDisplay">€10</span>
+                                    <p style="font-size:0.78rem;color:var(--text-soft);margin-top:0.5rem;">You + one friend included</p>
                                 </div>
                             </div>
                             <p style="text-align:center;font-size:0.75rem;color:var(--text-mute);margin:0 0 1rem;letter-spacing:0.04em;">
@@ -2125,6 +2132,7 @@
         let currentSlug = null;
         let currentRegId = null;
         let step = 1;
+        let isFixedPrice = false;
 
         // ── UTM capture — parse from URL on page load ──
         const utmParams = new URLSearchParams(window.location.search);
@@ -2438,6 +2446,21 @@
             if (ogTitle) ogTitle.content = 'Holy Rave — ' + date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' · ' + (event.location || 'Tenerife');
             if (ogDesc) ogDesc.content = '50 tickets. Pay what feels right. You + 1 friend. ' + (event.event_time || 'Sunset') + ' at ' + (event.location || 'Tenerife South') + '.';
 
+            // Set pricing model and update amount section visibility
+            const isFixed = event.pricing_model === 'fixed';
+            isFixedPrice = isFixed;
+            document.getElementById('amountSectionPWYW').style.display = isFixed ? 'none' : '';
+            document.getElementById('amountSectionFixed').style.display = isFixed ? '' : 'none';
+            if (isFixed && event.ticket_price_cents) {
+                const priceEuros = (event.ticket_price_cents / 100).toFixed(2);
+                document.getElementById('fixedPriceDisplay').textContent = '€' + priceEuros;
+                document.getElementById('tierMessage').textContent = '€' + priceEuros + ' · includes you + one friend';
+                selectedAmount = event.ticket_price_cents;
+            } else {
+                document.getElementById('tierMessage').textContent = '€1 verification · just to know you\\'re real';
+                selectedAmount = 1200;
+            }
+
             document.getElementById('detailTitle').innerHTML =
                 `<em>${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</em> · ${event.location || 'Tenerife'}`;
             document.getElementById('detailEyebrow').innerHTML = '<span class="pin"></span>Holy Rave';
@@ -2684,6 +2707,8 @@
             const phone = phoneNumber ? phoneCountry + ' ' + phoneNumber : '';
 
             let amount = selectedAmount;
+            // For fixed-price events, skip custom amount check — price is locked
+            if (!isFixedPrice) {
             const customRow = document.getElementById('customRow');
             if (customRow.classList.contains('selected')) {
                 const val = parseInt(document.getElementById('customAmount').value, 10);
@@ -2694,6 +2719,7 @@
                 }
                 amount = Math.max(100, val * 100); // Minimum €1 (val is in euros, convert to cents)
             }
+            } // end if (!isFixedPrice)
 
             const btn = document.getElementById('submitBtn');
             goToStep(3); // Show loading state

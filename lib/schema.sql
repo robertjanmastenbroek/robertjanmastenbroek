@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS events (
   description TEXT,                             -- Short sell copy
   ticket_limit INTEGER DEFAULT 50,
   image_url VARCHAR(500),                       -- Hero photo path
+  pricing_model VARCHAR(20) DEFAULT 'pay_what_you_want',  -- 'pay_what_you_want' | 'fixed'
+  ticket_price_cents INTEGER DEFAULT NULL,      -- required when pricing_model = 'fixed'
   status VARCHAR(20) DEFAULT 'upcoming',        -- 'upcoming' | 'past' | 'cancelled'
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -103,6 +105,16 @@ CREATE INDEX IF NOT EXISTS idx_phone_verifications_phone ON phone_verifications(
 -- Migration: add maps_url to events
 DO $$ BEGIN
   ALTER TABLE events ADD COLUMN IF NOT EXISTS maps_url VARCHAR(500);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+-- Migration: add pricing_model and ticket_price_cents to events
+DO $$ BEGIN
+  ALTER TABLE events ADD COLUMN IF NOT EXISTS pricing_model VARCHAR(20) DEFAULT 'pay_what_you_want';
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TABLE events ADD COLUMN IF NOT EXISTS ticket_price_cents INTEGER DEFAULT NULL;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
