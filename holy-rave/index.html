@@ -2441,7 +2441,7 @@
                         document.getElementById('codeInputWrap').style.display = 'none';
                         document.getElementById('verifyStatus').innerHTML = '<span class="check">\u2713</span> Phone already verified';
                         document.getElementById('verifyStatus').className = 'verify-status check';
-                        setTimeout(function() { goToStep(2); showToast('Welcome back! Just choose your contribution to finish.', 'info'); }, 600);
+                        setTimeout(function() { goToStep(2); showToast('Welcome back! Just choose your contribution to finish.', 'info'); window.history.replaceState({}, '', window.location.pathname); }, 600);
                     }
                 } catch (e) {
                     console.error('[resume] Error:', e);
