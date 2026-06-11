@@ -1112,6 +1112,41 @@
             text-decoration: underline;
         }
         .resend-timer a:hover { color: var(--terracotta); }
+        .resend-timer .email-cta {
+            display: block;
+            width: 100%;
+            margin-top: 0.75rem;
+            padding: 0.9rem 1.5rem;
+            background: var(--terracotta);
+            color: var(--text);
+            font-family: var(--font-sans);
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            text-decoration: none;
+            text-align: center;
+            border: 1px solid var(--terracotta);
+            cursor: pointer;
+            transition: all 0.4s var(--ease-warm);
+            position: relative;
+            overflow: hidden;
+        }
+        .resend-timer .email-cta:hover {
+            background: var(--terracotta-soft);
+            border-color: var(--terracotta-soft);
+            box-shadow: 0 8px 28px var(--terracotta-glow);
+            transform: translateY(-1px);
+        }
+        .resend-timer .email-cta::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transform: translateX(-110%);
+            transition: transform 0.75s var(--ease-warm);
+        }
+        .resend-timer .email-cta:hover::after { transform: translateX(110%); }
 
         .amount-section { margin: 1.5rem 0 1rem; }
         .amount-label {
@@ -3445,7 +3480,7 @@
             function tick() {
                 if (phoneVerified) { timerEl.textContent = ''; return; }
                 if (seconds <= 0) {
-                    timerEl.innerHTML = 'Didn\'t receive it? <a onclick="resendCode(\'' + phone.replace(/'/g, "\\'") + '\')">Send again</a> &nbsp;·&nbsp; <a onclick="continueWithEmail(\'' + phone.replace(/'/g, "\\'") + '\')" style="color:var(--terracotta);text-decoration:underline;cursor:pointer;">Continue with email instead</a>';
+                    timerEl.innerHTML = 'Didn\'t receive it? <a onclick="resendCode(\'' + phone.replace(/'/g, "\\'") + '\')">Send again</a><span class="email-cta" onclick="continueWithEmail(\'' + phone.replace(/'/g, "\\'") + '\')">Continue with email instead</span>';
                     return;
                 }
                 timerEl.textContent = 'Resend in ' + seconds + 's';
