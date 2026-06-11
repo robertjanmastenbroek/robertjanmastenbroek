@@ -2759,7 +2759,7 @@
                     document.getElementById('customAmount').focus();
                     return;
                 }
-                amount = Math.max(500, val * 100); // Minimum €5 (val is in euros, convert to cents)
+                amount = Math.max(100, val * 100); // Minimum €1 (val is in euros, convert to cents)
             }
             } // end if (!isFixedPrice)
 
@@ -3645,7 +3645,7 @@
                     if (val && val > 0) {
                         amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
                         document.getElementById('customRow').classList.add('selected');
-                        selectedAmount = Math.max(5, val) * 100; // Minimum €5
+                        selectedAmount = Math.max(1, val) * 100; // Minimum €1
                         updateAmountDisplay(selectedAmount);
                     }
                 });
