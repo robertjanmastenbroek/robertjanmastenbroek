@@ -665,7 +665,7 @@ app.post('/api/verify/phone/continue-with-email', async (req, res) => {
     }
 
     // Store a sentinel code so the frontend can verify email-only mode
-    const code = 'EMAILONLY';
+    const code = 'EONLY';
     await db.storeVerificationCode(phone, code);
 
     const cleaned = phone.replace(/\s+/g, '');

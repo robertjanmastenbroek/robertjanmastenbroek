@@ -3480,7 +3480,7 @@
             function tick() {
                 if (phoneVerified) { timerEl.textContent = ''; return; }
                 if (seconds <= 0) {
-                    timerEl.innerHTML = 'Didn\'t receive it? <a onclick="resendCode(\'' + phone.replace(/'/g, "\\'") + '\')">Send again</a><span class="email-cta" onclick="continueWithEmail(\'' + phone.replace(/'/g, "\\'") + '\')">Continue with email instead</span>';
+                    timerEl.innerHTML = 'Didn\'t receive it? <a onclick="resendCode(\'' + phone.replace(/'/g, "\\'") + '\')">Send again</a><span class="email-cta" onclick="continueWithEmail(\'' + phone.replace(/'/g, "\\'") + '\')">Continue with ONLY EMAIL</span>';
                     return;
                 }
                 timerEl.textContent = 'Resend in ' + seconds + 's';
