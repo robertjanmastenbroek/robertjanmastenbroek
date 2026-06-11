@@ -1796,21 +1796,16 @@ app.get('/health', (req, res) => res.send('OK'));
 
 
 
-// ─── Admin panel — read directly from fs so it works regardless of build context ──
+// ─── Admin panel — load at startup, serve from memory ────────────────────────
+let adminHtml = '';
+try {
+  adminHtml = fs.readFileSync(path.join(__dirname, 'admin', 'index.html'), 'utf8');
+} catch (e) {
+  console.warn('[admin] Could not load admin/index.html:', e.message);
+}
 app.get('/admin', (req, res) => {
-  const adminPath = path.join(__dirname, 'admin', 'index.html');
-  fs.readFile(adminPath, 'utf8', (err, data) => {
-    if (err || !data) {
-      // Fallback: serve from git-tracked path
-      const altPath = path.join(__dirname, '..', 'Documents/Robert-Jan Mastenbroek Command Centre', 'admin', 'index.html');
-      fs.readFile(altPath, 'utf8', (err2, data2) => {
-        if (err2 || !data2) return res.sendFile(path.join(__dirname, 'index.html'));
-        res.send(data2);
-      });
-      return;
-    }
-    res.send(data);
-  });
+  if (adminHtml) return res.send(adminHtml);
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ─── SPA-style routing — serve index.html for any unmatched routes ────────────
