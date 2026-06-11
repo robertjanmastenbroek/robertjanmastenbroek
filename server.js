@@ -415,6 +415,9 @@ app.get('/holy-rave/:slug', async (req, res) => {
 
 app.use(express.static(path.join(__dirname)));
 
+// ─── Admin redirect (express.static 301s /admin to /admin/ but doesn't follow through)
+app.get('/admin', (req, res) => res.redirect('/admin/'));
+
 // ─── Admin auth — signed token (avoids session cookie issues) ────────────────
 function signAdminToken() {
   const secret = process.env.ADMIN_API_KEY || 'fallback-dev-secret';
