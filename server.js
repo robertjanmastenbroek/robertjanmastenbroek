@@ -624,6 +624,7 @@ const verifyLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 1,
   keyGenerator: (req) => req.body?.phone || req.ip,
+  validate: { xForwardedForHeader: false },
   message: { error: 'Please wait 60 seconds before requesting another code.' },
   standardHeaders: true,
   legacyHeaders: false,
