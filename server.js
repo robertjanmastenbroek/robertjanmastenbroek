@@ -413,7 +413,6 @@ app.get('/holy-rave/:slug', async (req, res) => {
   res.sendFile(path.join(__dirname, 'holy-rave', 'index.html'));
 });
 
-app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use(express.static(path.join(__dirname)));
 
 // ─── Admin auth — signed token (avoids session cookie issues) ────────────────
@@ -1796,17 +1795,7 @@ app.get('/health', (req, res) => res.send('OK'));
 
 
 
-// ─── Admin panel — load at startup, serve from memory ────────────────────────
-let adminHtml = '';
-try {
-  adminHtml = fs.readFileSync(path.join(__dirname, 'admin', 'index.html'), 'utf8');
-} catch (e) {
-  console.warn('[admin] Could not load admin/index.html:', e.message);
-}
-app.get('/admin', (req, res) => {
-  if (adminHtml) return res.send(adminHtml);
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+
 
 // ─── SPA-style routing — serve index.html for any unmatched routes ────────────
 app.get('*', (req, res) => {

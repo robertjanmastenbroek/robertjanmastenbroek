@@ -16,8 +16,7 @@ graphify-out/
 learning/
 scripts/
 tools/
-admin/
-*.py
+admin/*.py
 *.pyc
 __pycache__/
 
