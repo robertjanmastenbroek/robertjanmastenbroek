@@ -2027,9 +2027,9 @@
                         <!-- STEP 2: Amount -->
                         <div class="form-step" data-step="2">
                             <div class="amount-section" id="amountSectionPWYW">
-                                <label class="amount-label" id="amountLabel">Choose Your Contribution <em>— €1 minimum</em></label>
+                                <label class="amount-label" id="amountLabel">Choose Your Contribution <em>— €5 minimum</em></label>
                                 <div class="amount-options" id="amountOptions">
-                                    <button type="button" class="amount-btn" data-amount="100">€1</button>
+                                    <button type="button" class="amount-btn" data-amount="500">€5</button>
                                     <button type="button" class="amount-btn" data-amount="1200">€12</button>
                                     <button type="button" class="amount-btn selected recommended" data-amount="2000">€20</button>
                                     <button type="button" class="amount-btn" data-amount="5000">€50</button>
@@ -2062,7 +2062,7 @@
                                 Pay &amp; Reserve
                             </button>
                             <p style="text-align:center;font-size:0.72rem;color:var(--text-mute);margin-top:0.5rem;letter-spacing:0.03em;" id="amountSummary">
-                                <span id="tierMessage">€1 verification · just to know you're real</span>
+                                <span id="tierMessage">€5 minimum · to keep the music going</span>
                             </p>
                             <p class="form-error" id="formError"></p>
                         </div>
@@ -2499,7 +2499,7 @@
                 document.getElementById('tierMessage').textContent = '€' + priceEuros + ' · includes you + one friend';
                 selectedAmount = event.ticket_price_cents;
             } else {
-                document.getElementById('tierMessage').textContent = '€1 verification · just to know you\'re real';
+                document.getElementById('tierMessage').textContent = '€5 minimum · to keep the music going';
                 selectedAmount = 1200;
             }
 
@@ -2759,7 +2759,7 @@
                     document.getElementById('customAmount').focus();
                     return;
                 }
-                amount = Math.max(100, val * 100); // Minimum €1 (val is in euros, convert to cents)
+                amount = Math.max(500, val * 100); // Minimum €5 (val is in euros, convert to cents)
             }
             } // end if (!isFixedPrice)
 
@@ -3645,7 +3645,7 @@
                     if (val && val > 0) {
                         amountOptions.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
                         document.getElementById('customRow').classList.add('selected');
-                        selectedAmount = Math.max(1, val) * 100; // Minimum €1
+                        selectedAmount = Math.max(5, val) * 100; // Minimum €5
                         updateAmountDisplay(selectedAmount);
                     }
                 });

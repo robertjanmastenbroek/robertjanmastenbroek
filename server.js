@@ -1090,7 +1090,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
   const phoneErr = validatePhone(phone);
   if (phoneErr) return res.status(400).json({ error: phoneErr });
 
-  let amt = Math.max(100, parseInt(amount, 10) || 100); // Minimum €1 (100 cents)
+  let amt = Math.max(500, parseInt(amount, 10) || 500); // Minimum €5 (500 cents)
 
   try {
     let eventId = null;
