@@ -137,6 +137,16 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 CREATE INDEX IF NOT EXISTS idx_registrations_payment_token ON holy_rave_registrations(payment_token);
 
+-- Migration: add email_sequence_step and reminder_sent for abandoned cart emails
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS email_sequence_step INTEGER DEFAULT 0;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS reminder_sent BOOLEAN DEFAULT FALSE;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_registrations_week_status ON holy_rave_registrations(week, status);
 CREATE INDEX IF NOT EXISTS idx_registrations_event_status ON holy_rave_registrations(event_id, status);
 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
