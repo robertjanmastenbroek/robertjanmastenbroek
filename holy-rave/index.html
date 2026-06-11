@@ -1762,36 +1762,7 @@
          ══════════════════════════════════════════════════ -->
     <div id="detailMode" class="detail-page">
 
-        <div class="detail-hero" id="detailHero">
-            <div class="atmosphere"></div>
-            <div class="detail-hero-content reveal">
-                <nav aria-label="Breadcrumb" style="font-size:0.72rem;color:var(--text-mute);letter-spacing:0.12em;margin-bottom:0.75rem;">
-                    <a href="/holy-rave" style="color:var(--text-mute);text-decoration:none;">Holy Rave</a>
-                    <span style="margin:0 0.35rem;">/</span>
-                    <span id="breadcrumbEvent" style="color:var(--text-soft);"></span>
-                </nav>
-                <a href="/holy-rave" class="back-link">← All events</a>
-                <p class="eyebrow" id="detailEyebrow"><span class="pin"></span>Holy Rave</p>
-                <h1 id="detailTitle"><em>Loading</em></h1>
-                <div class="meta-row" id="detailMeta">
-                    <span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                        <span id="detailTime">Sunset</span>
-                    </span>
-                    <span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-                        </svg>
-                        <span id="detailLocation">Tenerife</span>
-                    </span>
-                </div>
-                <div class="countdown" id="countdownWrap" style="display:none;">
-                    <span id="countdownLabel">— days away</span>
-                </div>
-            </div>
-        </div>
+        <div class="detail-hero" id="detailHero" style="display:none;"></div>
 
         <div class="detail-grid">
             <!-- LEFT: Meter + Info + Host + Timeline -->
@@ -2467,7 +2438,6 @@
                 startSocialProof(event.id);
                 loadVelocity(event.id);
             } catch (err) {
-                document.getElementById('detailTitle').innerHTML = 'Event <em>not found</em>';
                 document.getElementById('formCard').style.display = 'none';
             }
         }
@@ -2503,35 +2473,12 @@
                 selectedAmount = 1200;
             }
 
-            document.getElementById('detailTitle').innerHTML =
-                `${event.title || 'Holy Rave'} <em>·</em> ${event.location || 'Tenerife'}`;
-            document.getElementById('detailEyebrow').innerHTML = '<span class="pin"></span>Holy Rave';
-            document.getElementById('detailTime').textContent = event.event_time || 'Sunset';
-            document.getElementById('detailLocation').textContent = event.location || 'Tenerife South';
             if (event.description) {
                 document.getElementById('detailDesc').textContent = event.description;
             }
 
-            // Event image as hero background
-            const hero = document.getElementById('detailHero');
-            if (event.image_url) {
-                hero.style.backgroundImage = 'linear-gradient(180deg, rgba(15,23,48,0.7) 0%, rgba(10,10,10,0.85) 60%, var(--dark) 100%), url(' + event.image_url + ')';
-                hero.style.backgroundSize = 'cover';
-                hero.style.backgroundPosition = 'center';
-            }
-            const now = new Date();
-            const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
-            const countdownEl = document.getElementById('countdownWrap');
-            if (diffDays > 0 && diffDays <= 30) {
-                countdownEl.style.display = 'block';
-                document.getElementById('countdownLabel').innerHTML = `<strong>${diffDays === 1 ? 'Tomorrow' : diffDays + ' days away'}</strong>`;
-            } else if (diffDays <= 0) {
-                countdownEl.style.display = 'block';
-                document.getElementById('countdownLabel').innerHTML = '<strong>Today</strong>';
-            }
             updateDetailMeter(event);
             document.getElementById('detailOf').textContent = 'of ' + event.ticket_limit;
-            document.getElementById('breadcrumbEvent').textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' + (event.location || 'Tenerife');
             updateStructuredData(event);
         }
 
