@@ -125,14 +125,15 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         if (confirmed && email) {
           const firstName = name ? name.split(' ')[0] : '';
           const lastName = name ? name.split(' ').slice(1).join(' ') : '';
-          await sendHolyRaveConfirmation(email, firstName, lastName);
+          const checkoutReg = regId ? await db.getRegistrationById(regId).catch(() => null) : null;
+          await sendHolyRaveConfirmation(email, firstName, lastName, null, checkoutReg?.email_only || false);
           syncToResendAudience(email, firstName, lastName).catch(e =>
             console.error('Webhook audience sync error:', e.message));
 
-          // Send ticket SMS with event details
+          // Send ticket SMS with event details (skip if email-only)
           try {
             const reg = await db.getRegistrationById(regId);
-            if (reg && reg.phone) {
+            if (reg && reg.phone && !reg.email_only) {
               const eventMeta = session.metadata || {};
               let evTitle = 'Holy Rave', evDate = '', evTime = '', evLoc = '', evSlug = 'holy-rave', evDetail = '', evMaps = '';
               if (reg.event_id) {
@@ -184,12 +185,13 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
           if (reg) {
             const firstName = reg.first_name || '';
             const lastName = reg.last_name || '';
+            const isEmailOnly = reg.email_only || false;
             if (reg.email) {
-              await sendHolyRaveConfirmation(reg.email, firstName, lastName);
+              await sendHolyRaveConfirmation(reg.email, firstName, lastName, null, isEmailOnly);
               syncToResendAudience(reg.email, firstName, lastName).catch(e =>
                 console.error('PI webhook audience sync error:', e.message));
             }
-            if (reg.phone) {
+            if (reg.phone && !isEmailOnly) {
               let evTitle = 'Holy Rave', evDate = '', evTime = '', evLoc = '', evSlug = 'holy-rave', evDetail = '', evMaps = '';
               if (reg.event_id) {
                 try {
@@ -648,6 +650,33 @@ app.post('/api/verify/phone/check', async (req, res) => {
   }
 });
 
+// POST /api/verify/phone/continue-with-email — bypass SMS when code never arrives
+app.post('/api/verify/phone/continue-with-email', async (req, res) => {
+  const { phone, email } = req.body;
+  if (!phone || !email) {
+    return res.status(400).json({ error: 'Phone and email required.' });
+  }
+
+  try {
+    // Verify at least one SMS was attempted for this phone (within last 10 minutes)
+    const lastAttempt = await db.getLastVerificationAttempt(phone);
+    if (!lastAttempt) {
+      return res.status(400).json({ error: 'No verification code was sent to this number. Click "Send Code" first.' });
+    }
+
+    // Store a sentinel code so the frontend can verify email-only mode
+    const code = 'EMAILONLY';
+    await db.storeVerificationCode(phone, code);
+
+    const cleaned = phone.replace(/\s+/g, '');
+    const masked = cleaned.slice(0, -4).replace(/\d/g, '*') + cleaned.slice(-4);
+    res.json({ ok: true, masked, emailOnly: true });
+  } catch (err) {
+    console.error('[verify] Continue-with-email error:', err);
+    res.status(500).json({ error: 'Could not process. Try again.' });
+  }
+});
+
 // ─── MRR Counter ────────────────────────────────────────────────────────────
 // Cached so we don't hammer the Stripe API on every page load
 let mrrCache = { value: 0, fetchedAt: 0 };
@@ -1014,7 +1043,7 @@ app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
 
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
 app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
-  const { firstName, lastName, email, phone, amount, eventSlug, phoneVerified, utmSource, utmMedium, utmCampaign } = req.body;
+  const { firstName, lastName, email, phone, amount, eventSlug, phoneVerified, utmSource, utmMedium, utmCampaign, emailOnly } = req.body;
 
   if (!firstName || !lastName || !email) {
     return res.status(400).json({ error: 'Please fill in all fields correctly.' });
@@ -1099,7 +1128,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       // Stripe not configured — save as pending registration
       await db.createRegistration({
         id, firstName, lastName, email, phone, phoneVerified: !!phoneVerified, amount: amt, week, eventId,
-        utmSource, utmMedium, utmCampaign,
+        utmSource, utmMedium, utmCampaign, emailOnly: !!emailOnly,
       });
       return res.json({ id, confirmed: false, note: 'Payment system not available. Registration saved without payment.' });
     }
@@ -1144,7 +1173,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     await db.createRegistration({
       id, firstName, lastName, email, phone, phoneVerified: !!phoneVerified, amount: amt, week, eventId,
       stripeSessionId: paymentIntent.id,
-      utmSource, utmMedium, utmCampaign,
+      utmSource, utmMedium, utmCampaign, emailOnly: !!emailOnly,
     });
 
     // Sync to Resend (fire-and-forget, happens regardless)
@@ -1229,13 +1258,16 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
         amount: reg.amount_cents || 0,
       } : null;
 
+      const isEmailOnly = reg.email_only || false;
+
       if (reg.email) {
-        sendHolyRaveConfirmation(reg.email, reg.first_name, reg.last_name, eventDetails).catch(e =>
+        sendHolyRaveConfirmation(reg.email, reg.first_name, reg.last_name, eventDetails, isEmailOnly).catch(e =>
           console.error('Confirm email error:', e.message));
         syncToResendAudience(reg.email, reg.first_name, reg.last_name, reg.phone).catch(e =>
           console.error('Confirm sync error:', e.message));
       }
-      if (reg.phone) {
+      // Skip SMS for email-only registrations — all ticket info is in the email
+      if (reg.phone && !isEmailOnly) {
         if (ev) {
           sendTicketSMS(
             reg.phone,
@@ -1252,7 +1284,6 @@ app.post('/api/holy-rave/confirm-payment', async (req, res) => {
         } else {
           // Fallback SMS if event lookup failed — at least user gets notified
           const fallbackLink = `${SITE_URL}/holy-rave${regId ? '?confirmed=' + regId : ''}`;
-          const fallbackMsg = `Holy Rave confirmed! Check your email for event details. ${fallbackLink}`;
           sendTicketSMS(reg.phone, 'Holy Rave', null, null, null, null, regId, null, null, reg.confirmation_code).catch(e => console.error('Confirm SMS fallback error:', e.message));
         }
       }
@@ -1814,7 +1845,7 @@ async function sendTicketSMS(phone, eventTitle, eventDate, eventTime, eventLocat
 }
 
 // ─── Holy Rave Confirmation Email ─────────────────────────────────────────────
-async function sendHolyRaveConfirmation(email, firstName, lastName, eventDetails) {
+async function sendHolyRaveConfirmation(email, firstName, lastName, eventDetails, emailOnly) {
   const name = firstName || '';
   const greeting = name ? `Hey ${name},` : 'Hey,';
 
@@ -1842,7 +1873,7 @@ async function sendHolyRaveConfirmation(email, firstName, lastName, eventDetails
         reply_to: 'mastenbroekrobertjan@gmail.com',
       to: email,
       subject: "You're in — Holy Rave",
-      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · Sunset Sessions</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">Payment <span style="color:#d4af37">Confirmed</span></h1><p style="margin:0 0 4px;color:#7a7266;font-size:13px;letter-spacing:1px;text-transform:uppercase">Receipt</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">${greeting}</p>${eventDetails?.amount ? '<p style="margin:0 0 12px;color:#a0a0a0;font-size:15px;">Amount: <strong style="color:#d4af37;font-size:18px;">€' + (eventDetails.amount / 100).toFixed(2) + '</strong></p>' : ''}<p style="margin:0 0 20px;color:#ffffff">Your payment went through. Your spot is confirmed — you + one friend.</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">Your ticket with the location and time is being sent to your phone via SMS. Your name is on the list at the door.</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0 0 8px">Stay connected:</p><a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3?utm_source=email&amp;utm_medium=email" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">WhatsApp Community →</a>&nbsp;&nbsp;&nbsp;<a href="https://www.instagram.com/robertjanmastenbroek/?utm_source=email&amp;utm_medium=email" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">Instagram →</a><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
+      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · Sunset Sessions</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">Payment <span style="color:#d4af37">Confirmed</span></h1><p style="margin:0 0 4px;color:#7a7266;font-size:13px;letter-spacing:1px;text-transform:uppercase">Receipt</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">${greeting}</p>${eventDetails?.amount ? '<p style="margin:0 0 12px;color:#a0a0a0;font-size:15px;">Amount: <strong style="color:#d4af37;font-size:18px;">€' + (eventDetails.amount / 100).toFixed(2) + '</strong></p>' : ''}<p style="margin:0 0 20px;color:#ffffff">Your payment went through. Your spot is confirmed — you + one friend.</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="margin:0 0 20px;color:#a0a0a0">${emailOnly ? 'Your ticket details are below — save this email.' : 'Your ticket with the location and time is being sent to your phone via SMS.'} Your name is on the list at the door.</p><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0 0 8px">Stay connected:</p><a href="https://chat.whatsapp.com/KNdLsExB8sP4bVomnjkqp3?utm_source=email&amp;utm_medium=email" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">WhatsApp Community →</a>&nbsp;&nbsp;&nbsp;<a href="https://www.instagram.com/robertjanmastenbroek/?utm_source=email&amp;utm_medium=email" style="display:inline-block;color:#d4af37;font-size:14px;text-decoration:none;letter-spacing:1px;text-transform:uppercase">Instagram →</a><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`,
     });
     console.log(`Holy Rave confirmation sent to ${email}`);
   } catch (err) {

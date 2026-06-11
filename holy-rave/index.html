@@ -2650,8 +2650,8 @@
                     document.getElementById('formError').textContent = 'Please enter a valid phone number (e.g. ' + phoneCountry + ' 612 345 678).';
                     return;
                 }
-                // Phone must be verified via 6-digit code
-                if (!phoneVerified) {
+                // Phone must be verified via 6-digit code (or email-only fallback)
+                if (!phoneVerified && !emailOnly) {
                     document.getElementById('formError').textContent = 'Verify your phone number first — click "Send Code" and enter the 6-digit code.';
                     return;
                 }
@@ -2741,7 +2741,7 @@
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, phone, phoneVerified, amount, eventSlug: currentSlug, utmSource, utmMedium, utmCampaign }),
+                    body: JSON.stringify({ firstName, lastName, email, phone, phoneVerified, amount, eventSlug: currentSlug, utmSource, utmMedium, utmCampaign, emailOnly }),
                     signal: controller.signal,
                 });
                 clearTimeout(timeout);
@@ -3299,6 +3299,7 @@
         // PHONE VERIFICATION STATE
         // ──────────────────────────────────────────────────────
         let phoneVerified = false;
+        let emailOnly = false;
         let maskedPhone = '';
 
         // ──────────────────────────────────────────────────────
@@ -3444,7 +3445,7 @@
             function tick() {
                 if (phoneVerified) { timerEl.textContent = ''; return; }
                 if (seconds <= 0) {
-                    timerEl.innerHTML = 'Didn\'t receive it? <a onclick="resendCode(\'' + phone.replace(/'/g, "\\'") + '\')">Send again</a>';
+                    timerEl.innerHTML = 'Didn\'t receive it? <a onclick="resendCode(\'' + phone.replace(/'/g, "\\'") + '\')">Send again</a> &nbsp;·&nbsp; <a onclick="continueWithEmail(\'' + phone.replace(/'/g, "\\'") + '\')" style="color:var(--terracotta);text-decoration:underline;cursor:pointer;">Continue with email instead</a>';
                     return;
                 }
                 timerEl.textContent = 'Resend in ' + seconds + 's';
@@ -3479,6 +3480,54 @@
                 document.getElementById('cd0').focus();
                 startResendTimer(phone);
 
+            } catch (err) {
+                setVerifyStatus(err.message, 'error');
+                btn.textContent = 'Send Code';
+                btn.disabled = false;
+            }
+        }
+
+        // ── Continue with email (bypass SMS when code never arrives) ──
+        async function continueWithEmail(phone) {
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                setVerifyStatus('Enter your email address first.', 'error');
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+                setVerifyStatus('Enter a valid email address.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('verifySendBtn');
+            btn.textContent = 'Switching...';
+            btn.disabled = true;
+            setVerifyStatus('Switching to email...', 'info');
+
+            try {
+                const res = await fetch('/api/verify/phone/continue-with-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, email }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                emailOnly = true;
+                phoneVerified = true;
+                maskedPhone = data.masked;
+
+                document.getElementById('resendTimer').textContent = '';
+                document.getElementById('verifySendBtn').textContent = 'Email Only';
+                document.getElementById('verifySendBtn').disabled = true;
+                for (let i = 0; i < 6; i++) {
+                    const el = document.getElementById('cd' + i);
+                    if (el) { el.disabled = true; el.classList.add('filled'); }
+                }
+                setVerifyStatus('<span class="info">📧 Tickets will be sent to your email</span>', 'info');
+
+                showToast('Switched to email ✓', 'success');
+                setTimeout(function() { goToStep(2); }, 800);
             } catch (err) {
                 setVerifyStatus(err.message, 'error');
                 btn.textContent = 'Send Code';

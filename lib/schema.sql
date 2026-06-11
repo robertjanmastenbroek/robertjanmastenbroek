@@ -118,6 +118,12 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
+-- Migration: add email_only flag to registrations
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS email_only BOOLEAN DEFAULT FALSE;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 -- Migration: add confirmation_code to registrations
 DO $$ BEGIN
   ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS confirmation_code VARCHAR(20);
