@@ -1795,6 +1795,13 @@ app.get('/health', (req, res) => res.send('OK'));
 
 
 
+// ─── Admin panel (explicit route to ensure it's served) ───────────────────────
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin', 'index.html'), (err) => {
+    if (err) res.sendFile(path.join(__dirname, 'index.html'));
+  });
+});
+
 // ─── SPA-style routing — serve index.html for any unmatched routes ────────────
 app.get('*', (req, res) => {
   const reqPath = req.path === '/' ? '' : req.path;
