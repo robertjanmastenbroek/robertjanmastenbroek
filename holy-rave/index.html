@@ -3391,6 +3391,18 @@
 
                 phoneVerified = true;
                 trackEvent('phone_verified', data.phone ? data.phone.slice(-4) : '');
+                // Capture lead as soon as phone is verified
+                fetch('/api/capture-lead', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        firstName: document.getElementById('firstName').value.trim(),
+                        lastName: document.getElementById('lastName').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        phone: fullPhone,
+                        source: 'holy_rave',
+                    }),
+                }).catch(function(err) { console.warn('[lead] Capture error:', err); });
                 setVerifyStatus('<span class="check">\u2713</span> Phone verified', 'check');
 
                 // Mark verified, keep inputs unlocked so user can change if needed
@@ -3500,6 +3512,19 @@
                 emailOnly = true;
                 phoneVerified = true;
                 maskedPhone = data.masked;
+
+                // Capture lead as soon as email-only verification succeeds
+                fetch('/api/capture-lead', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        firstName: document.getElementById('firstName').value.trim(),
+                        lastName: document.getElementById('lastName').value.trim(),
+                        email: email,
+                        phone: phone,
+                        source: 'holy_rave',
+                    }),
+                }).catch(function(err) { console.warn('[lead] Capture error:', err); });
 
                 document.getElementById('resendTimer').textContent = '';
                 document.getElementById('verifySendBtn').textContent = 'Email Only';

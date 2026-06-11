@@ -689,6 +689,20 @@ app.post('/api/verify/phone/check', async (req, res) => {
   }
 });
 
+// ─── Capture lead (subscriber) after verification — before payment ────────────
+app.post('/api/capture-lead', async (req, res) => {
+  const { firstName, lastName, email, phone, source } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required.' });
+  try {
+    await db.addSubscriber(email, firstName || '', lastName || '', source || 'holy_rave', phone || '');
+    console.log(`[lead] Captured: ${email} (${firstName || ''} ${lastName || ''})`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[lead] Error:', err.message);
+    res.json({ ok: true }); // Don't block the user on a subscriber save failure
+  }
+});
+
 // POST /api/verify/phone/continue-with-email — bypass SMS when code never arrives
 app.post('/api/verify/phone/continue-with-email', async (req, res) => {
   const { phone, email } = req.body;
