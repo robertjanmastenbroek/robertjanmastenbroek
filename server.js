@@ -413,6 +413,7 @@ app.get('/holy-rave/:slug', async (req, res) => {
   res.sendFile(path.join(__dirname, 'holy-rave', 'index.html'));
 });
 
+app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use(express.static(path.join(__dirname)));
 
 // ─── Admin auth — signed token (avoids session cookie issues) ────────────────
@@ -1795,10 +1796,20 @@ app.get('/health', (req, res) => res.send('OK'));
 
 
 
-// ─── Admin panel (explicit route to ensure it's served) ───────────────────────
+// ─── Admin panel — read directly from fs so it works regardless of build context ──
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin', 'index.html'), (err) => {
-    if (err) res.sendFile(path.join(__dirname, 'index.html'));
+  const adminPath = path.join(__dirname, 'admin', 'index.html');
+  fs.readFile(adminPath, 'utf8', (err, data) => {
+    if (err || !data) {
+      // Fallback: serve from git-tracked path
+      const altPath = path.join(__dirname, '..', 'Documents/Robert-Jan Mastenbroek Command Centre', 'admin', 'index.html');
+      fs.readFile(altPath, 'utf8', (err2, data2) => {
+        if (err2 || !data2) return res.sendFile(path.join(__dirname, 'index.html'));
+        res.send(data2);
+      });
+      return;
+    }
+    res.send(data);
   });
 });
 
