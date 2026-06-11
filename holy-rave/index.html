@@ -1997,7 +1997,7 @@
                         <!-- STEP 2: Amount -->
                         <div class="form-step" data-step="2">
                             <div class="amount-section" id="amountSectionPWYW">
-                                <label class="amount-label" id="amountLabel">Choose Your Contribution <em>— €5 minimum</em></label>
+                                <label class="amount-label" id="amountLabel">Choose Your Contribution <em>— €1 minimum</em></label>
                                 <div class="amount-options" id="amountOptions">
                                     <button type="button" class="amount-btn" data-amount="500">€5</button>
                                     <button type="button" class="amount-btn" data-amount="1200">€12</button>
@@ -2032,7 +2032,7 @@
                                 Pay &amp; Reserve
                             </button>
                             <p style="text-align:center;font-size:0.72rem;color:var(--text-mute);margin-top:0.5rem;letter-spacing:0.03em;" id="amountSummary">
-                                <span id="tierMessage">€5 minimum · to keep the music going</span>
+                                <span id="tierMessage">€1 minimum · just to know you're real</span>
                             </p>
                             <p class="form-error" id="formError"></p>
                         </div>
@@ -2471,7 +2471,7 @@
                 document.getElementById('tierMessage').textContent = '€' + priceEuros + ' · includes you + one friend';
                 selectedAmount = event.ticket_price_cents;
             } else {
-                document.getElementById('tierMessage').textContent = '€5 minimum · to keep the music going';
+                document.getElementById('tierMessage').textContent = '€1 minimum · just to know you\'re real';
                 selectedAmount = 1200;
             }
 
