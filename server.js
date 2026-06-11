@@ -1094,9 +1094,48 @@ app.get('/api/holy-rave/ticket/:id/calendar.ics', async (req, res) => {
   }
 });
 
+// POST /api/holy-rave/create-pending — create a pending registration at verification time
+// This stores the user's info before they choose an amount, so the abandoned
+// email cron can pick them up and send reminders with a resume link.
+app.post('/api/holy-rave/create-pending', async (req, res) => {
+  const { firstName, lastName, email, phone, eventSlug, phoneVerified, emailOnly } = req.body;
+  if (!firstName || !lastName || !email) {
+    return res.status(400).json({ error: 'Please fill in all fields correctly.' });
+  }
+
+  try {
+    let eventId = null;
+    if (eventSlug) {
+      const event = await db.getEventBySlug(eventSlug);
+      if (!event) return res.status(400).json({ error: 'Event not found.' });
+      eventId = event.id;
+    }
+
+    const id = 'hr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+
+    // Ensure subscriber is saved
+    await db.addSubscriber(email, firstName, lastName, 'holy_rave', phone);
+
+    // Create pending registration with amount=1 (placeholder to avoid 'confirmed' status)
+    const payToken = await db.createRegistration({
+      id, firstName, lastName, email, phone,
+      phoneVerified: !!phoneVerified,
+      amount: 1,
+      eventId,
+      emailOnly: !!emailOnly,
+    });
+
+    console.log(`[create-pending] Created for ${email} (${id})`);
+    res.json({ id, paymentToken: payToken, payLink: payToken ? `${SITE_URL}/holy-rave/pay/${payToken}` : null });
+  } catch (err) {
+    console.error('[create-pending] Error:', err.message);
+    res.status(500).json({ error: 'Could not save your information.' });
+  }
+});
+
 // POST /api/holy-rave/register — create a registration + optional Stripe checkout
 app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
-  const { firstName, lastName, email, phone, amount, eventSlug, phoneVerified, utmSource, utmMedium, utmCampaign, emailOnly } = req.body;
+  const { firstName, lastName, email, phone, amount, eventSlug, phoneVerified, utmSource, utmMedium, utmCampaign, emailOnly, existingRegId } = req.body;
 
   if (!firstName || !lastName || !email) {
     return res.status(400).json({ error: 'Please fill in all fields correctly.' });
@@ -1158,7 +1197,8 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
       }
     }
 
-    const id = 'hr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    // Use existing reg ID if available (from create-pending at verification time)
+    const id = existingRegId || ('hr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8));
 
     // Build event description for Stripe
     let eventDateStr = '';

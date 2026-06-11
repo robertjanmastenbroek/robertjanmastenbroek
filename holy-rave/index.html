@@ -2145,6 +2145,7 @@
         let currentEvent = null;
         let currentSlug = null;
         let currentRegId = null;
+        let pendingVerificationRegId = null; // Set after verification, used for abandoned email resume
         let step = 1;
         let isFixedPrice = false;
 
@@ -2396,6 +2397,7 @@
                     const res = await fetch('/api/holy-rave/resume/' + encodeURIComponent(resumeId));
                     if (res.ok) {
                         const data = await res.json();
+                        pendingVerificationRegId = resumeId; // Use existing reg for submission
                         document.getElementById('firstName').value = data.firstName || '';
                         document.getElementById('lastName').value = data.lastName || '';
                         document.getElementById('email').value = data.email || '';
@@ -2725,7 +2727,7 @@
                 const res = await fetch('/api/holy-rave/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, phone, phoneVerified, amount, eventSlug: currentSlug, utmSource, utmMedium, utmCampaign, emailOnly }),
+                    body: JSON.stringify({ firstName, lastName, email, phone, phoneVerified, amount, eventSlug: currentSlug, utmSource, utmMedium, utmCampaign, emailOnly, existingRegId: pendingVerificationRegId }),
                     signal: controller.signal,
                 });
                 clearTimeout(timeout);
@@ -3403,6 +3405,21 @@
                         source: 'holy_rave',
                     }),
                 }).catch(function(err) { console.warn('[lead] Capture error:', err); });
+                // Create pending registration for abandoned email tracking
+                fetch('/api/holy-rave/create-pending', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        firstName: document.getElementById('firstName').value.trim(),
+                        lastName: document.getElementById('lastName').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        phone: fullPhone,
+                        eventSlug: currentSlug,
+                        phoneVerified: true,
+                    }),
+                }).then(function(r) { return r.json(); }).then(function(d) {
+                    if (d.id) pendingVerificationRegId = d.id;
+                }).catch(function(err) { console.warn('[lead] Pending reg error:', err); });
                 setVerifyStatus('<span class="check">\u2713</span> Phone verified', 'check');
 
                 // Mark verified, keep inputs unlocked so user can change if needed
@@ -3525,6 +3542,22 @@
                         source: 'holy_rave',
                     }),
                 }).catch(function(err) { console.warn('[lead] Capture error:', err); });
+                // Create pending registration for abandoned email tracking
+                fetch('/api/holy-rave/create-pending', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        firstName: document.getElementById('firstName').value.trim(),
+                        lastName: document.getElementById('lastName').value.trim(),
+                        email: email,
+                        phone: phone,
+                        eventSlug: currentSlug,
+                        phoneVerified: true,
+                        emailOnly: true,
+                    }),
+                }).then(function(r) { return r.json(); }).then(function(d) {
+                    if (d.id) pendingVerificationRegId = d.id;
+                }).catch(function(err) { console.warn('[lead] Pending reg error:', err); });
 
                 document.getElementById('resendTimer').textContent = '';
                 document.getElementById('verifySendBtn').textContent = 'Email Only';
