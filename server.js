@@ -292,6 +292,41 @@ app.get('/holy-rave', async (req, res) => {
   });
 });
 
+// ─── Server-rendered /holy-rave/pay/:token — payment resume link ────────────
+// Resolves a short payment token to the registration and redirects to the
+// event detail page with the ?resume=regId param so the user can complete
+// payment. Useful for email/SMS reminder links.
+app.get('/holy-rave/pay/:token', async (req, res) => {
+  const { token } = req.params;
+  if (!token) return res.redirect('/holy-rave');
+
+  try {
+    const reg = await db.getRegistrationByPaymentToken(token);
+    if (!reg) {
+      // Token not found — redirect to hub with a flag for frontend to show toast
+      return res.redirect('/holy-rave?pay=notfound');
+    }
+    if (reg.status === 'confirmed') {
+      // Registration is already confirmed — show a simple confirmed page
+      const dateStr = reg.event_date
+        ? new Date(reg.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+        : '';
+      return res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Already Confirmed — Holy Rave</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&display=swap" rel="stylesheet"><style>body{margin:0;padding:0;background:#0a0a0a;color:#f5f1e8;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}.card{max-width:420px;padding:3rem 2rem;}.card h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:2.5rem;font-weight:400;margin:0 0 0.75rem;}.card h1 span{color:#c8883a;font-style:italic;}.card p{color:#7a7266;font-size:0.95rem;line-height:1.7;margin:0 0 2rem;}.card .btn{display:inline-block;padding:0.9rem 2rem;background:#d4af37;color:#0a0a0a;text-decoration:none;font-size:0.76rem;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;transition:all 0.3s;}.card .btn:hover{background:#b8532a;color:#f5f1e8;}</style></head><body><div class="card"><h1>Already <span>Confirmed</span></h1><p>Your spot for ${reg.event_title || 'Holy Rave'}${dateStr ? ' on ' + dateStr : ''} is already confirmed. Check your email or SMS for the event details.</p><a class="btn" href="/holy-rave">Back to Events →</a></div></body></html>`);
+    }
+    if (reg.status !== 'pending') {
+      return res.redirect('/holy-rave?pay=expired');
+    }
+
+    // Pending registration — redirect to event page with resume param
+    const slug = reg.event_slug || 'holy-rave';
+    const resumePath = slug === 'holy-rave' ? '/holy-rave' : '/holy-rave/' + slug;
+    return res.redirect(resumePath + '?resume=' + encodeURIComponent(reg.id));
+  } catch (err) {
+    console.error('[pay] Token lookup error:', err.message);
+    return res.redirect('/holy-rave');
+  }
+});
+
 // ─── Server-rendered /holy-rave/:slug — inject OG tags + event data + JSON-LD ─
 app.get('/holy-rave/:slug', async (req, res) => {
   const slug = req.params.slug;
@@ -1126,11 +1161,12 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     const stripe = getStripe();
     if (!stripe) {
       // Stripe not configured — save as pending registration
-      await db.createRegistration({
+      const payToken = await db.createRegistration({
         id, firstName, lastName, email, phone, phoneVerified: !!phoneVerified, amount: amt, week, eventId,
         utmSource, utmMedium, utmCampaign, emailOnly: !!emailOnly,
       });
-      return res.json({ id, confirmed: false, note: 'Payment system not available. Registration saved without payment.' });
+      const payLink = payToken ? `${SITE_URL}/holy-rave/pay/${payToken}` : null;
+      return res.json({ id, confirmed: false, payLink, note: 'Payment system not available. Registration saved without payment.' });
     }
 
     console.log(`[register] Creating PaymentIntent for ${email} — €${(amt / 100).toFixed(2)}`);
@@ -1170,7 +1206,7 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
 
     console.log(`[register] PaymentIntent created: ${paymentIntent.id}`);
 
-    await db.createRegistration({
+    const payToken = await db.createRegistration({
       id, firstName, lastName, email, phone, phoneVerified: !!phoneVerified, amount: amt, week, eventId,
       stripeSessionId: paymentIntent.id,
       utmSource, utmMedium, utmCampaign, emailOnly: !!emailOnly,
@@ -1180,8 +1216,9 @@ app.post('/api/holy-rave/register', registerLimiter, async (req, res) => {
     syncToResendAudience(email, firstName, lastName, phone).catch(e =>
       console.error('[register] Resend sync error:', e.message));
 
+    const payLink = payToken ? `${SITE_URL}/holy-rave/pay/${payToken}` : null;
     // Return clientSecret for inline Payment Element — no redirect needed
-    res.json({ id, clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
+    res.json({ id, clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id, payLink });
   } catch (err) {
     console.error('[register] Holy Rave register error:', err);
     console.error('[register] Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
@@ -1310,6 +1347,7 @@ app.get('/api/holy-rave/resume/:id', async (req, res) => {
       email: reg.email,
       phone: reg.phone,
       eventId: reg.event_id,
+      paymentToken: reg.payment_token || null,
     });
   } catch (err) {
     console.error('Resume error:', err.message);
@@ -1907,9 +1945,11 @@ async function sendThankYouEmail(email, name) {
 // Runs every 5 minutes. Sends a reminder email to anyone who started
 // registration but didn't complete payment, after 20 minutes of inactivity.
 // ─── Abandoned email templates ──────────────────────────────────────────────
-function buildAbandonedEmail(step, firstName, eventDate, eventSlug, regId, pricingModel, ticketPriceCents) {
+function buildAbandonedEmail(step, firstName, eventDate, eventSlug, regId, pricingModel, ticketPriceCents, paymentToken) {
   const name = firstName || 'there';
-  const link = `${SITE_URL}/holy-rave/${eventSlug || ''}?resume=${regId}&utm_source=email&utm_medium=abandoned`;
+  const payLink = paymentToken
+    ? `${SITE_URL}/holy-rave/pay/${paymentToken}?utm_source=email&utm_medium=abandoned`
+    : `${SITE_URL}/holy-rave/${eventSlug || ''}?resume=${regId}&utm_source=email&utm_medium=abandoned`;
   const isFixed = pricingModel === 'fixed' && ticketPriceCents;
   const priceStr = isFixed
     ? '€' + (ticketPriceCents / 100).toFixed(2) + ' ticket'
@@ -1940,7 +1980,7 @@ function buildAbandonedEmail(step, firstName, eventDate, eventSlug, regId, prici
   };
 
   const { subject, body } = emails[step] || emails[0];
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · ${eventDate}</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You left a spot <span style="color:#d4af37">open</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0">${body}<table cellpadding="0" cellspacing="0" style="margin:32px auto"><tr><td align="center" bgcolor="#d4af37" style="border-radius:0;padding:14px 32px"><a href="${link}" target="_blank" style="color:#0a0a0a;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-decoration:none;display:inline-block">Complete Your Reservation →</a></td></tr></table><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`;
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0a0a0a" style="background-color:#0a0a0a"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#0a0a0a" bgcolor="#0a0a0a"><tr><td style="padding:48px 32px;color:#a0a0a0;font-size:16px;line-height:1.8"><p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 24px">Holy Rave · ${eventDate}</p><h1 style="font-size:28px;color:#ffffff;margin:0 0 8px;letter-spacing:2px;text-transform:uppercase;font-weight:700">You left a spot <span style="color:#d4af37">open</span></h1><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0">${body}<table cellpadding="0" cellspacing="0" style="margin:32px auto"><tr><td align="center" bgcolor="#d4af37" style="border-radius:0;padding:14px 32px"><a href="${payLink}" target="_blank" style="color:#0a0a0a;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-decoration:none;display:inline-block">Complete Your Reservation →</a></td></tr></table><hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:28px 0"><p style="font-size:13px;color:#555;margin:0">All the glory belongs to Jesus.<br>— Robert-Jan</p></td></tr></table></td></tr></table></body></html>`;
 
   return { subject, html };
 }
@@ -1961,7 +2001,7 @@ async function sendAbandonedReminders() {
         : 'soon';
 
       const step = reg.email_sequence_step || 0;
-      const { subject, html } = buildAbandonedEmail(step, reg.first_name, eventDate, reg.slug, reg.id, reg.pricing_model, reg.ticket_price_cents);
+      const { subject, html } = buildAbandonedEmail(step, reg.first_name, eventDate, reg.slug, reg.id, reg.pricing_model, reg.ticket_price_cents, reg.payment_token);
 
       try {
         await resendClient.emails.send({

@@ -130,6 +130,13 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
+-- Migration: add payment_token to registrations (shareable payment resume link)
+DO $$ BEGIN
+  ALTER TABLE holy_rave_registrations ADD COLUMN IF NOT EXISTS payment_token VARCHAR(12);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_registrations_payment_token ON holy_rave_registrations(payment_token);
+
 CREATE INDEX IF NOT EXISTS idx_registrations_week_status ON holy_rave_registrations(week, status);
 CREATE INDEX IF NOT EXISTS idx_registrations_event_status ON holy_rave_registrations(event_id, status);
 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
