@@ -588,10 +588,11 @@
 
         .detail-hero {
             position: relative;
-            padding: 2rem 2rem 0;
+            min-height: 32vh;
             background: transparent;
+            background-size: cover;
+            background-position: center;
             overflow: hidden;
-            text-align: center;
         }
         .detail-hero .atmosphere { z-index: 0; }
         .detail-hero-content {
@@ -1761,7 +1762,7 @@
          ══════════════════════════════════════════════════ -->
     <div id="detailMode" class="detail-page">
 
-        <div class="detail-hero" id="detailHero" style="display:none;"></div>
+        <div class="detail-hero" id="detailHero"></div>
 
         <div class="detail-grid">
             <!-- LEFT: Meter + Info + Host + Timeline -->
@@ -2461,6 +2462,15 @@
             if (twImage) twImage.content = fullImageUrl;
             if (ogTitle) ogTitle.content = (event.title || 'Holy Rave') + ' · ' + date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' · ' + (event.location || 'Tenerife');
             if (ogDesc) ogDesc.content = '50 tickets. Pay what feels right. You + 1 friend. ' + (event.event_time || 'Sunset') + ' at ' + (event.location || 'Tenerife South') + '.';
+
+            // Event image as hero background
+            const hero = document.getElementById('detailHero');
+            if (event.image_url) {
+                const imgUrl = event.image_url.startsWith('http') ? event.image_url : window.location.origin + event.image_url;
+                hero.style.backgroundImage = 'linear-gradient(180deg, rgba(15,23,48,0.3) 0%, rgba(10,10,10,0.4) 60%, var(--dark) 100%), url(' + imgUrl + ')';
+                hero.style.backgroundSize = 'cover';
+                hero.style.backgroundPosition = 'center';
+            }
 
             // Set pricing model and update amount section visibility
             const isFixed = event.pricing_model === 'fixed';
